@@ -1,0 +1,122 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and access information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "hasFullAccess": { "type": "boolean" },
+        "purchasedSeries": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Exam": {
+      "title": "Exam",
+      "description": "A high-level exam category (e.g., OPSC AIO)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "TestSeries": {
+      "title": "Test Series",
+      "description": "A bundle of mock tests",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "examId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "durationDays": { "type": "number" },
+        "testIds": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["id", "examId", "title", "price"]
+    },
+    "MockTest": {
+      "title": "Mock Test",
+      "description": "A timed test with multiple questions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "seriesId": { "type": "string" },
+        "title": { "type": "string" },
+        "durationMinutes": { "type": "number" },
+        "totalMarks": { "type": "number" },
+        "isPremium": { "type": "boolean" }
+      },
+      "required": ["id", "seriesId", "title"]
+    },
+    "Question": {
+      "title": "Question",
+      "description": "A single question in the bank",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "examId": { "type": "string" },
+        "topic": { "type": "string" },
+        "difficulty": { "type": "string", "enum": ["easy", "medium", "hard"] },
+        "questionText": { "type": "string" },
+        "options": { "type": "array", "items": { "type": "string" } },
+        "correctAnswerIndex": { "type": "number" },
+        "explanation": { "type": "string" }
+      },
+      "required": ["id", "examId", "questionText", "options", "correctAnswerIndex"]
+    },
+    "TestAttempt": {
+      "title": "Test Attempt",
+      "description": "User's performance in a mock test",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "testId": { "type": "string" },
+        "score": { "type": "number" },
+        "accuracy": { "type": "number" },
+        "answers": { "type": "object" },
+        "completedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "testId", "score"]
+    },
+    "Subject": {
+      "title": "Subject",
+      "description": "A study subject or topic with associated materials",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "image": { "type": "string" },
+        "questionsCount": { "type": "number" },
+        "tagline": { "type": "string" },
+        "category": { "type": "string", "enum": ["topic-wise", "exam-focused", "revision-sets", "pyq-collections"] },
+        "isPremium": { "type": "boolean" },
+        "pdfUrl": { "type": "string" },
+        "driveUrl": { "type": "string" },
+        "canDownload": { "type": "boolean" },
+        "canPractice": { "type": "boolean" },
+        "price": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "category"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": "User", "description": "User profiles" },
+    "/exams/{examId}": { "schema": "Exam", "description": "Exam categories" },
+    "/testSeries/{seriesId}": { "schema": "TestSeries", "description": "Bundled test series" },
+    "/mockTests/{testId}": { "schema": "MockTest", "description": "Individual mock tests" },
+    "/questions/{questionId}": { "schema": "Question", "description": "Question bank" },
+    "/attempts/{attemptId}": { "schema": "TestAttempt", "description": "User test history" },
+    "/subjects/{subjectId}": { "schema": "Subject", "description": "Dynamic subjects and materials" }
+  }
+}
