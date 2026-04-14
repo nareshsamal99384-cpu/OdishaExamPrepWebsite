@@ -37,14 +37,6 @@ const AdminLoginPage = () => {
       const data = await response.json();
 
       if (data.success) {
-        // Also sign in to Firebase Auth so Storage/Firestore rules work
-        try {
-          await signInWithEmailAndPassword(auth, email, password);
-        } catch (firebaseErr) {
-          console.warn("Firebase Auth sign-in failed, proceeding with manual session:", firebaseErr);
-          // We still proceed because the custom API succeeded
-        }
-        
         loginAsAdmin(data.user);
         navigate('/admin');
       } else {

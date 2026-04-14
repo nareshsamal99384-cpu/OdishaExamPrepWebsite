@@ -87,27 +87,6 @@
         "completedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "userId", "testId", "score"]
-    },
-    "Subject": {
-      "title": "Subject",
-      "description": "A study subject or topic with associated materials",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string" },
-        "image": { "type": "string" },
-        "questionsCount": { "type": "number" },
-        "tagline": { "type": "string" },
-        "category": { "type": "string", "enum": ["topic-wise", "exam-focused", "revision-sets", "pyq-collections"] },
-        "isPremium": { "type": "boolean" },
-        "pdfUrl": { "type": "string" },
-        "driveUrl": { "type": "string" },
-        "canDownload": { "type": "boolean" },
-        "canPractice": { "type": "boolean" },
-        "price": { "type": "number" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "title", "category"]
     }
   },
   "firestore": {
@@ -116,7 +95,6 @@
     "/testSeries/{seriesId}": { "schema": "TestSeries", "description": "Bundled test series" },
     "/mockTests/{testId}": { "schema": "MockTest", "description": "Individual mock tests" },
     "/questions/{questionId}": { "schema": "Question", "description": "Question bank" },
-    "/attempts/{attemptId}": { "schema": "TestAttempt", "description": "User test history" },
-    "/subjects/{subjectId}": { "schema": "Subject", "description": "Dynamic subjects and materials" }
+    "/attempts/{attemptId}": { "schema": "TestAttempt", "description": "User test history" }
   }
 }

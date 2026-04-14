@@ -31,7 +31,7 @@ import {
 import { useAuth } from './lib/AuthContext';
 import { auth, googleProvider, db } from './lib/firebase';
 import { signInWithPopup, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDocFromServer, collection, getDocs, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { doc, getDocFromServer, collection, getDocs, query, where } from 'firebase/firestore';
 import { cn } from './lib/utils';
 import AdminPanel from './AdminPanel';
 import MockTestSystem from './MockTestSystem';
@@ -837,47 +837,29 @@ const DashboardContent = ({ isGuest }: { isGuest?: boolean }) => {
   const [selectedBankType, setSelectedBankType] = useState<string | null>(null);
   const [selectedBankItem, setSelectedBankItem] = useState<any | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
-  const [showUnlockModal, setShowUnlockModal] = useState(false);
-  const [selectedSubject, setSelectedSubject] = useState<any | null>(null);
   const [practiceSettings, setPracticeSettings] = useState({
     topic: '',
     questions: '20'
   });
 
-  const [subjects, setSubjects] = useState<any[]>([]);
-  const [questionBanks, setQuestionBanks] = useState<Record<string, any[]>>({
-    'topic-wise': [],
-    'exam-focused': [],
-    'revision-sets': [],
-    'pyq-collections': []
-  });
-
-  useEffect(() => {
-    const q = query(collection(db, 'subjects'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const subjectsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
-      setSubjects(subjectsData);
-      
-      // Group subjects by category
-      const grouped: Record<string, any[]> = {
-        'topic-wise': [],
-        'exam-focused': [],
-        'revision-sets': [],
-        'pyq-collections': []
-      };
-      
-      subjectsData.forEach((subject: any) => {
-        if (grouped[subject.category]) {
-          grouped[subject.category].push(subject);
-        }
-      });
-      
-      setQuestionBanks(grouped);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'subjects');
-    });
-    return () => unsubscribe();
-  }, []);
+  const questionBanks: Record<string, any[]> = {
+    'topic-wise': [
+      { id: 'polity', title: 'Indian Polity', questions: 1200, tagline: 'Concept-Focused Practice', image: 'https://picsum.photos/seed/polity/400/250', isPremium: false },
+      { id: 'history', title: 'Odisha History', questions: 850, tagline: 'Based on Previous Year Trends', image: 'https://picsum.photos/seed/history/400/250', isPremium: true },
+      { id: 'geography', title: 'Geography', questions: 1100, tagline: 'High-Scoring Topics', image: 'https://picsum.photos/seed/geography/400/250', isPremium: true },
+      { id: 'economy', title: 'Indian Economy', questions: 950, tagline: 'Updated Economic Trends', image: 'https://picsum.photos/seed/economy/400/250', isPremium: true },
+    ],
+    'exam-focused': [
+      { id: 'opsc-special', title: 'OPSC ASO Special', questions: 2000, tagline: 'Exam-Pattern Aligned', image: 'https://picsum.photos/seed/opsc/400/250', isPremium: true },
+      { id: 'ossc-capsule', title: 'OSSC CGL Capsule', questions: 1500, tagline: 'Quick Revision Ready', image: 'https://picsum.photos/seed/ossc/400/250', isPremium: true },
+    ],
+    'revision-sets': [
+      { id: 'high-value', title: 'High Value Topics', questions: 500, tagline: 'High-Yield Topics', image: 'https://picsum.photos/seed/revision/400/250', isPremium: true },
+    ],
+    'pyq-collections': [
+      { id: 'pyq-2023', title: '2023 Solved Papers', questions: 1200, tagline: 'Authentic Solved Papers', image: 'https://picsum.photos/seed/pyq/400/250', isPremium: true },
+    ]
+  };
 
   const exams = [
     { id: 'opsc-aio', name: 'OPSC AIO', description: 'Odisha Public Service Commission All In One', icon: '🏛️', category: 'popular' },
@@ -910,25 +892,6 @@ const DashboardContent = ({ isGuest }: { isGuest?: boolean }) => {
         explanation: 'Hirakud Dam is built across the Mahanadi River, about 15 kilometres from Sambalpur in Odisha.'
       }
     ]
-  };
-
-  const handleStartPractice = (item: any) => {
-    if (isGuest && guestUsage.questions >= 10) {
-      setShowLoginPrompt(true);
-      return;
-    }
-    
-    if (item.isPremium && !hasFullAccess) {
-      setSelectedSubject(item);
-      setShowUnlockModal(true);
-      return;
-    }
-
-    setPracticeSettings({
-      ...practiceSettings,
-      topic: item.id
-    });
-    setShowPracticeConfig(true);
   };
 
   const handleStartTest = (test: any) => {
@@ -1167,45 +1130,9 @@ const DashboardContent = ({ isGuest }: { isGuest?: boolean }) => {
                       <span className="text-[11px] font-black uppercase tracking-wider">{item.tagline}</span>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-3">
-                    {item.canPractice !== false && (
-                      <Button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (isLocked) {
-                            setSelectedSubject(item);
-                            setShowUnlockModal(true);
-                          } else {
-                            handleStartPractice(item);
-                          }
-                        }}
-                        className="w-full py-3 rounded-xl text-sm font-black premium-gradient border-none"
-                      >
-                        {isLocked && <Lock className="w-4 h-4 mr-2" />}
-                        Practice Mode
-                      </Button>
-                    )}
-                    {item.canDownload !== false && (
-                      <Button 
-                        variant="secondary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (isLocked) {
-                            setSelectedSubject(item);
-                            setShowUnlockModal(true);
-                          } else if (item.pdfUrl || item.driveUrl) {
-                            window.open(item.pdfUrl || item.driveUrl, '_blank');
-                          } else {
-                            alert("No study material available for this subject yet.");
-                          }
-                        }}
-                        className="w-full py-3 rounded-xl text-sm font-bold border-slate-200"
-                      >
-                        {isLocked && <Lock className="w-4 h-4 mr-2" />}
-                        Download PDF
-                      </Button>
-                    )}
-                  </div>
+                  <Button variant="secondary" className="w-full py-3 rounded-xl text-sm font-bold">
+                    {isLocked ? 'Unlock to View' : 'View Details'}
+                  </Button>
                 </div>
               </Card>
             );
@@ -1315,7 +1242,7 @@ const DashboardContent = ({ isGuest }: { isGuest?: boolean }) => {
 
         {/* Paywall Modal */}
         <AnimatePresence>
-          {(showPaywall || showUnlockModal) && (
+          {showPaywall && (
             <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 backdrop-blur-md">
               <motion.div 
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -1324,11 +1251,7 @@ const DashboardContent = ({ isGuest }: { isGuest?: boolean }) => {
                 className="bg-white rounded-[2rem] w-[90%] max-w-sm overflow-hidden shadow-2xl relative"
               >
                 <button 
-                  onClick={() => {
-                    setShowPaywall(false);
-                    setShowUnlockModal(false);
-                    setSelectedSubject(null);
-                  }}
+                  onClick={() => setShowPaywall(false)}
                   className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 transition-colors z-10"
                 >
                   <X className="w-5 h-5" />
@@ -1340,14 +1263,8 @@ const DashboardContent = ({ isGuest }: { isGuest?: boolean }) => {
                   </div>
                   
                   <div className="space-y-1">
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                      {selectedSubject ? `Unlock ${selectedSubject.title}` : 'Unlock Full Access'}
-                    </h2>
-                    <p className="text-slate-500 text-sm font-medium leading-tight line-clamp-2">
-                      {selectedSubject 
-                        ? `Get instant access to ${selectedSubject.title} and all other premium materials.`
-                        : 'Get unlimited access to all premium question banks and features.'}
-                    </p>
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Unlock Full Access</h2>
+                    <p className="text-slate-500 text-sm font-medium leading-tight line-clamp-2">Get unlimited access to all premium question banks and features.</p>
                   </div>
 
                   <div className="space-y-2.5 text-left bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
@@ -1367,8 +1284,8 @@ const DashboardContent = ({ isGuest }: { isGuest?: boolean }) => {
                     <div className="flex items-center justify-center gap-4">
                       <div className="text-left">
                         <div className="flex items-center gap-2">
-                          <span className="text-3xl font-black text-slate-950">₹{selectedSubject?.price || 499}</span>
-                          <span className="text-sm font-bold text-slate-400 line-through">₹{Number(selectedSubject?.price || 499) * 2}</span>
+                          <span className="text-3xl font-black text-slate-950">₹499</span>
+                          <span className="text-sm font-bold text-slate-400 line-through">₹999</span>
                         </div>
                         <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">50% OFF • Lifetime Access</span>
                       </div>
@@ -1379,18 +1296,15 @@ const DashboardContent = ({ isGuest }: { isGuest?: boolean }) => {
                       onClick={async () => {
                         const res = await loadRazorpay();
                         if (res) {
-                          const amount = Number(selectedSubject?.price || 499) * 100;
                           const options = {
                             key: 'rzp_test_YOUR_KEY_ID',
-                            amount: amount,
+                            amount: 49900,
                             currency: 'INR',
                             name: 'OdishaExamPrep Premium',
-                            description: selectedSubject ? `Unlock ${selectedSubject.title}` : 'Unlock Full Access',
+                            description: 'Unlock Full Access',
                             handler: async function () {
                               await grantFullAccess();
                               setShowPaywall(false);
-                              setShowUnlockModal(false);
-                              setSelectedSubject(null);
                             },
                             prefill: {
                               name: profile?.displayName,
@@ -1531,10 +1445,8 @@ const DashboardContent = ({ isGuest }: { isGuest?: boolean }) => {
                     className="w-full p-4 rounded-2xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700"
                   >
                     <option value="">Choose a topic...</option>
-                    {Object.values(questionBanks).flat().map((item: any) => (
-                      <option key={item.id} value={item.id}>
-                        {item.title} {item.isPremium && !hasFullAccess ? '🔒' : ''}
-                      </option>
+                    {Object.values(questionBanks).flat().filter(item => !item.isPremium || hasFullAccess).map(item => (
+                      <option key={item.id} value={item.id}>{item.title}</option>
                     ))}
                     <option value="aptitude">General Aptitude</option>
                   </select>
@@ -1669,57 +1581,6 @@ const DashboardContent = ({ isGuest }: { isGuest?: boolean }) => {
 
 // --- Main App ---
 
-enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
-
-interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: {
-    userId: string | undefined;
-    email: string | null | undefined;
-    emailVerified: boolean | undefined;
-    isAnonymous: boolean | undefined;
-    tenantId: string | null | undefined;
-    providerInfo: {
-      providerId: string;
-      displayName: string | null;
-      email: string | null;
-      photoUrl: string | null;
-    }[];
-  }
-}
-
-function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData.map(provider => ({
-        providerId: provider.providerId,
-        displayName: provider.displayName,
-        email: provider.email,
-        photoUrl: provider.photoURL
-      })) || []
-    },
-    operationType,
-    path
-  };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
-}
-
 export default function App() {
   return (
     <BrowserRouter>
@@ -1735,7 +1596,7 @@ function AppContent() {
   useEffect(() => {
     async function testConnection() {
       try {
-        await getDocFromServer(doc(db, 'subjects', 'connection-test'));
+        await getDocFromServer(doc(db, 'test', 'connection'));
       } catch (error) {
         if (error instanceof Error && error.message.includes('the client is offline')) {
           console.error("Please check your Firebase configuration. The client is offline.");

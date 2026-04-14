@@ -24,9 +24,6 @@ service cloud.firestore {
     // Collection: attempts
     // Fields: id, userId, testId, score, accuracy, answers, completedAt
     //
-    // Collection: subjects
-    // Fields: id, title, image, questionsCount, tagline, category, isPremium, pdfUrl, canDownload, canPractice, price, createdAt
-    //
     // ===============================================================
 
     // ===============================================================
@@ -61,20 +58,6 @@ service cloud.firestore {
     // Rules
     // ===============================================================
 
-    function isValidSubject(data) {
-      return data.title is string && data.title.size() > 0 && data.title.size() < 100 &&
-             data.category in ['topic-wise', 'exam-focused', 'revision-sets', 'pyq-collections'] &&
-             (!('tagline' in data) || (data.tagline is string && data.tagline.size() < 200)) &&
-             (!('image' in data) || (data.image is string && data.image.size() < 500)) &&
-             (!('pdfUrl' in data) || (data.pdfUrl is string && data.pdfUrl.size() < 500)) &&
-             (!('driveUrl' in data) || (data.driveUrl is string && data.driveUrl.size() < 500)) &&
-             (!('questionsCount' in data) || data.questionsCount is int) &&
-             (!('price' in data) || data.price is int) &&
-             (!('isPremium' in data) || data.isPremium is bool) &&
-             (!('canDownload' in data) || data.canDownload is bool) &&
-             (!('canPractice' in data) || data.canPractice is bool);
-    }
-
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       allow create: if isAuthenticated() && isValidUser(request.resource.data) && 
@@ -107,13 +90,6 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isAdmin();
-    }
-
-    match /subjects/{subjectId} {
-      allow read: if true;
-      allow create: if isAdmin() && isValidSubject(request.resource.data);
-      allow update: if isAdmin() && isValidSubject(request.resource.data);
-      allow delete: if isAdmin();
     }
   }
 }
