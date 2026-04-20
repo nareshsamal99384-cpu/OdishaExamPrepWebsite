@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, User, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db } from './firebase';
+import { supabase } from './supabase';
+import { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
@@ -12,6 +11,8 @@ interface AuthContextType {
   loginAsAdmin: (adminData: any) => void;
   logout: () => Promise<void>;
   grantFullAccess: () => Promise<void>;
+  unlockItem: (itemId: string) => Promise<void>;
+  hasAccessTo: (itemId: string) => boolean;
   guestUsage: { questions: number; tests: number };
   incrementGuestUsage: (type: 'questions' | 'tests') => void;
 }
@@ -25,6 +26,8 @@ const AuthContext = createContext<AuthContextType>({
   loginAsAdmin: () => {},
   logout: async () => {},
   grantFullAccess: async () => {},
+  unlockItem: async () => {},
+  hasAccessTo: () => false,
   guestUsage: { questions: 0, tests: 0 },
   incrementGuestUsage: () => {},
 });
@@ -48,50 +51,74 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setManualAdmin(JSON.parse(storedAdmin));
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      
-      if (firebaseUser) {
-        try {
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-          const adminEmails = ['nareshsamal99384@gmail.com', 'odishaexamprep365@gmail.com'];
-          const isAuthorizedAdmin = adminEmails.includes(firebaseUser.email || '');
+    const fetchProfile = async (sessionUser: User) => {
+      try {
+        const { data: userDoc, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('uid', sessionUser.id)
+          .single();
 
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            // Proactively upgrade to admin if authorized but role is currently 'user'
-            if (isAuthorizedAdmin && userData.role !== 'admin') {
-              const updatedProfile = { ...userData, role: 'admin' };
-              await setDoc(doc(db, 'users', firebaseUser.uid), updatedProfile);
-              setProfile(updatedProfile);
-            } else {
-              setProfile(userData);
-            }
+        const adminEmails = ['odishaexamprep365@gmail.com'];
+        const isAuthorizedAdmin = adminEmails.includes(sessionUser.email || '');
+
+        if (userDoc) {
+          // Proactively upgrade to admin if authorized but role is currently 'user'
+          if (isAuthorizedAdmin && userDoc.role !== 'admin') {
+            const updatedProfile = { ...userDoc, role: 'admin' };
+            await supabase.from('users').update({ role: 'admin' }).eq('uid', sessionUser.id);
+            setProfile(updatedProfile);
+          } else if (!isAuthorizedAdmin && userDoc.role === 'admin') {
+            // Force downgrade previously authorized admins who are no longer on the list
+            const updatedProfile = { ...userDoc, role: 'user' };
+            await supabase.from('users').update({ role: 'user' }).eq('uid', sessionUser.id);
+            setProfile(updatedProfile);
           } else {
-            // Create initial profile
-            const newProfile = {
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0],
-              photoURL: firebaseUser.photoURL,
-              role: isAuthorizedAdmin ? 'admin' : 'user',
-              hasFullAccess: isAuthorizedAdmin ? true : false,
-              purchasedSeries: [],
-              createdAt: new Date().toISOString(),
-            };
-            await setDoc(doc(db, 'users', firebaseUser.uid), newProfile);
-            setProfile(newProfile);
+            setProfile(userDoc);
           }
-        } catch (error) {
-          console.error("Error fetching user profile:", error);
+        } else {
+          // Create initial profile
+          const newProfile = {
+            uid: sessionUser.id,
+            email: sessionUser.email,
+            displayName: sessionUser.user_metadata?.full_name || sessionUser.email?.split('@')[0],
+            photoURL: sessionUser.user_metadata?.avatar_url,
+            role: isAuthorizedAdmin ? 'admin' : 'user',
+            hasFullAccess: isAuthorizedAdmin ? true : false,
+            purchasedSeries: [],
+          };
+          
+          await supabase.from('users').insert([newProfile]);
+          setProfile(newProfile);
         }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      }
+    };
+
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user);
       } else {
         setProfile(null);
       }
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user);
+      } else {
+        setProfile(null);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const incrementGuestUsage = (type: 'questions' | 'tests') => {
@@ -106,7 +133,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
-    await signOut(auth);
+    await supabase.auth.signOut();
     setManualAdmin(null);
     localStorage.removeItem('admin_session');
   };
@@ -117,8 +144,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const grantFullAccess = async () => {
     if (!user) return;
     const updatedProfile = { ...profile, hasFullAccess: true };
-    await setDoc(doc(db, 'users', user.uid), updatedProfile);
+    await supabase.from('users').update({ hasFullAccess: true }).eq('uid', user.id);
     setProfile(updatedProfile);
+  };
+
+  const unlockItem = async (itemId: string) => {
+    if (!user || !profile) return;
+    const currentPurchased = profile.purchasedSeries || [];
+    if (!currentPurchased.includes(itemId)) {
+      const newPurchased = [...currentPurchased, itemId];
+      const updatedProfile = { ...profile, purchasedSeries: newPurchased };
+      await supabase.from('users').update({ purchasedSeries: newPurchased }).eq('uid', user.id);
+      setProfile(updatedProfile);
+    }
+  };
+
+  const hasAccessTo = (itemId: string) => {
+    if (isAdmin || profile?.hasFullAccess) return true;
+    return (profile?.purchasedSeries || []).includes(itemId);
   };
 
   return (
@@ -131,6 +174,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       loginAsAdmin,
       logout,
       grantFullAccess, 
+      unlockItem,
+      hasAccessTo,
       guestUsage, 
       incrementGuestUsage 
     }}>

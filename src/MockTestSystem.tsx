@@ -30,21 +30,21 @@ interface MockTestProps {
     questions: Question[];
   };
   mode?: 'mock' | 'practice';
+  initialState?: any;
   onComplete: (results: any) => void;
-  onExit: () => void;
+  onExit: (progressState?: any) => void;
 }
 
-const MockTestSystem = ({ test, mode = 'mock', onComplete, onExit }: MockTestProps) => {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, number>>({});
-  const [markedForReview, setMarkedForReview] = useState<number[]>([]);
-  const [timeLeft, setTimeLeft] = useState(test.durationMinutes * 60);
+const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit }: MockTestProps) => {
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(initialState?.currentQuestionIndex || 0);
+  const [answers, setAnswers] = useState<Record<number, number>>(initialState?.answers || {});
+  const [markedForReview, setMarkedForReview] = useState<number[]>(initialState?.markedForReview || []);
+  const [timeSpent, setTimeSpent] = useState<Record<number, number>>(initialState?.timeSpent || {});
+  const [timeLeft, setTimeLeft] = useState(initialState?.timeLeft ?? test.durationMinutes * 60);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
 
   useEffect(() => {
-    if (mode === 'practice') return;
-
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 0) {
@@ -54,9 +54,13 @@ const MockTestSystem = ({ test, mode = 'mock', onComplete, onExit }: MockTestPro
         }
         return prev - 1;
       });
+      setTimeSpent(prev => ({
+        ...prev,
+        [currentQuestionIndex]: (prev[currentQuestionIndex] || 0) + 1
+      }));
     }, 1000);
     return () => clearInterval(timer);
-  }, [mode]);
+  }, [currentQuestionIndex]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -90,7 +94,22 @@ const MockTestSystem = ({ test, mode = 'mock', onComplete, onExit }: MockTestPro
       score,
       total: test.questions.length,
       answers,
-      timeTaken: test.durationMinutes * 60 - timeLeft
+      timeTaken: test.durationMinutes * 60 - timeLeft,
+      timeSpent,
+      markedForReview,
+      test,
+      isComplete: true
+    });
+  };
+
+  const handleExit = () => {
+    onExit({
+      answers,
+      timeLeft,
+      timeSpent,
+      markedForReview,
+      currentQuestionIndex,
+      test
     });
   };
 
@@ -115,27 +134,25 @@ const MockTestSystem = ({ test, mode = 'mock', onComplete, onExit }: MockTestPro
       {/* Header */}
       <header className="h-16 glass border-b border-slate-200/50 flex items-center justify-between px-4 sm:px-6 shrink-0 sticky top-0 z-10">
         <div className="flex items-center gap-2 sm:gap-4">
-          <button onClick={onExit} className="p-2 hover:bg-slate-100 rounded-xl transition-all">
+          <button onClick={handleExit} className="p-2 hover:bg-slate-100 rounded-xl transition-all">
             <X className="w-6 h-6 text-slate-500" />
           </button>
           <h1 className="font-extrabold text-slate-900 truncate max-w-[150px] sm:max-w-none tracking-tight">{test.title}</h1>
         </div>
         
         <div className="flex items-center gap-2 sm:gap-6">
-          {mode === 'mock' && (
-            <div className={cn(
-              "flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl font-mono font-extrabold text-sm sm:text-lg premium-shadow",
-              timeLeft < 300 ? "bg-red-50 text-red-600 animate-pulse border border-red-100" : "bg-white text-slate-700 border border-slate-100"
-            )}>
-              <Timer className="w-4 h-4 sm:w-5 sm:h-5" />
-              {formatTime(timeLeft)}
-            </div>
-          )}
+          <div className={cn(
+            "flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl font-mono font-extrabold text-sm sm:text-lg premium-shadow",
+            timeLeft < 300 ? "bg-red-50 text-red-600 animate-pulse border border-red-100" : "bg-white text-slate-700 border border-slate-100"
+          )}>
+            <Timer className="w-4 h-4 sm:w-5 sm:h-5" />
+            {formatTime(timeLeft)}
+          </div>
           <button 
-            onClick={() => mode === 'mock' ? setShowSubmitConfirm(true) : onExit()}
+            onClick={() => setShowSubmitConfirm(true)}
             className="premium-gradient text-white px-5 py-2 sm:px-8 sm:py-2.5 rounded-xl font-extrabold hover:premium-glow shadow-lg shadow-brand-500/20 transition-all text-sm sm:text-base active:scale-95"
           >
-            {mode === 'mock' ? 'Submit' : 'Exit'}
+            Submit
           </button>
         </div>
       </header>
@@ -148,18 +165,16 @@ const MockTestSystem = ({ test, mode = 'mock', onComplete, onExit }: MockTestPro
               <span className="px-4 py-1.5 bg-brand-50 text-brand-700 rounded-full text-[10px] sm:text-xs font-extrabold uppercase tracking-widest border border-brand-100">
                 Question {currentQuestionIndex + 1} of {test.questions.length}
               </span>
-              {mode === 'mock' && (
-                <button 
-                  onClick={toggleMarkForReview}
-                  className={cn(
-                    "flex items-center gap-2 text-xs sm:text-sm font-bold transition-all px-3 py-1.5 rounded-lg",
-                    markedForReview.includes(currentQuestionIndex) ? "bg-amber-50 text-amber-600 border border-amber-100" : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-                  )}
-                >
-                  <Flag className={cn("w-3 h-3 sm:w-4 sm:h-4", markedForReview.includes(currentQuestionIndex) && "fill-amber-600")} />
-                  Mark for Review
-                </button>
-              )}
+              <button 
+                onClick={toggleMarkForReview}
+                className={cn(
+                  "flex items-center gap-2 text-xs sm:text-sm font-bold transition-all px-3 py-1.5 rounded-lg",
+                  markedForReview.includes(currentQuestionIndex) ? "bg-amber-50 text-amber-600 border border-amber-100" : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                )}
+              >
+                <Flag className={cn("w-3 h-3 sm:w-4 sm:h-4", markedForReview.includes(currentQuestionIndex) && "fill-amber-600")} />
+                Mark for Review
+              </button>
             </div>
 
             <div className="space-y-10">
@@ -299,30 +314,30 @@ const MockTestSystem = ({ test, mode = 'mock', onComplete, onExit }: MockTestPro
       {/* Submit Confirmation Modal */}
       <AnimatePresence>
         {showSubmitConfirm && (
-          <div className="fixed inset-0 bg-slate-950/40 z-[100] flex items-center justify-center p-6 backdrop-blur-md">
+          <div className="fixed inset-0 bg-slate-950/40 z-[100] flex items-center justify-center p-4 sm:p-6 backdrop-blur-md">
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="glass rounded-[2.5rem] p-10 max-w-md w-full text-center space-y-8 shadow-2xl border-white/40"
+              className="glass rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-10 max-w-md w-full text-center space-y-6 sm:space-y-8 shadow-2xl border-white/40"
             >
-              <div className="w-24 h-24 premium-gradient rounded-3xl flex items-center justify-center mx-auto premium-glow rotate-12">
-                <Send className="text-white w-12 h-12 -translate-y-1 translate-x-1" />
+              <div className="w-20 h-20 sm:w-24 sm:h-24 premium-gradient rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto premium-glow rotate-12">
+                <Send className="text-white w-10 h-10 sm:w-12 sm:h-12 -translate-y-1 translate-x-1" />
               </div>
-              <div className="space-y-3">
-                <h3 className="text-3xl font-extrabold text-slate-950 tracking-tight">Submit Test?</h3>
-                <p className="text-slate-500 text-lg font-medium">You've answered <span className="text-brand-600 font-extrabold">{Object.keys(answers).length}</span> out of <span className="text-slate-900 font-extrabold">{test.questions.length}</span> questions.</p>
+              <div className="space-y-2 sm:space-y-3">
+                <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">Submit Test?</h3>
+                <p className="text-slate-500 text-base sm:text-lg font-medium">You've answered <span className="text-brand-600 font-extrabold">{Object.keys(answers).length}</span> out of <span className="text-slate-900 font-extrabold">{test.questions.length}</span> questions.</p>
               </div>
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3 sm:gap-4">
                 <Button 
                   onClick={handleSubmit}
-                  className="w-full py-5 rounded-2xl text-xl"
+                  className="w-full py-4 sm:py-5 rounded-xl sm:rounded-2xl text-lg sm:text-xl"
                 >
                   Yes, Submit Now
                 </Button>
                 <button 
                   onClick={() => setShowSubmitConfirm(false)}
-                  className="w-full py-3 text-slate-400 font-bold hover:text-slate-600 transition-colors"
+                  className="w-full py-2.5 sm:py-3 text-sm sm:text-base text-slate-400 font-bold hover:text-slate-600 transition-colors"
                 >
                   Keep Solving
                 </button>

@@ -1,0 +1,1 @@
+const { createClient } = require('@supabase/supabase-js'); const fs = require('fs'); const content = fs.readFileSync('.env', 'utf8'); const urlMatch = content.match(/VITE_SUPABASE_URL=(.*)/); const keyMatch = content.match(/VITE_SUPABASE_ANON_KEY=(.*)/); const supabase = createClient(urlMatch[1], keyMatch[1]); supabase.rpc('get_schema').then(res => console.log(res));
