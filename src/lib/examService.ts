@@ -159,6 +159,15 @@ export const examService = {
     return data;
   },
 
+  // Fetch mock test metadata only (no question payloads) — fast for dashboard views
+  async getAllMockTestsLite() {
+    const { data, error } = await supabase
+      .from('mockTests')
+      .select('id, seriesId, title, durationMinutes, totalMarks, createdAt');
+    if (error) throw error;
+    return data as MockTest[];
+  },
+
   async getAllMockTests() {
     const { data: tests, error: testsError } = await supabase
       .from('mockTests')
