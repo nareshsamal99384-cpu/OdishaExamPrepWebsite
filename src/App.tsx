@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import toast from 'react-hot-toast';
-import { authRateLimit } from './lib/rateLimit';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   BookOpen, 
   LayoutDashboard, 
@@ -70,31 +68,12 @@ import BlogPost from './pages/BlogPost';
 
 const HistoryView = ({ user, onViewResults, onResumeTest }: { user: any, onViewResults?: (results: any) => void, onResumeTest?: (test: any, state: any) => void }) => {
   const [activities, setActivities] = useState<any[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(true);
 
   useEffect(() => {
-    if (!user?.id) { setLoadingHistory(false); return; }
-    // Primary: load from DB for cross-device reliability
-    activityTracker.getActivitiesFromDB(user.id).then(data => {
-      setActivities(data);
-      setLoadingHistory(false);
-    }).catch(() => {
-      // Fallback: local cache if DB unavailable
-      const raw = activityTracker.getActivities(user?.id, user?.user_metadata);
-      setActivities(raw);
-      setLoadingHistory(false);
-    });
-  }, [user?.id]);
+    const raw = activityTracker.getActivities(user?.id, user?.user_metadata);
+    setActivities(raw);
+  }, [user]);
   
-  if (loadingHistory) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24">
-        <div className="w-10 h-10 border-4 border-slate-100 border-t-brand-600 rounded-full animate-spin" />
-        <p className="mt-4 text-slate-500 font-medium text-sm">Loading your history...</p>
-      </div>
-    );
-  }
-
   if (!activities || activities.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center space-y-4">
@@ -316,14 +295,14 @@ const StatsSection = () => {
 
   return (
     <section className="py-12 md:py-24 px-4 sm:px-6">
-      <div className="max-w-6xl mx-auto rounded-[3rem] overflow-hidden relative" >
+      <div className="max-w-6xl mx-auto rounded-[3rem] overflow-hidden relative" style={{background: 'linear-gradient(135deg, #120a2e 0%, #1a1040 50%, #120a2e 100%)', boxShadow: '0 40px 100px rgba(124,58,237,0.12), 0 20px 40px rgba(0,0,0,0.15)'}}>
         {/* Dot grid overlay */}
         <div className="absolute inset-0 dot-bg opacity-30" />
         {/* Animated glow orbs */}
-        <div className="absolute -top-20 -right-20 sm:-top-40 sm:-right-40 w-64 h-64 sm:w-[500px] sm:h-[500px] rounded-full mix-blend-screen filter blur-[80px] sm:blur-[120px] animate-orb"  />
-        <div className="absolute -bottom-20 -left-20 sm:-bottom-40 sm:-left-40 w-64 h-64 sm:w-[500px] sm:h-[500px] rounded-full mix-blend-screen filter blur-[80px] sm:blur-[120px] animate-orb" style={{ animationDelay: '2.5s' }} />
+        <div className="absolute -top-20 -right-20 sm:-top-40 sm:-right-40 w-64 h-64 sm:w-[500px] sm:h-[500px] rounded-full mix-blend-screen filter blur-[80px] sm:blur-[120px] animate-orb" style={{background: 'radial-gradient(circle, rgba(124,58,237,0.8) 0%, transparent 70%)'}} />
+        <div className="absolute -bottom-20 -left-20 sm:-bottom-40 sm:-left-40 w-64 h-64 sm:w-[500px] sm:h-[500px] rounded-full mix-blend-screen filter blur-[80px] sm:blur-[120px] animate-orb" style={{background: 'radial-gradient(circle, rgba(99,102,241,0.7) 0%, transparent 70%)', animationDelay: '2.5s'}} />
         {/* Top shimmer line */}
-        <div className="absolute top-0 left-0 right-0 h-px"  />
+        <div className="absolute top-0 left-0 right-0 h-px" style={{background: 'linear-gradient(90deg, transparent, rgba(124,58,237,0.6), rgba(99,102,241,0.8), rgba(167,139,250,0.6), transparent)'}} />
         
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-700/30 p-6 sm:p-12 md:p-16">
           {stats.map((stat, i) => (
@@ -335,7 +314,7 @@ const StatsSection = () => {
               transition={{ delay: i * 0.18, duration: 0.6, ease: 'easeOut' }}
               className="flex flex-col items-center justify-center space-y-3 sm:space-y-4 py-8 md:py-0 px-2 sm:px-4 group cursor-default"
             >
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-400 shadow-xl" >
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-400 shadow-xl" style={{background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', boxShadow: '0 4px 24px rgba(124,58,237,0.2), inset 0 1px 0 rgba(255,255,255,0.08)'}}>
                 {stat.icon}
               </div>
               <div className="text-center space-y-1 sm:space-y-2">
@@ -350,7 +329,7 @@ const StatsSection = () => {
           ))}
         </div>
         {/* Bottom shimmer line */}
-        <div className="absolute bottom-0 left-0 right-0 h-px"  />
+        <div className="absolute bottom-0 left-0 right-0 h-px" style={{background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent)'}} />
       </div>
     </section>
   );
@@ -399,7 +378,7 @@ const HowItWorksSection = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-10 relative">
         {/* Connection Line (Desktop) — gradient */}
-        <div className="hidden md:block absolute top-[50%] left-0 w-full h-[2px] -translate-y-1/2 z-0"  />
+        <div className="hidden md:block absolute top-[50%] left-0 w-full h-[2px] -translate-y-1/2 z-0" style={{background: 'linear-gradient(90deg, transparent, rgba(124,58,237,0.2), rgba(99,102,241,0.3), rgba(124,58,237,0.2), transparent)'}} />
         
         {steps.map((step, i) => (
           <motion.div 
@@ -413,7 +392,7 @@ const HowItWorksSection = () => {
           >
             <Card className="card-3d-deep soft-card p-6 md:p-10 h-full flex flex-col items-start cursor-pointer relative z-20 overflow-visible rounded-[2.5rem] border-white/20">
               <div className="flex justify-between items-start w-full mb-6 md:mb-8">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:premium-glow transition-all duration-500 feature-icon-wrap" >
+                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:premium-glow transition-all duration-500 feature-icon-wrap" style={{background: 'linear-gradient(135deg, rgba(124,58,237,0.1), rgba(99,102,241,0.08))', border: '1px solid rgba(124,58,237,0.15)', boxShadow: '0 4px 16px rgba(124,58,237,0.1)'}}>
                   {step.icon}
                 </div>
                 <div className="flex flex-col items-end">
@@ -827,7 +806,7 @@ const TestimonialsSection = () => {
                   </p>
                 </div>
                 
-                <div className="flex items-center gap-4 pt-4" >
+                <div className="flex items-center gap-4 pt-4" style={{borderTop: '1px solid rgba(124,58,237,0.1)'}}>
                   <div className="relative">
                     <img 
                       src={review.avatar} 
@@ -1241,7 +1220,6 @@ const LandingPage = () => {
   
   const handleGoogleLogin = async () => {
     try {
-      authRateLimit.checkLimit();
       const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
       if (error) throw error;
       setShowAuthModal(false);
@@ -1253,7 +1231,6 @@ const LandingPage = () => {
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      authRateLimit.checkLimit();
       if (authMode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -1262,14 +1239,14 @@ const LandingPage = () => {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         if (data?.user && !data?.session) {
-            toast.error('Account already exists or requires email verification. Please check your inbox or try logging in!');
+            alert('Account already exists or requires email verification. Please check your inbox or try logging in!');
             setAuthMode('login');
             return;
         }
         setShowAuthModal(false);
       }
     } catch (error: any) {
-      toast.error(error.message);
+      alert(error.message);
     }
   };
 
@@ -1309,16 +1286,16 @@ const LandingPage = () => {
 
       <Navbar user={user} isAdmin={false} onSignIn={() => setShowAuthModal(true)} />
 
-      <main className="flex-1" >
+      <main className="flex-1" style={{background: 'linear-gradient(160deg, #f5f0ff 0%, #faf7ff 40%, #f0f4ff 100%)'}}>
         {/* Elite Split-Layout Hero Section */}
         <section className="relative overflow-hidden pt-6 pb-16 lg:pt-10 lg:pb-32">
           {/* Animated Mesh + Grid Background */}
           <div className="absolute inset-0 -z-10 mesh-bg" />
           <div className="absolute inset-0 -z-10 grid-bg opacity-60" />
           {/* Glowing Orbs */}
-          <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full -z-10 animate-orb"  />
-          <div className="absolute bottom-0 -left-40 w-[500px] h-[500px] rounded-full -z-10 animate-orb" style={{ animationDelay: '2.5s' }} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full -z-10 opacity-30"  />
+          <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full -z-10 animate-orb" style={{background: 'radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%)', filter: 'blur(40px)'}} />
+          <div className="absolute bottom-0 -left-40 w-[500px] h-[500px] rounded-full -z-10 animate-orb" style={{background: 'radial-gradient(circle, rgba(99,102,241,0.14) 0%, transparent 70%)', filter: 'blur(50px)', animationDelay: '2.5s'}} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full -z-10 opacity-30" style={{background: 'radial-gradient(ellipse, rgba(167,139,250,0.12) 0%, transparent 65%)', filter: 'blur(60px)'}} />
           
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-16">
@@ -1411,7 +1388,7 @@ const LandingPage = () => {
                     transition={{ duration: 6, repeat: Infinity }}
                     className="absolute -left-2 sm:-left-8 top-1/4 glass-card p-3 sm:p-5 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl z-20 flex items-center gap-3 sm:gap-4 scale-90 sm:scale-100"
                   >
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30 feature-icon-wrap" >
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30 feature-icon-wrap" style={{background: 'linear-gradient(135deg, #10b981, #059669)'}}>
                       <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-white relative z-10" />
                     </div>
                     <div className="pr-2">
@@ -1709,10 +1686,10 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
           <RotateCw className={cn("w-5 h-5", refreshing && "animate-spin")} />
         </button>
         <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-inner relative"
-          >
+          style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}>
           <BookMarked className="w-10 h-10 text-white" />
           <div className="absolute inset-0 rounded-full animate-ping opacity-20"
-             />
+            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }} />
         </div>
         <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight">
           My <span className="premium-text-gradient">Library</span>
@@ -1727,7 +1704,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
       ) : isFullAccess ? (
         /* Admin / Full Access Banner */
         <div className="relative overflow-hidden rounded-[2rem] p-8 text-white"
-          >
+          style={{ background: 'linear-gradient(135deg, #0f0a28 0%, #1e1151 50%, #0f172a 100%)' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-brand-500/20 to-purple-500/20 pointer-events-none" />
           <div className="relative z-10 flex items-center gap-6">
             <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center shrink-0">
@@ -1783,10 +1760,10 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
               >
                 {/* Exam Header — dark premium strip */}
                 <div className="relative p-6 sm:p-8 text-white overflow-hidden"
-                  >
+                  style={{ background: 'linear-gradient(135deg, #0f0a28 0%, #1e1151 60%, #312e81 100%)' }}>
                   {/* Glow orb */}
                   <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full opacity-30 pointer-events-none"
-                     />
+                    style={{ background: 'radial-gradient(circle, #818cf8 0%, transparent 70%)' }} />
                   <div className="relative z-10 flex items-center gap-5">
                     {/* Exam icon */}
                     <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
@@ -1844,7 +1821,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                           >
                             <div className="flex items-start gap-4 relative z-10">
                               <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-md group-hover:shadow-brand-500/30 transition-shadow duration-300"
-                                >
+                                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
                                 <Timer className="w-6 h-6 text-white group-hover:rotate-12 transition-transform duration-300" />
                               </div>
                               <div className="flex-1 min-w-0 pt-0.5">
@@ -1863,7 +1840,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                               </span>
                             </div>
                             <button className="w-full mt-2 py-2.5 text-sm font-bold text-white rounded-xl shadow-md group-hover:shadow-brand-500/25 transition-all duration-300 relative overflow-hidden"
-                              >
+                              style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>
                               <span className="relative z-10 flex items-center justify-center gap-2">
                                 Start Test <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                               </span>
@@ -1885,7 +1862,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                           >
                             <div className="flex items-start gap-4 relative z-10">
                               <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-md group-hover:shadow-emerald-500/30 transition-shadow duration-300"
-                                >
+                                style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
                                 <BookOpen className="w-6 h-6 text-white group-hover:-rotate-12 transition-transform duration-300" />
                               </div>
                               <div className="flex-1 min-w-0 pt-0.5">
@@ -1904,7 +1881,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                               </span>
                             </div>
                             <button className="w-full mt-2 py-2.5 text-sm font-bold text-white rounded-xl shadow-md group-hover:shadow-emerald-500/25 transition-all duration-300 relative overflow-hidden"
-                              >
+                              style={{ background: 'linear-gradient(135deg, #059669, #047857)' }}>
                               <span className="relative z-10 flex items-center justify-center gap-2">
                                 Practice Now <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                               </span>
@@ -1930,22 +1907,18 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
  * and re-triggering a fetch that could race with a concurrent token refresh.
  * Now we immediately populate state from this cache on re-mount.
  */
-const DASHBOARD_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-
 const _dashboardCache: {
   exams: any[];
   testSeries: any[];
   mockTests: any[];
   dynamicQuestionBanks: Record<string, any[]>;
   loadedForUserId: string | null;
-  fetchedAt: number;
 } = {
   exams: [],
   testSeries: [],
   mockTests: [],
   dynamicQuestionBanks: {},
   loadedForUserId: null,
-  fetchedAt: 0,
 };
 
 const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activities = [], onNavigate, onActivityLogged }: { isGuest?: boolean, onSignIn?: () => void, mainTab?: string, user?: any, activities?: any[], onNavigate?: (tab: any) => void, onActivityLogged?: () => void }) => {
@@ -2143,7 +2116,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       )}
                       onClick={() => {
                         if (selectedBankItem.hasPracticeMode === false) {
-                          toast.error("Practice mode for this topic is coming soon!");
+                          alert("Practice mode for this topic is coming soon!");
                           return;
                         }
                         
@@ -2418,54 +2391,32 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     <Button 
                       className="w-full h-12 rounded-xl text-base font-black premium-gradient shadow-lg shadow-brand-500/20 group/btn relative overflow-hidden"
                       onClick={async () => {
-                        const sdkLoaded = await loadRazorpay();
-                        if (!sdkLoaded) {
-                          toast.error('Razorpay SDK failed to load. Check your internet connection.');
-                          return;
+                        const res = await loadRazorpay();
+                        if (res) {
+                          const options = {
+                            key: 'rzp_live_SeeKABRgdgfsWG',
+                            amount: paywallPrice * 100,
+                            currency: 'INR',
+                            name: 'OdishaExamPrep Premium',
+                            description: paywallItemTitle === 'Full Access' ? 'Unlock Full Access' : `Unlock ${paywallItemTitle}`,
+                            handler: async function () {
+                              if (paywallItemId) {
+                                await unlockItem(paywallItemId);
+                              } else {
+                                await grantFullAccess();
+                              }
+                              setShowPaywall(false);
+                              setPaywallItemId(null);
+                            },
+                            prefill: {
+                              name: profile?.displayName,
+                              email: profile?.email
+                            },
+                            theme: { color: '#4f46e5' }
+                          };
+                          const rzp = new (window as any).Razorpay(options);
+                          rzp.open();
                         }
-
-                        // ── Step 1: Create order server-side (amount set by server) ──
-                        const { data: orderData, error: orderError } = await supabase.functions.invoke(
-                          'create-razorpay-order',
-                          { body: { itemId: paywallItemId ?? 'full-access', itemTitle: paywallItemTitle, amountPaise: paywallPrice * 100 } }
-                        );
-                        if (orderError || !orderData?.orderId) {
-                          toast.error('Could not initiate payment. Please try again.');
-                          return;
-                        }
-
-                        // ── Step 2: Open Razorpay checkout with server-generated order ──
-                        const options = {
-                          key:         orderData.keyId,
-                          order_id:    orderData.orderId,
-                          amount:      orderData.amount,
-                          currency:    orderData.currency,
-                          name:        'OdishaExamPrep Premium',
-                          description: paywallItemTitle === 'Full Access' ? 'Unlock Full Access' : `Unlock ${paywallItemTitle}`,
-                          // ── Step 3: Verify signature server-side before granting access ──
-                          handler: async function (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) {
-                            const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
-                              'verify-razorpay-payment',
-                              { body: { ...response, itemId: paywallItemId } }
-                            );
-                            if (verifyError || !verifyData?.success) {
-                              toast.error('Payment verification failed. If money was deducted, contact support with your payment ID: ' + response.razorpay_payment_id);
-                              return;
-                            }
-                            // Verification passed — update local state
-                            if (paywallItemId) {
-                              await unlockItem(paywallItemId);
-                            } else {
-                              await grantFullAccess();
-                            }
-                            setShowPaywall(false);
-                            setPaywallItemId(null);
-                          },
-                          prefill: { name: profile?.displayName, email: profile?.email },
-                          theme: { color: '#4f46e5' }
-                        };
-                        const rzp = new (window as any).Razorpay(options);
-                        rzp.open();
                       }}
                     >
                       {/* Button Shine Effect */}
@@ -2609,14 +2560,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      // Skip re-fetch if we already have fresh data for this user (tab switch remount).
-      // Cache expires after 5 minutes to pick up any admin-side content changes.
-      const isCacheHit =
-        _dashboardCache.loadedForUserId === (user?.id || 'guest') &&
-        _dashboardCache.exams.length > 0 &&
-        Date.now() - _dashboardCache.fetchedAt < DASHBOARD_CACHE_TTL_MS;
-
-      if (isCacheHit) {
+      // Skip re-fetch if we already have data for this user (tab switch remount)
+      if (_dashboardCache.loadedForUserId === (user?.id || 'guest') && _dashboardCache.exams.length > 0) {
         // Data is already in state (from cache initializer) — just ensure loading is off
         setLoadingExams(false);
         return;
@@ -2706,7 +2651,6 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         _dashboardCache.mockTests = fetchedTests || [];
         _dashboardCache.dynamicQuestionBanks = groupedBanks;
         _dashboardCache.loadedForUserId = user?.id || 'guest';
-        _dashboardCache.fetchedAt = Date.now();
 
         // Update React state
         setExams(finalExams);
@@ -2829,21 +2773,21 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           finalTest.questions = fetchedQs;
           
           if (fetchedQs.length === 0) {
-            toast.error("This test doesn't have any questions yet.");
+            alert("This test doesn't have any questions yet.");
             return;
           }
         }
       }
 
       if (isGuest) incrementGuestUsage('tests'); // This could be removed since we block guests entirely, but to avoid TS errors
-      setActiveTestState({ resumeSessionId: crypto.randomUUID() });
+      setActiveTestState({ resumeSessionId: `session-${Date.now()}` });
       setActiveTest({
         ...finalTest,
         durationMinutes: finalTest.durationMinutes || 60, // Fallback duration
       });
     } catch (error) {
       console.error(error);
-      toast.error('Failed to start test.');
+      alert('Failed to start test.');
     }
   };
 
@@ -2881,7 +2825,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       const bankTopicName = topicBank ? topicBank.title : practiceSettings.topic;
 
       if (!effectiveExamId) {
-        toast.error("Could not determine which exam to load questions from. Please try opening Practice Mode from the exam page directly.");
+        alert("Could not determine which exam to load questions from. Please try opening Practice Mode from the exam page directly.");
         setLoadingPractice(false);
         return;
       }
@@ -2898,7 +2842,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       }
       
       if (matchedQs.length === 0) {
-        toast.error("Oh no! You haven't added any questions for this Exam in the Admin Panel yet.");
+        alert("Oh no! You haven't added any questions for this Exam in the Admin Panel yet.");
         setLoadingPractice(false);
         return;
       }
@@ -2909,7 +2853,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       const finalQuestions = shuffled.slice(0, limit);
 
       const practiceTest = {
-        id: `practice-${crypto.randomUUID()}`,
+        id: `practice-${Date.now()}`,
         title: `${bankTopicName} - Practice Session`,
         durationMinutes: duration,
         // Access was already verified above — mark as non-premium here so
@@ -2925,63 +2869,43 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         }))
       };
 
-      setActiveTestState({ resumeSessionId: crypto.randomUUID() });
+      setActiveTestState({ resumeSessionId: `session-${Date.now()}` });
       handleStartTest(practiceTest);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to compile practice session.");
+      alert("Failed to compile practice session.");
     } finally {
       setLoadingPractice(false);
     }
   };
 
   const handlePayment = async (test: any) => {
-    const sdkLoaded = await loadRazorpay();
-    if (!sdkLoaded) {
-      toast.error('Razorpay SDK failed to load. Are you online?');
+    const res = await loadRazorpay();
+    if (!res) {
+      alert('Razorpay SDK failed to load. Are you online?');
       return;
     }
 
-    const itemId    = test?.id ?? 'full-access';
-    const itemPrice = test?.price ?? 499;
-
-    // ── Step 1: Create order server-side ────────────────────────────────────
-    const { data: orderData, error: orderError } = await supabase.functions.invoke(
-      'create-razorpay-order',
-      { body: { itemId, itemTitle: test?.title ?? 'Premium Content', amountPaise: itemPrice * 100 } }
-    );
-    if (orderError || !orderData?.orderId) {
-      toast.error('Could not initiate payment. Please try again.');
-      return;
-    }
-
-    // ── Step 2: Open Razorpay with the server-generated order ───────────────
     const options = {
-      key:         orderData.keyId,
-      order_id:    orderData.orderId,
-      amount:      orderData.amount,
-      currency:    orderData.currency,
-      name:        'OdishaExamPrep',
-      description: `Purchase ${test?.title ?? 'Premium Content'}`,
-      // ── Step 3: Verify signature before granting access ──────────────────
-      handler: async function (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) {
-        const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
-          'verify-razorpay-payment',
-          { body: { ...response, itemId } }
-        );
-        if (verifyError || !verifyData?.success) {
-          toast.error('Payment verification failed. If money was deducted, please contact support with Payment ID: ' + response.razorpay_payment_id);
-          return;
-        }
-        // Verification passed — grant access locally
-        await unlockItem(itemId);
+      key: 'rzp_live_SeeKABRgdgfsWG', // Razorpay Live API Key
+      amount: 49900,
+      currency: 'INR',
+      name: 'OdishaExamPrep',
+      description: `Purchase ${test.title}`,
+      handler: function (response: any) {
+        alert('Payment Successful! Payment ID: ' + response.razorpay_payment_id);
       },
-      prefill: { name: profile?.displayName, email: profile?.email },
-      theme:   { color: '#4f46e5' }
+      prefill: {
+        name: profile?.displayName,
+        email: profile?.email
+      },
+      theme: {
+        color: '#4f46e5'
+      }
     };
 
-    const rzp = new (window as any).Razorpay(options);
-    rzp.open();
+    const paymentObject = new (window as any).Razorpay(options);
+    paymentObject.open();
   };
 
   if (showAdmin) {
@@ -3028,7 +2952,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               title: activeTest.title,
               metadata: {
                 ...progressState,
-                resumeSessionId: activeTestState?.resumeSessionId || crypto.randomUUID(),
+                resumeSessionId: activeTestState?.resumeSessionId || `session-${Date.now()}`,
                 examName: currentExamName,
                 testCategory
               }
@@ -3116,6 +3040,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           onViewExam={(examId: string | null) => {
              setSelectedExam(examId);
              if (onNavigate) onNavigate('home');
+             setTimeout(() => document.getElementById('exams')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
           }}
         />
         {renderCommonModals()}
@@ -3369,7 +3294,13 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             
             <div 
               className="max-h-[420px] sm:max-h-[500px] md:max-h-[600px] overflow-y-auto no-scrollbar pb-4 sm:pb-6 pt-2 rounded-2xl sm:rounded-3xl"
-              
+              style={{ 
+                overscrollBehaviorY: 'auto',
+                background: 'rgba(255,255,255,0.5)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(124,58,237,0.08)',
+                boxShadow: '0 4px 24px rgba(124,58,237,0.06), inset 0 1px 0 rgba(255,255,255,0.8)'
+              }}
               onWheel={(e) => {
                 const el = e.currentTarget;
                 const isAtBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 2;
@@ -3388,7 +3319,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       <motion.div
                         key={`skeleton-${i}`}
                         className="h-28 sm:h-40 md:h-56 rounded-[1.25rem] sm:rounded-[1.75rem] md:rounded-[2rem] border animate-pulse"
-                        
+                        style={{background: 'linear-gradient(135deg, rgba(124,58,237,0.06), rgba(99,102,241,0.04))', borderColor: 'rgba(124,58,237,0.1)'}}
                       />
                     ))
                   ) : filteredExams.length === 0 ? (
@@ -3428,18 +3359,21 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.88 }}
                         transition={{ duration: 0.4, ease: 'easeOut' }}
-                        onClick={() => setSelectedExam(exam.id)}
+                        onClick={() => {
+                          setSelectedExam(exam.id);
+                          setTimeout(() => document.getElementById('exams')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                        }}
                         className="cursor-pointer h-full card-3d-deep rounded-[1.5rem] sm:rounded-[2rem] md:rounded-[2.5rem]"
                       >
                         <div className="soft-card p-3 sm:p-6 md:p-8 h-full group/card flex flex-col items-center text-center justify-center space-y-2 sm:space-y-4 md:space-y-6 relative rounded-[1.5rem] sm:rounded-[2rem] md:rounded-[2.5rem]">
                           {/* Corner arrow - softer circle */}
-                          <div className="absolute top-2 right-2 sm:top-4 sm:right-4 md:top-5 md:right-5 w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full hidden sm:flex items-center justify-center transition-all duration-500 shadow-xl group-hover/card:premium-gradient group-hover/card:text-white" >
+                          <div className="absolute top-2 right-2 sm:top-4 sm:right-4 md:top-5 md:right-5 w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full hidden sm:flex items-center justify-center transition-all duration-500 shadow-xl group-hover/card:premium-gradient group-hover/card:text-white" style={{background: 'rgba(124,58,237,0.05)'}}>
                             <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-brand-400 group-hover/card:translate-x-1 transition-transform" />
                           </div>
 
                           {/* Icon with super-soft glow container */}
                           <div className="w-10 h-10 sm:w-14 sm:h-14 md:w-20 md:h-20 flex justify-center items-center shrink-0 transform group-hover/card:scale-110 transition-transform duration-700 relative">
-                            <div className="absolute inset-0 rounded-full opacity-0 group-hover/card:opacity-100 transition-opacity duration-700"  />
+                            <div className="absolute inset-0 rounded-full opacity-0 group-hover/card:opacity-100 transition-opacity duration-700" style={{background: 'radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%)', filter: 'blur(15px)'}} />
                             {(exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/'))) ? (
                               <img src={getDirectImageUrl(exam.icon)} alt={exam.name} className="w-full h-full object-contain filter drop-shadow-xl relative z-10" referrerPolicy="no-referrer" />
                             ) : (
@@ -3535,7 +3469,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           <div className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
             <div 
               className="max-h-[460px] md:max-h-[600px] overflow-y-auto no-scrollbar scroll-smooth pb-12 pt-4"
-              
+              style={{
+                maskImage: 'linear-gradient(to bottom, transparent, black 2rem, black calc(100% - 3rem), transparent)',
+                WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 2rem, black calc(100% - 3rem), transparent)'
+              }}
             >
             <motion.div 
               initial="hidden"
@@ -3560,7 +3497,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 }}
               >
                 <Card 
-                  onClick={() => setSelectedBankItem(item)}
+                  onClick={() => { setSelectedBankItem(item); setTimeout(() => document.getElementById('exams')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }}
                   className="group cursor-pointer hover:border-brand-300 relative overflow-hidden rounded-[1.5rem] hover:-translate-y-2 transition-all duration-500 h-full border-slate-200/60 shadow-sm hover:shadow-2xl hover:shadow-brand-500/10 flex flex-col"
                 >
                   <div className={cn("h-44 overflow-hidden relative shrink-0", isLocked && "blur-[2px]")}>
@@ -3942,7 +3879,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               }}
             >
               <Card 
-                onClick={() => setSelectedBankType(item.id)}
+                onClick={() => { setSelectedBankType(item.id); setTimeout(() => document.getElementById('exams')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }}
                 className="p-5 sm:p-6 lg:p-8 flex flex-col justify-between bg-gradient-to-br from-white to-slate-50/50 backdrop-blur-md border border-white/20 shadow-sm hover:shadow-2xl hover:shadow-brand-500/10 hover:-translate-y-2 transition-all duration-500 rounded-[1.5rem] cursor-pointer group relative overflow-hidden h-full"
               >
                 <div className="absolute -right-6 -top-6 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-colors" />
@@ -4239,13 +4176,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 <Card 
                   key={test.id} 
                   className={cn("p-6 bg-white border-slate-200/60 shadow-lg shadow-slate-200/30 rounded-[1.5rem] hover:-translate-y-2 hover:shadow-2xl hover:shadow-brand-500/10 hover:border-brand-200 group transition-all duration-500 cursor-pointer flex flex-col gap-6 relative overflow-hidden", isLocked && "border-amber-200/50 hover:border-amber-300", isPremiumUnlocked && "border-emerald-200/50 hover:border-emerald-300")}
-                  onClick={() => {
-                      if (!test.questions || test.questions.length === 0) {
-                        toast.error("This mock test is empty. Questions are being added soon!");
-                      } else {
-                        handleStartTest({ ...test, isPremium, price });
-                      }
-                  }}
+                  onClick={() => handleStartTest({ ...test, isPremium, price })}
                 >
                   {isPremiumUnlocked && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none" />}
                   <div className="flex items-start justify-between relative z-10 w-full">
@@ -4279,7 +4210,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     <div className="flex gap-4 text-xs font-bold text-slate-500 flex-wrap">
                       <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded"><Clock className="w-3.5 h-3.5 text-brand-500"/> {test.durationMinutes} Mins</span>
                       <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded"><Award className="w-3.5 h-3.5 text-brand-500"/> {test.totalMarks} Marks</span>
-                      <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded"><FileText className="w-3.5 h-3.5 text-brand-500"/> {test.questions?.length || 0} Qs</span>
+                      <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded"><FileText className="w-3.5 h-3.5 text-brand-500"/> {test.questions?.length || test._questionCount || 0} Qs</span>
                     </div>
                   </div>
                   
@@ -4504,9 +4435,20 @@ const WhatsAppButton = () => {
 
 // --- Main App ---
 
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
+
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AppContent />
     </BrowserRouter>
   );
@@ -4528,20 +4470,9 @@ function AppContent() {
   useEffect(() => {
     if (!user?.id) return;
 
-    // Load activities from DB (primary) with localStorage fallback
-    activityTracker.getActivitiesFromDB(user.id).then(dbActivities => {
-      if (dbActivities.length > 0) {
-        setActivities(dbActivities);
-      } else {
-        // Fallback to localStorage cache for offline/new DB users
-        const localActivities = activityTracker.getActivities(user.id, user.user_metadata);
-        setActivities(localActivities);
-      }
-    }).catch(() => {
-      // Graceful fallback if DB is unavailable
-      const localActivities = activityTracker.getActivities(user.id, user.user_metadata);
-      setActivities(localActivities);
-    });
+    // Load activities (merges local + cloud, prefers local which has full question data)
+    const initialActivities = activityTracker.getActivities(user.id, user.user_metadata);
+    setActivities(initialActivities);
 
     // ── One-time metadata repair for old accounts ──────────────────────────────
     // Run whenever user_metadata is large (> 2KB). Strips ALL heavy session state
@@ -4594,25 +4525,13 @@ function AppContent() {
       _dashboardCache.mockTests = [];
       _dashboardCache.dynamicQuestionBanks = {};
       _dashboardCache.loadedForUserId = null;
-      _dashboardCache.fetchedAt = 0;
-      // Also bust the examService query cache so the next user gets fresh data
-      import('./lib/examService').then(({ queryCache }) => queryCache.invalidateAll());
     }
   }, [user]);
 
   const refreshActivities = () => {
     if (user?.id) {
-      activityTracker.getActivitiesFromDB(user.id).then(dbActivities => {
-        if (dbActivities.length > 0) {
-          setActivities(dbActivities);
-        } else {
-          const local = activityTracker.getActivities(user.id, user.user_metadata);
-          setActivities(local);
-        }
-      }).catch(() => {
-        const local = activityTracker.getActivities(user.id, user.user_metadata);
-        setActivities(local);
-      });
+       const updated = activityTracker.getActivities(user.id, user.user_metadata);
+       setActivities(updated);
     }
   };
 

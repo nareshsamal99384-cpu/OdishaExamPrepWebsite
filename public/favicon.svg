@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#4338ca" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <!-- Background squircle -->
+  <rect width="256" height="256" rx="64" fill="url(#grad1)" />
+  <!-- Book Icon inside -->
+  <g stroke="#ffffff" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" fill="none" filter="url(#shadow)">
+    <path d="M56 72c20-12 52-12 72 0 20-12 52-12 72 0v112c-20-12-52-12-72 0-20-12-52-12-72 0z" />
+    <path d="M128 72v112" />
+  </g>
+</svg>

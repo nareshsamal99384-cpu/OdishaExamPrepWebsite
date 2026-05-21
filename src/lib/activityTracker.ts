@@ -15,68 +15,169 @@ export interface UserActivity {
 
 const STORAGE_KEY_PREFIX = 'oep_activities_';
 
+// Maximum activities to keep in localStorage (full data including questions)
+const LOCAL_MAX = 500;
+// Maximum activities to sync to cloud (lightweight, no questions)
+const CLOUD_MAX = 50;
+
+/**
+ * Strip ALL heavy session state from an activity before cloud sync.
+ * Cloud metadata is ONLY for dashboard display (Continue Practice card, history count).
+ * Full data (answers, questions, progress) lives in localStorage for resume functionality.
+ *
+ * Target: < 200 bytes per activity in cloud.
+ */
+function toCloudSafe(activity: UserActivity): UserActivity {
+  try {
+    const m = activity.metadata || {};
+    // Only keep fields needed for "Continue Practice" card display
+    const lightMeta: any = {
+      examName: m.examName,
+      testCategory: m.testCategory,
+      bankType: m.bankType,
+      bankId: m.bankId,
+      resumeSessionId: m.resumeSessionId,
+    };
+
+    if (activity.type === 'test_incomplete') {
+      // Keep minimal progress info for the "Continue" card
+      lightMeta.currentQuestionIndex = m.currentQuestionIndex;
+      lightMeta.timeLeft = m.timeLeft;
+      // Store test identity ONLY (no questions, no answers)
+      if (m.test && typeof m.test === 'object') {
+        lightMeta.test = {
+          id: m.test.id,
+          title: m.test.title,
+          durationMinutes: m.test.durationMinutes,
+          _questionCount:
+            m.test._questionCount ||
+            (Array.isArray(m.test.questions) ? m.test.questions.length : 0),
+        };
+      }
+      // totalQuestions for progress %
+      lightMeta.totalQuestions =
+        m.totalQuestions ||
+        lightMeta.test?._questionCount ||
+        0;
+    }
+    // Strip: answers, markedForReview, timeSpent, progressState, questions arrays, etc.
+    return { ...activity, metadata: lightMeta };
+  } catch {
+    // On any error return a minimal safe object
+    return {
+      id: activity.id,
+      userId: activity.userId,
+      type: activity.type,
+      title: activity.title,
+      timestamp: activity.timestamp,
+      score: activity.score,
+      accuracy: activity.accuracy,
+    };
+  }
+}
+
+/**
+ * Safely parse a JSON string, returning fallback on any error.
+ */
+function safeParse<T>(json: string | null | undefined, fallback: T): T {
+  if (!json) return fallback;
+  try {
+    const parsed = JSON.parse(json);
+    return Array.isArray(fallback) ? (Array.isArray(parsed) ? parsed : fallback) : parsed;
+  } catch {
+    return fallback;
+  }
+}
+
 export const activityTracker = {
   getActivities: (userId: string, userMetadata?: any): UserActivity[] => {
     if (!userId) return [];
     try {
-      const localData = localStorage.getItem(`${STORAGE_KEY_PREFIX}${userId}`);
-      const localActivities: UserActivity[] = localData ? JSON.parse(localData) : [];
-      const cloudActivities: UserActivity[] = (userMetadata?.activities && Array.isArray(userMetadata.activities)) 
-        ? userMetadata.activities 
-        : [];
+      const localKey = `${STORAGE_KEY_PREFIX}${userId}`;
+      const localActivities: UserActivity[] = safeParse<UserActivity[]>(
+        localStorage.getItem(localKey),
+        []
+      );
 
-      // If cloud has more activities (meaning we logged in from a new device or restored session),
-      // we prefer the cloud state and sync it to local storage.
-      if (cloudActivities.length > localActivities.length) {
-        localStorage.setItem(`${STORAGE_KEY_PREFIX}${userId}`, JSON.stringify(cloudActivities));
+      const cloudActivities: UserActivity[] = (
+        userMetadata?.activities && Array.isArray(userMetadata.activities)
+      ) ? userMetadata.activities : [];
+
+      // Always prefer local (it has full question data for resuming).
+      // Only fall back to cloud if local is completely empty (e.g. new device).
+      if (localActivities.length === 0 && cloudActivities.length > 0) {
+        // Sync cloud → local so we have data on this device
+        try {
+          localStorage.setItem(localKey, JSON.stringify(cloudActivities));
+        } catch { /* storage full — ignore */ }
         return cloudActivities;
       }
 
       return localActivities;
     } catch (e) {
-      console.error("Failed to load activities", e);
+      console.error('Failed to load activities', e);
       return [];
     }
   },
 
-  logActivity: async (userId: string | undefined | null, activity: Omit<UserActivity, 'id' | 'userId' | 'timestamp'>) => {
+  logActivity: async (
+    userId: string | undefined | null,
+    activity: Omit<UserActivity, 'id' | 'userId' | 'timestamp'>
+  ) => {
     if (!userId) return;
-    
+
     try {
-      // Read current activities from local storage (or pass in empty array if none)
-      let activities: UserActivity[] = [];
-      const localData = localStorage.getItem(`${STORAGE_KEY_PREFIX}${userId}`);
-      if (localData) {
-        activities = JSON.parse(localData);
-      }
-      
+      const localKey = `${STORAGE_KEY_PREFIX}${userId}`;
+      const existing: UserActivity[] = safeParse<UserActivity[]>(
+        localStorage.getItem(localKey),
+        []
+      );
+
       const newActivity: UserActivity = {
         ...activity,
         id: Math.random().toString(36).substring(2, 15),
         userId,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-      
-      const updated = [newActivity, ...activities].slice(0, 500); // keep history bounded to last 500
-      
-      // Save locally instantly
-      localStorage.setItem(`${STORAGE_KEY_PREFIX}${userId}`, JSON.stringify(updated));
 
-      // Sync aggressively with Supabase Cloud `user_metadata`
-      await supabase.auth.updateUser({
-        data: { activities: updated }
-      });
-      
+      // Keep full data (with questions) in localStorage for resume functionality
+      const updated = [newActivity, ...existing].slice(0, LOCAL_MAX);
+      try {
+        localStorage.setItem(localKey, JSON.stringify(updated));
+      } catch (storageErr) {
+        // If storage is full, try trimming older entries
+        try {
+          const trimmed = [newActivity, ...existing].slice(0, 100);
+          localStorage.setItem(localKey, JSON.stringify(trimmed));
+        } catch { /* give up on local storage */ }
+      }
+
+      // Sync LIGHTWEIGHT version to cloud (no questions, no large timeSpent maps)
+      // Only send the most recent CLOUD_MAX activities to keep metadata small
+      const cloudPayload = updated.slice(0, CLOUD_MAX).map(toCloudSafe);
+
+      try {
+        await supabase.auth.updateUser({
+          data: { activities: cloudPayload },
+        });
+      } catch (cloudErr) {
+        // Cloud sync failure is non-fatal — local data is still intact
+        console.warn('Cloud activity sync failed (non-fatal):', cloudErr);
+      }
     } catch (e) {
-      console.error("Failed to log activity to cloud", e);
+      console.error('Failed to log activity:', e);
     }
   },
-  
+
   clearActivities: async (userId: string) => {
     if (!userId) return;
-    localStorage.removeItem(`${STORAGE_KEY_PREFIX}${userId}`);
-    await supabase.auth.updateUser({
-      data: { activities: [] }
-    });
-  }
+    try {
+      localStorage.removeItem(`${STORAGE_KEY_PREFIX}${userId}`);
+    } catch { /* ignore */ }
+    try {
+      await supabase.auth.updateUser({ data: { activities: [] } });
+    } catch (e) {
+      console.warn('Failed to clear cloud activities:', e);
+    }
+  },
 };

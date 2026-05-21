@@ -1,24 +1,147 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Play, X, Youtube } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const CARD_WIDTH = 320;  // px — card + gap
+const CARD_GAP   = 24;   // px
+const ITEM_STEP  = CARD_WIDTH + CARD_GAP;
+const AUTO_SPEED = 0.6;  // px per animation frame (~36px/s at 60fps)
+const RESUME_DELAY_MS = 2000; // ms after last user interaction before auto-scroll resumes
 
 export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
 
   // Fallback to empty if no ids provided
-  const sourceVideos = videoIds && videoIds.length > 0 ? videoIds.map(id => ({ id, title: 'Premium Video Content' })) : [];
+  const sourceVideos = videoIds && videoIds.length > 0
+    ? videoIds.map(id => ({ id, title: 'Premium Video Content' }))
+    : [];
 
+  // Triple the array so we always have items on both sides for seamless looping
+  const items = [...sourceVideos, ...sourceVideos, ...sourceVideos];
+  const totalWidth = items.length * ITEM_STEP;
+
+  // ── Refs ──────────────────────────────────────────────────────────────────
+  // NOTE: All hooks must be declared before any conditional returns (Rules of Hooks)
+  const trackRef  = useRef<HTMLDivElement>(null);
+  const offsetRef = useRef(0);            // current scroll offset (px)
+  const rafRef    = useRef<number>(0);    // requestAnimationFrame id
+  const isPaused  = useRef(false);
+  const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isDragging  = useRef(false);
+  const dragStartX  = useRef(0);
+  const dragStartOffset = useRef(0);
+
+  // ── Render helper ─────────────────────────────────────────────────────────
+  const applyOffset = useCallback(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    // Wrap offset into valid range [0, totalWidth/3] to create infinite loop
+    const loopLen = totalWidth / 3;           // length of ONE copy of the array
+    offsetRef.current = ((offsetRef.current % loopLen) + loopLen) % loopLen;
+
+    track.style.transform = `translateX(-${offsetRef.current}px)`;
+  }, [totalWidth]);
+
+  // ── Auto-scroll loop ──────────────────────────────────────────────────────
+  const tick = useCallback(() => {
+    if (!isPaused.current && !isDragging.current) {
+      offsetRef.current += AUTO_SPEED;
+      applyOffset();
+    }
+    rafRef.current = requestAnimationFrame(tick);
+  }, [applyOffset]);
+
+  useEffect(() => {
+    // Start positioned at the middle copy so we can scroll in both directions
+    offsetRef.current = totalWidth / 3;
+    applyOffset();
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [tick, applyOffset, totalWidth]);
+
+  // ── Pause / Resume helpers ────────────────────────────────────────────────
+  const pauseAuto = useCallback(() => {
+    isPaused.current = true;
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
+  }, []);
+
+  const scheduleResume = useCallback(() => {
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
+    resumeTimer.current = setTimeout(() => {
+      isPaused.current = false;
+    }, RESUME_DELAY_MS);
+  }, []);
+
+  // ── Mouse drag ────────────────────────────────────────────────────────────
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    isDragging.current = true;
+    dragStartX.current = e.clientX;
+    dragStartOffset.current = offsetRef.current;
+    pauseAuto();
+    e.preventDefault();
+  }, [pauseAuto]);
+
+  const onMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging.current) return;
+    const delta = dragStartX.current - e.clientX;
+    offsetRef.current = dragStartOffset.current + delta;
+    applyOffset();
+  }, [applyOffset]);
+
+  const onMouseUp = useCallback(() => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    scheduleResume();
+  }, [scheduleResume]);
+
+  // ── Touch drag ────────────────────────────────────────────────────────────
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    isDragging.current = true;
+    dragStartX.current = e.touches[0].clientX;
+    dragStartOffset.current = offsetRef.current;
+    pauseAuto();
+  }, [pauseAuto]);
+
+  const onTouchMove = useCallback((e: TouchEvent) => {
+    if (!isDragging.current) return;
+    const delta = dragStartX.current - e.touches[0].clientX;
+    offsetRef.current = dragStartOffset.current + delta;
+    applyOffset();
+    e.preventDefault(); // prevent page scroll while swiping the carousel
+  }, [applyOffset]);
+
+  const onTouchEnd = useCallback(() => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    scheduleResume();
+  }, [scheduleResume]);
+
+  // Attach window-level listeners so drag works even if cursor leaves the track
+  useEffect(() => {
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup',   onMouseUp);
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend',  onTouchEnd);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup',   onMouseUp);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend',  onTouchEnd);
+    };
+  }, [onMouseMove, onMouseUp, onTouchMove, onTouchEnd]);
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  // Early return AFTER all hooks (Rules of Hooks)
   if (sourceVideos.length === 0) return null;
 
-  // We duplicate the array to create a seamless infinite loop (if enough videos exist)
-  const carouselItems = [...sourceVideos, ...sourceVideos, ...sourceVideos];
-
   return (
-    <div className="w-full relative py-8 overflow-hidden bg-slate-900 rounded-[2rem] shadow-2xl">
-      {/* Dynamic Background Accents */}
+    <div className="w-full relative py-8 overflow-hidden bg-slate-900 rounded-[2rem] shadow-2xl select-none">
+      {/* Background Accents */}
       <div className="absolute -top-40 -left-40 w-96 h-96 bg-red-600/20 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-brand-600/20 rounded-full blur-[100px] pointer-events-none" />
 
+      {/* Header */}
       <div className="flex items-center gap-3 px-8 mb-8 relative z-10">
         <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20">
           <Youtube className="w-6 h-6 text-red-500" />
@@ -29,43 +152,58 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
         </div>
       </div>
 
-      {/* Marquee Container */}
-      <div className="relative flex overflow-x-hidden group">
-        <div className="flex animate-marquee-lr whitespace-nowrap gap-6 pl-6 hover:[animation-play-state:paused]">
-          {carouselItems.map((video, idx) => (
-            <motion.div
+      {/* Draggable Track */}
+      <div
+        className="relative overflow-hidden cursor-grab active:cursor-grabbing"
+        onMouseDown={onMouseDown}
+        onTouchStart={onTouchStart}
+      >
+        {/* Edge fade masks */}
+        <div className="absolute left-0 top-0 bottom-0 w-20 z-10 pointer-events-none"
+          style={{ background: 'linear-gradient(to right, #0f172a, transparent)' }} />
+        <div className="absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none"
+          style={{ background: 'linear-gradient(to left, #0f172a, transparent)' }} />
+
+        {/* Scrolling track — translated by JS, NOT CSS animation */}
+        <div
+          ref={trackRef}
+          className="flex gap-6 pl-6 will-change-transform"
+          style={{ width: `${totalWidth}px` }}
+        >
+          {items.map((video, idx) => (
+            <div
               key={`${video.id}-${idx}`}
-              whileHover={{ scale: 1.05, y: -5 }}
-              onClick={() => setActiveVideo(video.id)}
-              className="relative w-64 sm:w-80 aspect-video rounded-2xl overflow-hidden cursor-pointer shrink-0 border border-slate-700/50 shadow-lg group/video bg-slate-800"
+              onClick={() => {
+                if (!isDragging.current) setActiveVideo(video.id);
+              }}
+              className="relative shrink-0 rounded-2xl overflow-hidden border border-slate-700/50 shadow-lg bg-slate-800 group/video"
+              style={{ width: CARD_WIDTH, aspectRatio: '16/9' }}
             >
               <img
                 src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`}
                 alt={video.title}
+                draggable={false}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover/video:scale-110 opacity-80 group-hover/video:opacity-100"
                 onError={(e) => {
-                  // Fallback for missing maxresdefault
-                  (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`;
+                  (e.target as HTMLImageElement).src =
+                    `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`;
                 }}
               />
-              
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent opacity-80" />
-              
-              <div className="absolute inset-0 flex flex-col items-center justify-center z-10 transition-transform">
-                <div className="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(220,38,38,0.5)] group-hover/video:scale-110 transition-transform duration-300">
+              <div className="absolute inset-0 flex items-center justify-center z-10">
+                <div className="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(220,38,38,0.5)] group-hover/video:scale-110 transition-transform duration-300 pointer-events-none">
                   <Play className="w-6 h-6 text-white fill-white ml-1" />
                 </div>
               </div>
-
-              <div className="absolute bottom-0 left-0 right-0 p-4 z-20">
-                <h3 className="text-white font-bold text-sm line-clamp-1 whitespace-normal leading-snug">{video.title}</h3>
+              <div className="absolute bottom-0 left-0 right-0 p-4 z-20 pointer-events-none">
+                <h3 className="text-white font-bold text-sm line-clamp-1 leading-snug">{video.title}</h3>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
 
-      {/* Embedded Video Modal */}
+      {/* Video Modal */}
       <AnimatePresence>
         {activeVideo && (
           <motion.div
@@ -75,7 +213,6 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
             className="fixed inset-0 z-[200] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80"
           >
             <div className="absolute inset-0" onClick={() => setActiveVideo(null)} />
-            
             <motion.div
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
@@ -88,7 +225,6 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
               >
                 <X className="w-5 h-5" />
               </button>
-              
               <iframe
                 src={`https://www.youtube.com/embed/${activeVideo}?autoplay=1`}
                 title="YouTube video player"

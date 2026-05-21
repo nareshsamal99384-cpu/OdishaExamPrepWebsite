@@ -1,34 +1,16 @@
-import React, { Component, ReactNode, ErrorInfo } from "react";
-import * as Sentry from "@sentry/react";
+import React from "react";
 
-interface Props {
-  children?: ReactNode;
-}
-
-interface State {
-  hasError: boolean;
-  error: Error | null;
-}
-
-// React error boundaries must be class components.
-// Declare state explicitly as a class property to satisfy TSC strict mode.
-export class ErrorBoundary extends Component<Props, State> {
-  declare state: State;
-
-  constructor(props: Props) {
+export class ErrorBoundary extends React.Component<any, { hasError: boolean; error: any }> {
+  constructor(props: any) {
     super(props);
     this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: any) {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    Sentry.captureException(error, { extra: { errorInfo } });
-  }
-
-  render(): ReactNode {
+  render() {
     if (this.state.hasError) {
       return (
         <div style={{ padding: 20, color: "red", backgroundColor: "white", zIndex: 9999, position: "relative" }}>
@@ -37,6 +19,6 @@ export class ErrorBoundary extends Component<Props, State> {
         </div>
       );
     }
-    return (this as unknown as { props: Props }).props.children;
+    return this.props.children;
   }
 }

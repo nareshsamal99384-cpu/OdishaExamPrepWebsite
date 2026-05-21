@@ -17,8 +17,11 @@ import {
   Edit2,
   LogOut,
   Award,
-  BookMarked
+  BookMarked,
+  GripVertical,
+  Bell
 } from 'lucide-react';
+import { Reorder } from 'framer-motion';
 import { examService, Question, TestSeries, MockTest, Exam } from './lib/examService';
 import { cn } from './lib/utils';
 import { supabase } from './lib/supabase';
@@ -111,7 +114,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder, required, d
 // --- Admin Components ---
 
 const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () => void }) => {
-  const [activeTab, setActiveTab] = useState<'questions' | 'series' | 'tests' | 'exams' | 'banks' | 'users'>('exams');
+  const [activeTab, setActiveTab] = useState<'questions' | 'series' | 'tests' | 'exams' | 'banks' | 'users' | 'updates'>('exams');
   const [questionFilter, setQuestionFilter] = useState<'all' | 'practice' | 'mock'>('all');
   const [examFilter, setExamFilter] = useState<'all' | 'popular' | 'upcoming'>('all');
   const [testFilter, setTestFilter] = useState<'all' | 'full-length' | 'sectional' | 'pyq' | 'daily'>('all');
@@ -139,6 +142,12 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordTargetUser, setPasswordTargetUser] = useState<any>(null);
   const [newPasswordValue, setNewPasswordValue] = useState("");
+  const [showGrantModal, setShowGrantModal] = useState(false);
+  const [grantTargetUser, setGrantTargetUser] = useState<any>(null);
+  const [grantSelectedExamId, setGrantSelectedExamId] = useState("");
+  const [grantSelectedCategory, setGrantSelectedCategory] = useState("bundle");
+  const [grantSelectedContentId, setGrantSelectedContentId] = useState("");
+  const [items, setItems] = useState<any[]>([]);
 
   // Comprehensive Form State
   const initialFormData = {
@@ -159,6 +168,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
     image: '',
     isPremium: false,
     pdfUrl: '',
+    pdfLinks: [] as { title: string; url: string }[],
     hasPracticeMode: true,
     
     // Series / Test
@@ -178,39 +188,47 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
     questionText: '',
     options: ['', '', '', ''],
     correctAnswerIndex: 0,
-    explanation: ''
+    explanation: '',
+    targetExamId: '',
+    
+    // SEO
+    metaTitle: '',
+    metaDescription: '',
+    keywords: ''
   };
 
   const [formData, setFormData] = useState<any>(initialFormData);
   const [youtubeVideosInput, setYoutubeVideosInput] = useState('');
+  const [newsUpdatesInput, setNewsUpdatesInput] = useState('');
+  
+  const DEFAULT_NEWS_UPDATES = [
+    `🚀 New Mock Test Series released for OSSC CGL ${new Date().getFullYear()}`,
+    "📅 OPSC Prelims exam dates announced - Check latest schedule",
+    "⭐ 500+ New PYQs added for OSSSC recruitment exams",
+    "🔥 Weekly Current Affairs PDF now available for download",
+    "✅ Real-time rank analysis enabled for all premium mock tests"
+  ].join('\n');
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      let usersFetchPromise = supabase.from('users').select('*').then(res => res.data || []);
+      let usersFetchPromise = Promise.resolve([] as any[]);
       const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
       if (supabaseServiceKey) {
          try {
            const { createClient } = await import('@supabase/supabase-js');
            const supabaseAdminLocal = createClient(import.meta.env.VITE_SUPABASE_URL, supabaseServiceKey, { auth: { autoRefreshToken: false, persistSession: false } });
            
-           usersFetchPromise = Promise.all([
-             supabaseAdminLocal.auth.admin.listUsers().then(res => res.data.users || []),
-             supabaseAdminLocal.from('users').select('*').then(res => res.data || [])
-           ]).then(([authUsers, publicUsers]) => {
-              // Merge Auth users with their Public profiles (or fallback data)
-              return authUsers.map(au => {
-                 const pu = publicUsers.find(p => p.uid === au.id) || {};
-                 return {
-                    uid: au.id,
-                    email: au.email,
-                    displayName: pu.displayName || au.user_metadata?.full_name || au.user_metadata?.name || au.email?.split('@')[0],
-                    photoURL: pu.photoURL || au.user_metadata?.avatar_url || au.user_metadata?.picture,
-                    role: pu.role || 'user',
-                    hasFullAccess: !!pu.hasFullAccess,
-                    purchasedSeries: pu.purchasedSeries || []
-                 };
-              });
+           usersFetchPromise = supabaseAdminLocal.auth.admin.listUsers().then(res => res.data.users || []).then(authUsers => {
+              return authUsers.map(au => ({
+                 uid: au.id,
+                 email: au.email,
+                 displayName: au.user_metadata?.displayName || au.user_metadata?.full_name || au.user_metadata?.name || au.email?.split('@')[0],
+                 photoURL: au.user_metadata?.photoURL || au.user_metadata?.avatar_url || au.user_metadata?.picture,
+                 role: au.user_metadata?.role || 'user',
+                 hasFullAccess: !!au.user_metadata?.hasFullAccess,
+                 purchasedSeries: au.user_metadata?.purchasedSeries || []
+              }));
            });
          } catch(e) {}
       }
@@ -237,6 +255,16 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
           if (parsed.videos) setYoutubeVideosInput(parsed.videos.join('\n'));
         } catch(e) {}
       }
+
+      const newsSettings = ex.find(e => e.name === 'SYSTEM_SETTINGS_NEWS_TICKER');
+      if (newsSettings && newsSettings.description) {
+        try {
+          const parsed = JSON.parse(newsSettings.description);
+          if (parsed.updates) setNewsUpdatesInput(parsed.updates.join('\n'));
+        } catch(e) {}
+      } else {
+        setNewsUpdatesInput(DEFAULT_NEWS_UPDATES);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -248,18 +276,158 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
     fetchData();
   }, []);
 
+  useEffect(() => {
+    let list: any[] = [];
+    if (activeTab === 'questions') {
+      let filtered = questions;
+      if (questionFilter === 'practice') {
+        filtered = filtered.filter(q => !(q.topic || '').toLowerCase().startsWith('mocktest__'));
+      } else if (questionFilter === 'mock') {
+        filtered = filtered.filter(q => (q.topic || '').toLowerCase().startsWith('mocktest__'));
+      }
+      if (filterExamId !== 'all') filtered = filtered.filter(q => q.examId === filterExamId);
+      if (searchQuery.trim()) {
+        const lowerQ = searchQuery.toLowerCase();
+        filtered = filtered.filter(q => {
+          const textMatch = (q.questionText || '').toLowerCase().includes(lowerQ);
+          const topicMatch = (q.topic || '').toLowerCase().includes(lowerQ);
+          let examNameMatch = false;
+          let mockTitleMatch = false;
+          if (q.examId) {
+             const ex = exams.find(e => e.id === q.examId);
+             if (ex && ex.name.toLowerCase().includes(lowerQ)) examNameMatch = true;
+          }
+          if ((q.topic || '').toLowerCase().startsWith('mocktest__')) {
+            const testId = q.topic.split('__')[1];
+            const mt = mockTests.find(m => m.id === testId);
+            if (mt && mt.title.toLowerCase().includes(lowerQ)) mockTitleMatch = true;
+          }
+          return textMatch || topicMatch || examNameMatch || mockTitleMatch;
+        });
+      }
+      list = filtered;
+    } else if (activeTab === 'series') {
+       let filtered = series;
+       if (filterExamId !== 'all') filtered = filtered.filter(s => s.examId === filterExamId);
+       if (searchQuery.trim()) {
+         const lowerQ = searchQuery.toLowerCase();
+         filtered = filtered.filter(s => (s.title || '').toLowerCase().includes(lowerQ));
+       }
+       list = filtered;
+    } else if (activeTab === 'tests') {
+      let filtered = mockTests;
+      if (testFilter !== 'all') {
+        filtered = filtered.filter(mt => {
+          let cat = 'full-length';
+          try { if (mt.seriesId) cat = JSON.parse(mt.seriesId).category || 'full-length'; } catch(e){}
+          return cat === testFilter;
+        });
+      }
+      if (filterExamId !== 'all') {
+        filtered = filtered.filter(mt => {
+          let mtExam = '';
+          try { if (mt.seriesId) mtExam = JSON.parse(mt.seriesId).examId || ''; } catch(e){}
+          return mtExam === filterExamId;
+        });
+      }
+      if (searchQuery.trim()) {
+        const lowerQ = searchQuery.toLowerCase();
+        filtered = filtered.filter(mt => {
+          const titleMatch = (mt.title || '').toLowerCase().includes(lowerQ);
+          let examNameMatch = false;
+          let catMatch = false;
+          try {
+            if (mt.seriesId) {
+              const parsed = JSON.parse(mt.seriesId);
+              const ex = exams.find(e => e.id === parsed.examId);
+              if (ex && ex.name.toLowerCase().includes(lowerQ)) examNameMatch = true;
+              if (parsed.category && parsed.category.toLowerCase().includes(lowerQ)) catMatch = true;
+            }
+          } catch(e){}
+          return titleMatch || examNameMatch || catMatch;
+        });
+      }
+      list = filtered;
+    } else if (activeTab === 'exams') {
+      let filtered = exams.filter(e => e.name !== 'SYSTEM_SETTINGS_YOUTUBE_RESERVED' && e.category !== 'blog');
+      if (examFilter !== 'all') filtered = filtered.filter(e => e.category === examFilter);
+      if (searchQuery.trim()) {
+        const lowerQ = searchQuery.toLowerCase();
+        filtered = filtered.filter(e => (e.name || '').toLowerCase().includes(lowerQ));
+      }
+      list = filtered;
+    } else if (activeTab === 'blogs') {
+      let filtered = exams.filter(e => e.category === 'blog');
+      if (searchQuery.trim()) {
+        const lowerQ = searchQuery.toLowerCase();
+        filtered = filtered.filter(e => (e.name || '').toLowerCase().includes(lowerQ));
+      }
+      list = filtered;
+    } else if (activeTab === 'banks') {
+      let filtered = banks;
+      if (bankFilter !== 'all') filtered = filtered.filter(b => b.type === bankFilter);
+      if (filterExamId !== 'all') filtered = filtered.filter(b => b.examId === filterExamId);
+      if (searchQuery.trim()) {
+        const lowerQ = searchQuery.toLowerCase();
+        filtered = filtered.filter(b => {
+          const titleMatch = (b.title || '').toLowerCase().includes(lowerQ);
+          let examNameMatch = false;
+          let catMatch = false;
+          if (b.examId) {
+             const ex = exams.find(e => e.id === b.examId);
+             if (ex && ex.name.toLowerCase().includes(lowerQ)) examNameMatch = true;
+          }
+          if (b.type && b.type.toLowerCase().includes(lowerQ)) catMatch = true;
+          return titleMatch || examNameMatch || catMatch;
+        });
+      }
+      list = filtered;
+    } else if (activeTab === 'users') {
+      let filtered = users;
+      if (searchQuery.trim()) {
+        const lowerQ = searchQuery.toLowerCase();
+        filtered = filtered.filter(u => 
+          (u.email || '').toLowerCase().includes(lowerQ) || 
+          (u.displayName || '').toLowerCase().includes(lowerQ)
+        );
+      }
+      list = filtered;
+    }
+    
+    // Sort local items by sortOrder if available
+    const sorted = [...list].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    setItems(sorted);
+  }, [activeTab, questions, series, mockTests, exams, banks, users, filterExamId, searchQuery, examFilter, questionFilter, testFilter, bankFilter]);
+
+  const actualExams = React.useMemo(() => {
+    return exams.filter(e => e.category !== 'blog' && e.category !== 'system' && e.name !== 'SYSTEM_SETTINGS_YOUTUBE_RESERVED');
+  }, [exams]);
+
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!confirm('Are you sure you want to delete this item?')) return;
+    
+    // Optimistic UI update: instantly remove from the local state arrays
+    if (activeTab === 'questions') setQuestions(prev => prev.filter(q => q.id !== id));
+    else if (activeTab === 'series') setSeries(prev => prev.filter(s => s.id !== id));
+    else if (activeTab === 'tests') setMockTests(prev => prev.filter(t => t.id !== id));
+    else if (activeTab === 'exams' || activeTab === 'blogs') setExams(prev => prev.filter(ex => ex.id !== id));
+    else if (activeTab === 'banks') setBanks(prev => prev.filter(b => b.id !== id));
+
     try {
       if (activeTab === 'questions') await examService.deleteQuestion(id);
       else if (activeTab === 'series') await examService.deleteTestSeries(id);
       else if (activeTab === 'tests') await examService.deleteMockTest(id);
       else if (activeTab === 'exams' || activeTab === 'blogs') await examService.deleteExam(id);
       else if (activeTab === 'banks') await examService.deleteQuestionBank(id);
-      await fetchData();
-    } catch (error) {
-      alert('Error deleting item');
+      
+      // Fetch data in the background to ensure consistency, without blocking the UI
+      fetchData();
+    } catch (error: any) {
+      alert('Error deleting item: ' + (error.message || error));
+      console.error("Delete Error:", error);
+      // If error occurs, re-fetch to restore the item in the UI
+      fetchData();
     }
   };
 
@@ -269,7 +437,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
     
     let newData = { ...initialFormData };
     if (activeTab === 'banks') {
-      let parsedTagline = { text: item.tagline || '', price: 499 };
+      let parsedTagline = { text: '', price: 499, originalPrice: 999 };
       try { 
         if (item.tagline && item.tagline.includes('{"text"')) {
            parsedTagline = JSON.parse(item.tagline);
@@ -288,16 +456,51 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         image: item.image || '',
         isPremium: item.isPremium || false,
         pdfUrl: item.pdfUrl || '',
+        pdfLinks: (() => {
+          if (!item.pdfUrl) return [];
+          try {
+            const parsed = JSON.parse(item.pdfUrl);
+            if (Array.isArray(parsed)) return parsed;
+            return [{ title: 'Download PDF', url: item.pdfUrl }];
+          } catch (e) {
+            return [{ title: 'Download PDF', url: item.pdfUrl }];
+          }
+        })(),
         hasPracticeMode: item.hasPracticeMode ?? true
       };
     } else if (activeTab === 'exams') {
       newData = {
         ...newData,
         name: item.name || '',
-        description: item.description || '',
         icon: item.icon || 'BookOpen',
-        examCategory: item.category || 'popular',
-        examDate: item.examDate || ''
+        metaDescription: item.metaDescription || '',
+        keywords: item.keywords || '',
+        targetExamId: item.targetExamId || '',
+        isPremium: (item.description || '').startsWith('JSON_METADATA_'),
+        price: (() => {
+          if (!(item.description || '').startsWith('JSON_METADATA_')) return 499;
+          try { return JSON.parse(item.description.replace('JSON_METADATA_', '')).price || 499; } catch(e) { return 499; }
+        })(),
+        originalPrice: (() => {
+          if (!(item.description || '').startsWith('JSON_METADATA_')) return 999;
+          try { return JSON.parse(item.description.replace('JSON_METADATA_', '')).originalPrice || 999; } catch(e) { return 999; }
+        })(),
+        description: (() => {
+          if (!(item.description || '').startsWith('JSON_METADATA_')) return item.description || '';
+          try { return JSON.parse(item.description.replace('JSON_METADATA_', '')).description || ''; } catch(e) { return item.description || ''; }
+        })()
+      };
+    } else if (activeTab === 'blogs') {
+      newData = {
+        ...newData,
+        name: item.name || '',
+        description: item.description || '',
+        icon: item.icon || '',
+        examDate: item.examDate || '',
+        metaTitle: item.metaTitle || '',
+        metaDescription: item.metaDescription || '',
+        keywords: item.keywords || '',
+        targetExamId: item.targetExamId || ''
       };
     } else if (activeTab === 'questions') {
       let mockCategory = 'full-length';
@@ -331,7 +534,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         durationDays: item.durationDays || 30
       };
     } else if (activeTab === 'tests') {
-      let parsedMockConfig = { examId: '', category: 'full-length', subject: '', isPremium: false, price: 499 };
+      let parsedMockConfig = { examId: '', category: 'full-length', subject: '', isPremium: false, price: 499, originalPrice: 999 };
       try {
         if (item.seriesId) parsedMockConfig = JSON.parse(item.seriesId);
       } catch(e) {}
@@ -373,14 +576,16 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         else await examService.addQuestion(payload);
       } else if (activeTab === 'series') {
         if (!formData.examId) { alert("Please select an exam."); return; }
-        await examService.createTestSeries({
+        const payload = {
           examId: formData.examId,
           title: formData.title,
           description: formData.description,
           price: Number(formData.price),
           durationDays: Number(formData.durationDays),
           testIds: []
-        });
+        };
+        if (editingId) await examService.updateTestSeries(editingId, payload);
+        else await examService.createTestSeries(payload);
       } else if (activeTab === 'tests') {
         if (!formData.examId) { alert("Please select an exam."); return; }
         const mockConfig = JSON.stringify({
@@ -403,10 +608,16 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       } else if (activeTab === 'exams' || activeTab === 'blogs') {
         const payload = {
           name: formData.name,
-          description: formData.description,
+          description: formData.isPremium 
+            ? `JSON_METADATA_${JSON.stringify({ price: Number(formData.price), originalPrice: Number(formData.originalPrice), description: formData.description })}`
+            : formData.description,
           icon: formData.icon,
           category: activeTab === 'blogs' ? 'blog' : (formData.examCategory as 'popular' | 'upcoming' | 'blog' | 'system'),
-          examDate: formData.examDate
+          examDate: formData.examDate || null,
+          metaTitle: formData.metaTitle,
+          metaDescription: formData.metaDescription,
+          keywords: formData.keywords,
+          targetExamId: formData.targetExamId
         };
         if (editingId) await examService.updateExam(editingId, payload);
         else await examService.addExam(payload);
@@ -420,7 +631,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
           tagline: formData.isPremium ? JSON.stringify({ text: formData.tagline, price: Number(formData.price) || 499, originalPrice: Number(formData.originalPrice) || ((Number(formData.price) || 499) * 2) }) : formData.tagline,
           image: formData.image,
           isPremium: formData.isPremium,
-          pdfUrl: formData.pdfUrl,
+          pdfUrl: JSON.stringify(formData.pdfLinks),
           hasPracticeMode: formData.hasPracticeMode
         };
         if (editingId) await examService.updateQuestionBank(editingId, payload);
@@ -432,6 +643,30 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
     } catch (error: any) {
       console.error(error);
       alert('Error adding item: ' + (error.message || 'Unknown error'));
+    }
+  };
+
+  const handleReorder = async (newOrder: any[]) => {
+    // 1. Update local state immediately for smooth UI
+    setItems(newOrder);
+
+    // 2. Persist new sortOrder to DB
+    try {
+      const promises = newOrder.map((item, index) => {
+        const targetOrder = index + 1; // 1-based order
+        if (activeTab === 'questions') return examService.updateQuestion(item.id, { sortOrder: targetOrder });
+        if (activeTab === 'series') return examService.updateTestSeries(item.id, { sortOrder: targetOrder });
+        if (activeTab === 'tests') return examService.updateMockTest(item.id, { sortOrder: targetOrder });
+        if (activeTab === 'exams' || activeTab === 'blogs') return examService.updateExam(item.id, { sortOrder: targetOrder });
+        if (activeTab === 'banks') return examService.updateQuestionBank(item.id, { sortOrder: targetOrder });
+        return Promise.resolve();
+      });
+
+      await Promise.all(promises);
+      // Optional: Refresh data to ensure everything is synced
+      // await fetchData();
+    } catch (e) {
+      console.error("Reorder failed", e);
     }
   };
 
@@ -538,143 +773,6 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
     setFormData({ ...formData, options: newOptions });
   };
 
-  const items = React.useMemo(() => {
-    if (activeTab === 'questions') {
-      let filtered = questions;
-      
-      if (questionFilter === 'practice') {
-        filtered = filtered.filter(q => !(q.topic || '').toLowerCase().startsWith('mocktest__'));
-      } else if (questionFilter === 'mock') {
-        filtered = filtered.filter(q => (q.topic || '').toLowerCase().startsWith('mocktest__'));
-      }
-      
-      if (filterExamId !== 'all') {
-        filtered = filtered.filter(q => q.examId === filterExamId);
-      }
-      
-      if (searchQuery.trim()) {
-        const lowerQ = searchQuery.toLowerCase();
-        filtered = filtered.filter(q => {
-          const textMatch = (q.questionText || '').toLowerCase().includes(lowerQ);
-          const topicMatch = (q.topic || '').toLowerCase().includes(lowerQ);
-          
-          let examNameMatch = false;
-          let mockTitleMatch = false;
-          
-          if (q.examId) {
-             const ex = exams.find(e => e.id === q.examId);
-             if (ex && ex.name.toLowerCase().includes(lowerQ)) examNameMatch = true;
-          }
-          
-          if ((q.topic || '').toLowerCase().startsWith('mocktest__')) {
-            const testId = q.topic.split('__')[1];
-            const mt = mockTests.find(m => m.id === testId);
-            if (mt && mt.title.toLowerCase().includes(lowerQ)) mockTitleMatch = true;
-          }
-
-          return textMatch || topicMatch || examNameMatch || mockTitleMatch;
-        });
-      }
-      
-      return filtered;
-    }
-    if (activeTab === 'series') return series;
-    if (activeTab === 'tests') {
-      let filtered = mockTests;
-      if (testFilter !== 'all') {
-        filtered = filtered.filter(mt => {
-          let cat = 'full-length';
-          try { if (mt.seriesId) cat = JSON.parse(mt.seriesId).category || 'full-length'; } catch(e){}
-          return cat === testFilter;
-        });
-      }
-      if (filterExamId !== 'all') {
-        filtered = filtered.filter(mt => {
-          let mtExam = '';
-          try { if (mt.seriesId) mtExam = JSON.parse(mt.seriesId).examId || ''; } catch(e){}
-          return mtExam === filterExamId;
-        });
-      }
-      if (searchQuery.trim()) {
-        const lowerQ = searchQuery.toLowerCase();
-        filtered = filtered.filter(mt => {
-          const titleMatch = (mt.title || '').toLowerCase().includes(lowerQ);
-          let examNameMatch = false;
-          let catMatch = false;
-          try {
-            if (mt.seriesId) {
-              const parsed = JSON.parse(mt.seriesId);
-              const ex = exams.find(e => e.id === parsed.examId);
-              if (ex && ex.name.toLowerCase().includes(lowerQ)) examNameMatch = true;
-              if (parsed.category && parsed.category.toLowerCase().includes(lowerQ)) catMatch = true;
-            }
-          } catch(e){}
-          
-          return titleMatch || examNameMatch || catMatch;
-        });
-      }
-      return filtered;
-    }
-    if (activeTab === 'exams') {
-      let filtered = exams.filter(e => e.name !== 'SYSTEM_SETTINGS_YOUTUBE_RESERVED' && e.category !== 'blog');
-      if (examFilter !== 'all') {
-        filtered = filtered.filter(e => e.category === examFilter);
-      }
-      if (searchQuery.trim()) {
-        const lowerQ = searchQuery.toLowerCase();
-        filtered = filtered.filter(e => 
-          (e.name || '').toLowerCase().includes(lowerQ)
-        );
-      }
-      return filtered;
-    }
-    if (activeTab === 'blogs') {
-      let filtered = exams.filter(e => e.category === 'blog');
-      if (searchQuery.trim()) {
-        const lowerQ = searchQuery.toLowerCase();
-        filtered = filtered.filter(e => 
-          (e.name || '').toLowerCase().includes(lowerQ)
-        );
-      }
-      return filtered;
-    }
-    if (activeTab === 'banks') {
-      let filtered = banks;
-      if (bankFilter !== 'all') {
-        filtered = filtered.filter(b => b.type === bankFilter);
-      }
-      if (filterExamId !== 'all') {
-        filtered = filtered.filter(b => b.examId === filterExamId);
-      }
-      if (searchQuery.trim()) {
-        const lowerQ = searchQuery.toLowerCase();
-        filtered = filtered.filter(b => {
-          const titleMatch = (b.title || '').toLowerCase().includes(lowerQ);
-          let examNameMatch = false;
-          let catMatch = false;
-          if (b.examId) {
-             const ex = exams.find(e => e.id === b.examId);
-             if (ex && ex.name.toLowerCase().includes(lowerQ)) examNameMatch = true;
-          }
-          if (b.type && b.type.toLowerCase().includes(lowerQ)) catMatch = true;
-          return titleMatch || examNameMatch || catMatch;
-        });
-      }
-      return filtered;
-    }
-    if (activeTab === 'users') {
-      let filtered = users;
-      if (searchQuery.trim()) {
-        const lowerQ = searchQuery.toLowerCase();
-        filtered = filtered.filter(u => 
-          (u.email || '').toLowerCase().includes(lowerQ) || 
-          (u.displayName || '').toLowerCase().includes(lowerQ)
-        );
-      }
-      return filtered;
-    }
-    return [];
-  }, [activeTab, questions, series, mockTests, exams, banks, users, questionFilter, testFilter, bankFilter, examFilter, filterExamId, searchQuery]);
 
   // Render modal forms dynamically
   const renderFormFields = () => {
@@ -705,9 +803,46 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                 </div>
               )}
             </div>
-            <div className="space-y-3 mt-6">
-              <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Description *</label>
-              <textarea required value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold min-h-[100px]" placeholder="Exam details..."></textarea>
+            
+            <div className="md:col-span-2 p-6 bg-brand-50 rounded-3xl border border-brand-100 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center text-white">
+                    <Award className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <label className="text-base font-black text-slate-900 leading-tight">Full Exam Access Bundle</label>
+                    <p className="text-xs font-bold text-slate-500 italic">Allow users to unlock ALL question banks and mock tests for this exam at once</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked={formData.isPremium} onChange={e => setFormData({ ...formData, isPremium: e.target.checked })} className="sr-only peer" />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+                </label>
+              </div>
+              {formData.isPremium && (
+                <div className="grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Bundle Price (₹)</label>
+                    <input type="number" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold text-sm" placeholder="e.g. 499" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Original Price (₹)</label>
+                    <input type="number" value={formData.originalPrice} onChange={e => setFormData({ ...formData, originalPrice: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold text-sm" placeholder="e.g. 999" />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-3 md:col-span-2">
+              <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Exam Description / Detailed Content</label>
+              <textarea 
+                rows={4} 
+                value={formData.description} 
+                onChange={e => setFormData({ ...formData, description: e.target.value })} 
+                className="w-full px-5 py-4 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-medium text-sm leading-relaxed" 
+                placeholder="Describe the exam and what's included in the bundle..."
+              />
             </div>
           </>
         );
@@ -727,6 +862,38 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                 <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Publish Date *</label>
                 <input required type="date" value={formData.examDate} onChange={e => setFormData({ ...formData, examDate: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" />
               </div>
+              <div className="space-y-3">
+                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Related Exam (For Promotion)</label>
+                <SearchableDropdown 
+                  value={formData.targetExamId} 
+                  onChange={v => setFormData({ ...formData, targetExamId: v })} 
+                  options={actualExams.map(ex => ({ value: ex.id as string, label: ex.name }))}
+                  placeholder="-- No Related Exam --"
+                />
+                <p className="text-[10px] font-bold text-slate-400">If selected, this blog will promote Question Banks & Mock Tests for this exam.</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 mt-8 space-y-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Search className="w-5 h-5 text-brand-600" />
+                <h3 className="text-lg font-black text-slate-900 tracking-tight">SEO Options</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Meta Title</label>
+                  <input type="text" value={formData.metaTitle} onChange={e => setFormData({ ...formData, metaTitle: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-200 outline-none focus:border-brand-500 transition-all font-bold bg-white" placeholder="SEO Title Tag" />
+                </div>
+                <div className="space-y-3">
+                  <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Meta Keywords</label>
+                  <input type="text" value={formData.keywords} onChange={e => setFormData({ ...formData, keywords: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-200 outline-none focus:border-brand-500 transition-all font-bold bg-white" placeholder="odisha, exams, prep..." />
+                </div>
+              </div>
+              <div className="space-y-3">
+                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Meta Description</label>
+                <textarea value={formData.metaDescription} onChange={e => setFormData({ ...formData, metaDescription: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-200 outline-none focus:border-brand-500 transition-all font-bold min-h-[80px] bg-white" placeholder="Search result snippet..."></textarea>
+              </div>
             </div>
             <div className="space-y-3 mt-6">
               <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">HTML/Code Content *</label>
@@ -745,7 +912,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   required 
                   value={formData.examId} 
                   onChange={v => setFormData({ ...formData, examId: v })} 
-                  options={exams.map(ex => ({ value: ex.id as string, label: ex.name }))}
+                  options={actualExams.map(ex => ({ value: ex.id as string, label: ex.name }))}
                   placeholder="-- Choose Exam --"
                 />
               </div>
@@ -778,7 +945,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   required 
                   value={formData.examId} 
                   onChange={v => setFormData({ ...formData, examId: v })} 
-                  options={exams.map(ex => ({ value: ex.id as string, label: ex.name }))}
+                  options={actualExams.map(ex => ({ value: ex.id as string, label: ex.name }))}
                   placeholder="-- Choose Exam --"
                 />
               </div>
@@ -847,7 +1014,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   required 
                   value={formData.examId} 
                   onChange={v => setFormData({ ...formData, examId: v })} 
-                  options={exams.map(ex => ({ value: ex.id as string, label: ex.name }))}
+                  options={actualExams.map(ex => ({ value: ex.id as string, label: ex.name }))}
                   placeholder="-- Choose Exam --"
                 />
               </div>
@@ -876,9 +1043,70 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                 <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Image URL</label>
                 <input type="text" value={formData.image} onChange={e => setFormData({ ...formData, image: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" placeholder="https://..." />
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">PDF Download URL</label>
-                <input type="text" value={formData.pdfUrl} onChange={e => setFormData({ ...formData, pdfUrl: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" placeholder="Link to PDF..." />
+              <div className="md:col-span-2 space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">PDF Download Links</label>
+                  <button 
+                    type="button"
+                    onClick={() => setFormData({ ...formData, pdfLinks: [...formData.pdfLinks, { title: '', url: '' }] })}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-brand-50 text-brand-600 rounded-xl text-xs font-black hover:bg-brand-100 transition-all"
+                  >
+                    <Plus className="w-4 h-4" /> Add New Link
+                  </button>
+                </div>
+                
+                <div className="space-y-3">
+                  {formData.pdfLinks.length === 0 ? (
+                    <div className="py-8 border-2 border-dashed border-slate-100 rounded-2xl flex flex-col items-center justify-center text-slate-400">
+                      <FileText className="w-8 h-8 mb-2 opacity-20" />
+                      <p className="text-xs font-bold uppercase tracking-widest">No PDF links added yet</p>
+                    </div>
+                  ) : (
+                    formData.pdfLinks.map((link: any, idx: number) => (
+                      <div key={idx} className="flex gap-3 items-end bg-white p-4 rounded-2xl border-2 border-slate-50 shadow-sm relative group">
+                        <div className="flex-1 space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Link Title</label>
+                          <input 
+                            type="text" 
+                            value={link.title} 
+                            onChange={e => {
+                              const newLinks = [...formData.pdfLinks];
+                              newLinks[idx].title = e.target.value;
+                              setFormData({ ...formData, pdfLinks: newLinks });
+                            }} 
+                            placeholder="e.g. Question Bank Vol. 1" 
+                            className="w-full px-4 py-2 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold text-sm" 
+                          />
+                        </div>
+                        <div className="flex-[2] space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">PDF URL</label>
+                          <input 
+                            type="text" 
+                            value={link.url} 
+                            onChange={e => {
+                              const newLinks = [...formData.pdfLinks];
+                              newLinks[idx].url = e.target.value;
+                              setFormData({ ...formData, pdfLinks: newLinks });
+                            }} 
+                            placeholder="https://..." 
+                            className="w-full px-4 py-2 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold text-sm font-mono" 
+                          />
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            const newLinks = formData.pdfLinks.filter((_: any, i: number) => i !== idx);
+                            setFormData({ ...formData, pdfLinks: newLinks });
+                          }}
+                          className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all mb-1"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <p className="text-[10px] font-bold text-slate-400 italic">Adding multiple links allows students to download separate files for questions, answers, or different parts.</p>
               </div>
             </div>
             <div className="mt-8 flex flex-col gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-100">
@@ -915,7 +1143,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   required 
                   value={formData.examId} 
                   onChange={v => setFormData({ ...formData, examId: v })} 
-                  options={exams.map(ex => ({ value: ex.id as string, label: ex.name }))}
+                  options={actualExams.map(ex => ({ value: ex.id as string, label: ex.name }))}
                   placeholder="-- Choose Exam --"
                 />
               </div>
@@ -1083,10 +1311,10 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
           <td className="px-8 py-6">
             <div className="flex items-center gap-4">
               {item.photoURL ? (
-                <img src={item.photoURL} alt="avatar" className="w-10 h-10 rounded-full object-cover" />
+                <img src={item.photoURL} alt="avatar" className="w-10 h-10 rounded-full object-cover shadow-sm border border-slate-100" />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold">
-                  {(item.displayName || item.email || '?').charAt(0).toUpperCase()}
+                <div className="w-10 h-10 rounded-full premium-gradient text-white flex items-center justify-center font-black text-sm shadow-inner uppercase select-none">
+                  <span className="drop-shadow-md">{(item.displayName || item.email || '?').charAt(0)}</span>
                 </div>
               )}
               <div>
@@ -1119,8 +1347,18 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                        e.stopPropagation();
                        if (!confirm(`Are you manually revoking content access to ${name} for ${item.email}?`)) return;
                        const newPurchased = item.purchasedSeries.filter((id: string) => id !== p);
-                       await supabase.from('users').update({ purchasedSeries: newPurchased }).eq('uid', item.uid);
-                       alert('Access revoked successfully.');
+                       
+                       let activeClient = supabase;
+                       const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+                       if (serviceKey) {
+                          const { createClient } = await import('@supabase/supabase-js');
+                          activeClient = createClient(import.meta.env.VITE_SUPABASE_URL, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+                       }
+                       
+                       const { error } = await activeClient.auth.admin.updateUserById(item.uid, { user_metadata: { purchasedSeries: newPurchased } });
+                       if (error) alert(`Failed to revoke access: ${error.message}`);
+                       else alert('Access revoked successfully.');
+                       
                        fetchData();
                     }} className="text-red-500 hover:text-red-700 text-[10px] uppercase mt-1 border-t border-brand-200/50 pt-0.5 self-start">Revoke</button>
                   </span>
@@ -1133,11 +1371,24 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
+                  setGrantTargetUser(item);
+                  setGrantSelectedExamId("");
+                  setGrantSelectedCategory("bundle");
+                  setGrantSelectedContentId("");
+                  setShowGrantModal(true);
+                }}
+                className="w-full text-center px-3 py-1.5 text-brand-700 bg-brand-100 hover:text-white hover:bg-brand-600 rounded-lg transition-all text-[10px] uppercase font-black border border-brand-200 shadow-sm whitespace-nowrap"
+              >
+                Grant Content
+              </button>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
                   setPasswordTargetUser(item);
                   setNewPasswordValue("");
                   setShowPasswordModal(true);
                 }}
-                className="px-3 py-1.5 text-brand-600 bg-brand-50 hover:text-white hover:bg-brand-600 rounded-lg transition-all text-[10px] uppercase font-black border border-brand-200 shadow-sm whitespace-nowrap"
+                className="w-full text-center px-3 py-1.5 text-brand-600 bg-brand-50 hover:text-white hover:bg-brand-600 rounded-lg transition-all text-[10px] uppercase font-black border border-brand-200 shadow-sm whitespace-nowrap"
               >
                 Force Set Password
               </button>
@@ -1146,7 +1397,16 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   e.stopPropagation();
                   if (!confirm(`Are you sure you want to globally ${item.hasFullAccess ? 'revoke' : 'grant'} full system access to ${item.email}?`)) return;
                   const newAccess = !item.hasFullAccess;
-                  await supabase.from('users').update({ hasFullAccess: newAccess }).eq('uid', item.uid);
+                  
+                  let activeClient = supabase;
+                  const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+                  if (serviceKey) {
+                     const { createClient } = await import('@supabase/supabase-js');
+                     activeClient = createClient(import.meta.env.VITE_SUPABASE_URL, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+                  }
+                  
+                  const { error } = await activeClient.auth.admin.updateUserById(item.uid, { user_metadata: { hasFullAccess: newAccess } });
+                  if (error) alert(`Failed to update access: ${error.message}`);
                   fetchData();
                 }}
                 className="w-full text-center px-3 py-1.5 text-slate-600 bg-slate-50 hover:text-slate-900 hover:bg-slate-200 rounded-lg transition-all text-xs font-bold border border-slate-200 shadow-sm"
@@ -1179,22 +1439,34 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         </td>
         <td className="px-8 py-6 text-right">
           <div className="flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-            {['tests', 'series'].includes(activeTab) && (
+            {['tests', 'series', 'banks'].includes(activeTab) && (
               <button 
                 onClick={async (e) => {
                    e.stopPropagation();
                    if (!confirm('DANGER ZONE: Are you sure you want to revoke access to this content for EVERY SINGLE USER who purchased it? They will need to repurchase it if you add it to a new cycle.')) return;
                    
                    let count = 0;
+                   let activeClient = supabase;
+                   const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+                   if (serviceKey) {
+                      const { createClient } = await import('@supabase/supabase-js');
+                      activeClient = createClient(import.meta.env.VITE_SUPABASE_URL, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+                   }
+                   
+                   let errorCount = 0;
                    for (const u of users) {
                       if (u.purchasedSeries?.includes(item.id)) {
                          const newPurchased = u.purchasedSeries.filter((p: string) => p !== item.id);
-                         await supabase.from('users').update({ purchasedSeries: newPurchased }).eq('uid', u.uid);
-                         count++;
+                         const { error } = await activeClient.auth.admin.updateUserById(u.uid, { user_metadata: { purchasedSeries: newPurchased } });
+                         if (error) errorCount++;
+                         else count++;
                       }
                    }
-                   if (count > 0) alert(`Successfully revoked access from ${count} users.`);
+                   
+                   if (errorCount > 0) alert(`Revoked from ${count} users, but failed for ${errorCount} users.`);
+                   else if (count > 0) alert(`Successfully revoked access from ${count} users.`);
                    else alert('No users currently hold access to this item.');
+                   
                    fetchData();
                 }}
                 className="p-2.5 text-red-500 hover:text-white hover:bg-red-500 rounded-xl transition-all"
@@ -1215,6 +1487,13 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                 <Upload className="w-5 h-5" />
               </button>
             )}
+            <button 
+              className="p-2.5 text-slate-300 group-hover:text-slate-400 cursor-grab active:cursor-grabbing"
+              title="Hold and drag to reorder"
+            >
+              <GripVertical className="w-5 h-5" />
+            </button>
+
             <button 
               onClick={(e) => handleEditClick(item, e)}
               className="p-2.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-all"
@@ -1249,6 +1528,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
               { id: 'tests', label: 'Mock Tests', icon: Check },
               { id: 'questions', label: 'Questions', icon: FileText },
               { id: 'users', label: 'Users', icon: Users },
+              { id: 'updates', label: 'Exam Updates', icon: Bell },
               { id: 'settings', label: 'Site Settings', icon: Settings },
             ].map((tab) => (
               <button
@@ -1281,7 +1561,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
               <p className="text-slate-500 font-medium text-lg">Manage your {activeTab} data efficiently.</p>
             </div>
             <div className="flex gap-3 overflow-x-auto custom-scrollbar pb-2 items-center flex-nowrap">
-              {['questions', 'tests', 'banks', 'exams', 'series', 'blogs'].includes(activeTab) && (
+              {['questions', 'tests', 'banks', 'exams', 'series', 'blogs', 'users'].includes(activeTab) && (
                 <input
                   type="text"
                   placeholder="Search..."
@@ -1297,7 +1577,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   className="px-3 py-2 border border-slate-200 rounded-xl text-sm font-bold bg-white text-slate-700 outline-none focus:border-brand-500 w-32 flex-shrink-0"
                 >
                   <option value="all">All Exams</option>
-                  {exams.map(ex => <option key={ex.id} value={ex.id as string}>{ex.name}</option>)}
+                  {actualExams.map(ex => <option key={ex.id} value={ex.id as string}>{ex.name}</option>)}
                 </select>
               )}
               {activeTab === 'questions' && (
@@ -1313,25 +1593,114 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   >
                     <Upload className="w-4 h-4" /> Bulk Upload
                   </button>
+                  {(() => {
+                     if (items.length === 0 || filterExamId === 'all') return null;
+                     const targetExamId = items[0].examId;
+                     const targetTopic = items[0].topic;
+                     // Only show button if all displayed items fall under the EXACT same exam and topic.
+                     const isSpecificSelection = items.every((q: any) => q.examId === targetExamId && q.topic === targetTopic);
+                     if (!isSpecificSelection) return null;
+                     
+                     return (
+                       <button 
+                         onClick={async () => {
+                            const subjectName = (targetTopic || '').toLowerCase().startsWith('mocktest__') ? 'this Mock Test' : `the subject '${targetTopic}'`;
+                            const confirmMessage = `WARNING: Are you sure you want to delete ALL ${items.length} questions for ${subjectName}?\n\nThis action cannot be undone.`;
+                            if (!confirm(confirmMessage)) return;
+                            
+                            try {
+                                const promises = items.map((item: any) => examService.deleteQuestion(item.id));
+                                await Promise.all(promises);
+                                alert(`Successfully deleted ${items.length} questions.`);
+                                fetchData();
+                            } catch(e: any) {
+                                alert(`Failed to delete some or all questions: ${e.message}`);
+                                fetchData();
+                            }
+                         }}
+                         className="flex items-center justify-center gap-2 px-6 py-2.5 bg-red-50 text-red-600 border border-red-200 rounded-xl text-sm font-extrabold hover:bg-red-100 transition-all premium-shadow flex-shrink-0"
+                       >
+                         <Trash2 className="w-4 h-4" /> Bulk Delete Filtered
+                       </button>
+                     );
+                  })()}
                 </>
               )}
               {activeTab === 'tests' && (
-                <div className="hidden lg:flex items-center bg-slate-100 p-1 rounded-xl mr-2 h-10 border border-slate-200/50 flex-shrink-0">
-                  <button onClick={() => setTestFilter('all')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", testFilter === 'all' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>All</button>
-                  <button onClick={() => setTestFilter('full-length')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", testFilter === 'full-length' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Full-Length</button>
-                  <button onClick={() => setTestFilter('sectional')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", testFilter === 'sectional' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Sectional</button>
-                  <button onClick={() => setTestFilter('pyq')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", testFilter === 'pyq' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>PYQ</button>
-                  <button onClick={() => setTestFilter('daily')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", testFilter === 'daily' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Daily</button>
-                </div>
+                <>
+                  <div className="hidden lg:flex items-center bg-slate-100 p-1 rounded-xl mr-2 h-10 border border-slate-200/50 flex-shrink-0">
+                    <button onClick={() => setTestFilter('all')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", testFilter === 'all' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>All</button>
+                    <button onClick={() => setTestFilter('full-length')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", testFilter === 'full-length' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Full-Length</button>
+                    <button onClick={() => setTestFilter('sectional')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", testFilter === 'sectional' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Sectional</button>
+                    <button onClick={() => setTestFilter('pyq')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", testFilter === 'pyq' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>PYQ</button>
+                    <button onClick={() => setTestFilter('daily')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", testFilter === 'daily' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Daily</button>
+                  </div>
+                  <button 
+                    onClick={() => setShowMockUploadModal(true)}
+                    className="flex items-center justify-center gap-2 px-6 py-2.5 glass border border-slate-200 rounded-xl text-sm font-extrabold hover:bg-white transition-all premium-shadow flex-shrink-0"
+                  >
+                    <Upload className="w-4 h-4" /> Bulk Upload Questions
+                  </button>
+                  {(() => {
+                     if (items.length === 0 || filterExamId === 'all') return null;
+                     return (
+                       <button 
+                         onClick={async () => {
+                            const confirmMessage = `WARNING: Are you sure you want to delete ALL ${items.length} Mock Tests currently displayed?\n\nThis will permanently delete the test configurations. This action cannot be undone.`;
+                            if (!confirm(confirmMessage)) return;
+                            
+                            try {
+                                const promises = items.map((item: any) => examService.deleteMockTest(item.id));
+                                await Promise.all(promises);
+                                alert(`Successfully deleted ${items.length} Mock Tests.`);
+                                fetchData();
+                            } catch(e: any) {
+                                alert(`Failed to delete some or all tests: ${e.message}`);
+                                fetchData();
+                            }
+                         }}
+                         className="flex items-center justify-center gap-2 px-6 py-2.5 bg-red-50 text-red-600 border border-red-200 rounded-xl text-sm font-extrabold hover:bg-red-100 transition-all premium-shadow flex-shrink-0"
+                       >
+                         <Trash2 className="w-4 h-4" /> Bulk Delete Filtered
+                       </button>
+                     );
+                  })()}
+                </>
               )}
               {activeTab === 'banks' && (
-                <div className="hidden lg:flex items-center bg-slate-100 p-1 rounded-xl mr-2 h-10 border border-slate-200/50 flex-shrink-0">
-                  <button onClick={() => setBankFilter('all')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", bankFilter === 'all' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>All</button>
-                  <button onClick={() => setBankFilter('topic-wise')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", bankFilter === 'topic-wise' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Topic-Wise</button>
-                  <button onClick={() => setBankFilter('exam-focused')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", bankFilter === 'exam-focused' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Exam-Focused</button>
-                  <button onClick={() => setBankFilter('revision-sets')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", bankFilter === 'revision-sets' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Revision Sets</button>
-                  <button onClick={() => setBankFilter('pyq-collections')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", bankFilter === 'pyq-collections' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>PYQ</button>
-                </div>
+                <>
+                  <div className="hidden lg:flex items-center bg-slate-100 p-1 rounded-xl mr-2 h-10 border border-slate-200/50 flex-shrink-0">
+                    <button onClick={() => setBankFilter('all')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", bankFilter === 'all' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>All</button>
+                    <button onClick={() => setBankFilter('topic-wise')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", bankFilter === 'topic-wise' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Topic-Wise</button>
+                    <button onClick={() => setBankFilter('exam-focused')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", bankFilter === 'exam-focused' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Exam-Focused</button>
+                    <button onClick={() => setBankFilter('revision-sets')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", bankFilter === 'revision-sets' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Revision Sets</button>
+                    <button onClick={() => setBankFilter('pyq-collections')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", bankFilter === 'pyq-collections' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>PYQ</button>
+                  </div>
+                  {(() => {
+                     if (items.length === 0 || filterExamId === 'all') return null;
+                     return (
+                       <button 
+                         onClick={async () => {
+                            const confirmMessage = `WARNING: Are you sure you want to delete ALL ${items.length} Question Banks currently displayed?\n\nThis will permanently delete the bank configurations. This action cannot be undone.`;
+                            if (!confirm(confirmMessage)) return;
+                            
+                            try {
+                                const promises = items.map((item: any) => examService.deleteQuestionBank(item.id));
+                                await Promise.all(promises);
+                                alert(`Successfully deleted ${items.length} Question Banks.`);
+                                fetchData();
+                            } catch(e: any) {
+                                alert(`Failed to delete some or all banks: ${e.message}`);
+                                fetchData();
+                            }
+                         }}
+                         className="flex items-center justify-center gap-2 px-6 py-2.5 bg-red-50 text-red-600 border border-red-200 rounded-xl text-sm font-extrabold hover:bg-red-100 transition-all premium-shadow flex-shrink-0"
+                       >
+                         <Trash2 className="w-4 h-4" /> Bulk Delete Filtered
+                       </button>
+                      );
+                  })()}
+                </>
               )}
               {activeTab === 'exams' && (
                 <div className="hidden lg:flex items-center bg-slate-100 p-1 rounded-xl mr-2 h-10 border border-slate-200/50 flex-shrink-0">
@@ -1340,16 +1709,18 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   <button onClick={() => setExamFilter('upcoming')} className={cn("px-4 py-1.5 rounded-lg text-sm font-bold transition-all h-full", examFilter === 'upcoming' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Upcoming</button>
                 </div>
               )}
-              <button 
-                onClick={() => {
-                  setEditingId(null);
-                  setFormData(initialFormData);
-                  setShowAddModal(true);
-                }}
-                className="flex items-center gap-2 px-8 py-2.5 premium-gradient text-white rounded-xl text-sm font-extrabold hover:premium-glow shadow-lg shadow-brand-500/20 transition-all active:scale-95"
-              >
-                <Plus className="w-5 h-5" /> Add New
-              </button>
+              {['questions', 'tests', 'banks', 'exams', 'series', 'blogs'].includes(activeTab) && (
+                <button 
+                  onClick={() => {
+                    setEditingId(null);
+                    setFormData(initialFormData);
+                    setShowAddModal(true);
+                  }}
+                  className="flex items-center gap-2 px-8 py-2.5 premium-gradient text-white rounded-xl text-sm font-extrabold hover:premium-glow shadow-lg shadow-brand-500/20 transition-all active:scale-95"
+                >
+                  <Plus className="w-5 h-5" /> Add New
+                </button>
+              )}
             </div>
           </div>
 
@@ -1410,7 +1781,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                            name: 'SYSTEM_SETTINGS_YOUTUBE_RESERVED',
                            description: JSON.stringify({ videos: parsedIds }),
                            icon: '⚙️',
-                           category: 'upcoming' as const
+                           category: 'system' as const
                         };
                         const exists = exams.find(e => e.name === 'SYSTEM_SETTINGS_YOUTUBE_RESERVED');
                         if (exists && exists.id) {
@@ -1423,34 +1794,224 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   }} className="px-10 py-3.5 premium-gradient text-white font-extrabold rounded-xl shadow-lg shadow-brand-500/20 hover:premium-glow transition-all active:scale-95 text-lg">Save YouTube Library</button>
                 </div>
              </div>
+          ) : activeTab === 'updates' ? (
+            <div className="glass rounded-[2rem] border border-slate-200/50 shadow-xl overflow-hidden bg-white/70 p-8 sm:p-12 space-y-8">
+               <div>
+                 <h3 className="text-3xl font-black text-slate-900 tracking-tight">Exam Updates & News Ticker</h3>
+                 <p className="text-slate-500 font-medium mt-2 text-lg">Manage the flashing news updates shown at the top of the website.</p>
+               </div>
+               
+               <div className="bg-brand-50 p-5 rounded-2xl border border-brand-100 flex gap-4 items-start shadow-sm">
+                 <Bell className="w-6 h-6 text-brand-600 shrink-0 mt-0.5" />
+                 <div className="space-y-1">
+                   <p className="font-extrabold text-slate-800">Ticker Instructions</p>
+                   <p className="text-sm font-medium text-slate-600">
+                     Enter each news update or announcement on a **new line**. These will be displayed in a continuous loop in the top announcement bar.
+                   </p>
+                 </div>
+               </div>
+
+               <div className="space-y-3">
+                 <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Active Announcements</label>
+                 <textarea 
+                    rows={10}
+                    className="w-full px-6 py-5 rounded-2xl border-2 border-slate-200 outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all shadow-inner bg-white text-slate-700 font-bold"
+                    placeholder="OPSC Prelims Exam Dates Announced...&#10;500+ New PYQs Added...&#10;Weekly Current Affairs PDF..."
+                    value={newsUpdatesInput}
+                    onChange={e => setNewsUpdatesInput(e.target.value)}
+                 />
+               </div>
+               
+               <div className="flex justify-end pt-4 border-t border-slate-100">
+                 <button onClick={async () => {
+                    try {
+                       const updates = newsUpdatesInput.split('\n')
+                          .map(s => s.trim())
+                          .filter(s => s.length > 0);
+                          
+                       if (updates.length === 0) {
+                          alert('Please enter at least one announcement.');
+                          return;
+                       }
+
+                       const updated = {
+                          name: 'SYSTEM_SETTINGS_NEWS_TICKER',
+                          description: JSON.stringify({ updates }),
+                          icon: '📢',
+                          category: 'system' as const
+                       };
+                       const exists = exams.find(e => e.name === 'SYSTEM_SETTINGS_NEWS_TICKER');
+                       if (exists && exists.id) {
+                          await examService.updateExam(exists.id, updated);
+                       } else {
+                          await examService.addExam(updated);
+                       }
+                       alert("Exam updates successfully published to the live ticker!");
+                    } catch(err: any) { alert(`Failed to save updates: ${err.message || 'Unknown error'}`); }
+                 }} className="px-10 py-3.5 premium-gradient text-white font-extrabold rounded-xl shadow-lg shadow-brand-500/20 hover:premium-glow transition-all active:scale-95 text-lg">Publish Live Updates</button>
+               </div>
+            </div>
+          ) : activeTab === 'users' ? (
+              <div className="glass rounded-[2rem] border border-slate-200/50 shadow-xl overflow-hidden bg-white/70">
+                 <table className="w-full text-left border-collapse">
+                    <thead className="bg-slate-100/50 border-b border-slate-200/60 font-black text-xs uppercase text-slate-500 tracking-widest">
+                      <tr>
+                         <th className="px-8 py-5">User</th>
+                         <th className="px-8 py-5">Status</th>
+                         <th className="px-8 py-5 text-right pr-12">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
+                      {items.length === 0 ? (
+                         <tr><td colSpan={3} className="px-8 py-20 text-center text-slate-400">No users found.</td></tr>
+                      ) : (
+                         items.map(renderTableRow)
+                      )}
+                    </tbody>
+                 </table>
+              </div>
           ) : (
-          <div className="glass rounded-[2rem] border border-slate-200/50 shadow-xl overflow-hidden bg-white/70">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-slate-100/50 border-b border-slate-200/60">
-                <tr>
-                  <th className="px-8 py-5 text-xs font-extrabold text-slate-500 uppercase tracking-widest w-1/2">Basic Info</th>
-                  <th className="px-8 py-5 text-xs font-extrabold text-slate-500 uppercase tracking-widest w-1/4">Category/Topic</th>
-                  <th className="px-8 py-5 text-xs font-extrabold text-slate-500 uppercase tracking-widest">Details</th>
-                  <th className="px-8 py-5 text-xs font-extrabold text-slate-500 uppercase tracking-widest text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {items.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="px-8 py-24 text-center">
-                      <div className="flex flex-col items-center gap-4 text-slate-400">
-                        <AlertCircle className="w-12 h-12 text-slate-300" />
-                        <p className="font-extrabold text-xl text-slate-500">No items found in {activeTab}</p>
-                        <button onClick={() => { setEditingId(null); setFormData(initialFormData); setShowAddModal(true); }} className="text-brand-600 hover:text-brand-700 font-extrabold text-sm underline mt-2">Create the first record</button>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  items.map(renderTableRow)
-                )}
-              </tbody>
-            </table>
-          </div>
+              <div className="glass rounded-[2rem] border border-slate-200/50 shadow-xl overflow-hidden bg-white/70">
+                 <div className="grid grid-cols-12 bg-slate-100/50 border-b border-slate-200/60 px-8 py-5 text-xs font-black uppercase text-slate-500 tracking-widest">
+                    <div className="col-span-6">Basic Info</div>
+                    <div className="col-span-3">Details</div>
+                    <div className="col-span-3 text-right pr-4">Actions</div>
+                 </div>
+
+                 {items.length === 0 ? (
+                    <div className="px-8 py-24 text-center">
+                       <div className="flex flex-col items-center gap-4 text-slate-400">
+                         <AlertCircle className="w-12 h-12 text-slate-300" />
+                         <p className="font-extrabold text-xl text-slate-500">No items found in {activeTab}</p>
+                         <button onClick={() => { setEditingId(null); setFormData(initialFormData); setShowAddModal(true); }} className="text-brand-600 hover:text-brand-700 font-extrabold text-sm underline mt-2">Create the first record</button>
+                       </div>
+                    </div>
+                 ) : (
+                   <Reorder.Group axis="y" values={items} onReorder={handleReorder} className="divide-y divide-slate-100">
+                     {items.map((item) => (
+                       <Reorder.Item key={item.id} value={item} className="bg-white/50">
+                          <div className="hover:bg-brand-50/30 transition-colors group px-8 py-6 grid grid-cols-12 items-center">
+                             <div className="col-span-6">
+                                <div className="font-extrabold text-slate-900 text-lg line-clamp-2 pr-4">{item.name || item.title || item.questionText || 'Untitled'}</div>
+                                <div className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-wider">{item.category || item.type || item.difficulty || 'Default'}</div>
+                             </div>
+                             <div className="col-span-3">
+                                <div className="text-sm font-bold text-slate-600">
+                                   {(() => {
+                                      if (activeTab === 'questions') return `${item.options?.length || 0} Options`;
+                                      if (activeTab === 'series') return `₹${item.price} • ${item.durationDays} Days`;
+                                      if (activeTab === 'tests') return `${item.durationMinutes} Min • ${item.totalMarks} Marks`;
+                                      if (activeTab === 'exams' || activeTab === 'blogs') {
+                                        return item.examDate ? new Date(item.examDate).toLocaleDateString() : '-';
+                                      }
+                                      if (activeTab === 'banks') return `${item.questionCount} Qs • ${item.isPremium ? 'Premium' : 'Free'}`;
+                                      return '-';
+                                   })()}
+                                </div>
+                                <div className="text-[10px] text-slate-400 font-bold uppercase mt-1">ID: {item.id?.slice(0, 8)}</div>
+                             </div>
+                             <div className="col-span-3 flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                {['tests', 'series', 'banks'].includes(activeTab) && (
+                                  <button 
+                                    onClick={async (e) => {
+                                       e.stopPropagation();
+                                       if (!confirm('DANGER ZONE: Are you sure you want to revoke access to this content for EVERY SINGLE USER who purchased it?')) return;
+                                       
+                                       let count = 0;
+                                       let activeClient = supabase;
+                                       const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+                                       if (serviceKey) {
+                                          const { createClient } = await import('@supabase/supabase-js');
+                                          activeClient = createClient(import.meta.env.VITE_SUPABASE_URL, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+                                       }
+                                       
+                                       let errorCount = 0;
+                                       for (const u of users) {
+                                          if (u.purchasedSeries?.includes(item.id)) {
+                                             const newPurchased = u.purchasedSeries.filter((p: string) => p !== item.id);
+                                             const { error } = await activeClient.auth.admin.updateUserById(u.uid, { user_metadata: { purchasedSeries: newPurchased } });
+                                             if (error) errorCount++;
+                                             else count++;
+                                          }
+                                       }
+                                       alert(`Access revoked from ${count} users.` + (errorCount > 0 ? ` Failed for ${errorCount}.` : ''));
+                                       fetchData();
+                                    }}
+                                    className="p-2.5 text-red-500 hover:text-white hover:bg-red-500 rounded-xl transition-all"
+                                    title="Revoke Content for All Users"
+                                  >
+                                    <Users className="w-5 h-5 pointer-events-none" />
+                                  </button>
+                                )}
+                                {activeTab === 'exams' && (
+                                  <button 
+                                    onClick={async (e) => {
+                                       e.stopPropagation();
+                                       if (!confirm('DANGER ZONE / END CYCLE: Are you sure you want to REVOKE ALL ACCESS to this Exam for EVERY SINGLE USER? This instantly removes access to the Exam Bundle, all individual Mock Tests, and Question Banks under this exam. This action cannot be undone and users will need to purchase again for the next cycle.')) return;
+                                       
+                                       const relatedIds = [
+                                          `exam_bundle_${item.id}`,
+                                          ...mockTests.filter((t: any) => t.examId === item.id).map((t: any) => t.id),
+                                          ...banks.filter((b: any) => b.examId === item.id).map((b: any) => b.id)
+                                       ];
+                                       
+                                       let count = 0;
+                                       let activeClient = supabase;
+                                       const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+                                       if (serviceKey) {
+                                          const { createClient } = await import('@supabase/supabase-js');
+                                          activeClient = createClient(import.meta.env.VITE_SUPABASE_URL, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+                                       }
+                                       
+                                       let errorCount = 0;
+                                       for (const u of users) {
+                                          let hasAny = false;
+                                          if (u.purchasedSeries) {
+                                            for (const rid of relatedIds) {
+                                              if (u.purchasedSeries.includes(rid)) hasAny = true;
+                                            }
+                                          }
+                                          if (hasAny) {
+                                             const newPurchased = u.purchasedSeries.filter((p: string) => !relatedIds.includes(p));
+                                             const { error } = await activeClient.auth.admin.updateUserById(u.uid, { user_metadata: { purchasedSeries: newPurchased } });
+                                             if (error) errorCount++;
+                                             else count++;
+                                          }
+                                       }
+                                       alert(`Cycle Reset Complete: Exam Access revoked from ${count} users.` + (errorCount > 0 ? ` Failed for ${errorCount}.` : ''));
+                                       fetchData();
+                                    }}
+                                    className="p-2.5 text-red-500 hover:text-white hover:bg-red-500 rounded-xl transition-all"
+                                    title="End Cycle: Revoke All Exam Content Access"
+                                  >
+                                    <Users className="w-5 h-5 pointer-events-none" />
+                                  </button>
+                                )}
+                                {activeTab === 'tests' && (
+                                  <button 
+                                    onClick={(e) => {
+                                       e.stopPropagation();
+                                       setAttachMockTestId(item.id);
+                                       setShowMockUploadModal(true);
+                                    }}
+                                    className="p-2.5 text-brand-600 hover:text-brand-700 hover:bg-brand-50 rounded-xl transition-all"
+                                    title="Upload Questions JSON"
+                                  >
+                                    <Upload className="w-5 h-5" />
+                                  </button>
+                                )}
+                                <div className="p-2.5 text-slate-300 group-hover:text-slate-400 cursor-grab active:cursor-grabbing" title="Drag to reorder">
+                                  <GripVertical className="w-5 h-5" />
+                                </div>
+                                <button onClick={(e) => handleEditClick(item, e)} className="p-2.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-all"><Edit2 className="w-5 h-5" /></button>
+                                <button onClick={(e) => handleDelete(item.id, e)} className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 className="w-5 h-5" /></button>
+                             </div>
+                          </div>
+                       </Reorder.Item>
+                     ))}
+                   </Reorder.Group>
+                 )}
+              </div>
           )}
         </div>
       </main>
@@ -1486,7 +2047,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                         required 
                         value={bulkExamId} 
                         onChange={v => setBulkExamId(v)} 
-                        options={exams.map(ex => ({ value: ex.id as string, label: ex.name }))}
+                        options={actualExams.map(ex => ({ value: ex.id as string, label: ex.name }))}
                         placeholder="-- Choose Exam --"
                       />
                     </div>
@@ -1617,6 +2178,20 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
               <div className="p-8 space-y-6">
                 
                 <div className="space-y-3">
+                  <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Target Mock Test *</label>
+                  <select 
+                    value={attachMockTestId || ''} 
+                    onChange={e => setAttachMockTestId(e.target.value)}
+                    className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 focus:border-brand-500 font-bold bg-white"
+                  >
+                    <option value="">-- Select Mock Test --</option>
+                    {mockTests.map(t => (
+                      <option key={t.id} value={t.id}>{t.title}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-3">
                   <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider flex justify-between">
                     <span>Paste JSON Array</span>
                   </label>
@@ -1705,6 +2280,138 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                         alert(`Error: ${err.message}`);
                      }
                   }} className="px-8 py-2.5 bg-red-600 text-white font-extrabold rounded-xl hover:bg-red-700 shadow-sm transition-all">Update Password</button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Grant Content Modal */}
+        {showGrantModal && grantTargetUser && (
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-white rounded-[2rem] w-full max-w-md overflow-hidden shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]"
+            >
+              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 className="text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+                  <span className="p-2 bg-brand-100 text-brand-600 rounded-lg">
+                    <BookMarked className="w-5 h-5" />
+                  </span>
+                  Manual Content Grant
+                </h3>
+                <button onClick={() => setShowGrantModal(false)} className="p-2 text-slate-400 hover:bg-slate-200 rounded-xl transition-all">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1">
+                   <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Target Account</p>
+                   <p className="font-extrabold text-slate-900 text-lg truncate" title={grantTargetUser.email}>{grantTargetUser.email}</p>
+                   {grantTargetUser.displayName && <p className="text-sm font-medium text-slate-600">{grantTargetUser.displayName}</p>}
+                </div>
+                <div className="space-y-3">
+                  <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Select Exam *</label>
+                  <select 
+                    value={grantSelectedExamId} 
+                    onChange={e => {
+                        setGrantSelectedExamId(e.target.value);
+                        setGrantSelectedContentId("");
+                    }} 
+                    className="w-full px-4 py-3.5 rounded-xl border-2 border-slate-200 outline-none focus:border-brand-500 font-bold text-sm bg-white shadow-inner"
+                  >
+                    <option value="">-- Choose Exam --</option>
+                    {actualExams.map(ex => <option key={ex.id} value={ex.id as string}>{ex.name}</option>)}
+                  </select>
+                </div>
+                
+                {grantSelectedExamId && (
+                    <div className="space-y-3">
+                      <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Select Category *</label>
+                      <select 
+                        value={grantSelectedCategory} 
+                        onChange={e => {
+                            setGrantSelectedCategory(e.target.value);
+                            setGrantSelectedContentId("");
+                        }} 
+                        className="w-full px-4 py-3.5 rounded-xl border-2 border-slate-200 outline-none focus:border-brand-500 font-bold text-sm bg-white shadow-inner"
+                      >
+                        <option value="bundle">Full Exam Bundle (All Content)</option>
+                        <option value="mock">Mock Tests</option>
+                        <option value="bank">Question Banks</option>
+                        <option value="series">Custom Test Series</option>
+                      </select>
+                    </div>
+                )}
+                
+                {grantSelectedExamId && grantSelectedCategory !== 'bundle' && (
+                    <div className="space-y-3">
+                      <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Select Specific Content *</label>
+                      <select 
+                        value={grantSelectedContentId} 
+                        onChange={e => setGrantSelectedContentId(e.target.value)} 
+                        className="w-full px-4 py-3.5 rounded-xl border-2 border-slate-200 outline-none focus:border-brand-500 font-bold text-sm bg-white shadow-inner"
+                      >
+                        <option value="">-- Choose Specific Content --</option>
+                        {grantSelectedCategory === 'mock' && mockTests.filter(m => {
+                            if (m.examId !== grantSelectedExamId) return false;
+                            try { if (m.seriesId) return JSON.parse(m.seriesId).isPremium === true; } catch(e){}
+                            return false;
+                        }).map(m => (
+                            <option key={m.id} value={m.id}>{m.title}</option>
+                        ))}
+                        {grantSelectedCategory === 'bank' && banks.filter(b => b.examId === grantSelectedExamId && b.isPremium === true).map(b => (
+                            <option key={b.id} value={b.id}>{b.title}</option>
+                        ))}
+                        {grantSelectedCategory === 'series' && series.filter(s => s.examId === grantSelectedExamId).map(s => (
+                            <option key={s.id} value={s.id}>{s.title}</option>
+                        ))}
+                      </select>
+                    </div>
+                )}
+
+                <div className="flex gap-3 pt-4 border-t border-slate-100">
+                  <button onClick={() => setShowGrantModal(false)} className="w-1/3 py-3 rounded-xl border border-slate-200 font-extrabold text-slate-600 hover:bg-slate-100 transition-all">Cancel</button>
+                  <button 
+                    disabled={!grantSelectedExamId || (grantSelectedCategory !== 'bundle' && !grantSelectedContentId)}
+                    onClick={async () => {
+                        const contentIdToGrant = grantSelectedCategory === 'bundle' ? `exam_bundle_${grantSelectedExamId}` : grantSelectedContentId;
+                        const examName = actualExams.find(ex => ex.id === grantSelectedExamId)?.name || "Exam";
+                        const targetContentTitle = grantSelectedCategory === 'bundle' 
+                            ? `Full Access Bundle: ${examName}` 
+                            : (series.find(s => s.id === contentIdToGrant)?.title || mockTests.find(m => m.id === contentIdToGrant)?.title || banks.find(b => b.id === contentIdToGrant)?.title || "Selected Content");
+                            
+                        const confirmMsg = `Are you sure you want to permanently unlock "${targetContentTitle}" for ${grantTargetUser.email}?`;
+                        if (!confirm(confirmMsg)) return;
+
+                        const currentPurchased = grantTargetUser.purchasedSeries || [];
+                        if (currentPurchased.includes(contentIdToGrant)) {
+                           alert('This user already has access to this content.');
+                           return;
+                        }
+
+                        const newPurchased = [...currentPurchased, contentIdToGrant];
+                        let activeClient = supabase;
+                        const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+                        if (serviceKey) {
+                           const { createClient } = await import('@supabase/supabase-js');
+                           activeClient = createClient(import.meta.env.VITE_SUPABASE_URL, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+                        }
+                        
+                        const { error } = await activeClient.auth.admin.updateUserById(grantTargetUser.uid, { user_metadata: { purchasedSeries: newPurchased } });
+                        if (error) {
+                           alert(`Failed to grant access: ${error.message}`);
+                        } else {
+                           alert('Access granted successfully.');
+                           setShowGrantModal(false);
+                           fetchData();
+                        }
+                    }} 
+                    className="flex-1 bg-brand-600 text-white font-extrabold rounded-xl py-3 hover:bg-brand-700 disabled:opacity-50 shadow-lg shadow-brand-500/20 transition-all active:scale-[0.98]"
+                  >
+                    Grant Access
+                  </button>
                 </div>
               </div>
             </motion.div>

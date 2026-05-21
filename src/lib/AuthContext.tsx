@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from './supabase';
-import { User } from '@supabase/supabase-js';
+import { User, createClient } from '@supabase/supabase-js';
+
+const supabaseAdmin = createClient(
+  import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
+  import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || 'placeholder_key'
+);
 
 interface AuthContextType {
   user: User | null;
@@ -15,6 +20,7 @@ interface AuthContextType {
   hasAccessTo: (itemId: string) => boolean;
   guestUsage: { questions: number; tests: number };
   incrementGuestUsage: (type: 'questions' | 'tests') => void;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -30,6 +36,7 @@ const AuthContext = createContext<AuthContextType>({
   hasAccessTo: () => false,
   guestUsage: { questions: 0, tests: 0 },
   incrementGuestUsage: () => {},
+  refreshProfile: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -53,61 +60,70 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const fetchProfile = async (sessionUser: User) => {
       try {
-        const { data: userDoc, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('uid', sessionUser.id)
-          .single();
+        // Fetch fresh user data from server to avoid stale metadata in session
+        const { data: { user: freshUser }, error: userError } = await supabase.auth.getUser();
+        const activeUser = freshUser || sessionUser;
 
         const adminEmails = ['odishaexamprep365@gmail.com'];
-        const isAuthorizedAdmin = adminEmails.includes(sessionUser.email || '');
+        const isAuthorizedAdmin = adminEmails.includes(activeUser.email || '');
 
-        if (userDoc) {
-          // Proactively upgrade to admin if authorized but role is currently 'user'
-          if (isAuthorizedAdmin && userDoc.role !== 'admin') {
-            const updatedProfile = { ...userDoc, role: 'admin' };
-            await supabase.from('users').update({ role: 'admin' }).eq('uid', sessionUser.id);
-            setProfile(updatedProfile);
-          } else if (!isAuthorizedAdmin && userDoc.role === 'admin') {
-            // Force downgrade previously authorized admins who are no longer on the list
-            const updatedProfile = { ...userDoc, role: 'user' };
-            await supabase.from('users').update({ role: 'user' }).eq('uid', sessionUser.id);
-            setProfile(updatedProfile);
-          } else {
-            setProfile(userDoc);
-          }
-        } else {
-          // Create initial profile
-          const newProfile = {
-            uid: sessionUser.id,
-            email: sessionUser.email,
-            displayName: sessionUser.user_metadata?.full_name || sessionUser.email?.split('@')[0],
-            photoURL: sessionUser.user_metadata?.avatar_url,
-            role: isAuthorizedAdmin ? 'admin' : 'user',
-            hasFullAccess: isAuthorizedAdmin ? true : false,
-            purchasedSeries: [],
-          };
-          
-          await supabase.from('users').insert([newProfile]);
-          setProfile(newProfile);
+        const meta = activeUser.user_metadata || {};
+        let currentRole = isAuthorizedAdmin ? 'admin' : (meta.role || 'user');
+        let currentFullAccess = isAuthorizedAdmin || !!meta.hasFullAccess;
+
+        // Sync role in Supabase if mismatched (runs at most once per session)
+        if (isAuthorizedAdmin && meta.role !== 'admin') {
+          await supabase.auth.updateUser({ data: { role: 'admin', hasFullAccess: true } });
+        } else if (!isAuthorizedAdmin && meta.role === 'admin') {
+          currentRole = 'user';
+          currentFullAccess = false;
+          await supabase.auth.updateUser({ data: { role: 'user', hasFullAccess: false } });
         }
+
+        setProfile({
+          uid: activeUser.id,
+          email: activeUser.email,
+          displayName: meta.full_name || meta.displayName || activeUser.email?.split('@')[0],
+          photoURL: meta.avatar_url || meta.photoURL,
+          role: currentRole,
+          hasFullAccess: currentFullAccess,
+          purchasedSeries: meta.purchasedSeries || [],
+        });
       } catch (error) {
-        console.error("Error fetching user profile:", error);
+        console.error('fetchProfile error:', error);
       }
     };
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+
+    // Load the existing session (may have stale/bloated JWT from localStorage).
+    // Always force a token refresh so the JWT reflects the CURRENT server-side
+    // user_metadata — this is critical for accounts where metadata was cleaned
+    // server-side (e.g., via admin script) but the browser JWT is still old.
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
+        try {
+          // Refresh the token to get a new JWT with current metadata
+          const { data: refreshed, error: refreshErr } = await supabase.auth.refreshSession();
+          if (!refreshErr && refreshed?.session) {
+            // onAuthStateChange will handle setUser/fetchProfile for TOKEN_REFRESHED
+            // but set loading=false here in case it fires slowly
+            setLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.warn('Token refresh failed, falling back to cached session:', e);
+        }
+        // Fallback: use cached session if refresh fails
+        setUser(session.user);
         fetchProfile(session.user);
       } else {
+        setUser(null);
         setProfile(null);
       }
       setLoading(false);
     });
 
-    // Listen for auth changes
+    // Listen for auth state changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -133,9 +149,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
+    // Clear state immediately so UI switches to guest view at once
+    setUser(null);
+    setProfile(null);
     setManualAdmin(null);
     localStorage.removeItem('admin_session');
+    // Then sign out from Supabase (clears the session cookie/token)
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch (e) {
+      console.error('signOut error (non-critical):', e);
+    }
   };
 
   const isAdmin = profile?.role === 'admin' || manualAdmin?.role === 'admin';
@@ -144,8 +168,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const grantFullAccess = async () => {
     if (!user) return;
     const updatedProfile = { ...profile, hasFullAccess: true };
-    await supabase.from('users').update({ hasFullAccess: true }).eq('uid', user.id);
-    setProfile(updatedProfile);
+    const { error } = await supabase.auth.updateUser({ data: { hasFullAccess: true } });
+    
+    if (error) {
+      console.error("Metadata update failed:", error);
+      alert("Payment successful, but we couldn't update your profile automatically. Please contact support.");
+    } else {
+      setProfile(updatedProfile);
+    }
   };
 
   const unlockItem = async (itemId: string) => {
@@ -154,14 +184,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!currentPurchased.includes(itemId)) {
       const newPurchased = [...currentPurchased, itemId];
       const updatedProfile = { ...profile, purchasedSeries: newPurchased };
-      await supabase.from('users').update({ purchasedSeries: newPurchased }).eq('uid', user.id);
-      setProfile(updatedProfile);
+      
+      const { error } = await supabase.auth.updateUser({ data: { purchasedSeries: newPurchased } });
+      
+      if (error) {
+        console.error("Metadata update failed:", error);
+        alert("Payment successful, but we couldn't update your profile automatically. Please contact support.");
+      } else {
+        setProfile(updatedProfile);
+      }
     }
   };
 
-  const hasAccessTo = (itemId: string) => {
+  const hasAccessTo = (itemId: string, examId?: string) => {
     if (isAdmin || profile?.hasFullAccess) return true;
-    return (profile?.purchasedSeries || []).includes(itemId);
+    const purchased = profile?.purchasedSeries || [];
+    if (purchased.includes(itemId)) return true;
+    if (examId && purchased.includes(`exam_bundle_${examId}`)) return true;
+    return false;
+  };
+
+  const refreshProfile = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const { data: { user: freshUser } } = await supabase.auth.getUser();
+      const activeUser = freshUser || session.user;
+      const adminEmails = ['odishaexamprep365@gmail.com'];
+      const isAuthorizedAdmin = adminEmails.includes(activeUser.email || '');
+      const meta = activeUser.user_metadata || {};
+      const currentRole = isAuthorizedAdmin ? 'admin' : (meta.role || 'user');
+      const currentFullAccess = isAuthorizedAdmin || !!meta.hasFullAccess;
+      setProfile({
+        uid: activeUser.id,
+        email: activeUser.email,
+        displayName: meta.full_name || meta.displayName || activeUser.email?.split('@')[0],
+        photoURL: meta.avatar_url || meta.photoURL,
+        role: currentRole,
+        hasFullAccess: currentFullAccess,
+        purchasedSeries: meta.purchasedSeries || [],
+      });
+    }
   };
 
   return (
@@ -177,7 +239,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       unlockItem,
       hasAccessTo,
       guestUsage, 
-      incrementGuestUsage 
+      incrementGuestUsage,
+      refreshProfile
     }}>
       {children}
     </AuthContext.Provider>

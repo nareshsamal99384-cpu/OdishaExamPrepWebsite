@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, supabaseAdmin } from './supabase';
 
 // --- Types ---
 
@@ -11,6 +11,7 @@ export interface Question {
   options: string[];
   correctAnswerIndex: number;
   explanation: string;
+  sortOrder?: number;
   createdAt?: string;
 }
 
@@ -22,6 +23,7 @@ export interface TestSeries {
   price: number;
   durationDays: number;
   testIds: string[];
+  sortOrder?: number;
   createdAt?: string;
 }
 
@@ -32,6 +34,7 @@ export interface MockTest {
   durationMinutes: number;
   totalMarks: number;
   questions?: Question[];
+  sortOrder?: number;
   createdAt?: string;
 }
 
@@ -42,6 +45,11 @@ export interface Exam {
   icon: string;
   category: 'popular' | 'upcoming' | 'blog' | 'system';
   examDate?: string;
+  targetExamId?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  keywords?: string;
+  sortOrder?: number;
   createdAt?: string;
 }
 
@@ -56,6 +64,7 @@ export interface QuestionBank {
   isPremium: boolean;
   pdfUrl?: string;
   hasPracticeMode?: boolean;
+  sortOrder?: number;
   createdAt?: string;
 }
 
@@ -64,7 +73,7 @@ export interface QuestionBank {
 export const examService = {
   // Questions
   async addQuestion(question: Question) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('questions')
       .insert([question])
       .select()
@@ -74,7 +83,7 @@ export const examService = {
   },
 
   async addQuestionsBulk(questions: Question[]) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('questions')
       .insert(questions)
       .select();
@@ -85,13 +94,14 @@ export const examService = {
   async getAllQuestions() {
     const { data, error } = await supabase
       .from('questions')
-      .select('*');
+      .select('*')
+      .order('sortOrder', { ascending: true });
     if (error) throw error;
     return data as Question[];
   },
 
   async deleteQuestion(id: string) {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('questions')
       .delete()
       .eq('id', id);
@@ -99,7 +109,7 @@ export const examService = {
   },
 
   async updateQuestion(id: string, updates: Partial<Question>) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('questions')
       .update(updates)
       .eq('id', id)
@@ -111,7 +121,7 @@ export const examService = {
 
   // Test Series
   async createTestSeries(series: TestSeries) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('testSeries')
       .insert([series])
       .select()
@@ -123,13 +133,14 @@ export const examService = {
   async getAllTestSeries() {
     const { data, error } = await supabase
       .from('testSeries')
-      .select('*');
+      .select('*')
+      .order('sortOrder', { ascending: true });
     if (error) throw error;
     return data as TestSeries[];
   },
 
   async deleteTestSeries(id: string) {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('testSeries')
       .delete()
       .eq('id', id);
@@ -137,7 +148,7 @@ export const examService = {
   },
 
   async updateTestSeries(id: string, updates: Partial<TestSeries>) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('testSeries')
       .update(updates)
       .eq('id', id)
@@ -150,7 +161,7 @@ export const examService = {
   // Mock Tests
   async createMockTest(test: MockTest) {
     const { questions, ...testData } = test;
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('mockTests')
       .insert([testData])
       .select()
@@ -159,19 +170,11 @@ export const examService = {
     return data;
   },
 
-  // Fetch mock test metadata only (no question payloads) — fast for dashboard views
-  async getAllMockTestsLite() {
-    const { data, error } = await supabase
-      .from('mockTests')
-      .select('id, seriesId, title, durationMinutes, totalMarks, createdAt');
-    if (error) throw error;
-    return data as MockTest[];
-  },
-
   async getAllMockTests() {
     const { data: tests, error: testsError } = await supabase
       .from('mockTests')
-      .select('*');
+      .select('*')
+      .order('sortOrder', { ascending: true });
     if (testsError) throw testsError;
 
     if (!tests || tests.length === 0) return [];
@@ -193,8 +196,63 @@ export const examService = {
     })) as MockTest[];
   },
 
+  /**
+   * Lightweight version for dashboard display — fetches only test metadata
+   * WITHOUT the full question array. Much faster and smaller payload.
+   * Use this for listing tests; use getQuestionsForMockTest() when starting a test.
+   */
+  async getAllMockTestsLite() {
+    const { data: tests, error } = await supabase
+      .from('mockTests')
+      .select('*')
+      .order('sortOrder', { ascending: true });
+    if (error) throw error;
+
+    // Fast query to get question counts by fetching only the topic string
+    const testIds = (tests ?? []).map(t => `mockTest__${t.id}`);
+    const { data: qTopics } = await supabase
+      .from('questions')
+      .select('topic')
+      .in('topic', testIds);
+      
+    const countMap: Record<string, number> = {};
+    if (qTopics) {
+      qTopics.forEach(q => {
+        if (q.topic) {
+          countMap[q.topic] = (countMap[q.topic] || 0) + 1;
+        }
+      });
+    }
+
+    // The `seriesId` column may contain either:
+    //   - A UUID string (for tests linked to a real testSeries row)
+    //   - A JSON/JSONB object like {examId, isPremium, category, price, ...}
+    //     (used by the admin panel to store exam metadata inline)
+    // Parse it to expose virtual `examId` and `isPremium` fields on each test.
+    return (tests ?? []).map((t: any) => {
+      let examId: string | null = t.examId || null;
+      let isPremium = t.isPremium ?? false;
+      let category: string | null = t.category || null;
+
+      let seriesData = t.seriesId;
+      if (typeof seriesData === 'string' && seriesData.startsWith('{')) {
+        try { seriesData = JSON.parse(seriesData); } catch(e) {}
+      }
+
+      if (seriesData && typeof seriesData === 'object') {
+        examId   = examId   || seriesData.examId   || null;
+        isPremium = seriesData.isPremium ?? isPremium;
+        category  = category  || seriesData.category  || null;
+      }
+
+      const _questionCount = countMap[`mockTest__${t.id}`] || 0;
+
+      return { ...t, examId, isPremium, category, _questionCount };
+    }) as MockTest[];
+  },
+
   async deleteMockTest(id: string) {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('mockTests')
       .delete()
       .eq('id', id);
@@ -203,7 +261,7 @@ export const examService = {
 
   async updateMockTest(id: string, updates: Partial<MockTest>) {
     const { questions, ...updateData } = updates;
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('mockTests')
       .update(updateData)
       .eq('id', id)
@@ -232,7 +290,7 @@ export const examService = {
       correctAnswerIndex: q.correctAnswerIndex,
       explanation: q.explanation || ''
     }));
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('questions')
       .insert(payload);
     if (error) throw error;
@@ -241,7 +299,7 @@ export const examService = {
 
   // Exams
   async addExam(exam: Exam) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('exams')
       .insert([exam])
       .select()
@@ -253,30 +311,31 @@ export const examService = {
   async getAllExams() {
     const { data, error } = await supabase
       .from('exams')
-      .select('*');
+      .select('*')
+      .order('sortOrder', { ascending: true });
     if (error) throw error;
     return data as Exam[];
   },
 
   async deleteExam(id: string) {
     // Delete associated questions first
-    const { error: questionsError } = await supabase
+    const { error: questionsError } = await supabaseAdmin
       .from('questions')
       .delete()
       .eq('examId', id);
     if (questionsError) throw questionsError;
 
     // Delete associated question banks
-    await supabase.from('questionBanks').delete().eq('examId', id);
+    await supabaseAdmin.from('questionBanks').delete().eq('examId', id);
 
     // Delete associated test series
-    await supabase.from('testSeries').delete().eq('examId', id);
+    await supabaseAdmin.from('testSeries').delete().eq('examId', id);
 
     // Delete associated mock tests (seriesId contains JSON with examId)
-    await supabase.from('mockTests').delete().like('seriesId', `%"examId":"${id}"%`);
+    await supabaseAdmin.from('mockTests').delete().like('seriesId', `%"examId":"${id}"%`);
 
     // Delete the exam
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('exams')
       .delete()
       .eq('id', id);
@@ -284,7 +343,7 @@ export const examService = {
   },
 
   async updateExam(id: string, updates: Partial<Exam>) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('exams')
       .update(updates)
       .eq('id', id)
@@ -296,7 +355,7 @@ export const examService = {
 
   // Question Banks
   async createQuestionBank(bank: QuestionBank) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('questionBanks')
       .insert([bank])
       .select()
@@ -308,13 +367,14 @@ export const examService = {
   async getAllQuestionBanks() {
     const { data, error } = await supabase
       .from('questionBanks')
-      .select('*');
+      .select('*')
+      .order('sortOrder', { ascending: true });
     if (error) throw error;
     return data as QuestionBank[];
   },
 
   async deleteQuestionBank(id: string) {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('questionBanks')
       .delete()
       .eq('id', id);
@@ -322,7 +382,7 @@ export const examService = {
   },
 
   async updateQuestionBank(id: string, updates: Partial<QuestionBank>) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('questionBanks')
       .update(updates)
       .eq('id', id)
