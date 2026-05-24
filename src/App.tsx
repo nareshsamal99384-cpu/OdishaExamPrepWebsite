@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -481,7 +481,16 @@ const HowItWorksSection = () => {
                 <div className="w-full pt-2 sm:pt-4">
                   <Button 
                     className="w-full py-4 sm:py-4.5 rounded-2xl text-sm sm:text-base font-black shadow-2xl shadow-brand-500/30"
-                    onClick={() => setSelectedStep(null)}
+                    onClick={() => {
+                      setSelectedStep(null);
+                      // Scroll to 'Explore Exams' with a minimal 50ms delay.
+                      // Since the parent wrapper is a standard div, the modal unmounts instantly;
+                      // a 50ms delay allows the browser to paint the modal removal and free up resources
+                      // before starting the smooth scroll, resulting in 60fps buttery scrolling.
+                      setTimeout(() => {
+                        document.getElementById('exams')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 50);
+                    }}
                   >
                     Got it, Proceed
                   </Button>
@@ -759,72 +768,228 @@ const TestimonialsSection = () => {
     }
   ];
 
+  // ── Carousel config ────────────────────────────────────────────────────────
+  const CARD_WIDTH     = 320;   // px
+  const CARD_GAP       = 24;    // px
+  const ITEM_STEP      = CARD_WIDTH + CARD_GAP;
+  const AUTO_SPEED     = 0.45;  // px per frame (~27px/s at 60fps)
+  const RESUME_DELAY   = 2000;  // ms after last interaction before auto-scroll resumes
+
+  // Triple the list for seamless infinite loop
+  const items      = [...reviews, ...reviews, ...reviews];
+  const totalWidth = items.length * ITEM_STEP;
+
+  // ── Refs ───────────────────────────────────────────────────────────────────
+  const trackRef        = useRef<HTMLDivElement>(null);
+  const offsetRef       = useRef(0);
+  const rafRef          = useRef<number>(0);
+  const isPaused        = useRef(false);
+  const resumeTimer     = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isDragging      = useRef(false);
+  const dragStartX      = useRef(0);
+  const dragStartOffset = useRef(0);
+
+  // ── Apply offset (wraps for infinite loop) ────────────────────────────────
+  const applyOffset = useCallback(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const loopLen = totalWidth / 3;
+    offsetRef.current = ((offsetRef.current % loopLen) + loopLen) % loopLen;
+    track.style.transform = `translateX(-${offsetRef.current}px)`;
+  }, [totalWidth]);
+
+  // ── RAF auto-scroll tick ──────────────────────────────────────────────────
+  const tick = useCallback(() => {
+    if (!isPaused.current && !isDragging.current) {
+      offsetRef.current += AUTO_SPEED;
+      applyOffset();
+    }
+    rafRef.current = requestAnimationFrame(tick);
+  }, [applyOffset]);
+
+  useEffect(() => {
+    offsetRef.current = totalWidth / 3; // start at middle copy
+    applyOffset();
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [tick, applyOffset, totalWidth]);
+
+  // ── Pause / resume helpers ────────────────────────────────────────────────
+  const pauseAuto = useCallback(() => {
+    isPaused.current = true;
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
+  }, []);
+
+  const scheduleResume = useCallback(() => {
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
+    resumeTimer.current = setTimeout(() => { isPaused.current = false; }, RESUME_DELAY);
+  }, []);
+
+  // ── Mouse drag ────────────────────────────────────────────────────────────
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    isDragging.current    = true;
+    dragStartX.current    = e.clientX;
+    dragStartOffset.current = offsetRef.current;
+    pauseAuto();
+    e.preventDefault();
+  }, [pauseAuto]);
+
+  const onMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging.current) return;
+    offsetRef.current = dragStartOffset.current + (dragStartX.current - e.clientX);
+    applyOffset();
+  }, [applyOffset]);
+
+  const onMouseUp = useCallback(() => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    scheduleResume();
+  }, [scheduleResume]);
+
+  // ── Touch drag ────────────────────────────────────────────────────────────
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    isDragging.current      = true;
+    dragStartX.current      = e.touches[0].clientX;
+    dragStartOffset.current = offsetRef.current;
+    pauseAuto();
+  }, [pauseAuto]);
+
+  const onTouchMove = useCallback((e: TouchEvent) => {
+    if (!isDragging.current) return;
+    offsetRef.current = dragStartOffset.current + (dragStartX.current - e.touches[0].clientX);
+    applyOffset();
+    e.preventDefault(); // prevent page scroll while swiping
+  }, [applyOffset]);
+
+  const onTouchEnd = useCallback(() => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    scheduleResume();
+  }, [scheduleResume]);
+
+  // Attach window-level listeners so drag continues even if pointer leaves the track
+  useEffect(() => {
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup',   onMouseUp);
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend',  onTouchEnd);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup',   onMouseUp);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend',  onTouchEnd);
+    };
+  }, [onMouseMove, onMouseUp, onTouchMove, onTouchEnd]);
+
   return (
-    <section id="testimonials" className="py-24 space-y-16 scroll-mt-24 overflow-hidden">
+    <section id="testimonials" className="py-24 scroll-mt-24 overflow-hidden space-y-16">
+      {/* ── Heading ── */}
       <div className="flex flex-col items-center space-y-5 text-center px-6">
-        <div className="flex items-center gap-2 font-bold animate-bounce-subtle px-4 sm:px-5 py-2 rounded-full border shadow-sm" style={{background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.25)', color: '#d97706'}}>
+        <div
+          className="flex items-center gap-2 font-bold animate-bounce-subtle px-4 sm:px-5 py-2 rounded-full border shadow-sm"
+          style={{ background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.25)', color: '#d97706' }}
+        >
           <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
           <span className="text-xs sm:text-sm tracking-tight">4.8 average rating from 2k+ aspirants</span>
         </div>
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">Trusted by <span className="premium-text-gradient">Aspirants</span></h2>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+          Trusted by <span className="premium-text-gradient">Aspirants</span>
+        </h2>
         <div className="section-divider" />
         <p className="text-slate-500 text-lg font-medium max-w-2xl mx-auto">
           Hear from students who are actually using OdishaExamPrep to crack their dream exams.
         </p>
       </div>
 
-      <div className="relative group">
-        {/* Gradient Fades for Slider */}
-        <div className="hidden sm:block absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#f5f0ff] to-transparent z-10 pointer-events-none" />
-        <div className="hidden sm:block absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#f0f4ff] to-transparent z-10 pointer-events-none" />
+      {/* ── Infinite drag/swipe carousel ── */}
+      <div className="relative select-none">
+        {/* Left edge fade */}
+        <div
+          className="absolute left-0 top-0 bottom-4 w-12 sm:w-24 z-10 pointer-events-none"
+          style={{ background: 'linear-gradient(to right, #f4f0ff 0%, transparent 100%)' }}
+        />
+        {/* Right edge fade */}
+        <div
+          className="absolute right-0 top-0 bottom-4 w-12 sm:w-24 z-10 pointer-events-none"
+          style={{ background: 'linear-gradient(to left, #f4f0ff 0%, transparent 100%)' }}
+        />
 
-        <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-12 px-6 sm:px-12 no-scrollbar snap-x snap-mandatory">
-          {reviews.map((review, i) => (
-            <motion.div 
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.05 }}
-              className="w-[85vw] sm:w-[320px] md:w-[380px] shrink-0 snap-center"
-            >
-              <div className="glass-card card-lift p-6 sm:p-8 h-full flex flex-col justify-between space-y-4 sm:space-y-6 text-left shimmer-border" style={{borderRadius: '1.5rem', border: '1px solid rgba(255,255,255,0.9)'}}>
-                <div className="space-y-4">
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <Star 
-                        key={star} 
-                        className={cn(
-                          "w-4 h-4",
-                          star <= review.rating ? "text-amber-400 fill-amber-400" : "text-slate-200 fill-slate-200"
-                        )} 
+        {/* Draggable viewport */}
+        <div
+          className="overflow-hidden cursor-grab active:cursor-grabbing"
+          onMouseDown={onMouseDown}
+          onTouchStart={onTouchStart}
+          onMouseEnter={pauseAuto}
+          onMouseLeave={scheduleResume}
+        >
+          {/* Track — translated by JS, not CSS animation */}
+          <div
+            ref={trackRef}
+            className="flex pb-4 will-change-transform"
+            style={{ gap: CARD_GAP, paddingLeft: 24, width: `${totalWidth}px` }}
+          >
+            {items.map((review, idx) => (
+              <div
+                key={`${review.name}-${idx}`}
+                className="shrink-0"
+                style={{ width: CARD_WIDTH }}
+              >
+                <div
+                  className="glass-card p-6 sm:p-7 h-full flex flex-col justify-between space-y-5 text-left shimmer-border transition-shadow duration-300 hover:shadow-xl hover:shadow-brand-500/10"
+                  style={{ borderRadius: '1.5rem', border: '1px solid rgba(255,255,255,0.9)' }}
+                >
+                  {/* Stars + Quote */}
+                  <div className="space-y-3">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <Star
+                          key={star}
+                          className={cn(
+                            'w-4 h-4',
+                            star <= review.rating
+                              ? 'text-amber-400 fill-amber-400'
+                              : 'text-slate-200 fill-slate-200'
+                          )}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-slate-700 font-medium leading-relaxed italic text-sm sm:text-[15px]">
+                      {review.text}
+                    </p>
+                  </div>
+
+                  {/* Author row */}
+                  <div
+                    className="flex items-center gap-3 pt-4"
+                    style={{ borderTop: '1px solid rgba(124,58,237,0.1)' }}
+                  >
+                    <div className="relative shrink-0">
+                      <img
+                        src={review.avatar}
+                        alt={review.name}
+                        referrerPolicy="no-referrer"
+                        draggable={false}
+                        className="w-11 h-11 rounded-full object-cover border-2 border-white shadow-sm"
                       />
-                    ))}
-                  </div>
-                  <p className="text-slate-700 font-medium leading-relaxed italic">
-                    &ldquo;{review.text}&rdquo;
-                  </p>
-                </div>
-                
-                <div className="flex items-center gap-4 pt-4" style={{borderTop: '1px solid rgba(124,58,237,0.1)'}}>
-                  <div className="relative">
-                    <img 
-                      src={review.avatar} 
-                      alt={review.name} 
-                      referrerPolicy="no-referrer"
-                      className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm" 
-                    />
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full" />
-                  </div>
-                  <div>
-                    <h4 className="font-black text-slate-900 text-sm">{review.name}</h4>
-                    <p className="text-[10px] font-black uppercase tracking-widest" style={{color: '#7c3aed'}}>{review.role}</p>
+                      <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full" />
+                    </div>
+                    <div>
+                      <h4 className="font-black text-slate-900 text-sm leading-tight">{review.name}</h4>
+                      <p className="text-[10px] font-black uppercase tracking-widest mt-0.5" style={{ color: '#7c3aed' }}>
+                        {review.role}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </motion.div>
-          ))}
+            ))}
+          </div>
         </div>
+
+        {/* Swipe hint — mobile only */}
+        <p className="sm:hidden text-center text-[11px] font-bold text-slate-400 tracking-wide mt-3 pointer-events-none select-none">
+          ← Swipe to explore more →
+        </p>
       </div>
     </section>
   );
@@ -1945,8 +2110,19 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     }
   }, [selectedExam, isGuest]);
   const [activeTest, setActiveTest] = useState<any | null>(null);
-  const [testResults, setTestResults] = useState<any | null>(null);
   const [activeTestState, setActiveTestState] = useState<any>(null);
+
+  // Signal to the global WhatsAppButton that a test/practice is in progress
+  // so it can hide itself for a distraction-free experience.
+  useEffect(() => {
+    if (activeTest) {
+      document.body.setAttribute('data-test-mode', 'true');
+    } else {
+      document.body.removeAttribute('data-test-mode');
+    }
+    return () => document.body.removeAttribute('data-test-mode');
+  }, [activeTest]);
+  const [testResults, setTestResults] = useState<any | null>(null);
 
   // Stats for comparisons
   // (Moving these inside the component so activities is in scope)
@@ -2913,6 +3089,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   }
 
   if (testResults) {
+    if (!testResults.test) {
+      alert("Detailed question-by-question review is only available on the device where you completed the test. (Detailed performance data is kept locally to optimize account space).");
+      setTestResults(null);
+      return null;
+    }
+
     // Find previous result for comparison
     const previousResult = activities
       .filter(a => a.type === 'mock_test_completed' && a.title === testResults.test.title)
@@ -2961,6 +3143,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           }
         }} 
         onComplete={(results) => {
+          // Reset scroll position BEFORE switching views so the new component
+          // mounts with the page already at the very top.
+          window.scrollTo(0, 0);
+          document.documentElement.scrollTop = 0;
+          document.body.scrollTop = 0;
           setActiveTest(null);
           setTestResults(results);
           const currentExamName = exams.find(e => e.id === selectedExam)?.name || 'General';
@@ -2982,7 +3169,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             type: 'mock_test_completed',
             title: activeTest.title,
             score: results.score,
-            totalMarks: results.total,
+            totalMarks: results.totalMarks || results.total,
             accuracy: results.accuracy || 0,
             metadata: {
               ...results,
@@ -4378,7 +4565,19 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
 const WhatsAppButton = () => {
   const { user } = useAuth();
-  
+  const [isTestMode, setIsTestMode] = useState(false);
+
+  // Listen for body attribute changes set by DashboardContent when a test is active
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsTestMode(document.body.hasAttribute('data-test-mode'));
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-test-mode'] });
+    return () => observer.disconnect();
+  }, []);
+
+  if (isTestMode) return null;
+
   const defaultMessage = "Hello! I am reaching out from the OdishaExamPrep website. I have a query.";
   const userMessage = user?.email ? `Hello! I am ${user.email} reaching out from the OdishaExamPrep website. I have a query.` : defaultMessage;
   const whatsappUrl = `https://wa.me/917377431715?text=${encodeURIComponent(userMessage)}`;
@@ -4637,4 +4836,3 @@ function AppContent() {
     </div>
   );
 }
-

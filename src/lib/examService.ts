@@ -33,6 +33,7 @@ export interface MockTest {
   title: string;
   durationMinutes: number;
   totalMarks: number;
+  negativeMarking?: number;
   questions?: Question[];
   sortOrder?: number;
   createdAt?: string;

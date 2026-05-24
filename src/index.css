@@ -740,3 +740,70 @@ body {
   overflow-wrap: anywhere;
   word-break: break-word;
 }
+
+/* Custom premium scrollbar style */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 58, 237, 0.25) transparent;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.25);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 58, 237, 0.45);
+}
+
+/* Smooth-scrolling question palette */
+.palette-scroll {
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-padding: 8px;
+  will-change: scroll-position;
+}
+
+/* Palette glow for active question */
+@keyframes palette-glow-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(124,58,237,0.3), 0 0 0 0 rgba(124,58,237,0.1); }
+  50% { box-shadow: 0 0 16px rgba(124,58,237,0.5), 0 0 0 4px rgba(124,58,237,0.05); }
+}
+.palette-active-glow {
+  animation: palette-glow-pulse 2s ease-in-out infinite;
+}
+
+/* Palette button base */
+.palette-btn {
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+  will-change: transform;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.palette-btn:hover {
+  transform: translateY(-1px);
+}
+.palette-btn:active {
+  transform: scale(0.93);
+}
+
+/* Status dot pulse */
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.dot-pulse {
+  animation: dot-pulse 2s ease-in-out infinite;
+}
+
+/* Legend count animation */
+.legend-count {
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}

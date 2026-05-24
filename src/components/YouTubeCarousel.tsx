@@ -142,14 +142,36 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
       <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-brand-600/20 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Header */}
-      <div className="flex items-center gap-3 px-8 mb-8 relative z-10">
-        <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20">
-          <Youtube className="w-6 h-6 text-red-500" />
+      {/* Header */}
+      <div className="flex flex-row items-center justify-between gap-3 px-5 sm:px-8 mb-8 relative z-10">
+        <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20 shrink-0">
+            <Youtube className="w-5.5 h-5.5 sm:w-6 sm:h-6 text-red-500" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-2xl font-black text-white tracking-tight leading-tight">Latest from our Channel</h2>
+            <p className="text-slate-400 font-medium text-[10px] sm:text-sm mt-0.5 line-clamp-1 sm:line-clamp-none">Watch the best tips and exam strategies free</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-2xl font-black text-white tracking-tight">Latest from our Channel</h2>
-          <p className="text-slate-400 font-medium text-sm">Watch the best tips and exam strategies free</p>
-        </div>
+
+        {/* YouTube Subscribe Button */}
+        <a
+          href="https://www.youtube.com/@OdishaExamPrep365?sub_confirmation=1"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-5 sm:py-2.5 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600 text-white font-extrabold text-[10px] sm:text-sm rounded-full shadow-[0_4px_12px_rgba(220,38,38,0.25)] hover:shadow-[0_4px_20px_rgba(220,38,38,0.45)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-300 border border-red-500/20 shrink-0 select-none cursor-pointer premium-shine-container"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 text-white"
+          >
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+          </svg>
+          <span className="sm:hidden">Subscribe</span>
+          <span className="hidden sm:inline">Subscribe on YouTube</span>
+          <span className="inline-block w-1 h-1 rounded-full bg-red-200 animate-ping shrink-0" />
+        </a>
       </div>
 
       {/* Draggable Track */}

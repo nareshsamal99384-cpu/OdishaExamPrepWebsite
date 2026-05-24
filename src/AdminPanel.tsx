@@ -181,6 +181,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
     durationDays: 30,
     durationMinutes: 60,
     totalMarks: 100,
+    negativeMarking: 0,
     
     // Question
     topic: '',
@@ -550,7 +551,8 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         seriesId: item.seriesId || '',
         title: item.title || '',
         durationMinutes: item.durationMinutes || 60,
-        totalMarks: item.totalMarks || 100
+        totalMarks: item.totalMarks || 100,
+        negativeMarking: item.negativeMarking || 0
       };
     }
     
@@ -601,7 +603,8 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
           seriesId: mockConfig,
           title: formData.title,
           durationMinutes: Number(formData.durationMinutes),
-          totalMarks: Number(formData.totalMarks)
+          totalMarks: Number(formData.totalMarks),
+          negativeMarking: Number(formData.negativeMarking) || 0
         };
         if (editingId) await examService.updateMockTest(editingId, payload);
         else await examService.createMockTest(payload);
@@ -982,6 +985,36 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
               <div className="space-y-3">
                 <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Total Marks *</label>
                 <input required type="number" min="1" value={formData.totalMarks} onChange={e => setFormData({ ...formData, totalMarks: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" />
+              </div>
+              <div className="space-y-3">
+                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Negative Marking Per Incorrect Answer *</label>
+                <input 
+                  required 
+                  type="number" 
+                  step="0.01" 
+                  min="0" 
+                  value={formData.negativeMarking} 
+                  onChange={e => setFormData({ ...formData, negativeMarking: e.target.value })} 
+                  className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" 
+                  placeholder="e.g. 0.25" 
+                />
+                <div className="flex gap-2 flex-wrap">
+                  {[0, 0.25, 0.33, 0.5, 1].map((val) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, negativeMarking: val })}
+                      className={cn(
+                        "px-3 py-1 rounded-lg text-xs font-bold transition-all border",
+                        Number(formData.negativeMarking) === val 
+                          ? "bg-brand-500 text-white border-brand-500" 
+                          : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      )}
+                    >
+                      {val === 0 ? "None (0.00)" : '-' + val}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
             <div className="mt-8 flex flex-col gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-100">
