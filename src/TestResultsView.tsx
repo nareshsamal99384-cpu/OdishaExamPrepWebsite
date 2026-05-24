@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle2, XCircle, Clock, Flag, AlertCircle, ChevronLeft, ChevronRight, BarChart } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Button } from './App';
+import { fadeSlideUpSm } from './lib/animations';
 
 export default function TestResultsView({ results, onClose }: { results: any, onClose: () => void }) {
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -265,9 +266,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
           <div ref={questionCardRef} className="glass p-5 sm:p-12 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-200 premium-shadow bg-white">
             <motion.div 
                key={currentIdx}
-               initial={{ opacity: 0, y: 5 }}
-               animate={{ opacity: 1, y: 0 }}
-               transition={{ duration: 0.15 }}
+               {...fadeSlideUpSm}
              >
              
              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">

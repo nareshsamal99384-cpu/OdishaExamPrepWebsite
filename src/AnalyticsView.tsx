@@ -13,23 +13,7 @@ import {
 } from 'lucide-react';
 import { activityTracker } from './lib/activityTracker';
 import { cn } from './lib/utils';
-
-// --- Variants ---
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.1 }
-  }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1, y: 0,
-    transition: { type: "spring", stiffness: 100, damping: 20 }
-  }
-};
+import { stagger } from './lib/animations';
 
 const AnimatedCounter = ({ value, suffix = "", decimals = 0 }: { value: number, suffix?: string, decimals?: number }) => {
   const [displayValue, setDisplayValue] = useState(0);
@@ -480,9 +464,9 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
       <div className="fixed bottom-0 right-0 w-[800px] h-[600px] bg-gradient-to-tl from-indigo-100/20 to-transparent blur-[120px] -z-10 pointer-events-none" />
 
       <motion.div 
-        variants={containerVariants}
+        variants={stagger.containerDelay(0.1, 0.1)}
         initial="hidden"
-        animate="visible"
+        animate="show"
         className="w-full mx-auto space-y-6 sm:space-y-8 pb-20 relative z-10"
       >
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
@@ -495,7 +479,7 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           <div className="lg:col-span-2 space-y-6 sm:space-y-8">
             <motion.div 
-              variants={itemVariants} 
+              variants={stagger.itemFadeUp} 
               className="relative bg-white/70 backdrop-blur-2xl rounded-[2rem] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-500 overflow-hidden group"
             >
                <div className="absolute -top-32 -right-32 w-64 h-64 bg-brand-500/5 rounded-full blur-3xl group-hover:bg-brand-500/10 transition-colors duration-500 pointer-events-none" />
@@ -538,17 +522,17 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
             </motion.div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-               <motion.div variants={itemVariants} whileHover={{ y: -4, scale: 0.99 }} className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-300 flex gap-5 items-start">
-                  <div className={cn("p-3.5 rounded-2xl shrink-0 shadow-sm border border-white", stats.impScore >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600")}>
-                     {stats.impScore >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
+                <motion.div variants={stagger.itemFadeUp} whileHover={{ y: -4, scale: 0.99 }} className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-300 flex gap-5 items-start">
+                   <div className={cn("p-3.5 rounded-2xl shrink-0 shadow-sm border border-white", stats.impScore >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600")}>
+                      {stats.impScore >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
                   </div>
                   <div>
                      <h4 className="font-extrabold text-slate-900 mb-1.5 tracking-tight">{stats.impScore >= 0 ? "You are improving" : "Scores dropped recently"}</h4>
                      <p className="text-sm font-medium text-slate-500 leading-relaxed">{stats.impScore >= 0 ? "Your latest test scores show positive momentum. Keep up the good work!" : "Review your recent mistakes to get back on track."}</p>
                   </div>
                </motion.div>
-               <motion.div variants={itemVariants} whileHover={{ y: -4, scale: 0.99 }} className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-300 flex gap-5 items-start">
-                  <div className={cn("p-3.5 rounded-2xl shrink-0 shadow-sm border border-white", stats.avgTimePerQuestion > 60 ? "bg-amber-50 text-amber-600" : "bg-brand-50 text-brand-600")}>
+                <motion.div variants={stagger.itemFadeUp} whileHover={{ y: -4, scale: 0.99 }} className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-300 flex gap-5 items-start">
+                   <div className={cn("p-3.5 rounded-2xl shrink-0 shadow-sm border border-white", stats.avgTimePerQuestion > 60 ? "bg-amber-50 text-amber-600" : "bg-brand-50 text-brand-600")}>
                      <Timer className="w-6 h-6" />
                   </div>
                   <div>
@@ -559,7 +543,7 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
             </div>
 
             <motion.div 
-              variants={itemVariants} 
+              variants={stagger.itemFadeUp} 
               whileHover={{ y: -4 }}
               className="relative bg-gradient-to-br from-brand-600 via-indigo-600 to-purple-700 rounded-[2rem] p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between shadow-[0_15px_40px_-10px_rgba(79,70,229,0.5)] border border-brand-400/30 gap-6 overflow-hidden transition-all duration-500 hover:shadow-[0_25px_50px_-12px_rgba(79,70,229,0.6)]"
             >
@@ -581,7 +565,7 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
           </div>
 
           <div className="space-y-6 sm:space-y-8">
-            <motion.div variants={itemVariants} className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-500 relative overflow-hidden group">
+            <motion.div variants={stagger.itemFadeUp} className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-500 relative overflow-hidden group">
                <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-brand-500/5 rounded-full blur-3xl group-hover:bg-brand-500/10 transition-colors duration-500 pointer-events-none" />
                <h3 className="text-xl font-extrabold text-slate-900 mb-8 tracking-tight relative z-10 text-center">Accuracy Breakdown</h3>
                
@@ -613,7 +597,7 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
                )}
             </motion.div>
 
-            <motion.div variants={itemVariants} className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-500 relative overflow-hidden group">
+            <motion.div variants={stagger.itemFadeUp} className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-500 relative overflow-hidden group">
                <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-brand-500/5 rounded-full blur-3xl group-hover:bg-brand-500/10 transition-colors duration-500 pointer-events-none" />
                <h3 className="text-xl font-extrabold text-slate-900 mb-8 tracking-tight relative z-10 text-center">Overall Skill Profile</h3>
                
@@ -652,7 +636,7 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
             {stats.examAnalysis && stats.examAnalysis.length > 0 && (
               <div className="flex flex-col gap-6 sm:gap-8 max-h-[600px] lg:max-h-[750px] overflow-y-auto custom-scrollbar pr-2 sm:pr-4 pb-2 -mr-2 sm:-mr-4 relative">
                 {stats.examAnalysis.map((exam: any, idx: number) => (
-                  <motion.div key={idx} variants={itemVariants} className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-500 relative overflow-hidden flex flex-col shrink-0">
+                  <motion.div key={idx} variants={stagger.itemFadeUp} className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-500 relative overflow-hidden flex flex-col shrink-0">
                  <div className="mb-6 relative z-10">
                     <div className="mb-3">
                        <span className="px-3 py-1.5 bg-slate-900 text-white text-[11px] font-extrabold rounded-lg uppercase tracking-widest shadow-md">
@@ -752,7 +736,7 @@ function StatCard({ icon, title, value, suffix = "", trend, decimals = 0 }: any)
   const isPositive = (trend ?? 0) >= 0;
   return (
     <motion.div 
-      variants={itemVariants} 
+      variants={stagger.itemFadeUp} 
       whileHover={{ y: -6, scale: 0.99 }}
       whileTap={{ scale: 0.97 }}
       className="relative overflow-hidden bg-white/70 backdrop-blur-xl p-4 sm:p-7 rounded-[1.5rem] sm:rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 flex flex-col justify-between group transition-all duration-500 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] cursor-default"

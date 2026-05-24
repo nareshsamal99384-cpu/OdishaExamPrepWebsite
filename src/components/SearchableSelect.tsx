@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Search, Check } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { dropdown } from '../lib/animations';
 
 export interface Option {
   value: string;
@@ -76,11 +77,7 @@ export default function SearchableSelect({
       {/* Floating Menu */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -5, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -5, scale: 0.98 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
+          <motion.div {...dropdown}
             className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-white border border-slate-200 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col"
           >
             <div className="p-2 border-b border-slate-100 bg-slate-50/50 backdrop-blur-sm">

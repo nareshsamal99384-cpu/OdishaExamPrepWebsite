@@ -24,6 +24,21 @@
    ============================================================ */
 html {
   scroll-behavior: smooth;
+  overscroll-behavior: contain;
+  scroll-padding-top: 80px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 body {
@@ -806,4 +821,38 @@ body {
 /* Legend count animation */
 .legend-count {
   transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Timer urgency pulse */
+@keyframes timer-urgent {
+  0%, 100% { box-shadow: 0 0 8px rgba(239,68,68,0.2), 0 0 0 0 rgba(239,68,68,0.1); }
+  50% { box-shadow: 0 0 20px rgba(239,68,68,0.4), 0 0 0 6px rgba(239,68,68,0.05); }
+}
+.timer-urgent {
+  animation: timer-urgent 1.5s ease-in-out infinite;
+}
+
+/* Animated progress bar shimmer */
+@keyframes progress-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+.progress-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: progress-shimmer 2s ease-in-out infinite;
+}
+
+/* Option card hover lift */
+.option-card {
+  transition: all 0.25s cubic-bezier(0.23, 1, 0.32, 1);
+  will-change: transform, box-shadow;
+}
+.option-card:hover {
+  transform: translateY(-2px);
+}
+.option-card:active {
+  transform: scale(0.98);
 }

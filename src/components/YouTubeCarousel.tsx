@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Play, X, Youtube } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { modalBackdrop, modalContent } from '../lib/animations';
 
 const CARD_WIDTH = 320;  // px — card + gap
 const CARD_GAP   = 24;   // px
@@ -229,16 +230,11 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
       <AnimatePresence>
         {activeVideo && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            {...modalBackdrop}
             className="fixed inset-0 z-[200] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80"
           >
             <div className="absolute inset-0" onClick={() => setActiveVideo(null)} />
-            <motion.div
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
+            <motion.div {...modalContent}
               className="relative w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10"
             >
               <button

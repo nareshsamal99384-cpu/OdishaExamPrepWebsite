@@ -25,6 +25,7 @@ import { Reorder } from 'framer-motion';
 import { examService, Question, TestSeries, MockTest, Exam } from './lib/examService';
 import { cn } from './lib/utils';
 import { supabase } from './lib/supabase';
+import { dropdown, modalContent, scaleIn } from './lib/animations';
 
 // --- Custom Components ---
 const SearchableDropdown = ({ value, onChange, options, placeholder, required, disabled }: { value: string, onChange: (v: string) => void, options: {value: string, label: string}[], placeholder: string, required?: boolean, disabled?: boolean }) => {
@@ -63,8 +64,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder, required, d
       </div>
       <AnimatePresence>
         {isOpen && (
-          <motion.div 
-            initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.15 }}
+          <motion.div {...dropdown}
             className="absolute z-[100] mt-2 left-0 right-0 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden"
           >
             <div className="p-3 border-b border-slate-100 bg-slate-50/50">
@@ -1344,7 +1344,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
           <td className="px-8 py-6">
             <div className="flex items-center gap-4">
               {item.photoURL ? (
-                <img src={item.photoURL} alt="avatar" className="w-10 h-10 rounded-full object-cover shadow-sm border border-slate-100" />
+                <img src={item.photoURL} alt="avatar" loading="lazy" className="w-10 h-10 rounded-full object-cover shadow-sm border border-slate-100" />
               ) : (
                 <div className="w-10 h-10 rounded-full premium-gradient text-white flex items-center justify-center font-black text-sm shadow-inner uppercase select-none">
                   <span className="drop-shadow-md">{(item.displayName || item.email || '?').charAt(0)}</span>
@@ -2053,10 +2053,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       <AnimatePresence>
         {showBulkUploadModal && (
           <div className="fixed inset-0 bg-slate-950/40 z-[60] flex items-center justify-center p-4 backdrop-blur-sm pt-20">
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0, y: 10 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+            <motion.div {...modalContent}
               className="bg-white rounded-[2rem] w-full max-w-2xl max-h-[90vh] overflow-y-auto premium-shadow border border-slate-100 my-auto"
             >
               <div className="p-8">
@@ -2150,10 +2147,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       <AnimatePresence>
         {showAddModal && (
           <div className="fixed inset-0 bg-slate-950/40 z-[60] flex items-center justify-center p-6 backdrop-blur-sm overflow-y-auto pt-20">
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0, y: 10 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+            <motion.div {...modalContent}
               className={cn(
                 "glass rounded-[2rem] w-full overflow-hidden shadow-2xl border-white/60 bg-white my-auto",
                 activeTab === 'questions' ? 'max-w-4xl' : 'max-w-3xl'
@@ -2191,10 +2185,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       <AnimatePresence>
         {showMockUploadModal && (
           <div className="fixed inset-0 bg-slate-950/40 z-[70] flex items-center justify-center p-6 backdrop-blur-sm">
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0, y: 10 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+            <motion.div {...modalContent}
               className="glass rounded-[2rem] w-full max-w-2xl overflow-hidden shadow-2xl border-white/60 bg-white"
             >
               <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -2250,10 +2241,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       <AnimatePresence>
         {showPasswordModal && passwordTargetUser && (
           <div className="fixed inset-0 bg-slate-950/40 z-[80] flex items-center justify-center p-6 backdrop-blur-sm">
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0, y: 10 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+            <motion.div {...modalContent}
               className="glass rounded-[2rem] w-full max-w-md overflow-hidden shadow-2xl border-white/60 bg-white"
             >
               <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -2322,9 +2310,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         {/* Grant Content Modal */}
         {showGrantModal && grantTargetUser && (
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
+            <motion.div {...scaleIn}
               className="bg-white rounded-[2rem] w-full max-w-md overflow-hidden shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]"
             >
               <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   BookOpen, 
   LayoutDashboard, 
@@ -48,23 +48,27 @@ import { useAuth } from './lib/AuthContext';
 import { supabase } from './lib/supabase';
 import { cn, getDirectImageUrl } from './lib/utils';
 import { examService } from './lib/examService';
-import AdminPanel from './AdminPanel';
-import MockTestSystem from './MockTestSystem';
-import TestResultsView from './TestResultsView';
-import AnalyticsView from './AnalyticsView';
-import AdminLoginPage from './pages/AdminLoginPage';
+import { useScrollSpy } from './hooks/useScrollSpy';
+import { scrollToElement, scrollToTop } from './lib/scrollManager';
+import AnimatedRoutes from './components/AnimatedRoutes';
+import { sectionReveal, sectionRevealSimple, sectionRevealScale, fadeSlideRight, scaleIn, barGrow, whileHover, whileTap, modalBackdrop, slideUpPanel, durations, easings } from './lib/animations';
 import { ErrorBoundary } from './ErrorBoundary';
-import AdminDashboardPage from './pages/AdminDashboardPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { activityTracker } from './lib/activityTracker';
 
-import PrivacyPolicy from './PrivacyPolicy';
-import TermsOfService from './TermsOfService';
-import RefundPolicy from './RefundPolicy';
-import SearchableSelect from './components/SearchableSelect';
-import YouTubeCarousel from './components/YouTubeCarousel';
-import BlogList from './pages/BlogList';
-import BlogPost from './pages/BlogPost';
+const AdminPanel = React.lazy(() => import('./AdminPanel'));
+const MockTestSystem = React.lazy(() => import('./MockTestSystem'));
+const TestResultsView = React.lazy(() => import('./TestResultsView'));
+const AnalyticsView = React.lazy(() => import('./AnalyticsView'));
+const AdminLoginPage = React.lazy(() => import('./pages/AdminLoginPage'));
+const AdminDashboardPage = React.lazy(() => import('./pages/AdminDashboardPage'));
+const PrivacyPolicy = React.lazy(() => import('./PrivacyPolicy'));
+const TermsOfService = React.lazy(() => import('./TermsOfService'));
+const RefundPolicy = React.lazy(() => import('./RefundPolicy'));
+const SearchableSelect = React.lazy(() => import('./components/SearchableSelect'));
+const YouTubeCarousel = React.lazy(() => import('./components/YouTubeCarousel'));
+const BlogList = React.lazy(() => import('./pages/BlogList'));
+const BlogPost = React.lazy(() => import('./pages/BlogPost'));
 
 const HistoryView = ({ user, onViewResults, onResumeTest }: { user: any, onViewResults?: (results: any) => void, onResumeTest?: (test: any, state: any) => void }) => {
   const [activities, setActivities] = useState<any[]>([]);
@@ -308,10 +312,8 @@ const StatsSection = () => {
           {stats.map((stat, i) => (
             <motion.div 
               key={i}
-              initial={{ opacity: 0, y: 30, scale: 0.9 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.18, duration: 0.6, ease: 'easeOut' }}
+              {...sectionReveal}
+              transition={{ ...sectionReveal.transition, delay: i * 0.18 }}
               className="flex flex-col items-center justify-center space-y-3 sm:space-y-4 py-8 md:py-0 px-2 sm:px-4 group cursor-default"
             >
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-400 shadow-xl" style={{background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', boxShadow: '0 4px 24px rgba(124,58,237,0.2), inset 0 1px 0 rgba(255,255,255,0.08)'}}>
@@ -383,10 +385,8 @@ const HowItWorksSection = () => {
         {steps.map((step, i) => (
           <motion.div 
             key={i}
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: i * 0.2, duration: 0.6, ease: 'easeOut' }}
+            {...sectionRevealSimple}
+            transition={{ ...sectionRevealSimple.transition, delay: i * 0.2 }}
             className="relative z-10 group h-full rounded-[2.5rem]"
             onClick={() => setSelectedStep(i)}
           >
@@ -437,10 +437,7 @@ const HowItWorksSection = () => {
       <AnimatePresence>
         {selectedStep !== null && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 backdrop-blur-xl bg-slate-900/60 transition-all duration-500">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+            <motion.div {...modalBackdrop}
               className="absolute inset-0" 
               onClick={() => setSelectedStep(null)} 
             />
@@ -483,13 +480,7 @@ const HowItWorksSection = () => {
                     className="w-full py-4 sm:py-4.5 rounded-2xl text-sm sm:text-base font-black shadow-2xl shadow-brand-500/30"
                     onClick={() => {
                       setSelectedStep(null);
-                      // Scroll to 'Explore Exams' with a minimal 50ms delay.
-                      // Since the parent wrapper is a standard div, the modal unmounts instantly;
-                      // a 50ms delay allows the browser to paint the modal removal and free up resources
-                      // before starting the smooth scroll, resulting in 60fps buttery scrolling.
-                      setTimeout(() => {
-                        document.getElementById('exams')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }, 50);
+                      scrollToElement('exams', { block: 'start', delay: 50 });
                     }}
                   >
                     Got it, Proceed
@@ -526,9 +517,7 @@ const ProductPreviewSection = () => {
       <div className="relative max-w-6xl mx-auto">
         {/* Mock Dashboard UI */}
         <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
+          {...sectionRevealScale}
           className="glass rounded-2xl md:rounded-3xl premium-shadow border-white/40 overflow-hidden h-[400px] sm:h-[500px] md:h-auto md:aspect-[21/9] relative"
         >
           <div className="absolute inset-0 bg-slate-50/50" />
@@ -603,8 +592,7 @@ const ProductPreviewSection = () => {
                 {[40, 70, 45, 90, 65, 80, 55, 85, 60, 95].map((h, i) => (
                   <motion.div 
                     key={i}
-                    initial={{ height: 0 }}
-                    whileInView={{ height: `${h}%` }}
+                    {...barGrow(`${h}%`)}
                     className="flex-1 bg-gradient-to-t from-brand-500/10 to-brand-500/40 rounded-t-sm sm:rounded-t-lg border-t-2 border-brand-500 relative group cursor-pointer"
                   >
                     <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded shadow-lg pointer-events-none z-20">
@@ -618,10 +606,9 @@ const ProductPreviewSection = () => {
 
           {/* Test UI Overlay */}
           <motion.div 
-            initial={{ x: 100, opacity: 0 }}
-            whileInView={{ x: 0, opacity: 1 }}
+            {...fadeSlideRight}
             viewport={{ once: true }}
-            transition={{ delay: 0.5 }}
+            transition={{ ...fadeSlideRight.transition, delay: 0.5 }}
             className="absolute -right-20 top-16 w-[340px] bg-white/95 backdrop-blur-xl rounded-3xl premium-shadow border border-slate-200/60 p-6 space-y-5 hidden lg:block z-30"
           >
             <div className="flex justify-between items-center border-b border-slate-100 pb-4">
@@ -967,6 +954,7 @@ const TestimonialsSection = () => {
                       <img
                         src={review.avatar}
                         alt={review.name}
+                        loading="lazy"
                         referrerPolicy="no-referrer"
                         draggable={false}
                         className="w-11 h-11 rounded-full object-cover border-2 border-white shadow-sm"
@@ -1087,15 +1075,9 @@ const Navbar = ({
 }) => {
   const { profile, logout } = useAuth();
   const navigate = useNavigate();
-  const [scrolled, setScrolled] = useState(false);
+  const scrolled = useScrollSpy(20);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
@@ -1106,12 +1088,7 @@ const Navbar = ({
       return;
     }
     
-    const element = document.getElementById(id);
-    if (element) {
-      setTimeout(() => {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 10);
-    }
+    scrollToElement(id, { block: 'start' });
   };
 
   const defaultMessage = "Hello! I am reaching out from the OdishaExamPrep website. I have a query.";
@@ -1499,7 +1476,7 @@ const LandingPage = () => {
                     onClick={() => {
                       setShowGuideToast(true);
                       setTimeout(() => setShowGuideToast(false), 6000);
-                      document.getElementById('exams')?.scrollIntoView({ behavior: 'smooth' });
+                      scrollToElement('exams');
                     }}
                   >
                     <span className="relative z-10">Start Free Practice</span>
@@ -1511,12 +1488,8 @@ const LandingPage = () => {
                     onClick={() => {
                       setShowGuideToast(true);
                       setTimeout(() => setShowGuideToast(false), 6000);
-                      const el = document.getElementById('test-series');
-                      if (el) {
-                        el.scrollIntoView({ behavior: 'smooth' });
-                      } else {
-                        document.getElementById('exams')?.scrollIntoView({ behavior: 'smooth' });
-                      }
+                      const target = document.getElementById('test-series') || document.getElementById('exams');
+                      if (target) scrollToElement(target);
                     }}
                   >
                     View Test Series
@@ -1663,11 +1636,7 @@ const LandingPage = () => {
       <AnimatePresence>
         {showAuthModal && (
           <div className="fixed inset-0 bg-slate-950/40 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 backdrop-blur-md">
-            <motion.div 
-              initial={{ y: '100%', opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: '100%', opacity: 0 }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            <motion.div {...slideUpPanel}
               className="glass rounded-t-[2rem] sm:rounded-3xl w-full max-w-md p-6 sm:p-10 pb-10 sm:pb-10 space-y-6 sm:space-y-8 shadow-2xl border-x-0 border-b-0 sm:border border-white/40 max-h-[90vh] overflow-y-auto no-scrollbar"
             >
               <div className="flex justify-between items-center sticky top-0 bg-white/0 z-10">
@@ -1976,11 +1945,10 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                         {sTests.map((test: any, i: number) => (
                           <motion.div 
                             key={test.id}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.1 + (i * 0.05) }}
-                            whileHover={{ y: -6, scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
+                            {...scaleIn}
+                            transition={{ ...scaleIn.transition, delay: 0.1 + (i * 0.05) }}
+                            whileHover={whileHover.liftTap}
+                            whileTap={whileTap.press}
                             className="group premium-shine-container relative bg-white/60 backdrop-blur-md rounded-2xl border border-slate-200/60 p-5 hover:bg-white hover:border-brand-300 hover:shadow-2xl hover:shadow-brand-500/20 transition-all duration-500 cursor-pointer flex flex-col gap-4 overflow-hidden"
                             onClick={() => onLaunchMockTest(test)}
                           >
@@ -2017,11 +1985,10 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                         {sBanks.map((bank: any, i: number) => (
                           <motion.div 
                             key={bank.id}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.15 + (i * 0.05) }}
-                            whileHover={{ y: -6, scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
+                            {...scaleIn}
+                            transition={{ ...scaleIn.transition, delay: 0.15 + (i * 0.05) }}
+                            whileHover={whileHover.liftTap}
+                            whileTap={whileTap.press}
                             className="group premium-shine-container relative bg-white/60 backdrop-blur-md rounded-2xl border border-slate-200/60 p-5 hover:bg-white hover:border-emerald-300 hover:shadow-2xl hover:shadow-emerald-500/20 transition-all duration-500 cursor-pointer flex flex-col gap-4 overflow-hidden"
                             onClick={() => onLaunchBank(bank)}
                           >
@@ -2100,12 +2067,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   useEffect(() => {
     if (selectedExam) {
       if (isGuest) {
-        const examsSection = document.getElementById('exams');
-        if (examsSection) {
-          examsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        scrollToElement('exams', { block: 'start' });
       } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        scrollToTop();
       }
     }
   }, [selectedExam, isGuest]);
@@ -2156,6 +2120,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   <img 
                     src={getDirectImageUrl(selectedBankItem.image)} 
                     alt={selectedBankItem.title} 
+                    loading="lazy"
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
                   />
@@ -2323,9 +2288,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                             category: selectedBankType || practiceSettings.category,
                             topic: selectedBankItem.id
                           });
-                          setTimeout(() => {
-                            document.getElementById('practice-mode-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                          }, 100);
+                          scrollToElement('practice-mode-section', { block: 'start', delay: 100 });
                         }
                       }}
                     >
@@ -3143,11 +3106,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           }
         }} 
         onComplete={(results) => {
-          // Reset scroll position BEFORE switching views so the new component
-          // mounts with the page already at the very top.
-          window.scrollTo(0, 0);
-          document.documentElement.scrollTop = 0;
-          document.body.scrollTop = 0;
+          scrollToTop({ behavior: 'instant' });
           setActiveTest(null);
           setTestResults(results);
           const currentExamName = exams.find(e => e.id === selectedExam)?.name || 'General';
@@ -3227,7 +3186,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           onViewExam={(examId: string | null) => {
              setSelectedExam(examId);
              if (onNavigate) onNavigate('home');
-             setTimeout(() => document.getElementById('exams')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+             scrollToElement('exams', { block: 'start', delay: 100 });
           }}
         />
         {renderCommonModals()}
@@ -3548,7 +3507,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         transition={{ duration: 0.4, ease: 'easeOut' }}
                         onClick={() => {
                           setSelectedExam(exam.id);
-                          setTimeout(() => document.getElementById('exams')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                          scrollToElement('exams', { block: 'start', delay: 50 });
                         }}
                         className="cursor-pointer h-full card-3d-deep rounded-[1.5rem] sm:rounded-[2rem] md:rounded-[2.5rem]"
                       >
@@ -3684,13 +3643,14 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 }}
               >
                 <Card 
-                  onClick={() => { setSelectedBankItem(item); setTimeout(() => document.getElementById('exams')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }}
+                  onClick={() => { setSelectedBankItem(item); scrollToElement('exams', { block: 'start', delay: 50 }); }}
                   className="group cursor-pointer hover:border-brand-300 relative overflow-hidden rounded-[1.5rem] hover:-translate-y-2 transition-all duration-500 h-full border-slate-200/60 shadow-sm hover:shadow-2xl hover:shadow-brand-500/10 flex flex-col"
                 >
                   <div className={cn("h-44 overflow-hidden relative shrink-0", isLocked && "blur-[2px]")}>
                     <img 
                       src={getDirectImageUrl(item.image)} 
                       alt={item.title} 
+                      loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       referrerPolicy="no-referrer"
                     />
@@ -3780,15 +3740,15 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-wrap items-center gap-2 sm:gap-3"
           >
-            <Button variant="outline" className="rounded-full bg-white border-slate-200/60 shadow-sm text-slate-600 font-bold hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 h-9 px-4 text-xs sm:text-sm transition-all" onClick={() => { document.getElementById('question-bank-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
+            <Button variant="outline" className="rounded-full bg-white border-slate-200/60 shadow-sm text-slate-600 font-bold hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 h-9 px-4 text-xs sm:text-sm transition-all" onClick={() => scrollToElement('question-bank-section', { block: 'start' })}>
               <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-brand-500" />
               Question Bank
             </Button>
-            <Button variant="outline" className="rounded-full bg-white border-slate-200/60 shadow-sm text-slate-600 font-bold hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 h-9 px-4 text-xs sm:text-sm transition-all" onClick={() => { document.getElementById('practice-mode-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
+            <Button variant="outline" className="rounded-full bg-white border-slate-200/60 shadow-sm text-slate-600 font-bold hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 h-9 px-4 text-xs sm:text-sm transition-all" onClick={() => scrollToElement('practice-mode-section', { block: 'start' })}>
               <Dumbbell className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-indigo-500" />
               Practice Mode
             </Button>
-            <Button variant="outline" className="rounded-full bg-white border-slate-200/60 shadow-sm text-slate-600 font-bold hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 h-9 px-4 text-xs sm:text-sm transition-all" onClick={() => { document.getElementById('test-series')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
+            <Button variant="outline" className="rounded-full bg-white border-slate-200/60 shadow-sm text-slate-600 font-bold hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 h-9 px-4 text-xs sm:text-sm transition-all" onClick={() => scrollToElement('test-series', { block: 'start' })}>
               <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-amber-500" />
               Mock Tests
             </Button>
@@ -4064,10 +4024,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 hidden: { y: 20, opacity: 0 },
                 show: { y: 0, opacity: 1 }
               }}
+              whileHover={whileHover.liftTap}
+              whileTap={whileTap.press}
             >
               <Card 
-                onClick={() => { setSelectedBankType(item.id); setTimeout(() => document.getElementById('exams')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }}
-                className="p-5 sm:p-6 lg:p-8 flex flex-col justify-between bg-gradient-to-br from-white to-slate-50/50 backdrop-blur-md border border-white/20 shadow-sm hover:shadow-2xl hover:shadow-brand-500/10 hover:-translate-y-2 transition-all duration-500 rounded-[1.5rem] cursor-pointer group relative overflow-hidden h-full"
+                onClick={() => { setSelectedBankType(item.id); scrollToElement('exams', { block: 'start', delay: 50 }); }}
+                className="p-5 sm:p-6 lg:p-8 flex flex-col justify-between bg-gradient-to-br from-white to-slate-50/50 backdrop-blur-md border border-white/20 shadow-sm hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 rounded-[1.5rem] cursor-pointer group relative overflow-hidden h-full"
               >
                 <div className="absolute -right-6 -top-6 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-colors" />
                 
@@ -4589,8 +4551,8 @@ const WhatsAppButton = () => {
       rel="noopener noreferrer"
       initial={{ opacity: 0, scale: 0.5, y: 50 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      whileHover={{ y: -5 }}
-      whileTap={{ scale: 0.9 }}
+      whileHover={whileHover.subtle}
+      whileTap={whileTap.pressMedium}
       className={cn(
         "fixed right-4 sm:right-8 z-[100] group transition-all duration-500",
         user ? "bottom-[100px] sm:bottom-8" : "bottom-6 sm:bottom-8"
@@ -4638,7 +4600,7 @@ const ScrollToTop = () => {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    scrollToTop({ behavior: 'auto' });
   }, [pathname]);
 
   return null;
@@ -4754,7 +4716,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900">
-      <Routes>
+      <AnimatedRoutes>
         <Route path="/admin-login" element={<AdminLoginPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
@@ -4831,7 +4793,7 @@ function AppContent() {
           } 
         />
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      </AnimatedRoutes>
       <WhatsAppButton />
     </div>
   );

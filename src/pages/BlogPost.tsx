@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { Calendar, ChevronLeft, BookMarked, Award, Zap, Sparkles, ChevronRight, Lock, CheckCircle2 } from 'lucide-react';
 import { examService, Exam, MockTest, QuestionBank } from '../lib/examService';
 import { getDirectImageUrl, cn } from '../lib/utils';
+import { fadeSlideDown, durations } from '../lib/animations';
+import PageLayout from '../components/PageLayout';
 
 export default function BlogPost() {
   const { id } = useParams<{ id: string }>();
@@ -18,9 +20,8 @@ export default function BlogPost() {
         const exams = await examService.getAllExams();
         const found = exams.find(e => e.id === id && e.category === 'blog');
         setBlog(found || null);
-        
+
         if (found) {
-          // SEO Optimization
           const seoTitle = found.metaTitle || `${found.name} | OdishaExamPrep`;
           document.title = seoTitle;
 
@@ -32,7 +33,6 @@ export default function BlogPost() {
           }
           metaDesc.setAttribute('content', found.metaDescription || (found.description.replace(/<[^>]*>/g, '').substring(0, 160) + '...'));
 
-          // JSON-LD
           const schemaJson = {
             "@context": "https://schema.org",
             "@type": "BlogPosting",
@@ -42,14 +42,13 @@ export default function BlogPost() {
             "datePublished": found.examDate || found.createdAt,
             "author": { "@type": "Organization", "name": "OdishaExamPrep" }
           };
-          
+
           const script = document.createElement('script');
           script.type = 'application/ld+json';
           script.id = 'json-ld-schema';
           script.text = JSON.stringify(schemaJson);
           document.head.appendChild(script);
 
-          // Fetch related promotional content
           if (found.targetExamId) {
             const [allBanks, allTests] = await Promise.all([
               examService.getAllQuestionBanks(),
@@ -71,37 +70,37 @@ export default function BlogPost() {
       }
     };
     fetchBlog();
-    
-    return () => { 
-      document.title = 'OdishaExamPrep'; 
+
+    return () => {
+      document.title = 'OdishaExamPrep';
       document.getElementById('json-ld-schema')?.remove();
     };
   }, [id]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+      <PageLayout className="flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-brand-600 border-t-transparent rounded-full animate-spin" />
-      </div>
+      </PageLayout>
     );
   }
 
   if (!blog) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#F8FAFC] pb-20">
+      <PageLayout className="flex flex-col items-center justify-center pb-20">
         <h1 className="text-3xl font-black text-slate-800 mb-4">Post Not Found</h1>
         <Link to="/blog" className="px-6 py-3 bg-brand-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all">
           Back to Blog
         </Link>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans pb-24">
+    <PageLayout>
       <div className="w-full h-64 sm:h-80 bg-slate-900 relative overflow-hidden flex items-end">
          {blog.icon ? (
-            <img src={getDirectImageUrl(blog.icon)} alt={blog.name} className="absolute inset-0 w-full h-full object-cover opacity-30" />
+             <img src={getDirectImageUrl(blog.icon)} alt={blog.name} loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-30" />
          ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-indigo-950 opacity-90" />
          )}
@@ -110,35 +109,35 @@ export default function BlogPost() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 sm:-mt-40 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-          
+
           {/* Main Content Area */}
           <div className="lg:col-span-8">
             <Link to="/blog" className="inline-flex items-center gap-2 text-brand-600 hover:text-brand-700 font-bold mb-4 sm:mb-8 bg-white/50 backdrop-blur px-4 py-2 rounded-lg transition-colors shadow-sm w-fit border border-white/60 text-sm sm:text-base">
               <ChevronLeft className="w-4 h-4" /> Back to Articles
             </Link>
 
-            <motion.article 
-              initial={{ opacity: 0, y: -40 }} 
-              animate={{ opacity: 1, y: 0 }} 
+            <motion.article
+              {...fadeSlideDown}
+              transition={{ ...fadeSlideDown.transition, duration: durations.slow }}
               className="bg-white rounded-[2rem] sm:rounded-3xl p-6 sm:p-8 md:p-14 shadow-xl border border-slate-200/50"
             >
               <div className="flex items-center gap-2 sm:gap-3 text-slate-500 font-semibold mb-4 sm:mb-6 text-sm sm:text-base">
                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-brand-600" />
                  {blog.examDate ? new Date(blog.examDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : 'Recent Update'}
               </div>
-              
+
               <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight mb-8 sm:mb-12">
                 {blog.name}
               </h1>
 
-              <div 
-                 className="prose prose-base sm:prose-lg prose-slate max-w-none 
-                            prose-headings:font-black prose-headings:tracking-tight prose-headings:text-slate-900 
-                            prose-p:text-slate-700 prose-p:leading-relaxed 
+              <div
+                 className="prose prose-base sm:prose-lg prose-slate max-w-none
+                            prose-headings:font-black prose-headings:tracking-tight prose-headings:text-slate-900
+                            prose-p:text-slate-700 prose-p:leading-relaxed
                             prose-a:text-brand-600 prose-a:font-semibold hover:prose-a:text-brand-700
                             prose-img:rounded-2xl prose-img:shadow-lg
                             prose-pre:bg-slate-900 prose-pre:rounded-xl"
-                 dangerouslySetInnerHTML={{ __html: blog.description }} 
+                 dangerouslySetInnerHTML={{ __html: blog.description }}
               />
             </motion.article>
           </div>
@@ -160,9 +159,9 @@ export default function BlogPost() {
                         <span className="text-sm font-black text-slate-500 uppercase tracking-widest">Question Banks</span>
                       </div>
                       {relatedBanks.map(bank => (
-                        <Link 
-                          key={bank.id} 
-                          to="/dashboard" 
+                        <Link
+                          key={bank.id}
+                          to="/"
                           className="group block bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-brand-200 transition-all"
                         >
                           <div className="flex gap-4">
@@ -200,9 +199,9 @@ export default function BlogPost() {
                         let isPremium = false;
                         try { isPremium = JSON.parse(test.seriesId).isPremium; } catch(e){}
                         return (
-                          <Link 
-                            key={test.id} 
-                            to="/dashboard" 
+                          <Link
+                            key={test.id}
+                            to="/"
                             className="group block bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-brand-200 transition-all"
                           >
                             <div className="flex gap-4">
@@ -231,8 +230,8 @@ export default function BlogPost() {
                     </div>
                   )}
 
-                  <Link 
-                    to="/dashboard" 
+                  <Link
+                    to="/"
                     className="flex items-center justify-center gap-2 w-full py-4 bg-brand-600 text-white rounded-2xl font-black shadow-lg hover:shadow-xl hover:bg-brand-700 transition-all mt-4"
                   >
                     Explore All Content <ChevronRight className="w-5 h-5" />
@@ -247,7 +246,7 @@ export default function BlogPost() {
                     </div>
                     <h3 className="text-2xl font-black mb-4 relative z-10">Start Your Journey with OEP</h3>
                     <p className="text-white/80 font-bold text-sm mb-6 relative z-10">Get access to 50k+ questions and premium mock tests tailored for Odisha excellence.</p>
-                    <Link to="/dashboard" className="inline-flex items-center gap-2 bg-white text-brand-600 px-6 py-3 rounded-xl font-black text-sm hover:shadow-xl transition-all relative z-10">
+                    <Link to="/" className="inline-flex items-center gap-2 bg-white text-brand-600 px-6 py-3 rounded-xl font-black text-sm hover:shadow-xl transition-all relative z-10">
                       Go to Dashboard <ChevronRight className="w-4 h-4" />
                     </Link>
                  </div>
@@ -256,6 +255,6 @@ export default function BlogPost() {
           </aside>
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }
