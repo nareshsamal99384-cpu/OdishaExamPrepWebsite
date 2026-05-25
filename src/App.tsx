@@ -3283,19 +3283,23 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   const canResume = Array.isArray(a.metadata?.test?.questions) && a.metadata.test.questions.length > 0;
 
                   return (
-                    <div
+                    <motion.div
                       key={i}
+                      {...scaleIn}
+                      transition={{ ...scaleIn.transition, delay: i * 0.06 }}
+                      whileHover={whileHover.subtle}
+                      whileTap={whileTap.press}
                       onClick={() => {
-                        if (!canResume) return; // Don't try to start a test without questions
+                        if (!canResume) return;
                         setActiveTestState({ ...a.metadata, resumeSessionId: a.metadata?.resumeSessionId || a.metadata?.test?.id });
                         setActiveTest(a.metadata.test);
                       }}
-                      className={`snap-start shrink-0 w-[72vw] sm:w-[300px] lg:w-[340px] bg-white rounded-2xl border border-amber-100 hover:border-amber-400 hover:shadow-md hover:shadow-amber-500/10 transition-all group active:scale-[0.97] p-4 sm:p-5 flex flex-col gap-3 ${
+                      className={`snap-start shrink-0 w-[72vw] sm:w-[300px] lg:w-[340px] bg-white rounded-2xl border border-amber-100 hover:border-amber-400 hover:shadow-md hover:shadow-amber-500/10 transition-all group active:scale-[0.97] p-4 sm:p-5 flex flex-col gap-3 premium-shine-container ${
                         canResume ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed'
                       }`}
                     >
                       {/* Top row: icon + text */}
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 relative z-10">
                         <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center shrink-0 shadow-md shadow-amber-500/30 group-hover:scale-110 transition-transform">
                           <Play className="w-4 h-4 text-white fill-white ml-0.5" />
                         </div>
@@ -3311,13 +3315,13 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         </div>
                       </div>
                       {/* Progress bar at bottom */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 relative z-10">
                         <div className="flex-1 h-1.5 bg-amber-100 rounded-full overflow-hidden">
                           <div className="h-full bg-amber-500 rounded-full" style={{ width: `${progressPct}%` }} />
                         </div>
                         <span className="text-[10px] font-black text-amber-600 shrink-0">{progressPct}%</span>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
@@ -3349,20 +3353,24 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     ? `${a.score}/${a.totalMarks ?? '?'}`
                     : null;
                   return (
-                    <div
+                    <motion.div
                       key={i}
+                      {...scaleIn}
+                      transition={{ ...scaleIn.transition, delay: i * 0.06 }}
+                      whileHover={whileHover.subtle}
+                      whileTap={whileTap.press}
                       onClick={() => {
                         if (isTestResult) setTestResults(a.metadata);
                         else if (a.type === 'question_bank_accessed' && a.metadata?.pdfUrl) window.open(a.metadata.pdfUrl, '_blank');
                       }}
-                      className="snap-start shrink-0 w-[72vw] sm:w-[300px] lg:w-[340px] bg-white rounded-2xl border border-slate-100 hover:border-brand-200 hover:shadow-md hover:shadow-brand-500/10 transition-all cursor-pointer group active:scale-[0.97] flex items-center gap-3 sm:gap-4 p-4 sm:p-5"
+                      className="snap-start shrink-0 w-[72vw] sm:w-[300px] lg:w-[340px] bg-white rounded-2xl border border-slate-100 hover:border-brand-200 hover:shadow-md hover:shadow-brand-500/10 transition-all cursor-pointer group active:scale-[0.97] flex items-center gap-3 sm:gap-4 p-4 sm:p-5 premium-shine-container"
                     >
                       {/* Icon */}
-                      <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 bg-brand-500/10 text-brand-600 group-hover:scale-110 transition-transform">
+                      <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 bg-brand-500/10 text-brand-600 group-hover:scale-110 transition-transform relative z-10">
                         <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" />
                       </div>
                       {/* Text */}
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 relative z-10">
                         <h4 className="font-extrabold text-sm sm:text-base text-slate-900 line-clamp-1 group-hover:text-brand-600 transition-colors">{a.title}</h4>
                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                           <p className="text-xs text-slate-400 font-medium">{new Date(a.timestamp).toLocaleDateString()}</p>
@@ -3377,8 +3385,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         </p>
                       </div>
                       {/* Arrow hint */}
-                      <ChevronRight className="w-4 h-4 text-slate-300 shrink-0 group-hover:text-brand-500 group-hover:translate-x-0.5 transition-all" />
-                    </div>
+                      <ChevronRight className="w-4 h-4 text-slate-300 shrink-0 group-hover:text-brand-500 group-hover:translate-x-0.5 transition-all relative z-10" />
+                    </motion.div>
                   );
                 })}
               </div>
@@ -3641,10 +3649,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   hidden: { opacity: 0, y: 20 },
                   show: { opacity: 1, y: 0 }
                 }}
+                whileHover={whileHover.liftTap}
+                whileTap={whileTap.press}
               >
                 <Card 
                   onClick={() => { setSelectedBankItem(item); scrollToElement('exams', { block: 'start', delay: 50 }); }}
-                  className="group cursor-pointer hover:border-brand-300 relative overflow-hidden rounded-[1.5rem] hover:-translate-y-2 transition-all duration-500 h-full border-slate-200/60 shadow-sm hover:shadow-2xl hover:shadow-brand-500/10 flex flex-col"
+                  className="group cursor-pointer hover:border-brand-300 relative overflow-hidden rounded-[1.5rem] hover:-translate-y-2 transition-all duration-500 h-full border-slate-200/60 shadow-sm hover:shadow-2xl hover:shadow-brand-500/10 flex flex-col premium-shine-container"
                 >
                   <div className={cn("h-44 overflow-hidden relative shrink-0", isLocked && "blur-[2px]")}>
                     <img 
@@ -3662,7 +3672,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       </div>
                     )}
                   </div>
-                  <div className={cn("p-6 flex flex-col flex-1", isLocked && "opacity-60")}>
+                  <div className={cn("p-6 flex flex-col flex-1 relative z-10", isLocked && "opacity-60")}>
                     <div className="flex justify-between items-start mb-4">
                       <h3 className="text-xl font-black text-slate-900 line-clamp-1 group-hover:text-brand-600 transition-colors uppercase tracking-tight">{item.title}</h3>
                       {isLocked && <Lock className="w-4 h-4 text-slate-400" />}
@@ -4029,11 +4039,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             >
               <Card 
                 onClick={() => { setSelectedBankType(item.id); scrollToElement('exams', { block: 'start', delay: 50 }); }}
-                className="p-5 sm:p-6 lg:p-8 flex flex-col justify-between bg-gradient-to-br from-white to-slate-50/50 backdrop-blur-md border border-white/20 shadow-sm hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 rounded-[1.5rem] cursor-pointer group relative overflow-hidden h-full"
+                className="p-5 sm:p-6 lg:p-8 flex flex-col justify-between bg-gradient-to-br from-white to-slate-50/50 backdrop-blur-md border border-white/20 shadow-sm hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 rounded-[1.5rem] cursor-pointer group relative overflow-hidden h-full premium-shine-container"
               >
                 <div className="absolute -right-6 -top-6 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-colors" />
                 
-                <div className="flex-1 pb-6">
+                <div className="flex-1 pb-6 relative z-10">
                   <div className="flex justify-between items-start mb-4 sm:mb-6">
                     <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 premium-gradient rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-500/20 group-hover:scale-110 group-hover:premium-glow transition-all duration-500 shrink-0 relative">
                       {item.icon}
@@ -4321,10 +4331,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
+                whileHover={whileHover.liftTap}
+                whileTap={whileTap.press}
               >
                 <Card 
                   key={test.id} 
-                  className={cn("p-6 bg-white border-slate-200/60 shadow-lg shadow-slate-200/30 rounded-[1.5rem] hover:-translate-y-2 hover:shadow-2xl hover:shadow-brand-500/10 hover:border-brand-200 group transition-all duration-500 cursor-pointer flex flex-col gap-6 relative overflow-hidden", isLocked && "border-amber-200/50 hover:border-amber-300", isPremiumUnlocked && "border-emerald-200/50 hover:border-emerald-300")}
+                  className={cn("p-6 bg-white border-slate-200/60 shadow-lg shadow-slate-200/30 rounded-[1.5rem] hover:-translate-y-2 hover:shadow-2xl hover:shadow-brand-500/10 hover:border-brand-200 group transition-all duration-500 cursor-pointer flex flex-col gap-6 relative overflow-hidden premium-shine-container", isLocked && "border-amber-200/50 hover:border-amber-300", isPremiumUnlocked && "border-emerald-200/50 hover:border-emerald-300")}
                   onClick={() => handleStartTest({ ...test, isPremium, price })}
                 >
                   {isPremiumUnlocked && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none" />}
@@ -4414,9 +4426,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       hidden: { opacity: 0, scale: 0.95, y: 10 },
                       show: { opacity: 1, scale: 1, y: 0 }
                     }}
+                    whileHover={whileHover.liftTap}
+                    whileTap={whileTap.press}
                   >
                     <Card 
-                      className="p-5 sm:p-6 lg:p-8 bg-white border-slate-200/60 shadow-lg shadow-slate-200/30 rounded-[2rem] hover:-translate-y-2 hover:shadow-2xl hover:shadow-brand-500/10 hover:border-brand-200 group transition-all duration-500 cursor-pointer flex flex-col gap-4 sm:gap-6 relative overflow-hidden h-full"
+                      className="p-5 sm:p-6 lg:p-8 bg-white border-slate-200/60 shadow-lg shadow-slate-200/30 rounded-[2rem] hover:-translate-y-2 hover:shadow-2xl hover:shadow-brand-500/10 hover:border-brand-200 group transition-all duration-500 cursor-pointer flex flex-col gap-4 sm:gap-6 relative overflow-hidden h-full premium-shine-container"
                       onClick={() => setSelectedMockCategory(test.id)}
                     >
                       <div className="flex items-center gap-3 sm:gap-4 relative z-10">
@@ -4600,7 +4614,7 @@ const ScrollToTop = () => {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    scrollToTop({ behavior: 'auto' });
+    scrollToTop({ behavior: 'smooth' });
   }, [pathname]);
 
   return null;

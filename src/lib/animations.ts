@@ -78,9 +78,9 @@ export const modalBackdrop = {
 };
 
 export const whileHover = {
-  lift: { y: -6, scale: 1.02, transition: { duration: durations.fast } },
-  liftTap: { y: -6, scale: 1.02 },
-  subtle: { y: -5, transition: { duration: durations.fast } },
+  lift: { y: -6, scale: 1.02, transition: { duration: 0.35, ease: easings.easeOut } },
+  liftTap: { y: -6, scale: 1.02, transition: { duration: 0.35, ease: easings.easeOut } },
+  subtle: { y: -5, transition: { duration: 0.3, ease: easings.easeOut } },
 };
 
 export const whileTap = {
