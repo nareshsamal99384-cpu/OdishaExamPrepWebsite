@@ -530,7 +530,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                     >
                       <div
                         ref={questionTextRef}
-                        className="text-lg sm:text-2xl md:text-3xl lg:text-2xl xl:text-3xl font-semibold sm:font-extrabold text-slate-900 leading-relaxed sm:leading-[1.3] tracking-tight break-words space-y-4"
+                        className="text-lg sm:text-2xl md:text-3xl lg:text-2xl xl:text-3xl font-semibold sm:font-extrabold text-slate-900 leading-relaxed sm:leading-[1.3] tracking-tight break-words overflow-wrap-anywhere space-y-4"
                       >
                         {currentQuestion.questionText.split('\n\n').map((para, i) => (
                           <p key={i}>{para}</p>

@@ -157,7 +157,7 @@ const HistoryView = ({ user, onViewResults, onResumeTest }: { user: any, onViewR
                  
                  {a.score !== undefined && (
                    <div className="text-right">
-                      <span className="font-bold text-brand-600 text-xl">{a.score}/{a.totalMarks}</span>
+                      <span className="font-bold text-brand-600 text-xl">{typeof a.score === 'number' ? Number(a.score.toFixed(2)) : a.score}/{a.totalMarks}</span>
                       <p className="text-xs font-semibold text-slate-400">{Math.round(a.accuracy || 0)}% Accuracy</p>
                    </div>
                  )}
@@ -184,6 +184,16 @@ const HistoryView = ({ user, onViewResults, onResumeTest }: { user: any, onViewR
 // --- Razorpay Helper ---
 const loadRazorpay = () => {
   return new Promise((resolve) => {
+    if ((window as any).Razorpay) {
+      resolve(true);
+      return;
+    }
+    const existingScript = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+    if (existingScript) {
+      existingScript.addEventListener('load', () => resolve(true));
+      existingScript.addEventListener('error', () => resolve(false));
+      return;
+    }
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.onload = () => resolve(true);
@@ -2530,31 +2540,108 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     <Button 
                       className="w-full h-12 rounded-xl text-base font-black premium-gradient shadow-lg shadow-brand-500/20 group/btn relative overflow-hidden"
                       onClick={async () => {
-                        const res = await loadRazorpay();
-                        if (res) {
+                        try {
+                          const res = await loadRazorpay();
+                          if (!res) {
+                            alert('Failed to load payment gateway SDK. Please check your internet connection.');
+                            return;
+                          }
+
+                          // 1. Create order on the server
+                          const orderRes = await fetch('/api/payment/order', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                              amount: paywallPrice * 100, // in paise
+                              currency: 'INR'
+                            })
+                          });
+
+                          let orderData;
+                          const orderText = await orderRes.text();
+                          try {
+                            orderData = orderText ? JSON.parse(orderText) : {};
+                          } catch (e) {
+                            throw new Error(`Invalid response from server. Status: ${orderRes.status}. If you just updated the server, please restart the dev server (npm run dev).`);
+                          }
+
+                          if (!orderRes.ok) {
+                            throw new Error(orderData.message || `Failed to create payment order (status ${orderRes.status}).`);
+                          }
+
+                          if (!orderData.orderId) {
+                            throw new Error('Server did not return a valid order ID. Please verify your Razorpay API key configurations in .env and restart your dev server.');
+                          }
+
+                          // 2. Open Razorpay checkout with the orderId
                           const options = {
-                            key: 'rzp_live_SeeKABRgdgfsWG',
-                            amount: paywallPrice * 100,
-                            currency: 'INR',
+                            key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_StcJAJY1MgRGmJ',
+                            amount: orderData.amount,
+                            currency: orderData.currency,
                             name: 'OdishaExamPrep Premium',
                             description: paywallItemTitle === 'Full Access' ? 'Unlock Full Access' : `Unlock ${paywallItemTitle}`,
-                            handler: async function () {
-                              if (paywallItemId) {
-                                await unlockItem(paywallItemId);
-                              } else {
-                                await grantFullAccess();
+                            order_id: orderData.orderId,
+                            handler: async function (response: any) {
+                              try {
+                                // 3. Verify payment signature on the server
+                                const verifyRes = await fetch('/api/payment/verify', {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json'
+                                  },
+                                  body: JSON.stringify({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature
+                                  })
+                                });
+
+                                let verifyData;
+                                const verifyText = await verifyRes.text();
+                                try {
+                                  verifyData = verifyText ? JSON.parse(verifyText) : {};
+                                } catch (e) {
+                                  throw new Error(`Invalid verification response from server. Status: ${verifyRes.status}`);
+                                }
+
+                                if (!verifyRes.ok) {
+                                  throw new Error(verifyData.message || 'Payment verification failed.');
+                                }
+                                if (verifyData.success) {
+                                  if (paywallItemId) {
+                                    await unlockItem(paywallItemId);
+                                  } else {
+                                    await grantFullAccess();
+                                  }
+                                  setShowPaywall(false);
+                                  setPaywallItemId(null);
+                                } else {
+                                  alert('Payment verification failed. Please contact support.');
+                                }
+                              } catch (err: any) {
+                                console.error('Verification error:', err);
+                                alert('Error verifying payment: ' + err.message);
                               }
-                              setShowPaywall(false);
-                              setPaywallItemId(null);
                             },
                             prefill: {
-                              name: profile?.displayName,
-                              email: profile?.email
+                              name: profile?.displayName || '',
+                              email: profile?.email || ''
                             },
-                            theme: { color: '#4f46e5' }
+                            theme: { color: '#4f46e5' },
+                            modal: {
+                              ondismiss: function () {
+                                console.log('Payment checkout closed');
+                              }
+                            }
                           };
+
                           const rzp = new (window as any).Razorpay(options);
                           rzp.open();
+                        } catch (err: any) {
+                          console.error('Payment initialization failed:', err);
+                          alert('Payment initialization failed: ' + err.message);
                         }
                       }}
                     >
@@ -3019,32 +3106,99 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   };
 
   const handlePayment = async (test: any) => {
-    const res = await loadRazorpay();
-    if (!res) {
-      alert('Razorpay SDK failed to load. Are you online?');
-      return;
-    }
-
-    const options = {
-      key: 'rzp_live_SeeKABRgdgfsWG', // Razorpay Live API Key
-      amount: 49900,
-      currency: 'INR',
-      name: 'OdishaExamPrep',
-      description: `Purchase ${test.title}`,
-      handler: function (response: any) {
-        alert('Payment Successful! Payment ID: ' + response.razorpay_payment_id);
-      },
-      prefill: {
-        name: profile?.displayName,
-        email: profile?.email
-      },
-      theme: {
-        color: '#4f46e5'
+    try {
+      const res = await loadRazorpay();
+      if (!res) {
+        alert('Razorpay SDK failed to load. Are you online?');
+        return;
       }
-    };
 
-    const paymentObject = new (window as any).Razorpay(options);
-    paymentObject.open();
+      const price = test.price || 499;
+      const orderRes = await fetch('/api/payment/order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          amount: price * 100, // in paise
+          currency: 'INR'
+        })
+      });
+
+      let orderData;
+      const orderText = await orderRes.text();
+      try {
+        orderData = orderText ? JSON.parse(orderText) : {};
+      } catch (e) {
+        throw new Error(`Invalid response from server. Status: ${orderRes.status}. If you just updated the server, please restart the dev server (npm run dev).`);
+      }
+
+      if (!orderRes.ok) {
+        throw new Error(orderData.message || `Failed to create payment order (status ${orderRes.status}).`);
+      }
+
+      if (!orderData.orderId) {
+        throw new Error('Server did not return a valid order ID. Please verify your Razorpay API key configurations in .env and restart your dev server.');
+      }
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_StcJAJY1MgRGmJ',
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'OdishaExamPrep',
+        description: `Purchase ${test.title}`,
+        order_id: orderData.orderId,
+        handler: async function (response: any) {
+          try {
+            const verifyRes = await fetch('/api/payment/verify', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+
+            let verifyData;
+            const verifyText = await verifyRes.text();
+            try {
+              verifyData = verifyText ? JSON.parse(verifyText) : {};
+            } catch (e) {
+              throw new Error(`Invalid verification response from server. Status: ${verifyRes.status}`);
+            }
+
+            if (!verifyRes.ok) {
+              throw new Error(verifyData.message || 'Payment verification failed.');
+            }
+            if (verifyData.success) {
+              await unlockItem(test.id);
+              alert('Payment Successful and Verified! Course unlocked.');
+            } else {
+              alert('Payment verification failed. Please contact support.');
+            }
+          } catch (err: any) {
+            console.error('Verification error:', err);
+            alert('Error verifying payment: ' + err.message);
+          }
+        },
+        prefill: {
+          name: profile?.displayName || '',
+          email: profile?.email || ''
+        },
+        theme: {
+          color: '#4f46e5'
+        }
+      };
+
+      const paymentObject = new (window as any).Razorpay(options);
+      paymentObject.open();
+    } catch (err: any) {
+      console.error('Payment initialization failed:', err);
+      alert('Payment initialization failed: ' + err.message);
+    }
   };
 
   if (showAdmin) {
@@ -3348,9 +3502,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 {activities.filter((a: any) => a.type !== 'test_incomplete').slice(0, 6).map((a: any, i: number) => {
                   const isTestResult = a.type === 'mock_test_completed' || a.type === 'practice_test_completed';
                   const scoreLabel = a.metadata?.score !== undefined
-                    ? `${a.metadata.score}/${a.metadata.totalMarks ?? a.metadata.total ?? '?'}`
+                    ? `${typeof a.metadata.score === 'number' ? Number(a.metadata.score.toFixed(2)) : a.metadata.score}/${a.metadata.totalMarks ?? a.metadata.total ?? '?'}`
                     : a.score !== undefined
-                    ? `${a.score}/${a.totalMarks ?? '?'}`
+                    ? `${typeof a.score === 'number' ? Number(a.score.toFixed(2)) : a.score}/${a.totalMarks ?? '?'}`
                     : null;
                   return (
                     <motion.div
