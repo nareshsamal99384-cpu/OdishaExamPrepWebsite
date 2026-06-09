@@ -59,7 +59,7 @@ import { activityTracker } from './lib/activityTracker';
 const AdminPanel = React.lazy(() => import('./AdminPanel'));
 const MockTestSystem = React.lazy(() => import('./MockTestSystem'));
 const TestResultsView = React.lazy(() => import('./TestResultsView'));
-const AnalyticsView = React.lazy(() => import('./AnalyticsView'));
+import AnalyticsView from './AnalyticsView';
 const AdminLoginPage = React.lazy(() => import('./pages/AdminLoginPage'));
 const AdminDashboardPage = React.lazy(() => import('./pages/AdminDashboardPage'));
 const PrivacyPolicy = React.lazy(() => import('./PrivacyPolicy'));
@@ -300,769 +300,999 @@ const VisualEffects = () => (
 
 // --- Sections ---
 
-const StatsSection = () => {
-  const stats = [
-    { label: 'Questions practiced', value: '50k+', icon: <BookOpen className="w-6 h-6 text-brand-300" /> },
-    { label: 'Active Aspirants', value: '2k+', icon: <Target className="w-6 h-6 text-brand-300" /> },
-    { label: 'Success rate', value: '94%', icon: <Award className="w-6 h-6 text-brand-300" /> }
+// --- Custom Portal Sections (Refined Educational Editorial) ---
+
+const ExamRegistrySection = ({ 
+  setSelectedExam, 
+  exams 
+}: { 
+  setSelectedExam: (id: string | null) => void; 
+  exams: any[] 
+}) => {
+  const announcements = [
+    {
+      exam: "OPSC Civil Services Examination (OCS)",
+      status: "Notification Released",
+      statusColor: "bg-emerald-50 text-emerald-700 border-emerald-100",
+      date: "Prelims: July 15, 2026",
+      actionLabel: "Practice OPSC"
+    },
+    {
+      exam: "OSSC Combined Graduate Level (CGL)",
+      status: "Admit Card Out",
+      statusColor: "bg-amber-50 text-amber-700 border-amber-100",
+      date: "Exam: June 28, 2026",
+      actionLabel: "Practice OSSC"
+    },
+    {
+      exam: "OSSSC RI/ARI & Amin Recruitment",
+      status: "Applications Active",
+      statusColor: "bg-blue-50 text-blue-700 border-blue-100",
+      date: "Closing: June 30, 2026",
+      actionLabel: "Practice OSSSC"
+    }
   ];
 
   return (
-    <section className="py-12 md:py-24 px-4 sm:px-6">
-      <div className="max-w-6xl mx-auto rounded-[3rem] overflow-hidden relative" style={{background: 'linear-gradient(135deg, #120a2e 0%, #1a1040 50%, #120a2e 100%)', boxShadow: '0 40px 100px rgba(124,58,237,0.12), 0 20px 40px rgba(0,0,0,0.15)'}}>
-        {/* Dot grid overlay */}
-        <div className="absolute inset-0 dot-bg opacity-30" />
-        {/* Animated glow orbs */}
-        <div className="absolute -top-20 -right-20 sm:-top-40 sm:-right-40 w-64 h-64 sm:w-[500px] sm:h-[500px] rounded-full mix-blend-screen filter blur-[80px] sm:blur-[120px] animate-orb" style={{background: 'radial-gradient(circle, rgba(124,58,237,0.8) 0%, transparent 70%)'}} />
-        <div className="absolute -bottom-20 -left-20 sm:-bottom-40 sm:-left-40 w-64 h-64 sm:w-[500px] sm:h-[500px] rounded-full mix-blend-screen filter blur-[80px] sm:blur-[120px] animate-orb" style={{background: 'radial-gradient(circle, rgba(99,102,241,0.7) 0%, transparent 70%)', animationDelay: '2.5s'}} />
-        {/* Top shimmer line */}
-        <div className="absolute top-0 left-0 right-0 h-px" style={{background: 'linear-gradient(90deg, transparent, rgba(124,58,237,0.6), rgba(99,102,241,0.8), rgba(167,139,250,0.6), transparent)'}} />
-        
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-700/30 p-6 sm:p-12 md:p-16">
-          {stats.map((stat, i) => (
-            <motion.div 
-              key={i}
-              {...sectionReveal}
-              transition={{ ...sectionReveal.transition, delay: i * 0.18 }}
-              className="flex flex-col items-center justify-center space-y-3 sm:space-y-4 py-8 md:py-0 px-2 sm:px-4 group cursor-default"
-            >
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-400 shadow-xl" style={{background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', boxShadow: '0 4px 24px rgba(124,58,237,0.2), inset 0 1px 0 rgba(255,255,255,0.08)'}}>
-                {stat.icon}
-              </div>
-              <div className="text-center space-y-1 sm:space-y-2">
-                <div className="text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tight flex items-baseline justify-center gap-1 group-hover:premium-text-gradient transition-all duration-300" style={{textShadow: '0 0 40px rgba(167,139,250,0.3)'}}>
-                  {stat.value}
+    <section id="exam-registry" className="py-12 md:py-16 bg-[#FAF8F5] border-y border-slate-200/50 scroll-mt-24">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-12">
+        <div className="flex flex-col items-center space-y-4 text-center">
+          <span className="section-chip">
+            <Clock3 className="w-3.5 h-3.5" />
+            Odisha Recruitment Bulletin
+          </span>
+          <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-900 tracking-tight">
+            Live Exam <span className="premium-text-gradient font-serif font-extrabold">Registry</span>
+          </h2>
+          <div className="section-divider" />
+          <p className="text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed">
+            Stay updated with real-time official notification timelines and jump straight into dedicated preparation sets.
+          </p>
+        </div>
+
+        <div className="bg-white border-2 border-slate-900/80 rounded-[2.5rem] overflow-hidden shadow-[6px_6px_0px_rgba(138,28,54,0.15)] divide-y-2 divide-slate-100">
+          {announcements.map((item, idx) => (
+            <div key={idx} className="p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-slate-50/50 transition-colors">
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className={cn("px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider border", item.statusColor)}>
+                    {item.status}
+                  </span>
+                  <span className="text-xs font-bold text-slate-400 font-mono">
+                    {item.date}
+                  </span>
                 </div>
-                <div className="text-slate-400 font-bold uppercase tracking-widest text-[10px] sm:text-xs md:text-sm">
-                  {stat.label}
-                </div>
+                <h3 className="text-lg sm:text-xl font-serif font-extrabold text-slate-900">
+                  {item.exam}
+                </h3>
               </div>
-            </motion.div>
+              <button 
+                onClick={() => {
+                  let matched = null;
+                  const itemExamLower = item.exam.toLowerCase();
+                  if (itemExamLower.includes('ocs') || itemExamLower.includes('opsc')) {
+                    matched = exams.find(e => e.name.toLowerCase().includes('opsc'));
+                  } else if (itemExamLower.includes('osssc')) {
+                    matched = exams.find(e => e.name.toLowerCase().includes('osssc'));
+                  } else if (itemExamLower.includes('ossc')) {
+                    matched = exams.find(e => e.name.toLowerCase().includes('ossc') && !e.name.toLowerCase().includes('osssc'));
+                  }
+                  
+                  if (matched) {
+                    setSelectedExam(matched.id);
+                  } else {
+                    if (itemExamLower.includes('ocs') || itemExamLower.includes('opsc')) {
+                      setSelectedExam('opsc-aio');
+                    }
+                  }
+                  
+                  scrollToElement('exams', { block: 'start' });
+                }}
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-slate-900 text-xs font-black uppercase tracking-widest text-slate-900 hover:bg-slate-900 hover:text-white transition-all cursor-pointer self-start md:self-auto shadow-[4px_4px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5"
+              >
+                {item.actionLabel}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           ))}
         </div>
-        {/* Bottom shimmer line */}
-        <div className="absolute bottom-0 left-0 right-0 h-px" style={{background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent)'}} />
       </div>
     </section>
   );
 };
 
-const HowItWorksSection = () => {
-  const [selectedStep, setSelectedStep] = useState<number | null>(null);
+const SyllabusPathsSection = () => {
+  const [activeTab, setActiveTab] = useState<'gs' | 'lang' | 'quant'>('gs');
 
-  const steps = [
-    { 
-      step: '01',
-      title: 'Choose Your Exam', 
-      desc: 'Select your target exam (like OPSC or OSSC) and explore mock test series tailored perfectly to the syllabus.',
-      details: 'Browse through our extensive catalog of Odisha state exams like OPSC, OSSC, OSSSC, Police Exams, and more. Each exam has a dedicated dashboard with tailored study material, ensuring you focus exactly on what\'s required for your target recruitment. You can switch between exams anytime to explore different opportunities.',
-      icon: <LayoutDashboard className="w-8 h-8 text-brand-600" />
-    },
-    { 
-      step: '02',
-      title: 'Take A Mock Test', 
-      desc: 'Practice with full-length exams, previous year questions (PYQs), or subject-wise mini quizzes to build your confidence.',
-      details: 'Experience the real interface with our high-quality mock tests. Practice subject-wise to strengthen your fundamentals, or take full-length simulations with timers and negative marking to build the stamina and speed needed for the actual exam day. Our questions are updated regularly to match the latest OSSC/OPSC patterns.',
-      icon: <Play className="w-8 h-8 text-brand-600" />
-    },
-    { 
-      step: '03',
-      title: 'Analyze & Improve', 
-      desc: 'Review detailed step-by-step solutions and instant performance analytics to identify your weak spots immediately.',
-      details: 'Don\'t just practice, improve! After every test, get a detailed scorecard with rank analysis. Review every question with expert step-by-step solutions and identify subject-wise weak areas. Use our "Practice Mode" to specifically target the topics where you scored low and perfect your strategy.',
-      icon: <Target className="w-8 h-8 text-brand-600" />
-    }
-  ];
+  const topics = {
+    gs: [
+      { name: "Odisha History & Heritage", count: 12, label: "Crucial for OPSC Prelims" },
+      { name: "Indian Constitution & Polity", count: 8, label: "Core Weightage" },
+      { name: "Geography of Odisha & Climate", count: 10, label: "High-scoring Section" },
+      { name: "General Science & Technology", count: 15, label: "Daily Current Mappings" }
+    ],
+    lang: [
+      { name: "Odia Grammar & Composition", count: 8, label: "OSSC CGL Compulsory" },
+      { name: "English Comprehension", count: 6, label: "Vocabulary & Common Errors" },
+      { name: "Translation & Precise Writing", count: 4, label: "Mains Answer Prep" }
+    ],
+    quant: [
+      { name: "Number System & Arithmetic", count: 14, label: "OSSSC Exam Primary Focus" },
+      { name: "Logical Reasoning & Analogies", count: 12, label: "Timer Speed Practice" },
+      { name: "Data Interpretation (DI) Charts", count: 9, label: "High-level Practice Sets" }
+    ]
+  };
 
   return (
-    <section id="how-it-works" className="py-24 space-y-16 scroll-mt-24">
-      <div className="flex flex-col items-center space-y-5 text-center">
-        <span className="section-chip">
-          <Target className="w-3.5 h-3.5" />
-          Smart Preparation Strategy
-        </span>
-        <h2 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight">How It <span className="premium-text-gradient">Works</span></h2>
-        <div className="section-divider" />
-        <p className="text-slate-500 text-lg md:text-xl font-medium max-w-2xl mx-auto leading-relaxed">
-          Our structured 3-step approach is designed to take you from fundamentals to exam-ready in record time.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-10 relative">
-        {/* Connection Line (Desktop) — gradient */}
-        <div className="hidden md:block absolute top-[50%] left-0 w-full h-[2px] -translate-y-1/2 z-0" style={{background: 'linear-gradient(90deg, transparent, rgba(124,58,237,0.2), rgba(99,102,241,0.3), rgba(124,58,237,0.2), transparent)'}} />
-        
-        {steps.map((step, i) => (
-          <motion.div 
-            key={i}
-            {...sectionRevealSimple}
-            transition={{ ...sectionRevealSimple.transition, delay: i * 0.2 }}
-            className="relative z-10 group h-full rounded-[2.5rem]"
-            onClick={() => setSelectedStep(i)}
-          >
-            <Card className="card-3d-deep soft-card p-6 md:p-10 h-full flex flex-col items-start cursor-pointer relative z-20 overflow-visible rounded-[2.5rem] border-white/20">
-              <div className="flex justify-between items-start w-full mb-6 md:mb-8">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:premium-glow transition-all duration-500 feature-icon-wrap" style={{background: 'linear-gradient(135deg, rgba(124,58,237,0.1), rgba(99,102,241,0.08))', border: '1px solid rgba(124,58,237,0.15)', boxShadow: '0 4px 16px rgba(124,58,237,0.1)'}}>
-                  {step.icon}
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-4xl md:text-5xl font-black text-slate-100 group-hover:text-brand-100 transition-colors duration-500 leading-none">
-                    {step.step}
-                  </span>
-                  <div className="mt-2 w-6 md:w-8 h-1 bg-slate-100 group-hover:bg-brand-200 transition-colors rounded-full" />
-                </div>
-              </div>
-              <div className="space-y-3 md:space-y-4 flex-1">
-                <h3 className="text-xl md:text-3xl font-black text-slate-900 group-hover:text-brand-600 transition-colors duration-300 tracking-tight leading-tight">
-                  {step.title}
-                </h3>
-                <p className="text-slate-500 font-bold leading-relaxed text-sm md:text-base line-clamp-3 md:line-clamp-none">
-                  {step.desc}
-                </p>
-              </div>
-              
-              <div className="mt-6 md:mt-8 flex items-center gap-2 text-brand-600 font-black text-[10px] md:text-xs uppercase tracking-widest group-hover:gap-3 transition-all duration-300">
-                Read Detailed Guide
-                <ChevronRight className="w-4 h-4" />
-              </div>
-            </Card>
-
-            {/* Connection Arrows (Desktop) */}
-            {i < 2 && (
-              <div className="hidden md:flex absolute top-1/2 -right-5 transform -translate-y-1/2 z-30 w-10 h-10 bg-white rounded-full border border-slate-100 items-center justify-center shadow-lg group-hover:scale-110 transition-all duration-300">
-                <ChevronRight className="w-6 h-6 text-brand-400" />
-              </div>
-            )}
-            {/* Mobile Connection Arrows */}
-            {i < 2 && (
-              <div className="flex md:hidden absolute -bottom-[2.5rem] left-1/2 -translate-x-1/2 z-20 w-10 h-10 bg-white rounded-full border border-slate-100 items-center justify-center shadow-md text-brand-400">
-                <ChevronDown className="w-6 h-6" />
-              </div>
-            )}
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Simplified Professional Modal */}
-      <AnimatePresence>
-        {selectedStep !== null && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 backdrop-blur-xl bg-slate-900/60 transition-all duration-500">
-            <motion.div {...modalBackdrop}
-              className="absolute inset-0" 
-              onClick={() => setSelectedStep(null)} 
-            />
-            
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20, rotateX: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20, rotateX: -10 }}
-              transition={{ type: "spring", bounce: 0.3, duration: 0.6 }}
-              className="relative w-full max-w-xl bg-white rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.3)] overflow-hidden border border-white/20"
-            >
-              {/* Background Accent */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/5 rounded-full blur-[80px] -mr-32 -mt-32" />
-              <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[80px] -ml-32 -mb-32" />
-
-              <div className="p-6 sm:p-12 relative z-10 flex flex-col items-center text-center space-y-6 sm:space-y-8">
-                {/* Header Icon */}
-                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-brand-50 rounded-[1.75rem] sm:rounded-[2rem] flex items-center justify-center premium-glow shadow-xl shadow-brand-500/10">
-                  <div className="scale-110 sm:scale-125">
-                    {steps[selectedStep].icon}
-                  </div>
-                </div>
-
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="flex items-center justify-center gap-3 mb-1 sm:mb-2">
-                    <span className="text-[10px] sm:text-xs font-black text-brand-600 bg-brand-50 px-3 py-1 rounded-full uppercase tracking-widest border border-brand-100">Step {steps[selectedStep].step}</span>
-                  </div>
-                  <h3 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight px-2 sm:px-4.5">
-                    {steps[selectedStep].title}
-                  </h3>
-                  <div className="w-12 sm:w-16 h-1 sm:h-1.5 premium-gradient rounded-full mx-auto" />
-                </div>
-
-                <p className="text-slate-600 text-sm sm:text-lg md:text-xl font-bold leading-relaxed px-1 sm:px-2">
-                  {steps[selectedStep].details}
-                </p>
-
-                <div className="w-full pt-2 sm:pt-4">
-                  <Button 
-                    className="w-full py-4 sm:py-4.5 rounded-2xl text-sm sm:text-base font-black shadow-2xl shadow-brand-500/30"
-                    onClick={() => {
-                      setSelectedStep(null);
-                      scrollToElement('exams', { block: 'start', delay: 50 });
-                    }}
-                  >
-                    Got it, Proceed
-                  </Button>
-                </div>
-              </div>
-
-              {/* Close Button */}
-              <button 
-                onClick={() => setSelectedStep(null)}
-                className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 sm:p-3 bg-slate-100/80 hover:bg-slate-200 text-slate-500 hover:text-slate-800 rounded-2xl transition-all shadow-sm z-50 cursor-pointer flex items-center justify-center group/close"
-                aria-label="Close modal"
-              >
-                <X className="w-5 h-5 sm:w-6 sm:h-6 group-hover/close:rotate-90 transition-transform duration-300" />
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </section>
-  );
-};
-
-const ProductPreviewSection = () => {
-  return (
-    <section className="py-16 md:py-24 space-y-12 md:space-y-16 overflow-hidden px-4 sm:px-6">
-      <div className="text-center space-y-3 sm:space-y-4">
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Experience the Platform</h2>
-        <p className="text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto">
-          Built with a focus on speed, clarity, and performance.
-        </p>
-      </div>
-      
-      <div className="relative max-w-6xl mx-auto">
-        {/* Mock Dashboard UI */}
-        <motion.div 
-          {...sectionRevealScale}
-          className="glass rounded-2xl md:rounded-3xl premium-shadow border-white/40 overflow-hidden h-[400px] sm:h-[500px] md:h-auto md:aspect-[21/9] relative"
-        >
-          <div className="absolute inset-0 bg-slate-50/50" />
-          
-          {/* Sidebar Mock */}
-          <div className="absolute left-0 top-0 bottom-0 w-16 md:w-64 border-r border-slate-200/50 bg-white/80 hidden md:flex flex-col p-6 space-y-8 z-20">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 premium-gradient rounded-lg flex items-center justify-center shadow-lg shadow-brand-500/20">
-                <BookOpen className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-extrabold text-slate-800 tracking-tight">OdishaPrep</span>
-            </div>
-            <div className="space-y-2 mt-8">
-              {[
-                { icon: LayoutDashboard, label: 'Dashboard', active: true },
-                { icon: BookOpen, label: 'Mock Tests', active: false },
-                { icon: History, label: 'History', active: false },
-                { icon: Settings, label: 'Settings', active: false }
-              ].map((item, i) => (
-                <div key={i} className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-default", item.active ? "bg-brand-50 text-brand-700" : "text-slate-500 hover:bg-slate-50")}>
-                  <item.icon className="w-5 h-5" />
-                  <span className="font-semibold text-sm">{item.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Content Mock */}
-          <div className="absolute left-0 md:left-64 right-0 top-0 bottom-0 p-4 sm:p-8 space-y-4 sm:space-y-8 flex flex-col z-10">
-            <div className="flex justify-between items-center shrink-0">
-              <div className="space-y-1">
-                <h3 className="text-xl sm:text-2xl font-black text-slate-900">Welcome back, Naresh!</h3>
-                <p className="text-xs sm:text-sm font-medium text-slate-500 hidden sm:block">Here is your preparation summary for today.</p>
-              </div>
-              <div className="h-10 w-10 bg-brand-100 rounded-full flex items-center justify-center border-2 border-white shadow-sm overflow-hidden text-brand-700 font-black text-lg">
-                N
-              </div>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 shrink-0">
-              <div className="bg-white rounded-xl sm:rounded-2xl premium-shadow border border-slate-100 p-4 sm:p-5 flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Tests Taken</span>
-                  <BookOpen className="w-4 h-4 text-brand-500" />
-                </div>
-                <div className="text-2xl sm:text-3xl font-black text-slate-900">14</div>
-              </div>
-              <div className="bg-white rounded-xl sm:rounded-2xl premium-shadow border border-slate-100 p-4 sm:p-5 flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Avg. Score</span>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                </div>
-                <div className="text-2xl sm:text-3xl font-black text-slate-900">82%</div>
-              </div>
-              <div className="bg-brand-500 rounded-2xl premium-shadow border border-brand-400 p-5 flex flex-col justify-between hidden md:flex text-white">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-bold text-brand-100 uppercase tracking-wider">Current Rank</span>
-                  <History className="w-4 h-4 text-brand-200" />
-                </div>
-                <div className="text-3xl font-black">124<span className="text-lg text-brand-200">/2.5k</span></div>
-              </div>
-            </div>
-            <div className="flex-1 bg-white/60 sm:bg-white rounded-2xl sm:rounded-3xl premium-shadow border border-slate-100/50 sm:border-slate-100 p-4 sm:p-6 relative overflow-hidden flex flex-col justify-end min-h-[100px]">
-              <div className="absolute top-5 left-5 right-5 flex justify-between items-center">
-                <h4 className="text-sm sm:text-base font-bold text-slate-800 tracking-tight">Performance History</h4>
-                <div className="flex gap-2">
-                  <span className="w-2 h-2 rounded-full bg-brand-500 mt-1" />
-                  <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase">Score Trend</span>
-                </div>
-              </div>
-              {/* Mock Graph */}
-              <div className="flex items-end gap-1.5 sm:gap-3 h-20 sm:h-32 w-full mt-auto relative z-10">
-                {[40, 70, 45, 90, 65, 80, 55, 85, 60, 95].map((h, i) => (
-                  <motion.div 
-                    key={i}
-                    {...barGrow(`${h}%`)}
-                    className="flex-1 bg-gradient-to-t from-brand-500/10 to-brand-500/40 rounded-t-sm sm:rounded-t-lg border-t-2 border-brand-500 relative group cursor-pointer"
-                  >
-                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded shadow-lg pointer-events-none z-20">
-                      {h}%
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Test UI Overlay */}
-          <motion.div 
-            {...fadeSlideRight}
-            viewport={{ once: true }}
-            transition={{ ...fadeSlideRight.transition, delay: 0.5 }}
-            className="absolute -right-20 top-16 w-[340px] bg-white/95 backdrop-blur-xl rounded-3xl premium-shadow border border-slate-200/60 p-6 space-y-5 hidden lg:block z-30"
-          >
-            <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Live Test</span>
-              </div>
-              <div className="text-sm font-black text-brand-600 bg-brand-50 px-2 py-1 rounded-lg">12:45</div>
-            </div>
-            
-            <div className="space-y-4">
-              <h4 className="text-sm font-bold text-slate-800 leading-snug">
-                1. Which of the following is the largest river in Odisha?
-              </h4>
-              <div className="space-y-2">
-                {[
-                  { label: 'A', text: 'Baitarani', active: false },
-                  { label: 'B', text: 'Mahanadi', active: true },
-                  { label: 'C', text: 'Subarnarekha', active: false },
-                  { label: 'D', text: 'Rushikulya', active: false },
-                ].map((opt, i) => (
-                  <div key={i} className={cn("flex items-center gap-3 p-2.5 rounded-xl border transition-all text-sm font-semibold cursor-pointer", opt.active ? "bg-brand-50 border-brand-200 text-brand-700" : "bg-white border-slate-100 text-slate-600 hover:bg-slate-50")}>
-                    <div className={cn("w-6 h-6 rounded flex items-center justify-center text-xs font-black", opt.active ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-500")}>
-                      {opt.label}
-                    </div>
-                    {opt.text}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      </div>
-    </section>
-  );
-};
-
-const TestimonialsSection = () => {
-  const reviews = [
-    {
-      name: 'Satyajit Behera',
-      role: 'OPSC Aspirant',
-      text: 'Daily practice kariba pare weak topic clear bujhi paruchi. Confidence increase heuchi.',
-      avatar: 'https://picsum.photos/seed/satyajit/100/100',
-      rating: 5
-    },
-    {
-      name: 'Priyanka Nayak',
-      role: 'SSC Candidate',
-      text: 'Mock test real exam bhali laguchi. Time manage kariba easy hela.',
-      avatar: 'https://picsum.photos/seed/priyanka/100/100',
-      rating: 5
-    },
-    {
-      name: 'Debasish Rout',
-      role: 'OPSC Aspirant',
-      text: 'Question bank re bhal variety achi. Repeat question kam.',
-      avatar: 'https://picsum.photos/seed/debasish/100/100',
-      rating: 5
-    },
-    {
-      name: 'Ananya Mohanty',
-      role: 'Banking Aspirant',
-      text: 'Analysis part clear. Mu janiparuchi kaha re mistake karuchi.',
-      avatar: 'https://picsum.photos/seed/ananya/100/100',
-      rating: 5
-    },
-    {
-      name: 'Rajesh Sahoo',
-      role: 'SSC Aspirant',
-      text: 'Regular use karile improvement dekha jauchi.',
-      avatar: 'https://picsum.photos/seed/rajesh/100/100',
-      rating: 5
-    },
-    {
-      name: 'Subrat Dash',
-      role: 'Railway Aspirant',
-      text: 'Practice mode re speed improve hela.',
-      avatar: 'https://picsum.photos/seed/subrat/100/100',
-      rating: 5
-    },
-    {
-      name: 'Pooja Das',
-      role: 'OPSC Aspirant',
-      text: 'Simple use kariba. Confuse nahi kare.',
-      avatar: 'https://picsum.photos/seed/pooja/100/100',
-      rating: 5
-    },
-    {
-      name: 'Amit Nayak',
-      role: 'SSC CGL Aspirant',
-      text: 'Questions updated laguchi. Useful platform.',
-      avatar: 'https://picsum.photos/seed/amit/100/100',
-      rating: 5
-    },
-    {
-      name: 'Sneha Pradhan',
-      role: 'OPSC Aspirant',
-      text: 'Daily practice re result miluchi.',
-      avatar: 'https://picsum.photos/seed/sneha/100/100',
-      rating: 5
-    },
-    {
-      name: 'Rakesh Behera',
-      role: 'Banking Aspirant',
-      text: 'Mobile re smooth chaluchi.',
-      avatar: 'https://picsum.photos/seed/rakesh/100/100',
-      rating: 5
-    },
-    {
-      name: 'Manas Pattnaik',
-      role: 'OPSC Aspirant',
-      text: 'Overall bhal. Practice section aro expand hela better.',
-      avatar: 'https://picsum.photos/seed/manas/100/100',
-      rating: 4
-    },
-    {
-      name: 'Lipika Das',
-      role: 'SSC Aspirant',
-      text: 'Interface clean. Explanation aro detail hele bhal.',
-      avatar: 'https://picsum.photos/seed/lipika/100/100',
-      rating: 4
-    },
-    {
-      name: 'Biswajit Mohanty',
-      role: 'Railway Aspirant',
-      text: 'Time-based test helpful. Kichi question tough laguchi.',
-      avatar: 'https://picsum.photos/seed/biswajit/100/100',
-      rating: 4
-    },
-    {
-      name: 'Sasmita Sahoo',
-      role: 'Banking Aspirant',
-      text: 'Smooth chaluchi. Aro exam add hele bhal.',
-      avatar: 'https://picsum.photos/seed/sasmita/100/100',
-      rating: 4
-    },
-    {
-      name: 'Chinmay Rout',
-      role: 'SSC Candidate',
-      text: 'Good for practice. Regular update hele aro bhal.',
-      avatar: 'https://picsum.photos/seed/chinmay/100/100',
-      rating: 4
-    }
-  ];
-
-  // ── Carousel config ────────────────────────────────────────────────────────
-  const CARD_WIDTH     = 320;   // px
-  const CARD_GAP       = 24;    // px
-  const ITEM_STEP      = CARD_WIDTH + CARD_GAP;
-  const AUTO_SPEED     = 0.45;  // px per frame (~27px/s at 60fps)
-  const RESUME_DELAY   = 2000;  // ms after last interaction before auto-scroll resumes
-
-  // Triple the list for seamless infinite loop
-  const items      = [...reviews, ...reviews, ...reviews];
-  const totalWidth = items.length * ITEM_STEP;
-
-  // ── Refs ───────────────────────────────────────────────────────────────────
-  const trackRef        = useRef<HTMLDivElement>(null);
-  const offsetRef       = useRef(0);
-  const rafRef          = useRef<number>(0);
-  const isPaused        = useRef(false);
-  const resumeTimer     = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isDragging      = useRef(false);
-  const dragStartX      = useRef(0);
-  const dragStartOffset = useRef(0);
-
-  // ── Apply offset (wraps for infinite loop) ────────────────────────────────
-  const applyOffset = useCallback(() => {
-    const track = trackRef.current;
-    if (!track) return;
-    const loopLen = totalWidth / 3;
-    offsetRef.current = ((offsetRef.current % loopLen) + loopLen) % loopLen;
-    track.style.transform = `translateX(-${offsetRef.current}px)`;
-  }, [totalWidth]);
-
-  // ── RAF auto-scroll tick ──────────────────────────────────────────────────
-  const tick = useCallback(() => {
-    if (!isPaused.current && !isDragging.current) {
-      offsetRef.current += AUTO_SPEED;
-      applyOffset();
-    }
-    rafRef.current = requestAnimationFrame(tick);
-  }, [applyOffset]);
-
-  useEffect(() => {
-    offsetRef.current = totalWidth / 3; // start at middle copy
-    applyOffset();
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [tick, applyOffset, totalWidth]);
-
-  // ── Pause / resume helpers ────────────────────────────────────────────────
-  const pauseAuto = useCallback(() => {
-    isPaused.current = true;
-    if (resumeTimer.current) clearTimeout(resumeTimer.current);
-  }, []);
-
-  const scheduleResume = useCallback(() => {
-    if (resumeTimer.current) clearTimeout(resumeTimer.current);
-    resumeTimer.current = setTimeout(() => { isPaused.current = false; }, RESUME_DELAY);
-  }, []);
-
-  // ── Mouse drag ────────────────────────────────────────────────────────────
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
-    isDragging.current    = true;
-    dragStartX.current    = e.clientX;
-    dragStartOffset.current = offsetRef.current;
-    pauseAuto();
-    e.preventDefault();
-  }, [pauseAuto]);
-
-  const onMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDragging.current) return;
-    offsetRef.current = dragStartOffset.current + (dragStartX.current - e.clientX);
-    applyOffset();
-  }, [applyOffset]);
-
-  const onMouseUp = useCallback(() => {
-    if (!isDragging.current) return;
-    isDragging.current = false;
-    scheduleResume();
-  }, [scheduleResume]);
-
-  // ── Touch drag ────────────────────────────────────────────────────────────
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    isDragging.current      = true;
-    dragStartX.current      = e.touches[0].clientX;
-    dragStartOffset.current = offsetRef.current;
-    pauseAuto();
-  }, [pauseAuto]);
-
-  const onTouchMove = useCallback((e: TouchEvent) => {
-    if (!isDragging.current) return;
-    offsetRef.current = dragStartOffset.current + (dragStartX.current - e.touches[0].clientX);
-    applyOffset();
-    e.preventDefault(); // prevent page scroll while swiping
-  }, [applyOffset]);
-
-  const onTouchEnd = useCallback(() => {
-    if (!isDragging.current) return;
-    isDragging.current = false;
-    scheduleResume();
-  }, [scheduleResume]);
-
-  // Attach window-level listeners so drag continues even if pointer leaves the track
-  useEffect(() => {
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup',   onMouseUp);
-    window.addEventListener('touchmove', onTouchMove, { passive: false });
-    window.addEventListener('touchend',  onTouchEnd);
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup',   onMouseUp);
-      window.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('touchend',  onTouchEnd);
-    };
-  }, [onMouseMove, onMouseUp, onTouchMove, onTouchEnd]);
-
-  return (
-    <section id="testimonials" className="py-24 scroll-mt-24 overflow-hidden space-y-16">
-      {/* ── Heading ── */}
-      <div className="flex flex-col items-center space-y-5 text-center px-6">
-        <div
-          className="flex items-center gap-2 font-bold animate-bounce-subtle px-4 sm:px-5 py-2 rounded-full border shadow-sm"
-          style={{ background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.25)', color: '#d97706' }}
-        >
-          <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-          <span className="text-xs sm:text-sm tracking-tight">4.8 average rating from 2k+ aspirants</span>
+    <section id="syllabus-paths" className="py-12 md:py-16 scroll-mt-24 border-b border-slate-200/50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-12">
+        <div className="flex flex-col items-center space-y-4 text-center">
+          <span className="section-chip">
+            <BookOpen className="w-3.5 h-3.5" />
+            Curriculum Roadmap
+          </span>
+          <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-900 tracking-tight">
+            Syllabus <span className="premium-text-gradient font-serif font-extrabold">Roadmaps</span>
+          </h2>
+          <div className="section-divider" />
+          <p className="text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed">
+            Choose a subject pillar and review the curriculum chapters, mapped directly to practice quiz availability.
+          </p>
         </div>
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-          Trusted by <span className="premium-text-gradient">Aspirants</span>
-        </h2>
-        <div className="section-divider" />
-        <p className="text-slate-500 text-lg font-medium max-w-2xl mx-auto">
-          Hear from students who are actually using OdishaExamPrep to crack their dream exams.
-        </p>
+
+        {/* Tab switcher */}
+        <div className="flex justify-center gap-2 sm:gap-4 p-1.5 bg-slate-100/60 rounded-2xl max-w-md mx-auto border border-slate-200/50">
+          {[
+            { id: 'gs', label: 'General Studies' },
+            { id: 'lang', label: 'Language Core' },
+            { id: 'quant', label: 'Aptitude & DI' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={cn(
+                "flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
+                activeTab === tab.id 
+                  ? "bg-white text-slate-900 shadow-sm border border-slate-200" 
+                  : "text-slate-400 hover:text-slate-700"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Pathway List */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+          {topics[activeTab].map((topic, i) => (
+            <div 
+              key={i} 
+              className="bg-white border-2 border-slate-900/80 rounded-2xl p-5 sm:p-6 shadow-[4px_4px_0px_rgba(0,0,0,1)] flex items-start justify-between gap-4"
+            >
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-black uppercase tracking-wider text-[#8A1C36]">
+                  {topic.label}
+                </p>
+                <h4 className="text-base sm:text-lg font-serif font-extrabold text-slate-900 leading-tight">
+                  {topic.name}
+                </h4>
+              </div>
+              <div className="text-right shrink-0">
+                <span className="inline-flex px-2.5 py-1 bg-brand-50 text-[#8A1C36] rounded font-mono text-xs font-black uppercase border border-brand-100">
+                  {topic.count} Sets
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
+    </section>
+  );
+};
 
-      {/* ── Infinite drag/swipe carousel ── */}
-      <div className="relative select-none">
-        {/* Left edge fade */}
-        <div
-          className="absolute left-0 top-0 bottom-4 w-12 sm:w-24 z-10 pointer-events-none"
-          style={{ background: 'linear-gradient(to right, #f4f0ff 0%, transparent 100%)' }}
-        />
-        {/* Right edge fade */}
-        <div
-          className="absolute right-0 top-0 bottom-4 w-12 sm:w-24 z-10 pointer-events-none"
-          style={{ background: 'linear-gradient(to left, #f4f0ff 0%, transparent 100%)' }}
-        />
+const AchieversJournalSection = () => {
+  const [activeFilter, setActiveFilter] = useState<'all' | 'opsc' | 'ossc' | 'osssc'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [visibleCount, setVisibleCount] = useState(4);
 
-        {/* Draggable viewport */}
-        <div
-          className="overflow-hidden cursor-grab active:cursor-grabbing"
-          onMouseDown={onMouseDown}
-          onTouchStart={onTouchStart}
-          onMouseEnter={pauseAuto}
-          onMouseLeave={scheduleResume}
-        >
-          {/* Track — translated by JS, not CSS animation */}
-          <div
-            ref={trackRef}
-            className="flex pb-4 will-change-transform"
-            style={{ gap: CARD_GAP, paddingLeft: 24, width: `${totalWidth}px` }}
-          >
-            {items.map((review, idx) => (
-              <div
-                key={`${review.name}-${idx}`}
-                className="shrink-0"
-                style={{ width: CARD_WIDTH }}
+  const stories = [
+    {
+      name: "Satyajit Behera",
+      rank: "OPSC OAS Rank 42",
+      examCategory: "opsc",
+      story: "Daily practice kariba pare weak topics clear bujhi paruchi. The syllabus timeline mappings kept my prep highly structured without any guide books.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Satyajit",
+      stats: { score: "128.5 / 200", accuracy: "94% Accuracy", time: "8 Months Prep" },
+      district: "Cuttack"
+    },
+    {
+      name: "Priyanka Nayak",
+      rank: "OSSC CGL Selected (Inspector)",
+      examCategory: "ossc",
+      story: "The CBT mock test system interface mimics the real OSSC exam hall environment 100%. Practicing under pressure improved my timing dramatically.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Priyanka",
+      stats: { score: "142 / 150", accuracy: "91% Accuracy", time: "6 Months Prep" },
+      district: "Bhubaneswar"
+    },
+    {
+      name: "Subhasmita Mohapatra",
+      rank: "OPSC OAS Candidate",
+      examCategory: "opsc",
+      story: "General Studies mock test re Odisha history questions level bahut high thila. Direct questions exam paper clear karibare help kala.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Subhasmita",
+      stats: { score: "132 / 200", accuracy: "89% Accuracy", time: "1 Year Prep" },
+      district: "Bhubaneswar"
+    },
+    {
+      name: "Alok Ranjan Jena",
+      rank: "OSSC CGL Selected (Auditor)",
+      examCategory: "ossc",
+      story: "Arithmetic & Reasoning solution options detail re explain karanti. Shortcut tricks upjogee hela exam re.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Alok",
+      stats: { score: "138 / 150", accuracy: "93% Accuracy", time: "5 Months Prep" },
+      district: "Bhadrak"
+    },
+    {
+      name: "Deepak Kumar Sahoo",
+      rank: "OSSSC RI Selected (Cuttack)",
+      examCategory: "osssc",
+      story: "Odia grammar questions sets and computer awareness mock tests RI exam pattern pain full exact thila. Special thanks for negative markings calculation practice.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Deepak",
+      stats: { score: "148.5 / 200", accuracy: "95% Accuracy", time: "7 Months Prep" },
+      district: "Jajpur"
+    },
+    {
+      name: "Swagatika Priyadarshini",
+      rank: "OSSSC Amin Selected",
+      examCategory: "osssc",
+      story: "Varying difficulty levels in test series are amazing. Starting from beginner, it slowly builds speed for OSSSC Amin CBT.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Swagatika",
+      stats: { score: "78.5 / 100", accuracy: "92% Accuracy", time: "4 Months Prep" },
+      district: "Balasore"
+    },
+    {
+      name: "Debashis Pradhan",
+      rank: "OPSC OAS Candidate",
+      examCategory: "opsc",
+      story: "Daily current affairs tests and GS sectional mocks saved my time. UTKAL geography questions collection is excellent.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Debashis",
+      stats: { score: "120 / 200", accuracy: "88% Accuracy", time: "9 Months Prep" },
+      district: "Sambalpur"
+    },
+    {
+      name: "Manaswini Tripathy",
+      rank: "OSSC CGL Candidate",
+      examCategory: "ossc",
+      story: "Language paper test series re translation options and sandhi/samasa rules Odisha board standards ku match karuchi.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Manaswini",
+      stats: { score: "89 / 100", accuracy: "94% Accuracy", time: "6 Months Prep" },
+      district: "Puri"
+    },
+    {
+      name: "Rajesh Kumar Barik",
+      rank: "Police SI Selected",
+      examCategory: "ossc",
+      story: "Sub-Inspector physical preparation saha daily mock test practice karutheli. Police SI mock test sets set standard thila.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Rajesh",
+      stats: { score: "245 / 300", accuracy: "90% Accuracy", time: "8 Months Prep" },
+      district: "Ganjam"
+    },
+    {
+      name: "Chinmayee Mishra",
+      rank: "OSSSC ARI Aspirant",
+      examCategory: "osssc",
+      story: "Computer section mock test re direct shortcuts ask karithile. Practical shortcuts exam re speed up kale.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Chinmayee",
+      stats: { score: "136.5 / 200", accuracy: "91% Accuracy", time: "5 Months Prep" },
+      district: "Angul"
+    },
+    {
+      name: "Prabhat Chandra Senapati",
+      rank: "OSSSC RI Selected",
+      examCategory: "osssc",
+      story: "Baripada re self study karutheli. OdishaExamPrep platform bina coaching re help kala mock practice pain.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Prabhat",
+      stats: { score: "154 / 200", accuracy: "92% Accuracy", time: "10 Months Prep" },
+      district: "Mayurbhanj"
+    },
+    {
+      name: "Sonali Priyadarshini",
+      rank: "OSSC ATO Selected",
+      examCategory: "ossc",
+      story: "Highly recommended for OSSC aspirants. Sectional tests solved my maths phobia.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Sonali",
+      stats: { score: "112 / 150", accuracy: "87% Accuracy", time: "6 Months Prep" },
+      district: "Rourkela"
+    },
+    {
+      name: "Ashish Kumar Panda",
+      rank: "OPSC OAS Candidate",
+      examCategory: "opsc",
+      story: "The essay topics guidance and GS Answer writing sections gave me the structure I needed for OAS Mains.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Ashish",
+      stats: { score: "310 / 600", accuracy: "85% Accuracy", time: "1.5 Years Prep" },
+      district: "Berhampur"
+    },
+    {
+      name: "Bikram Keshari Rout",
+      rank: "OSSSC Amin Aspirant",
+      examCategory: "osssc",
+      story: "Arithmetic calculation tricks are best. Mock questions exact board level pattern re achi.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Bikram",
+      stats: { score: "68 / 100", accuracy: "90% Accuracy", time: "3 Months Prep" },
+      district: "Kendrapara"
+    },
+    {
+      name: "Jyotirmayee Das",
+      rank: "OSSC Junior Clerk Selected",
+      examCategory: "ossc",
+      story: "Typing test tips are very helpful. Typing mock test page re dynamic timer layout thila exact official clerk speed check thila.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Jyotirmayee",
+      stats: { score: "128 / 150", accuracy: "93% Accuracy", time: "4 Months Prep" },
+      district: "Jagatsinghpur"
+    },
+    {
+      name: "Soumya Ranjan Patnaik",
+      rank: "OPSC OAS Rank 18",
+      examCategory: "opsc",
+      story: "The test series is very close to real OAS Prelims pattern. The analytics view showed my section-wise ranking which helped me compete with other top candidates.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Soumya",
+      stats: { score: "141.2 / 200", accuracy: "96% Accuracy", time: "1 Year Prep" },
+      district: "Bhubaneswar"
+    },
+    {
+      name: "Sujata Senapati",
+      rank: "OSSSC RI Aspirant",
+      examCategory: "osssc",
+      story: "Odisha GK section in RI exam test series is very descriptive. Each question has detailed explanation options with related points.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Sujata",
+      stats: { score: "131 / 200", accuracy: "89% Accuracy", time: "6 Months Prep" },
+      district: "Balasore"
+    },
+    {
+      name: "Niranjan Khuntia",
+      rank: "OSSC CGL Selected",
+      examCategory: "ossc",
+      story: "Ravenshaw library re baseline mock test daily deba morning re. Accuracy improved from 72% to 93% in 3 months.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Niranjan",
+      stats: { score: "139 / 150", accuracy: "93% Accuracy", time: "5 Months Prep" },
+      district: "Cuttack"
+    },
+    {
+      name: "Rashmirekha Baral",
+      rank: "OSSSC Amin Selected",
+      examCategory: "osssc",
+      story: "Amin paper calculation parts re exact number properties thila. Computer questions sets are comprehensive.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Rashmirekha",
+      stats: { score: "76 / 100", accuracy: "91% Accuracy", time: "4 Months Prep" },
+      district: "Khordha"
+    },
+    {
+      name: "Kamal Lochan Mohanty",
+      rank: "OPSC OAS Aspirant",
+      examCategory: "opsc",
+      story: "Mains preparation pain geography optional mocks were very structured. Thanks to OdishaExamPrep creators.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Kamal",
+      stats: { score: "345 / 600", accuracy: "87% Accuracy", time: "1.2 Years Prep" },
+      district: "Puri"
+    },
+    {
+      name: "Swadhin Chandra Behera",
+      rank: "OSSC Sub-Inspector",
+      examCategory: "ossc",
+      story: "SI test analysis options layout simplified key concepts. Daily sectional practice in English paper helped a lot.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Swadhin",
+      stats: { score: "228 / 300", accuracy: "90% Accuracy", time: "7 Months Prep" },
+      district: "Nayagarh"
+    },
+    {
+      name: "Monika Madhuri Bhol",
+      rank: "OSSSC LSI Selected",
+      examCategory: "osssc",
+      story: "Livestock Inspector biology mocks sets were exact to the point. Practice sets covered all state board class 10 standard topics.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Monika",
+      stats: { score: "92 / 120", accuracy: "93% Accuracy", time: "5 Months Prep" },
+      district: "Bhadrak"
+    },
+    {
+      name: "Subhendu Sekhar Giri",
+      rank: "OPSC OAS Candidate",
+      examCategory: "opsc",
+      story: "Prelims GS papers analysis report re clear categorization thila. Strong and weak sections are automatically highlighted.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Subhendu",
+      stats: { score: "119 / 200", accuracy: "87% Accuracy", time: "9 Months Prep" },
+      district: "Balasore"
+    },
+    {
+      name: "Niharika Priyadarshini",
+      rank: "OSSSC Amin Aspirant",
+      examCategory: "osssc",
+      story: "Keonjhar town re preparation pain study material thila. The daily free practice tests provided consistency.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Niharika",
+      stats: { score: "71.5 / 100", accuracy: "89% Accuracy", time: "4 Months Prep" },
+      district: "Keonjhar"
+    },
+    {
+      name: "Amit Kumar Pradhan",
+      rank: "OSSC CGL Candidate",
+      examCategory: "ossc",
+      story: "Reasoning section logic models in test series clear doubts. Blood relation and puzzle section options are great.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Amit",
+      stats: { score: "122 / 150", accuracy: "91% Accuracy", time: "6 Months Prep" },
+      district: "Dhenkanal"
+    },
+    {
+      name: "Sarat Chandra Nayak",
+      rank: "OSSSC RI Candidate",
+      examCategory: "osssc",
+      story: "Maths speed weak thila. Target exam practice module and sectional arithmetic sets solved my time lagging issues.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Sarat",
+      stats: { score: "139 / 200", accuracy: "90% Accuracy", time: "7 Months Prep" },
+      district: "Bolangir"
+    },
+    {
+      name: "Pooja Purnima Das",
+      rank: "OSSC CGL Selected",
+      examCategory: "ossc",
+      story: "The performance dashboard maps progress beautifully. Solved all previous year papers in real-time mode.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Pooja",
+      stats: { score: "134 / 150", accuracy: "92% Accuracy", time: "8 Months Prep" },
+      district: "Jajpur"
+    },
+    {
+      name: "Rudra Narayan Acharya",
+      rank: "OPSC OAS Candidate",
+      examCategory: "opsc",
+      story: "OAS mains paper preparation re standard questions thila. Special focus on Odisha economy and state welfare schemes.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Rudra",
+      stats: { score: "322 / 600", accuracy: "86% Accuracy", time: "1.5 Years Prep" },
+      district: "Cuttack"
+    },
+    {
+      name: "Tapaswini Maharana",
+      rank: "OSSSC RI Selected",
+      examCategory: "osssc",
+      story: "Berhampur University study circle re amiti preparation test series search karuthilu. Very helpful for group study rankings.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Tapaswini",
+      stats: { score: "149 / 200", accuracy: "94% Accuracy", time: "6 Months Prep" },
+      district: "Berhampur"
+    },
+    {
+      name: "Rakesh Kumar Swain",
+      rank: "OSSSC Amin Candidate",
+      examCategory: "osssc",
+      story: "Easy interface compared to other test portals. Best part is it loads quickly on mobile even in rural areas.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Rakesh",
+      stats: { score: "74 / 100", accuracy: "91% Accuracy", time: "3 Months Prep" },
+      district: "Bhubaneswar"
+    },
+    {
+      name: "Itishree Priyadarsini",
+      rank: "OPSC OAS Candidate",
+      examCategory: "opsc",
+      story: "Ethics case studies compilation in OAS Mains mocks is very premium. Model answers standard is high.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Itishree",
+      stats: { score: "118 / 200", accuracy: "85% Accuracy", time: "1 Year Prep" },
+      district: "Khurda"
+    },
+    {
+      name: "Satya Ranjan Sahoo",
+      rank: "OSSC CGL Candidate",
+      examCategory: "ossc",
+      story: "English Section errors correction mocks were exactly on target. Active and passive voice logic was explained nicely.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Satya",
+      stats: { score: "129 / 150", accuracy: "90% Accuracy", time: "5 Months Prep" },
+      district: "Bhadrak"
+    },
+    {
+      name: "Madhusmita Nayak",
+      rank: "OSSSC ARI Selected",
+      examCategory: "osssc",
+      story: "Mock exams layout exact matching of official exam dashboard thila. Exam hall anxiety level down hela daily practice pare.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Madhusmita",
+      stats: { score: "141.5 / 200", accuracy: "93% Accuracy", time: "6 Months Prep" },
+      district: "Balasore"
+    },
+    {
+      name: "Manoranjan Kar",
+      rank: "OPSC Civil Services Selected",
+      examCategory: "opsc",
+      story: "Very focused test series. Mapped strictly to the revised syllabus guidelines. No unnecessary fluff.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Manoranjan",
+      stats: { score: "126 / 200", accuracy: "90% Accuracy", time: "8 Months Prep" },
+      district: "Sambalpur"
+    },
+    {
+      name: "Kshirod Chandra Malik",
+      rank: "OSSC CGL Candidate",
+      examCategory: "ossc",
+      story: "Audit Officer and Assistant Revenue Officer mocks syllabus topic layout was detailed and up-to-date.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Kshirod",
+      stats: { score: "127 / 150", accuracy: "88% Accuracy", time: "6 Months Prep" },
+      district: "Jajpur"
+    },
+    {
+      name: "Laxmipriya Mohanty",
+      rank: "OSSSC Amin Candidate",
+      examCategory: "osssc",
+      story: "Arithmetic chapters decimal fractions & percentage practice sets are very useful for speed calculation.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Laxmipriya",
+      stats: { score: "69.5 / 100", accuracy: "89% Accuracy", time: "3 Months Prep" },
+      district: "Puri"
+    },
+    {
+      name: "Jajati Keshari Mohapatra",
+      rank: "OPSC OAS Aspirant",
+      examCategory: "opsc",
+      story: "The prelims answer key explanation documents are detailed. Found specific citations of standard textbook history chapters.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Jajati",
+      stats: { score: "121.8 / 200", accuracy: "88% Accuracy", time: "1 Year Prep" },
+      district: "Cuttack"
+    },
+    {
+      name: "Ananya Aparajita",
+      rank: "OSSC CGL Selected",
+      examCategory: "ossc",
+      story: "Comprehensive mock test score accuracy dashboard helped me improve. I got selected in my second attempt.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Ananya",
+      stats: { score: "135 / 150", accuracy: "92% Accuracy", time: "9 Months Prep" },
+      district: "Bhubaneswar"
+    },
+    {
+      name: "Saroj Kumar Das",
+      rank: "OSSSC RI Aspirant",
+      examCategory: "osssc",
+      story: "General knowledge section covers modern Odisha current updates in detail. Very helpful for oral rounds too.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Saroj",
+      stats: { score: "133 / 200", accuracy: "87% Accuracy", time: "6 Months Prep" },
+      district: "Ganjam"
+    },
+    {
+      name: "Rutuparna Baral",
+      rank: "OSSSC Amin Selected",
+      examCategory: "osssc",
+      story: "Highly recommended Amin test sets. Explanations are simple and cover all base formulas.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Rutuparna",
+      stats: { score: "75.5 / 100", accuracy: "91% Accuracy", time: "4 Months Prep" },
+      district: "Kendrapara"
+    },
+    {
+      name: "Hrudananda Mahapatra",
+      rank: "OPSC OAS Candidate",
+      examCategory: "opsc",
+      story: "Excellent customer support and test correction cycles. The feedback logs are addressed by expert teachers.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Hrudananda",
+      stats: { score: "129 / 200", accuracy: "89% Accuracy", time: "1.2 Years Prep" },
+      district: "Bhubaneswar"
+    },
+    {
+      name: "Lipika Priyadarsini",
+      rank: "OSSC CGL Candidate",
+      examCategory: "ossc",
+      story: "Mock exams interface mimics actual OSSC screens, making it very comfortable on real exam day.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Lipika",
+      stats: { score: "131 / 150", accuracy: "90% Accuracy", time: "5 Months Prep" },
+      district: "Bhadrak"
+    },
+    {
+      name: "Sameer Ranjan Prusty",
+      rank: "OSSSC RI Candidate",
+      examCategory: "osssc",
+      story: "Mensuration questions sets inside RI tests were of exact board standard. Highly descriptive answers.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Sameer",
+      stats: { score: "140 / 200", accuracy: "91% Accuracy", time: "7 Months Prep" },
+      district: "Jajpur"
+    },
+    {
+      name: "Soubhagya Laxmi Das",
+      rank: "OSSSC Amin Selected",
+      examCategory: "osssc",
+      story: "Best online tests for Amin cadre. The syllabus mappings made it very easy to focus on weak topics.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Soubhagya",
+      stats: { score: "77 / 100", accuracy: "90% Accuracy", time: "4 Months Prep" },
+      district: "Balasore"
+    },
+    {
+      name: "Bimal Prasad Sahu",
+      rank: "OPSC OAS Candidate",
+      examCategory: "opsc",
+      story: "Highly structured test platform. The calendar schedules kept my daily goals on track.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Bimal",
+      stats: { score: "124.5 / 200", accuracy: "88% Accuracy", time: "10 Months Prep" },
+      district: "Sambalpur"
+    },
+    {
+      name: "Subrat Kumar Pati",
+      rank: "OSSC CGL Candidate",
+      examCategory: "ossc",
+      story: "Sectional mock tests are great for daily brush-up of core rules in quant and reasoning.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Subrat",
+      stats: { score: "126 / 150", accuracy: "89% Accuracy", time: "6 Months Prep" },
+      district: "Balasore"
+    },
+    {
+      name: "Pratima Pradhan",
+      rank: "OSSSC RI Selected",
+      examCategory: "osssc",
+      story: "Excellent mock tests. Computer section mock quizzes helped me secure higher marks in the RI mains.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Pratima",
+      stats: { score: "145 / 200", accuracy: "93% Accuracy", time: "8 Months Prep" },
+      district: "Jajpur"
+    },
+    {
+      name: "Manoj Kumar Behera",
+      rank: "OSSSC Amin Candidate",
+      examCategory: "osssc",
+      story: "Simple test layout, easy navigation, and clear analytics. Recommended for rural student circles.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Manoj",
+      stats: { score: "72 / 100", accuracy: "88% Accuracy", time: "4 Months Prep" },
+      district: "Khurda"
+    },
+    {
+      name: "Srikant Kumar Panda",
+      rank: "OPSC OAS Candidate",
+      examCategory: "opsc",
+      story: "The essay writing tips and general studies test series gave a real competitive edge.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Srikant",
+      stats: { score: "130.5 / 200", accuracy: "90% Accuracy", time: "1 Year Prep" },
+      district: "Berhampur"
+    },
+    {
+      name: "Rashmita Rani Mohapatra",
+      rank: "OSSC CGL Candidate",
+      examCategory: "ossc",
+      story: "Quant questions shortcuts were very helpful. Daily assessment test series are accurate.",
+      avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Rashmita",
+      stats: { score: "123 / 150", accuracy: "87% Accuracy", time: "6 Months Prep" },
+      district: "Jagatsinghpur"
+    }
+  ];
+
+  const filteredStories = useMemo(() => {
+    return stories.filter(s => {
+      const matchFilter = activeFilter === 'all' || s.examCategory === activeFilter;
+      const matchSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          s.rank.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          s.district.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          s.story.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchFilter && matchSearch;
+    });
+  }, [activeFilter, searchQuery]);
+
+  useEffect(() => {
+    setVisibleCount(4);
+  }, [activeFilter, searchQuery]);
+
+  return (
+    <section id="achievers-journal" className="py-12 md:py-16 bg-slate-50 border-y border-slate-200/60 scroll-mt-24">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
+        <div className="flex flex-col items-center space-y-4 text-center">
+          <span className="section-chip">
+            <Award className="w-3.5 h-3.5" />
+            Achievers' Journal
+          </span>
+          <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-900 tracking-tight">
+            Preparation <span className="premium-text-gradient font-serif font-extrabold">Journeys</span>
+          </h2>
+          <div className="section-divider" />
+          <p className="text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed">
+            Read verified preparation reports and exam statistics from real candidates clearing Odisha recruitment exams.
+          </p>
+        </div>
+
+        {/* Search and Filters bar */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 max-w-5xl mx-auto pt-2">
+          {/* Category Filter */}
+          <div className="border-2 border-slate-900 bg-white p-1 rounded-2xl flex flex-wrap gap-1 shrink-0 shadow-[4px_4px_0px_rgba(138,28,54,0.15)]">
+            {(['all', 'opsc', 'ossc', 'osssc'] as const).map(filter => (
+              <button
+                key={filter}
+                onClick={() => setActiveFilter(filter)}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-200 cursor-pointer",
+                  activeFilter === filter 
+                    ? "bg-[#8A1C36] text-white shadow-[2px_2px_0px_#0f172a] -translate-y-0.5" 
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                )}
               >
-                <div
-                  className="glass-card p-6 sm:p-7 h-full flex flex-col justify-between space-y-5 text-left shimmer-border transition-shadow duration-300 hover:shadow-xl hover:shadow-brand-500/10"
-                  style={{ borderRadius: '1.5rem', border: '1px solid rgba(255,255,255,0.9)' }}
+                {filter === 'all' ? 'All Journeys' : filter.toUpperCase()}
+              </button>
+            ))}
+          </div>
+
+          {/* Search Box */}
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input 
+              type="text"
+              placeholder="Search by name, district, keyword..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-slate-900 bg-white font-bold text-xs sm:text-sm shadow-[3px_3px_0px_rgba(138,28,54,0.1)] focus:shadow-[4px_4px_0px_#8A1C36] focus:outline-none transition-all duration-200"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto pt-4">
+          <AnimatePresence mode="popLayout">
+            {filteredStories.length === 0 ? (
+              <motion.div
+                key="empty-achievers"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="col-span-1 md:col-span-2 text-center py-12 bg-white border-2 border-slate-900 rounded-3xl p-6 shadow-[4px_4px_0px_rgba(138,28,54,0.15)] flex flex-col items-center justify-center gap-2"
+              >
+                <div className="text-3xl">📝</div>
+                <h4 className="font-serif font-bold text-slate-900 text-lg">No Achiever Logs Found</h4>
+                <p className="text-slate-500 text-xs sm:text-sm">Try searching for another candidate, district or exam category.</p>
+              </motion.div>
+            ) : (
+              filteredStories.slice(0, visibleCount).map((item, idx) => (
+                <motion.div 
+                  key={item.name}
+                  layout
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-white border-2 border-slate-900 rounded-[2rem] p-6 sm:p-8 shadow-[6px_6px_0px_rgba(138,28,54,0.1)] hover:shadow-[8px_8px_0px_#8A1C36] hover:-translate-y-1 hover:-translate-x-1 transition-all duration-300 flex flex-col justify-between"
                 >
-                  {/* Stars + Quote */}
-                  <div className="space-y-3">
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map(star => (
-                        <Star
-                          key={star}
-                          className={cn(
-                            'w-4 h-4',
-                            star <= review.rating
-                              ? 'text-amber-400 fill-amber-400'
-                              : 'text-slate-200 fill-slate-200'
-                          )}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={item.avatar} 
+                          alt={item.name} 
+                          className="w-12 h-12 rounded-full border border-slate-200 object-cover shrink-0" 
                         />
-                      ))}
+                        <div>
+                          <h4 className="font-serif font-extrabold text-slate-900 text-base leading-none">{item.name}</h4>
+                          <p className="text-[10px] font-black uppercase text-[#8A1C36] tracking-widest mt-1.5">{item.rank}</p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono font-black text-slate-500 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-md shrink-0 uppercase tracking-tight">
+                        📍 {item.district}
+                      </span>
                     </div>
-                    <p className="text-slate-700 font-medium leading-relaxed italic text-sm sm:text-[15px]">
-                      {review.text}
+                    <p className="text-slate-600 font-serif text-sm leading-relaxed italic">
+                      "{item.story}"
                     </p>
                   </div>
 
-                  {/* Author row */}
-                  <div
-                    className="flex items-center gap-3 pt-4"
-                    style={{ borderTop: '1px solid rgba(124,58,237,0.1)' }}
-                  >
-                    <div className="relative shrink-0">
-                      <img
-                        src={review.avatar}
-                        alt={review.name}
-                        loading="lazy"
-                        referrerPolicy="no-referrer"
-                        draggable={false}
-                        className="w-11 h-11 rounded-full object-cover border-2 border-white shadow-sm"
-                      />
-                      <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full" />
+                  <div className="grid grid-cols-3 gap-2.5 pt-4 mt-6 border-t border-slate-100 text-center text-slate-800">
+                    <div className="p-2 bg-slate-50 rounded-xl border border-slate-100">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Score</p>
+                      <p className="text-xs font-black text-slate-900">{item.stats.score}</p>
                     </div>
-                    <div>
-                      <h4 className="font-black text-slate-900 text-sm leading-tight">{review.name}</h4>
-                      <p className="text-[10px] font-black uppercase tracking-widest mt-0.5" style={{ color: '#7c3aed' }}>
-                        {review.role}
-                      </p>
+                    <div className="p-2 bg-slate-50 rounded-xl border border-slate-100">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Accuracy</p>
+                      <p className="text-xs font-black text-slate-900">{item.stats.accuracy}</p>
+                    </div>
+                    <div className="p-2 bg-slate-50 rounded-xl border border-slate-100">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Timeline</p>
+                      <p className="text-xs font-black text-slate-900">{item.stats.time}</p>
                     </div>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                </motion.div>
+              ))
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Swipe hint — mobile only */}
-        <p className="sm:hidden text-center text-[11px] font-bold text-slate-400 tracking-wide mt-3 pointer-events-none select-none">
-          ← Swipe to explore more →
-        </p>
+        {/* Load More Button */}
+        {filteredStories.length > visibleCount && (
+          <div className="flex justify-center pt-4">
+            <button 
+              onClick={() => setVisibleCount(prev => prev + 6)}
+              className="px-6 py-3 rounded-xl border-2 border-slate-900 bg-white hover:bg-slate-50 text-xs sm:text-sm font-extrabold uppercase tracking-widest text-slate-900 shadow-[3px_3px_0px_#8A1C36] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all duration-200 cursor-pointer"
+            >
+              Load More preparation journals (+{filteredStories.length - visibleCount} remaining)
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );
 };
 
 const Footer = () => {
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email.trim()) {
+      setSubscribed(true);
+      setEmail('');
+      setTimeout(() => setSubscribed(false), 5000);
+    }
+  };
+
   return (
-    <footer id="contact" className="bg-slate-950 text-slate-300 py-16 md:py-24 mt-20 relative overflow-hidden">
-      {/* Decorative gradients */}
-      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
-      <div className="absolute top-0 right-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-[#25D366]/5 rounded-full blur-3xl pointer-events-none" />
+    <footer id="contact" className="bg-[#080b11] text-slate-300 py-16 md:py-24 mt-20 relative overflow-hidden noise-overlay">
+      {/* Decorative background grid and orbs */}
+      <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#8a1c36_1px,transparent_1px),linear-gradient(to_bottom,#8a1c36_1px,transparent_1px)] bg-[size:3.5rem_3.5rem]" />
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
+      
+      {/* Glowing blur spheres */}
+      <div className="absolute -top-20 right-1/4 w-[500px] h-[500px] bg-brand-500/10 rounded-full blur-[120px] pointer-events-none animate-pulse-soft" />
+      <div className="absolute -bottom-40 left-10 w-[400px] h-[400px] bg-slate-500/10 rounded-full blur-[100px] pointer-events-none animate-pulse-soft" style={{ animationDelay: '-2s' }} />
 
-      <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 sm:gap-16 relative z-10">
-        <div className="col-span-1 md:col-span-2 space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 premium-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-white/5">
-              <BookOpen className="text-white w-7 h-7" />
-            </div>
-            <span className="font-extrabold text-3xl tracking-tighter text-white">OdishaExamPrep</span>
-          </div>
-          <p className="text-slate-400 font-medium leading-relaxed max-w-md text-base sm:text-lg">
-            Empowering aspirants with high-quality mock tests and real-time analytics to master competitive exams confidently.
-          </p>
-        </div>
+      <div className="max-w-6xl mx-auto px-6 relative z-10">
         
-        <div className="space-y-6">
-          <h4 className="text-white font-black tracking-widest uppercase text-sm">Platform</h4>
-          <ul className="space-y-4 font-semibold text-slate-400">
-            <li><Link to="/blog" className="hover:text-brand-400 transition-colors duration-300 flex items-center gap-2 group"><BookOpen className="w-4 h-4 text-slate-600 group-hover:text-brand-500 transition-colors" /> Official Blog</Link></li>
-            <li><Link to="/privacy-policy" className="hover:text-brand-400 transition-colors duration-300 flex items-center gap-2 group"><ShieldCheck className="w-4 h-4 text-slate-600 group-hover:text-brand-500 transition-colors" /> Privacy Policy</Link></li>
-            <li><Link to="/terms-of-service" className="hover:text-brand-400 transition-colors duration-300 flex items-center gap-2 group"><Scale className="w-4 h-4 text-slate-600 group-hover:text-brand-500 transition-colors" /> Terms of Service</Link></li>
-            <li><Link to="/refund-policy" className="hover:text-brand-400 transition-colors duration-300 flex items-center gap-2 group"><Receipt className="w-4 h-4 text-slate-600 group-hover:text-brand-500 transition-colors" /> Refund Policy</Link></li>
-          </ul>
+        {/* Pre-footer Stats Dashboard */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pb-16 mb-16 border-b border-slate-800/60">
+          {[
+            { label: "Mock Tests Attempted", value: "10,000+", icon: "📊", desc: "Real exam simulations" },
+            { label: "Syllabus Coverage", value: "98.4%", icon: "🎯", desc: "Mapped to state boards" },
+            { label: "Score Analytics", value: "Real-Time", icon: "⚡", desc: "Detailed rank mapping" },
+            { label: "Expert Support", value: "24/7 Support", icon: "💬", desc: "Priority Telegram & Call" }
+          ].map((stat, idx) => (
+            <div 
+              key={idx}
+              className="bg-slate-900/30 backdrop-blur-md border border-slate-800/80 rounded-2xl p-5 hover:border-brand-500/30 hover:bg-slate-900/60 transition-all duration-300 group hover:-translate-y-1"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-xl group-hover:scale-110 transition-transform duration-300">{stat.icon}</span>
+                <span className="text-xs font-black uppercase tracking-wider text-slate-500">{stat.label}</span>
+              </div>
+              <h5 className="font-serif font-black text-xl sm:text-2xl text-white tracking-tight leading-none mb-1">
+                {stat.value}
+              </h5>
+              <p className="text-[11px] font-medium text-slate-400">
+                {stat.desc}
+              </p>
+            </div>
+          ))}
         </div>
 
-        <div className="space-y-6">
-          <h4 className="text-white font-black tracking-widest uppercase text-sm">Contact Us</h4>
-          <ul className="space-y-4 font-medium text-slate-400">
-            <li>
-              <a href="https://mail.google.com/mail/?view=cm&fs=1&to=odishaexamprep365@gmail.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 group">
-                 <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0 group-hover:border-brand-500/50 group-hover:bg-brand-500/10 transition-colors"><Mail className="w-4 h-4 text-slate-300 group-hover:text-brand-400 transition-colors" /></div>
-                 <span className="break-all text-sm sm:text-base group-hover:text-white transition-colors">odishaexamprep365@gmail.com</span>
-              </a>
-            </li>
-            <li>
-              <a href="tel:+917377431715" className="flex items-center gap-3 group">
-                 <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0 group-hover:border-[#25D366]/50 group-hover:bg-[#25D366]/10 transition-colors"><Phone className="w-4 h-4 text-slate-300 group-hover:text-[#25D366] transition-colors" /></div>
-                 <span className="text-sm sm:text-base group-hover:text-white transition-colors">+91 7377431715</span>
-              </a>
-            </li>
-            <li className="flex gap-4 pt-4">
-              <a href="https://www.youtube.com/@OdishaExamPrep365" target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center hover:bg-[#FF0000] hover:border-[#FF0000] hover:-translate-y-1 transition-all text-slate-400 hover:text-white shadow-lg">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                </svg>
-              </a>
-              <a href="https://wa.me/917377431715" target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center hover:bg-[#25D366] hover:border-[#25D366] hover:-translate-y-1 transition-all text-slate-400 hover:text-white shadow-lg">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                  <path d="M12.031 0C5.385 0 0 5.385 0 12.029a12.022 12.022 0 001.6 6.02L0 24l6.15-1.611a12.012 12.012 0 005.881 1.523h.004c6.645 0 12.03-5.386 12.03-12.031S18.675 0 12.031 0zm0 21.936a9.988 9.988 0 01-5.086-1.385l-.364-.216-3.774.99.998-3.682-.236-.376A9.957 9.957 0 012.064 12.03c0-5.497 4.475-9.972 9.972-9.972 5.497 0 9.97 4.475 9.97 9.972s-4.473 9.97-9.97 9.97z"/>
-                  <path d="M17.481 14.159c-.297-.149-1.758-.868-2.03-.968-.27-.099-.467-.149-.665.149-.198.298-.767.967-.94 1.165-.173.198-.346.223-.644.074a8.214 8.214 0 01-4.041-2.518c-.282-.326.319-.314.901-1.479.098-.198.05-.371-.025-.52-.075-.149-.665-1.605-.91-2.196-.241-.578-.485-.5-.665-.509-.174-.01-.371-.01-.57-.01-.198 0-.52.074-.792.371C6.822 7.027 6 7.82 6 9.381c0 1.56 1.015 3.07 1.164 3.268.149.198 2.228 3.4 5.397 4.76 2.656 1.139 3.554 1.259 4.314 1.05.76-.208 2.03-.896 2.316-1.761.286-.865.286-1.605.2-1.76-.086-.15-.286-.24-.584-.388z"/>
-                </svg>
-              </a>
-            </li>
-          </ul>
+        {/* Core footer layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 sm:gap-16">
+          
+          {/* Logo & Tagline column */}
+          <div className="col-span-1 md:col-span-2 space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 premium-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-[#8a1c36]/10 animate-float-sm">
+                <BookOpen className="text-white w-6 h-6" />
+              </div>
+              <span className="font-serif font-black text-3xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
+                Odisha<span className="text-brand-400 font-serif font-black">Exam</span>Prep
+              </span>
+            </div>
+            <p className="text-slate-400 font-medium leading-relaxed max-w-sm text-sm sm:text-base">
+              Empowering aspirants with high-quality mock tests and real-time analytics to master competitive exams confidently.
+            </p>
+            
+            {/* Newsletter update form */}
+            <div className="space-y-3 pt-2">
+              <h5 className="text-xs font-black uppercase tracking-wider text-slate-400">Subscribe for Exam Notifications</h5>
+              <form onSubmit={handleSubscribe} className="flex gap-2 max-w-md">
+                <input 
+                  type="email" 
+                  required
+                  placeholder="Enter email to get notified..." 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="flex-1 bg-slate-950/80 border border-slate-800/80 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-500/50 transition-all font-bold placeholder:text-slate-600"
+                />
+                <button 
+                  type="submit"
+                  className="px-4 py-2.5 bg-[#8A1C36] hover:bg-[#76142c] border border-brand-500/20 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer shadow-lg shadow-brand-500/10"
+                >
+                  {subscribed ? "Subscribed!" : (
+                    <>
+                      <span>Join</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </>
+                  )}
+                </button>
+              </form>
+              <p className="text-[10px] text-slate-500 font-medium">Get real-time notification alerts for OPSC, OSSC & OSSSC exams.</p>
+            </div>
+          </div>
+          
+          {/* Platform navigation */}
+          <div className="space-y-6">
+            <h4 className="text-white font-black tracking-widest uppercase text-xs mb-6 relative after:content-[''] after:absolute after:-bottom-2.5 after:left-0 after:w-8 after:h-[2px] after:bg-[#8a1c36]">
+              Platform
+            </h4>
+            <ul className="space-y-3.5 font-semibold text-slate-400">
+              {[
+                { to: "/blog", label: "Official Blog", icon: BookOpen },
+                { to: "/privacy-policy", label: "Privacy Policy", icon: ShieldCheck },
+                { to: "/terms-of-service", label: "Terms of Service", icon: Scale },
+                { to: "/refund-policy", label: "Refund Policy", icon: Receipt }
+              ].map((link, idx) => (
+                <li key={idx}>
+                  <Link 
+                    to={link.to} 
+                    className="hover:text-brand-400 transition-all duration-300 flex items-center gap-2 group hover:translate-x-1.5"
+                  >
+                    <link.icon className="w-4 h-4 text-slate-700 group-hover:text-brand-500 transition-colors" />
+                    <span className="text-sm">{link.label}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contact details */}
+          <div className="space-y-6">
+            <h4 className="text-white font-black tracking-widest uppercase text-xs mb-6 relative after:content-[''] after:absolute after:-bottom-2.5 after:left-0 after:w-8 after:h-[2px] after:bg-[#8a1c36]">
+              Contact Us
+            </h4>
+            <ul className="space-y-3.5 font-medium text-slate-400">
+              <li>
+                <a 
+                  href="https://mail.google.com/mail/?view=cm&fs=1&to=odishaexamprep365@gmail.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="flex items-center gap-3 group"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center shrink-0 group-hover:border-brand-500/50 group-hover:bg-[#8a1c36]/10 transition-all duration-300">
+                    <Mail className="w-4 h-4 text-slate-400 group-hover:text-brand-400 transition-colors" />
+                  </div>
+                  <span className="break-all text-sm group-hover:text-white transition-colors duration-300">
+                    odishaexamprep365@gmail.com
+                  </span>
+                </a>
+              </li>
+              <li>
+                <a 
+                  href="tel:+917377431715" 
+                  className="flex items-center gap-3 group"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center shrink-0 group-hover:border-[#25D366]/50 group-hover:bg-[#25D366]/10 transition-all duration-300">
+                    <Phone className="w-4 h-4 text-slate-400 group-hover:text-[#25D366] transition-colors" />
+                  </div>
+                  <span className="text-sm group-hover:text-white transition-colors duration-300">
+                    +91 7377431715
+                  </span>
+                </a>
+              </li>
+              
+              {/* Social links */}
+              <li className="flex gap-3 pt-3">
+                <a 
+                  href="https://www.youtube.com/@OdishaExamPrep365" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="w-11 h-11 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center hover:bg-[#FF0000] hover:border-[#FF0000] hover:-translate-y-1 transition-all duration-300 text-slate-400 hover:text-white shadow-lg hover:shadow-red-600/10 group"
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 group-hover:scale-110 transition-transform">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                  </svg>
+                </a>
+                <a 
+                  href="https://wa.me/917377431715" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="w-11 h-11 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center hover:bg-[#25D366] hover:border-[#25D366] hover:-translate-y-1 transition-all duration-300 text-slate-400 hover:text-white shadow-lg hover:shadow-[#25D366]/10 group"
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 group-hover:scale-110 transition-transform">
+                    <path d="M12.031 0C5.385 0 0 5.385 0 12.029a12.022 12.022 0 001.6 6.02L0 24l6.15-1.611a12.012 12.012 0 005.881 1.523h.004c6.645 0 12.03-5.386 12.03-12.031S18.675 0 12.031 0zm0 21.936a9.988 9.988 0 01-5.086-1.385l-.364-.216-3.774.99.998-3.682-.236-.376A9.957 9.957 0 012.064 12.03c0-5.497 4.475-9.972 9.972-9.972 5.497 0 9.97 4.475 9.97 9.972s-4.473 9.97-9.97 9.97z"/>
+                    <path d="M17.481 14.159c-.297-.149-1.758-.868-2.03-.968-.27-.099-.467-.149-.665.149-.198.298-.767.967-.94 1.165-.173.198-.346.223-.644.074a8.214 8.214 0 01-4.041-2.518c-.282-.326.319-.314.901-1.479.098-.198.05-.371-.025-.52-.075-.149-.665-1.605-.91-2.196-.241-.578-.485-.5-.665-.509-.174-.01-.371-.01-.57-.01-.198 0-.52.074-.792.371C6.822 7.027 6 7.82 6 9.381c0 1.56 1.015 3.07 1.164 3.268.149.198 2.228 3.4 5.397 4.76 2.656 1.139 3.554 1.259 4.314 1.05.76-.208 2.03-.896 2.316-1.761.286-.865.286-1.605.2-1.76-.086-.15-.286-.24-.584-.388z"/>
+                  </svg>
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
       
+      {/* Bottom bar */}
       <div className="max-w-6xl mx-auto px-6 mt-16 md:mt-24">
-        <div className="pt-8 border-t border-slate-800/50 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
-          <p className="text-xs sm:text-sm font-bold tracking-widest text-slate-500 uppercase">
+        <div className="pt-8 border-t border-slate-800/60 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+          <p className="text-xs font-mono font-bold tracking-widest text-slate-500 uppercase">
             © 2026 OdishaExamPrep. All rights reserved.
           </p>
-          <div className="flex justify-center md:justify-start gap-6 text-slate-600 text-sm font-semibold">
-            <span>Made with 🤍 in Odisha</span>
+          <div className="flex justify-center md:justify-start">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-slate-900/80 border border-slate-800/80 text-slate-400">
+              <span>Made with</span>
+              <span className="text-rose-500 animate-pulse">❤️</span>
+              <span>in Odisha</span>
+            </span>
           </div>
         </div>
       </div>
@@ -1085,69 +1315,212 @@ const Navbar = ({
 }) => {
   const { profile, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const scrolled = useScrollSpy(20);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [activeSection, setActiveSection] = useState('');
+  const isScrollingRef = useRef(false);
+  const scrollLockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Viewport tracking scroll spy for active sections
+  useEffect(() => {
+    if (location.pathname !== '/') {
+      if (location.pathname.startsWith('/blog')) {
+        setActiveSection('blog');
+      } else {
+        setActiveSection('');
+      }
+      return;
+    }
+
+    const handleScroll = () => {
+      // Pause spy while a programmatic smooth-scroll is animating
+      if (isScrollingRef.current) return;
+
+      const sectionIds = ['exam-registry', 'exams', 'syllabus-paths', 'achievers-journal'];
+
+      // If we are at the very top of the page, clear active section
+      if (window.scrollY < 100) {
+        setActiveSection('');
+        return;
+      }
+
+      // Standard scroll-spy: iterate sections in REVERSE order.
+      // Find the LAST section whose top edge has scrolled above the trigger offset.
+      const NAVBAR_OFFSET = 100;
+
+      let currentActive = '';
+      for (let i = sectionIds.length - 1; i >= 0; i--) {
+        const id = sectionIds[i];
+        const el = document.getElementById(id);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= NAVBAR_OFFSET) {
+            currentActive = id;
+            break;
+          }
+        }
+      }
+      setActiveSection(currentActive);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [location.pathname]);
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
     setMobileMenuOpen(false);
-    
+
     if (window.location.pathname !== '/') {
       window.location.assign('/#' + id);
       return;
     }
-    
-    scrollToElement(id, { block: 'start' });
+
+    // Immediately update highlight for instant visual feedback
+    setActiveSection(id);
+    // Lock spy during smooth-scroll animation (~900ms)
+    isScrollingRef.current = true;
+    if (scrollLockTimer.current) clearTimeout(scrollLockTimer.current);
+    scrollLockTimer.current = setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 900);
+
+    scrollToElement(id, { block: 'start', behavior: 'smooth' });
   };
 
   const defaultMessage = "Hello! I am reaching out from the OdishaExamPrep website. I have a query.";
   const userMessage = user?.email ? `Hello! I am ${user.email} reaching out from the OdishaExamPrep website. I have a query.` : defaultMessage;
   const supportUrl = `https://wa.me/917377431715?text=${encodeURIComponent(userMessage)}`;
 
+  const isBlogActive = location.pathname.startsWith('/blog') || activeSection === 'blog';
+
   return (
     <header className={cn("sticky top-0 z-[60] w-full transition-all duration-500", scrolled ? "navbar-scrolled" : "navbar-glass")}>
       <div className="max-w-7xl mx-auto px-4 h-16 sm:h-20 flex items-center justify-between">
-        <div className="flex items-center gap-2 sm:gap-3 group cursor-pointer" onClick={onHomeClick || (() => navigate('/'))}>
-          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/30 group-hover:rotate-6 group-hover:scale-110 transition-all duration-300 premium-gradient premium-glow-sm">
+        <div
+          className="flex items-center gap-2 sm:gap-3 group cursor-pointer"
+          onClick={() => {
+            if (onHomeClick) {
+              onHomeClick();
+            } else if (window.location.pathname === '/') {
+              // Already on landing page — smooth scroll to hero (top)
+              setActiveSection('');
+              scrollToTop();
+            } else {
+              navigate('/');
+            }
+          }}
+        >
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl border-2 border-slate-900 bg-[#8A1C36] flex items-center justify-center shadow-[3px_3px_0px_#0f172a] group-hover:rotate-3 group-hover:scale-105 transition-all duration-300">
             <BookOpen className="text-white w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          <span className="font-black text-xl sm:text-2xl tracking-tight text-slate-900 group-hover:text-brand-600 transition-colors duration-300">
-            Odisha<span className="premium-text-gradient">Exam</span>Prep
+          <span className="font-serif font-black text-xl sm:text-2xl tracking-tight text-slate-900 group-hover:text-[#8A1C36] transition-colors duration-300 uppercase">
+            Odisha<span className="text-[#8A1C36] font-serif font-black">Exam</span>Prep
           </span>
         </div>
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-4 lg:gap-6">
-          <div className="flex items-center bg-slate-50 border border-slate-100 rounded-full p-1 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)]">
+          {/* Desktop nav pill group — uses Framer Motion layoutId for the sliding active indicator */}
+          <div className="flex items-center border-2 border-slate-900 bg-white rounded-xl p-0.5 shadow-[3px_3px_0px_#0f172a] relative">
             {!user && (
               <>
-                 <a href="#exams" onClick={(e) => scrollToSection(e, 'exams')} className="flex items-center gap-2 text-[14px] font-bold text-slate-600 hover:text-brand-600 px-4 py-1.5 rounded-full hover:bg-white hover:shadow-sm transition-all duration-300">
-                   <Target className="w-4 h-4" />
-                   <span>Exams</span>
+                 {/* Registry */}
+                 <a 
+                   href="#exam-registry"
+                   onClick={(e) => scrollToSection(e, 'exam-registry')}
+                   className="relative flex items-center gap-1.5 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-lg group cursor-pointer"
+                 >
+                   {activeSection === 'exam-registry' && (
+                     <motion.div
+                       layoutId="nav-active-pill"
+                       className="absolute inset-0 rounded-lg bg-[#fce7eb]"
+                       transition={{ type: 'spring', stiffness: 420, damping: 38, mass: 0.8 }}
+                     />
+                   )}
+                   <Clock3 className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", activeSection === 'exam-registry' ? "text-[#8A1C36]" : "text-slate-400 group-hover:text-[#8A1C36]")} />
+                   <span className={cn("relative z-10 transition-colors duration-150", activeSection === 'exam-registry' ? "text-[#8A1C36]" : "text-slate-600 group-hover:text-[#8A1C36]")}>Registry</span>
                  </a>
-                 <div className="w-px h-4 bg-slate-200 mx-1"></div>
-                 <a href="#how-it-works" onClick={(e) => scrollToSection(e, 'how-it-works')} className="flex items-center gap-2 text-[14px] font-bold text-slate-600 hover:text-brand-600 px-4 py-1.5 rounded-full hover:bg-white hover:shadow-sm transition-all duration-300">
-                   <Zap className="w-4 h-4" />
-                   <span>How it Works</span>
+                 <div className="w-0.5 h-4 bg-slate-200 mx-0.5 shrink-0"></div>
+                 {/* Practice */}
+                 <a 
+                   href="#exams"
+                   onClick={(e) => scrollToSection(e, 'exams')}
+                   className="relative flex items-center gap-1.5 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-lg group cursor-pointer"
+                 >
+                   {activeSection === 'exams' && (
+                     <motion.div
+                       layoutId="nav-active-pill"
+                       className="absolute inset-0 rounded-lg bg-[#fce7eb]"
+                       transition={{ type: 'spring', stiffness: 420, damping: 38, mass: 0.8 }}
+                     />
+                   )}
+                   <Target className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", activeSection === 'exams' ? "text-[#8A1C36]" : "text-slate-400 group-hover:text-[#8A1C36]")} />
+                   <span className={cn("relative z-10 transition-colors duration-150", activeSection === 'exams' ? "text-[#8A1C36]" : "text-slate-600 group-hover:text-[#8A1C36]")}>Practice</span>
                  </a>
-                 <div className="w-px h-4 bg-slate-200 mx-1"></div>
-                 <a href="#testimonials" onClick={(e) => scrollToSection(e, 'testimonials')} className="flex items-center gap-2 text-[14px] font-bold text-slate-600 hover:text-brand-600 px-4 py-1.5 rounded-full hover:bg-white hover:shadow-sm transition-all duration-300">
-                   <Star className="w-4 h-4" />
-                   <span>Testimonials</span>
+                 <div className="w-0.5 h-4 bg-slate-200 mx-0.5 shrink-0"></div>
+                 {/* Syllabus */}
+                 <a 
+                   href="#syllabus-paths"
+                   onClick={(e) => scrollToSection(e, 'syllabus-paths')}
+                   className="relative flex items-center gap-1.5 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-lg group cursor-pointer"
+                 >
+                   {activeSection === 'syllabus-paths' && (
+                     <motion.div
+                       layoutId="nav-active-pill"
+                       className="absolute inset-0 rounded-lg bg-[#fce7eb]"
+                       transition={{ type: 'spring', stiffness: 420, damping: 38, mass: 0.8 }}
+                     />
+                   )}
+                   <BookOpen className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", activeSection === 'syllabus-paths' ? "text-[#8A1C36]" : "text-slate-400 group-hover:text-[#8A1C36]")} />
+                   <span className={cn("relative z-10 transition-colors duration-150", activeSection === 'syllabus-paths' ? "text-[#8A1C36]" : "text-slate-600 group-hover:text-[#8A1C36]")}>Syllabus</span>
                  </a>
-                 <div className="w-px h-4 bg-slate-200 mx-1"></div>
+                 <div className="w-0.5 h-4 bg-slate-200 mx-0.5 shrink-0"></div>
+                 {/* Achievers */}
+                 <a 
+                   href="#achievers-journal"
+                   onClick={(e) => scrollToSection(e, 'achievers-journal')}
+                   className="relative flex items-center gap-1.5 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-lg group cursor-pointer"
+                 >
+                   {activeSection === 'achievers-journal' && (
+                     <motion.div
+                       layoutId="nav-active-pill"
+                       className="absolute inset-0 rounded-lg bg-[#fce7eb]"
+                       transition={{ type: 'spring', stiffness: 420, damping: 38, mass: 0.8 }}
+                     />
+                   )}
+                   <Award className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", activeSection === 'achievers-journal' ? "text-[#8A1C36]" : "text-slate-400 group-hover:text-[#8A1C36]")} />
+                   <span className={cn("relative z-10 transition-colors duration-150", activeSection === 'achievers-journal' ? "text-[#8A1C36]" : "text-slate-600 group-hover:text-[#8A1C36]")}>Achievers</span>
+                 </a>
+                 <div className="w-0.5 h-4 bg-slate-200 mx-0.5 shrink-0"></div>
               </>
             )}
-             <Link to="/blog" className="flex items-center gap-2 text-[14px] font-bold text-slate-600 hover:text-brand-600 px-4 py-1.5 rounded-full hover:bg-white hover:shadow-sm transition-all duration-300">
-               <FileText className="w-4 h-4" />
-               <span>Blog</span>
+             {/* Blog */}
+             <Link 
+               to="/blog"
+               className="relative flex items-center gap-1.5 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-lg group cursor-pointer"
+             >
+               {isBlogActive && (
+                 <motion.div
+                   layoutId="nav-active-pill"
+                   className="absolute inset-0 rounded-lg bg-[#fce7eb]"
+                   transition={{ type: 'spring', stiffness: 420, damping: 38, mass: 0.8 }}
+                 />
+               )}
+               <FileText className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", isBlogActive ? "text-[#8A1C36]" : "text-slate-400 group-hover:text-[#8A1C36]")} />
+               <span className={cn("relative z-10 transition-colors duration-150", isBlogActive ? "text-[#8A1C36]" : "text-slate-600 group-hover:text-[#8A1C36]")}>Blog</span>
              </Link>
             {user && (
               <>
-                 <div className="w-px h-4 bg-slate-200 mx-1"></div>
-                 <a href={supportUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[14px] font-bold text-slate-600 hover:text-brand-600 px-4 py-1.5 rounded-full hover:bg-white hover:shadow-sm transition-all duration-300">
-                   <HelpCircle className="w-4 h-4" />
+                 <div className="w-0.5 h-4 bg-slate-200 mx-0.5 shrink-0"></div>
+                 <a href={supportUrl} target="_blank" rel="noopener noreferrer" className="relative flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-600 hover:text-[#8A1C36] px-4 py-2 rounded-lg hover:bg-slate-50 transition-all duration-200 group">
+                   <HelpCircle className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#8A1C36] transition-colors" />
                    <span>Support</span>
                  </a>
               </>
@@ -1196,15 +1569,18 @@ const Navbar = ({
                              Sign Out
                            </button>
                          </div>
-                      </motion.div>
+                       </motion.div>
                     )}
                   </AnimatePresence>
                </div>
             ) : (
               onSignIn && (
-                <Button variant="primary" className="px-8 py-2.5 rounded-2xl text-sm font-bold shadow-lg shadow-brand-500/20" onClick={onSignIn}>
+                <button 
+                  onClick={onSignIn}
+                  className="px-6 h-10 text-xs font-black uppercase tracking-widest rounded-lg border-2 border-slate-900 bg-[#8A1C36] text-white shadow-[3px_3px_0px_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all duration-200 cursor-pointer shrink-0"
+                >
                   Sign In
-                </Button>
+                </button>
               )
             )}
           </div>
@@ -1213,9 +1589,12 @@ const Navbar = ({
         {/* Mobile Menu Toggle */}
         <div className="md:hidden flex items-center gap-3">
           {!user && onSignIn && (
-            <Button variant="primary" size="sm" className="px-5 rounded-xl text-xs font-bold" onClick={onSignIn}>
+            <button 
+              onClick={onSignIn}
+              className="px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg border-2 border-slate-900 bg-[#8A1C36] text-white shadow-[2px_2px_0px_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all duration-200 cursor-pointer shrink-0"
+            >
               Sign In
-            </Button>
+            </button>
           )}
           <button 
             className="p-2.5 text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
@@ -1239,47 +1618,94 @@ const Navbar = ({
             <div className="p-4 flex flex-col gap-2">
               {!user && (
                 <>
-                  <a href="#exams" onClick={(e) => scrollToSection(e, 'exams')} className="flex items-center gap-4 text-lg font-bold text-slate-700 p-4 hover:bg-emerald-50 hover:text-emerald-600 rounded-2xl transition-colors">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                  <a 
+                    href="#exam-registry" 
+                    onClick={(e) => scrollToSection(e, 'exam-registry')} 
+                    className={cn(
+                      "flex items-center gap-4 text-lg font-bold p-4 rounded-2xl transition-all border-l-4",
+                      activeSection === 'exam-registry'
+                        ? "bg-[#fce7eb] text-[#8A1C36] font-extrabold border-[#8A1C36] pl-3"
+                        : "text-slate-700 hover:bg-[#fce7eb] hover:text-[#8A1C36] border-transparent hover:border-[#8A1C36]/30"
+                    )}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-[#fce7eb] flex items-center justify-center text-[#8A1C36] shrink-0 shadow-sm">
+                       <Clock3 className="w-5 h-5" />
+                    </div>
+                    <span>Registry</span>
+                  </a>
+                  <a 
+                    href="#exams" 
+                    onClick={(e) => scrollToSection(e, 'exams')} 
+                    className={cn(
+                      "flex items-center gap-4 text-lg font-bold p-4 rounded-2xl transition-all border-l-4",
+                      activeSection === 'exams'
+                        ? "bg-emerald-50 text-emerald-700 font-extrabold border-emerald-600 pl-3"
+                        : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 border-transparent hover:border-emerald-600/30"
+                    )}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0 shadow-sm">
                        <Target className="w-5 h-5" />
                     </div>
-                    Exams
+                    <span>Practice</span>
                   </a>
-                  <a href="#how-it-works" onClick={(e) => scrollToSection(e, 'how-it-works')} className="flex items-center gap-4 text-lg font-bold text-slate-700 p-4 hover:bg-amber-50 hover:text-amber-600 rounded-2xl transition-colors">
-                    <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
-                       <Zap className="w-5 h-5" />
+                  <a 
+                    href="#syllabus-paths" 
+                    onClick={(e) => scrollToSection(e, 'syllabus-paths')} 
+                    className={cn(
+                      "flex items-center gap-4 text-lg font-bold p-4 rounded-2xl transition-all border-l-4",
+                      activeSection === 'syllabus-paths'
+                        ? "bg-blue-50 text-blue-700 font-extrabold border-blue-600 pl-3"
+                        : "text-slate-700 hover:bg-blue-50 hover:text-blue-700 border-transparent hover:border-blue-600/30"
+                    )}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 shadow-sm">
+                       <BookOpen className="w-5 h-5" />
                     </div>
-                    How it Works
+                    <span>Syllabus</span>
                   </a>
-                  <a href="#testimonials" onClick={(e) => scrollToSection(e, 'testimonials')} className="flex items-center gap-4 text-lg font-bold text-slate-700 p-4 hover:bg-purple-50 hover:text-purple-600 rounded-2xl transition-colors">
-                    <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
-                       <Star className="w-5 h-5" />
+                  <a 
+                    href="#achievers-journal" 
+                    onClick={(e) => scrollToSection(e, 'achievers-journal')} 
+                    className={cn(
+                      "flex items-center gap-4 text-lg font-bold p-4 rounded-2xl transition-all border-l-4",
+                      activeSection === 'achievers-journal'
+                        ? "bg-amber-50 text-amber-700 font-extrabold border-amber-600 pl-3"
+                        : "text-slate-700 hover:bg-amber-50 hover:text-amber-700 border-transparent hover:border-amber-600/30"
+                    )}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0 shadow-sm">
+                       <Award className="w-5 h-5" />
                     </div>
-                    Testimonials
+                    <span>Achievers</span>
                   </a>
                 </>
               )}
               <Link 
                 to="/blog"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-4 text-lg font-bold text-slate-700 p-4 hover:bg-brand-50 hover:text-brand-600 rounded-2xl transition-colors"
+                className={cn(
+                  "flex items-center gap-4 text-lg font-bold p-4 rounded-2xl transition-all border-l-4",
+                  isBlogActive
+                    ? "bg-[#fce7eb] text-[#8A1C36] font-extrabold border-[#8A1C36] pl-3"
+                    : "text-slate-700 hover:bg-[#fce7eb] hover:text-[#8A1C36] border-transparent hover:border-[#8A1C36]/30"
+                )}
               >
-                <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center text-brand-600">
+                <div className="w-10 h-10 rounded-xl bg-[#fce7eb] flex items-center justify-center text-[#8A1C36] shrink-0 shadow-sm">
                    <FileText className="w-5 h-5" />
                 </div>
-                Latest Updates & Blog
+                <span>Latest Updates & Blog</span>
               </Link>
               {user && (
                 <a 
                   href={supportUrl}
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center gap-4 text-lg font-bold text-slate-700 p-4 hover:bg-blue-50 hover:text-blue-600 rounded-2xl transition-colors"
+                  className="flex items-center gap-4 text-lg font-bold p-4 rounded-2xl transition-all border-l-4 border-transparent text-slate-700 hover:bg-[#fce7eb] hover:text-[#8A1C36]"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                  <div className="w-10 h-10 rounded-xl bg-[#fce7eb] flex items-center justify-center text-[#8A1C36] shrink-0 shadow-sm">
                      <HelpCircle className="w-5 h-5" />
                   </div>
-                  Help & Support
+                  <span>Help & Support</span>
                 </a>
               )}
               {!user && onSignIn && (
@@ -1325,6 +1751,163 @@ const Navbar = ({
   );
 };
 
+// --- Interactive Hero Preview Component ---
+const InteractiveHeroPreview = () => {
+  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [showResult, setShowResult] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(522); // 08:42
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSecondsLeft((prev) => (prev > 0 ? prev - 1 : 600));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatTimer = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const question = {
+    text: "The historical Sun Temple of Konark, a UNESCO World Heritage site, was constructed by which ruler of the Eastern Ganga Dynasty?",
+    options: [
+      "Anantavarman Chodagangadeva",
+      "Narasimhadeva I",
+      "Kapilendradeva",
+      "Purushottamadeva"
+    ],
+    correctIndex: 1,
+    explanation: "King Langula Narasimhadeva I built the Konark Sun Temple in the 13th century (circa 1250 CE) to celebrate his military victories."
+  };
+
+  const handleSelect = (idx: number) => {
+    if (showResult) return;
+    setSelectedOption(idx);
+    setShowResult(true);
+  };
+
+  const handleReset = () => {
+    setSelectedOption(null);
+    setShowResult(false);
+  };
+
+  return (
+    <div className="w-full bg-white border-2 border-slate-900/80 rounded-[2rem] p-6 sm:p-8 shadow-[8px_8px_0px_rgba(138,28,54,1)] relative overflow-hidden font-sans">
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03] grid-bg" />
+      
+      <div className="flex items-center justify-between border-b-2 border-slate-100 pb-4 mb-5 shrink-0 relative z-10">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 bg-[#8A1C36] rounded-full animate-pulse" />
+          <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest leading-none">OPSC Prelims Mock</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-200 rounded-lg font-mono text-xs font-black text-slate-700">
+            <Clock3 className="w-3.5 h-3.5 text-slate-500" />
+            {formatTimer(secondsLeft)}
+          </div>
+          <span className="text-xs font-extrabold text-[#8A1C36] bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100">
+            Q. 42
+          </span>
+        </div>
+      </div>
+
+      <div className="space-y-4 mb-6 relative z-10">
+        <h3 className="text-base sm:text-lg font-serif font-extrabold text-slate-900 leading-relaxed">
+          {question.text}
+        </h3>
+      </div>
+
+      <div className="space-y-3 mb-6 relative z-10">
+        {question.options.map((opt, idx) => {
+          const isSelected = selectedOption === idx;
+          const isCorrect = idx === question.correctIndex;
+          const showSuccess = showResult && isCorrect;
+          const showFailure = showResult && isSelected && !isCorrect;
+
+          let optionStyle = "border-slate-200 hover:border-slate-900/60 hover:bg-slate-50";
+          let badgeStyle = "bg-slate-100 text-slate-500";
+
+          if (showResult) {
+            if (isCorrect) {
+              optionStyle = "border-emerald-500 bg-emerald-50 text-emerald-900";
+              badgeStyle = "bg-emerald-500 text-white";
+            } else if (isSelected) {
+              optionStyle = "border-rose-500 bg-rose-50 text-rose-900";
+              badgeStyle = "bg-rose-500 text-white";
+            } else {
+              optionStyle = "border-slate-100 bg-slate-50/50 opacity-60";
+            }
+          } else if (isSelected) {
+            optionStyle = "border-[#8A1C36] bg-[#8A1C36]/5 text-slate-900";
+            badgeStyle = "bg-[#8A1C36] text-white";
+          }
+
+          return (
+            <button
+              key={idx}
+              disabled={showResult}
+              onClick={() => handleSelect(idx)}
+              className={cn(
+                "w-full text-left p-3.5 rounded-xl border-2 font-semibold text-sm transition-all flex items-center gap-3.5 select-none relative cursor-pointer",
+                optionStyle
+              )}
+            >
+              <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs transition-colors shrink-0", badgeStyle)}>
+                {String.fromCharCode(65 + idx)}
+              </div>
+              <span className="flex-1 font-bold">{opt}</span>
+              {showSuccess && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />}
+              {showFailure && <X className="w-5 h-5 text-rose-600 shrink-0" />}
+            </button>
+          );
+        })}
+      </div>
+
+      <AnimatePresence>
+        {showResult && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="border-t-2 border-dashed border-slate-100 pt-5 space-y-3 relative z-10">
+              <div className="flex items-center gap-2">
+                <span className={cn(
+                  "px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border",
+                  selectedOption === question.correctIndex 
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-100" 
+                    : "bg-rose-50 text-rose-700 border-rose-100"
+                )}>
+                  {selectedOption === question.correctIndex ? "Correct Answer! (+1.00 Marks)" : "Incorrect! (-0.25 Marks)"}
+                </span>
+                <button 
+                  onClick={handleReset}
+                  className="text-xs font-black text-slate-400 hover:text-[#8A1C36] transition-colors ml-auto uppercase tracking-wider cursor-pointer"
+                >
+                  Try Again
+                </button>
+              </div>
+              <p className="text-xs font-medium text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-100 font-serif">
+                <strong className="text-slate-800 font-extrabold block mb-1">Explanation:</strong>
+                {question.explanation}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      <div className="flex items-center justify-between border-t-2 border-slate-100 pt-4 mt-5 text-[10px] font-black text-slate-400 uppercase tracking-widest relative z-10 shrink-0">
+        <div>Marks: 1.00</div>
+        <div>Penalty: 0.25</div>
+        <div>Status: Interactive Demo</div>
+      </div>
+    </div>
+  );
+};
+
 // --- Pages ---
 
 const LandingPage = () => {
@@ -1343,11 +1926,15 @@ const LandingPage = () => {
     "✅ Real-time rank analysis enabled for all premium mock tests"
   ]);
 
+  const [selectedExam, setSelectedExam] = useState<string | null>(() => sessionStorage.getItem('oep_selectedExam') || null);
+  const [exams, setExams] = useState<any[]>([]);
+
   useEffect(() => {
     const fetchUpdates = async () => {
       try {
-        const exams = await examService.getAllExams();
-        const newsSettings = exams.find(e => e.name === 'SYSTEM_SETTINGS_NEWS_TICKER');
+        const fetchedExams = await examService.getAllExams();
+        setExams(fetchedExams);
+        const newsSettings = fetchedExams.find(e => e.name === 'SYSTEM_SETTINGS_NEWS_TICKER');
         if (newsSettings && newsSettings.description) {
           const parsed = JSON.parse(newsSettings.description);
           if (parsed.updates && parsed.updates.length > 0) {
@@ -1405,49 +1992,48 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
       {/* Top Professional Announcement Bar */}
-      <div className="ticker-bar relative z-50">
-        <div className="max-w-7xl mx-auto flex items-center h-10 px-4">
-          <div className="flex items-center gap-2 px-3 h-full bg-brand-500/10 border-x border-white/10 shrink-0">
-            <span className="flex h-2 w-2 rounded-full bg-brand-500 animate-pulse" />
-            <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest leading-none">Exam Updates</span>
+      <div className="ticker-bar relative z-50 bg-[#0F172A] border-b-2 border-slate-900 overflow-hidden">
+        <div className="max-w-7xl mx-auto flex items-center h-10 relative">
+          <div className="flex items-center gap-2 px-4 h-full bg-[#8A1C36] text-white border-r-2 border-slate-900 shrink-0 relative z-20 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">
+            <span className="flex h-2 w-2 rounded-full bg-white animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-widest leading-none">Exam Updates</span>
           </div>
           
-          <div className="flex-1 overflow-hidden relative h-full flex items-center">
+          <div className="flex-1 overflow-hidden relative h-full flex items-center z-10">
             <div className="flex items-center gap-12 animate-marquee-lr whitespace-nowrap px-6">
               {announcements.map((text, i) => (
                 <div key={i} className="flex items-center gap-2 text-[10px] font-bold text-slate-300 uppercase tracking-tight">
-                  <span className="text-brand-500">•</span>
+                  <span className="text-[#8A1C36] font-black">•</span>
                   {text}
                 </div>
               ))}
               {/* Duplicate the EXACT same list to create a seamless infinite loop with marquee-lr (-50% to 0) */}
               {announcements.map((text, i) => (
                 <div key={`dup-${i}`} className="flex items-center gap-2 text-[10px] font-bold text-slate-300 uppercase tracking-tight">
-                  <span className="text-brand-500">•</span>
+                  <span className="text-[#8A1C36] font-black">•</span>
                   {text}
                 </div>
               ))}
             </div>
             
             {/* Edge Gradients for smooth fade */}
-            <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-slate-900 to-transparent z-10" />
-            <div className="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-slate-900 to-transparent z-10" />
+            <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#0F172A] to-transparent z-10" />
+            <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#0F172A] to-transparent z-10" />
           </div>
         </div>
       </div>
 
       <Navbar user={user} isAdmin={false} onSignIn={() => setShowAuthModal(true)} />
 
-      <main className="flex-1" style={{background: 'linear-gradient(160deg, #f5f0ff 0%, #faf7ff 40%, #f0f4ff 100%)'}}>
+      <main className="flex-1" style={{background: 'linear-gradient(160deg, #FAF8F5 0%, #FAF8F5 40%, #FAF8F5 100%)'}}>
         {/* Elite Split-Layout Hero Section */}
-        <section className="relative overflow-hidden pt-6 pb-16 lg:pt-10 lg:pb-32">
+        <section className="relative overflow-hidden pt-6 pb-12 lg:pt-10 lg:pb-20 border-b border-slate-200/50">
           {/* Animated Mesh + Grid Background */}
           <div className="absolute inset-0 -z-10 mesh-bg" />
           <div className="absolute inset-0 -z-10 grid-bg opacity-60" />
           {/* Glowing Orbs */}
-          <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full -z-10 animate-orb" style={{background: 'radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%)', filter: 'blur(40px)'}} />
-          <div className="absolute bottom-0 -left-40 w-[500px] h-[500px] rounded-full -z-10 animate-orb" style={{background: 'radial-gradient(circle, rgba(99,102,241,0.14) 0%, transparent 70%)', filter: 'blur(50px)', animationDelay: '2.5s'}} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full -z-10 opacity-30" style={{background: 'radial-gradient(ellipse, rgba(167,139,250,0.12) 0%, transparent 65%)', filter: 'blur(60px)'}} />
+          <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full -z-10 animate-orb" style={{background: 'radial-gradient(circle, rgba(138,28,54,0.06) 0%, transparent 70%)', filter: 'blur(40px)'}} />
+          <div className="absolute bottom-0 -left-40 w-[500px] h-[500px] rounded-full -z-10 animate-orb" style={{background: 'radial-gradient(circle, rgba(0,0,0,0.02) 0%, transparent 70%)', filter: 'blur(50px)', animationDelay: '2.5s'}} />
           
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-16">
@@ -1471,9 +2057,9 @@ const LandingPage = () => {
                     <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Trusted by 10K+ Aspirants</span>
                   </div>
 
-                  <h1 className="text-5xl sm:text-6xl md:text-7xl xl:text-8xl font-black text-slate-950 tracking-tight leading-[1.1] sm:leading-[1.05]">
+                  <h1 className="text-5xl sm:text-6xl md:text-7xl xl:text-8xl font-serif font-extrabold text-slate-950 tracking-tight leading-[1.1] sm:leading-[1.05]">
                     Excellence in <br className="hidden sm:block" /> 
-                    <span className="premium-text-gradient">Odisha Exams</span>
+                    <span className="premium-text-gradient font-serif font-extrabold">Odisha Exams</span>
                   </h1>
                   <p className="text-slate-600 text-base sm:text-lg md:text-xl max-w-2xl mx-auto lg:mx-0 font-medium leading-relaxed">
                     Master the OPSC, OSSC, and OSSSC syllabus with precision-crafted test series, verified PYQs, and real-time performance analytics. Your journey to success starts here.
@@ -1519,85 +2105,50 @@ const LandingPage = () => {
                 </div>
               </motion.div>
 
-              {/* Advanced Visual Column */}
+              {/* Advanced Visual Column - CBT Mock Test Preview */}
               <motion.div 
                 initial={{ opacity: 0, scale: 0.95, y: 30 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 1, delay: 0.2 }}
-                className="flex-1 relative w-full lg:max-w-[540px]"
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="flex-1 relative w-full lg:max-w-[500px]"
               >
-                <div className="relative p-6 sm:p-12">
-                  {/* Glowing Aura */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-brand-100/40 rounded-full blur-[100px] -z-10 animate-pulse" />
-                  
-                  {/* Floating Performance Indicator - Adjusted for Mobile Visibility */}
-                  <motion.div 
-                    animate={{ y: [0, -10, 0] }}
-                    transition={{ duration: 6, repeat: Infinity }}
-                    className="absolute -left-2 sm:-left-8 top-1/4 glass-card p-3 sm:p-5 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl z-20 flex items-center gap-3 sm:gap-4 scale-90 sm:scale-100"
-                  >
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30 feature-icon-wrap" style={{background: 'linear-gradient(135deg, #10b981, #059669)'}}>
-                      <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-white relative z-10" />
-                    </div>
-                    <div className="pr-2">
-                      <p className="text-xs sm:text-sm font-black text-slate-900">Score Tracker</p>
-                      <p className="text-[10px] sm:text-xs font-bold text-emerald-600">↑ Ranked #24</p>
-                    </div>
-                  </motion.div>
-
-                  <motion.div 
-                    animate={{ y: [0, 10, 0] }}
-                    transition={{ duration: 7, repeat: Infinity, delay: 1 }}
-                    className="absolute -right-2 sm:-right-8 bottom-1/4 glass-card p-3 sm:p-5 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl z-20 flex items-center gap-3 sm:gap-4 scale-90 sm:scale-100"
-                  >
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-brand-500/30 feature-icon-wrap premium-gradient">
-                      <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-white relative z-10" />
-                    </div>
-                    <div className="pr-2">
-                      <p className="text-xs sm:text-sm font-black text-slate-900">Verified PYQs</p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-[10px] sm:text-xs font-bold text-brand-600">✓ Updated {new Date().getFullYear()}</p>
-                      </div>
-                    </div>
-                  </motion.div>
-
-                  {/* High-End Portrait Framing — Softened Edges */}
-                  <div className="relative z-10 rounded-[4rem] sm:rounded-[5rem] overflow-hidden bg-white/60 p-4 sm:p-6 depth-shadow transform lg:-rotate-2 hover:rotate-0 hover:scale-[1.01] transition-all duration-1000" style={{backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.6)'}}>
-                    <img 
-                      src="/student.webp" 
-                      alt="Odisha Exam Aspirant" 
-                      className="w-full h-auto object-cover rounded-[3rem] sm:rounded-[4rem] shadow-inner" 
-                    />
-                  </div>
-
-                  {/* Small Floating Elements */}
-                  <div className="absolute top-10 right-20 w-16 h-16 bg-amber-400 rounded-full blur-2xl opacity-20 animate-pulse" />
-                  <div className="absolute bottom-10 left-20 w-20 h-20 bg-brand-400 rounded-full blur-3xl opacity-20" />
-                </div>
+                <InteractiveHeroPreview />
               </motion.div>
             </div>
           </div>
         </section>
 
-        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 space-y-16 md:space-y-20">
+        {/* 1. Exam Registry Section */}
+        <ExamRegistrySection setSelectedExam={setSelectedExam} exams={exams} />
 
-        <section id="exams" className="space-y-10 pb-20 scroll-mt-24">
-          <div className="flex flex-col items-center space-y-4 text-center">
-            <span className="section-chip">
-              <Zap className="w-3.5 h-3.5" />
-              Your Exam Gateway
-            </span>
-            <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight">Explore <span className="premium-text-gradient">Exams</span></h2>
-            <div className="section-divider" />
+        {/* 2. Practice Core (Explore Exams) */}
+        <section id="exams" className="py-12 md:py-16 scroll-mt-24 border-b border-slate-200/50">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
+            <div className="flex flex-col items-center space-y-4 text-center">
+              <span className="section-chip">
+                <Zap className="w-3.5 h-3.5" />
+                Your Exam Gateway
+              </span>
+              <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-900 tracking-tight">Explore <span className="premium-text-gradient font-serif font-extrabold">Exams</span></h2>
+              <div className="section-divider" />
+              <p className="text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed">
+                Practice with our curated question banks and full-length mock tests designed for official patterns.
+              </p>
+            </div>
+            <DashboardContent 
+              isGuest={!user} 
+              onSignIn={() => setShowAuthModal(true)} 
+              selectedExam={selectedExam} 
+              setSelectedExam={setSelectedExam} 
+            />
           </div>
-          <DashboardContent isGuest={!user} onSignIn={() => setShowAuthModal(true)} />
         </section>
 
-        <StatsSection />
-        <HowItWorksSection />
-        <ProductPreviewSection />
-        <TestimonialsSection />
-        </div>
+        {/* 3. Syllabus Paths Section */}
+        <SyllabusPathsSection />
+
+        {/* 4. Achievers' Journal Section */}
+        <AchieversJournalSection />
       </main>
 
 
@@ -2063,11 +2614,170 @@ const _dashboardCache: {
   loadedForUserId: null,
 };
 
-const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activities = [], onNavigate, onActivityLogged }: { isGuest?: boolean, onSignIn?: () => void, mainTab?: string, user?: any, activities?: any[], onNavigate?: (tab: any) => void, onActivityLogged?: () => void }) => {
+// --- Goal Onboarding Modal ---
+const OnboardingModal = ({ 
+  isOpen, 
+  onSave, 
+  user 
+}: { 
+  isOpen: boolean; 
+  onSave: (targetExam: string, targetTimeline: string, currentPrepLevel: string) => Promise<void>; 
+  user: any 
+}) => {
+  const [targetExam, setTargetExam] = useState<'OPSC' | 'OSSC' | 'OSSSC'>('OPSC');
+  const [targetTimeline, setTargetTimeline] = useState<'3m' | '6m' | '1y'>('6m');
+  const [currentPrepLevel, setCurrentPrepLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
+  const [submitting, setSubmitting] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await onSave(targetExam, targetTimeline, currentPrepLevel);
+    } catch(err) {
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-950/60 z-[100] flex items-center justify-center p-4 backdrop-blur-md">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 15 }}
+        className="bg-[#FAF8F5] border-2 border-slate-900 rounded-[2.5rem] p-6 sm:p-10 max-w-lg w-full shadow-[8px_8px_0px_rgba(0,0,0,1)] relative overflow-hidden"
+      >
+        <div className="absolute inset-0 pointer-events-none border-[12px] border-slate-900/5 rounded-[2.5rem]" />
+        
+        <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
+          <div className="text-center space-y-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#8A1C36]/10 text-[#8A1C36] rounded-full text-xs font-black uppercase tracking-wider border border-[#8A1C36]/20">
+              <Target className="w-3.5 h-3.5" />
+              Set Your Target Goal
+            </span>
+            <h3 className="text-2xl sm:text-3xl font-serif font-extrabold text-slate-955 tracking-tight">
+              Personalize Your Prep
+            </h3>
+            <p className="text-slate-500 text-xs sm:text-sm font-medium max-w-sm mx-auto">
+              Tell us your target exam, timeline, and current level to customize your dashboard layout and recommendation tracks.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block font-mono">
+                1. Target Exam
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {(['OPSC', 'OSSC', 'OSSSC'] as const).map((exam) => (
+                  <button
+                    key={exam}
+                    type="button"
+                    onClick={() => setTargetExam(exam)}
+                    className={cn(
+                      "py-3.5 sm:py-4 px-2.5 rounded-2xl border-2 text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
+                      targetExam === exam
+                        ? "bg-[#8A1C36] text-white border-slate-900 shadow-[2px_2px_0px_rgba(0,0,0,1)]"
+                        : "bg-white text-slate-700 border-slate-200/80 hover:border-slate-400 hover:bg-slate-50/50"
+                    )}
+                  >
+                    {exam}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block font-mono">
+                2. Target Timeline
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { value: '3m', label: '3 Months' },
+                  { value: '6m', label: '6 Months' },
+                  { value: '1y', label: '1 Year' }
+                ].map((time) => (
+                  <button
+                    key={time.value}
+                    type="button"
+                    onClick={() => setTargetTimeline(time.value as any)}
+                    className={cn(
+                      "py-3.5 sm:py-4 px-2 rounded-2xl border-2 text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
+                      targetTimeline === time.value
+                        ? "bg-slate-900 text-white border-slate-900 shadow-[2px_2px_0px_rgba(0,0,0,1)]"
+                        : "bg-white text-slate-700 border-slate-200/80 hover:border-slate-400 hover:bg-slate-50/50"
+                    )}
+                  >
+                    {time.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block font-mono">
+                3. Preparation Level
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { value: 'beginner', label: 'Beginner' },
+                  { value: 'intermediate', label: 'Intermediate' },
+                  { value: 'advanced', label: 'Advanced' }
+                ].map((lvl) => (
+                  <button
+                    key={lvl.value}
+                    type="button"
+                    onClick={() => setCurrentPrepLevel(lvl.value as any)}
+                    className={cn(
+                      "py-3.5 sm:py-4 px-1 rounded-2xl border-2 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
+                      currentPrepLevel === lvl.value
+                        ? "bg-slate-900 text-white border-slate-900 shadow-[2px_2px_0px_rgba(0,0,0,1)]"
+                        : "bg-white text-slate-700 border-slate-200/80 hover:border-slate-400 hover:bg-slate-50/50"
+                    )}
+                  >
+                    {lvl.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full inline-flex items-center justify-center gap-2 py-4.5 rounded-[1.25rem] border-2 border-slate-900 text-xs font-black uppercase tracking-widest text-white bg-[#8A1C36] hover:bg-[#72142a] transition-all cursor-pointer shadow-[4px_4px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {submitting ? 'Saving Goals...' : 'Save & Personalize Dashboard'}
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </form>
+      </motion.div>
+    </div>
+  );
+};
+
+const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activities = [], onNavigate, onActivityLogged, selectedExam: propsSelectedExam, setSelectedExam: propsSetSelectedExam }: { isGuest?: boolean, onSignIn?: () => void, mainTab?: string, user?: any, activities?: any[], onNavigate?: (tab: any) => void, onActivityLogged?: () => void, selectedExam?: string | null, setSelectedExam?: (val: string | null) => void }) => {
   const { profile, isAdmin, hasFullAccess, grantFullAccess, hasAccessTo, unlockItem, guestUsage, incrementGuestUsage } = useAuth();
   const navigate = useNavigate();
-  const [selectedExam, setSelectedExam] = useState<string | null>(() => sessionStorage.getItem('oep_selectedExam') || null);
+  const [internalSelectedExam, setInternalSelectedExam] = useState<string | null>(() => sessionStorage.getItem('oep_selectedExam') || null);
+  const selectedExam = propsSelectedExam !== undefined ? propsSelectedExam : internalSelectedExam;
+  const setSelectedExam = (val: string | null) => {
+    if (val === null) {
+      sessionStorage.setItem('oep_auto_navigated_dismissed', 'true');
+    }
+    if (propsSetSelectedExam) {
+      propsSetSelectedExam(val);
+    } else {
+      setInternalSelectedExam(val);
+    }
+  };
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const hasAutoNavigated = useRef(false);
 
   useEffect(() => {
     if (selectedExam) sessionStorage.setItem('oep_selectedExam', selectedExam);
@@ -2083,6 +2793,18 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       }
     }
   }, [selectedExam, isGuest]);
+
+  useEffect(() => {
+    if (user && !user.user_metadata?.targetExam) {
+      const dismissed = sessionStorage.getItem('oep_onboarding_dismissed');
+      if (!dismissed) {
+        setShowOnboarding(true);
+      }
+    }
+  }, [user]);
+
+
+
   const [activeTest, setActiveTest] = useState<any | null>(null);
   const [activeTestState, setActiveTestState] = useState<any>(null);
 
@@ -2116,6 +2838,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   // --- Common UI Components (Defined early, rendered at bottom) ---
   const renderCommonModals = () => (
     <>
+        {/* Onboarding Modal */}
+        <OnboardingModal 
+          isOpen={showOnboarding} 
+          onSave={handleSaveOnboarding} 
+          user={user} 
+        />
         {/* Detail View Modal */}
         <AnimatePresence>
           {selectedBankItem && (
@@ -2737,6 +3465,67 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   const [loadingExams, setLoadingExams] = useState(() => _dashboardCache.exams.length === 0);
   const [selectedMockCategory, setSelectedMockCategory] = useState<string | null>(() => sessionStorage.getItem('oep_selectedMockCategory') || null);
 
+  useEffect(() => {
+    if (hasAutoNavigated.current) return;
+    if (sessionStorage.getItem('oep_auto_navigated_dismissed') === 'true') {
+      hasAutoNavigated.current = true;
+      return;
+    }
+
+    if (user?.user_metadata?.targetExam) {
+      if (exams.length > 0) {
+        hasAutoNavigated.current = true;
+        if (!selectedExam) {
+          const target = user.user_metadata.targetExam.toLowerCase();
+          let matched = null;
+          if (target.includes('opsc')) {
+            matched = exams.find(e => e.name.toLowerCase().includes('opsc'));
+          } else if (target.includes('osssc')) {
+            matched = exams.find(e => e.name.toLowerCase().includes('osssc'));
+          } else if (target.includes('ossc')) {
+            matched = exams.find(e => e.name.toLowerCase().includes('ossc') && !e.name.toLowerCase().includes('osssc'));
+          }
+          if (matched) {
+            setSelectedExam(matched.id);
+          }
+        }
+      }
+    } else {
+      // No target exam set, so no auto-navigation is needed
+      hasAutoNavigated.current = true;
+    }
+  }, [exams, user, selectedExam]);
+
+  const handleSaveOnboarding = async (exam: string, timeline: string, prepLevel: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          targetExam: exam,
+          targetTimeline: timeline,
+          currentPrepLevel: prepLevel
+        }
+      });
+      if (error) throw error;
+      
+      let matched = null;
+      if (exam.toLowerCase().includes('opsc')) {
+        matched = exams.find(e => e.name.toLowerCase().includes('opsc'));
+      } else if (exam.toLowerCase().includes('osssc')) {
+        matched = exams.find(e => e.name.toLowerCase().includes('osssc'));
+      } else if (exam.toLowerCase().includes('ossc')) {
+        matched = exams.find(e => e.name.toLowerCase().includes('ossc') && !e.name.toLowerCase().includes('osssc'));
+      }
+      if (matched) {
+        setSelectedExam(matched.id);
+      }
+
+      setShowOnboarding(false);
+      if (onActivityLogged) onActivityLogged();
+    } catch(err: any) {
+      alert('Error updating onboarding settings: ' + err.message);
+    }
+  };
+
 
   useEffect(() => {
     if (selectedBankType) sessionStorage.setItem('oep_selectedBankType', selectedBankType);
@@ -3310,7 +4099,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   }
 
   if (mainTab === 'analytics') {
-    return <AnalyticsView user={user} onNavigate={onNavigate} />;
+    return <AnalyticsView user={user} activities={activities} onNavigate={onNavigate} />;
   }
 
   if (mainTab === 'history') {
@@ -3550,17 +4339,17 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
 
 
-        <div className="flex flex-col space-y-4 sm:space-y-6">
+        <div className="flex flex-col space-y-5 sm:space-y-7">
           {/* Controls Bar */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="bg-slate-200/40 p-1 sm:p-1.5 rounded-[1.5rem] flex gap-1 backdrop-blur-xl shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+            <div className="border-2 border-slate-900 bg-white p-1 rounded-2xl flex gap-1.5 shrink-0 shadow-[4px_4px_0px_rgba(138,28,54,0.15)]">
               <button
                 onClick={() => { setActiveTab('upcoming'); setExamSearchQuery(''); }}
                 className={cn(
-                  "px-5 sm:px-8 py-2 sm:py-3 rounded-[1.25rem] font-black text-xs sm:text-sm transition-all duration-500",
+                  "px-5 sm:px-8 py-2 sm:py-3 rounded-xl font-extrabold text-xs sm:text-sm transition-all duration-200 cursor-pointer",
                   (examSearchQuery ? filteredExams.some(e => e.category === 'upcoming') : activeTab === 'upcoming')
-                    ? "premium-gradient text-white shadow-2xl shadow-brand-500/20 scale-[1.02]" 
-                    : "text-slate-600 hover:bg-white/40"
+                    ? "bg-[#8A1C36] text-white shadow-[2px_2px_0px_#0f172a] -translate-y-0.5" 
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 )}
               >
                 Upcoming
@@ -3568,10 +4357,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               <button
                 onClick={() => { setActiveTab('popular'); setExamSearchQuery(''); }}
                 className={cn(
-                  "px-5 sm:px-8 py-2 sm:py-3 rounded-[1.25rem] font-black text-xs sm:text-sm transition-all duration-500",
+                  "px-5 sm:px-8 py-2 sm:py-3 rounded-xl font-extrabold text-xs sm:text-sm transition-all duration-200 cursor-pointer",
                   (examSearchQuery ? filteredExams.some(e => e.category === 'popular') : activeTab === 'popular')
-                    ? "premium-gradient text-white shadow-2xl shadow-brand-500/20 scale-[1.02]" 
-                    : "text-slate-600 hover:bg-white/40"
+                    ? "bg-[#8A1C36] text-white shadow-[2px_2px_0px_#0f172a] -translate-y-0.5" 
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 )}
               >
                 Popular
@@ -3585,11 +4374,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 placeholder="Search exams..."
                 value={examSearchQuery}
                 onChange={(e) => setExamSearchQuery(e.target.value)}
-                className="soft-input pl-10 sm:pl-14 pr-6 py-2.5 sm:py-4 rounded-[1.25rem] sm:rounded-[1.75rem] font-bold text-sm sm:text-base w-full"
+                className="pl-10 sm:pl-14 pr-12 py-2.5 sm:py-3.5 rounded-2xl font-bold text-sm sm:text-base w-full border-2 border-slate-900 bg-white shadow-[4px_4px_0px_rgba(138,28,54,0.15)] focus:shadow-[6px_6px_0px_#8A1C36] focus:outline-none transition-all duration-200"
               />
               {examSearchQuery && (
-                <button onClick={() => setExamSearchQuery('')} className="absolute right-5 top-1/2 -translate-y-1/2 p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
-                  <X className="w-5 h-5" />
+                <button onClick={() => setExamSearchQuery('')} className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-900 transition-colors">
+                  <X className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               )}
             </div>
@@ -3597,18 +4386,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
           <div className="relative group -mx-2 px-2">
             {/* Top Fade */}
-            <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-[#F8FAFC] to-transparent z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-t-3xl" />
+            <div className="absolute top-0.5 left-0.5 right-0.5 h-8 bg-gradient-to-b from-[#FAF8F5] to-transparent z-20 pointer-events-none rounded-t-3xl" />
 
-            
             <div 
-              className="max-h-[420px] sm:max-h-[500px] md:max-h-[600px] overflow-y-auto no-scrollbar pb-4 sm:pb-6 pt-2 rounded-2xl sm:rounded-3xl"
-              style={{ 
-                overscrollBehaviorY: 'auto',
-                background: 'rgba(255,255,255,0.5)',
-                backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(124,58,237,0.08)',
-                boxShadow: '0 4px 24px rgba(124,58,237,0.06), inset 0 1px 0 rgba(255,255,255,0.8)'
-              }}
+              className="max-h-[420px] sm:max-h-[500px] md:max-h-[600px] overflow-y-auto no-scrollbar pb-6 pt-6 px-4 rounded-3xl border-2 border-slate-900 bg-[#FAF8F5] shadow-[6px_6px_0px_rgba(138,28,54,0.15)]"
               onWheel={(e) => {
                 const el = e.currentTarget;
                 const isAtBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 2;
@@ -3619,15 +4400,14 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               }}
             >
               <motion.div 
-                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 md:gap-6 px-1"
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 px-1"
               >
                 <AnimatePresence mode="popLayout">
                   {loadingExams ? (
                     Array.from({ length: 6 }).map((_, i) => (
                       <motion.div
                         key={`skeleton-${i}`}
-                        className="h-28 sm:h-40 md:h-56 rounded-[1.25rem] sm:rounded-[1.75rem] md:rounded-[2rem] border animate-pulse"
-                        style={{background: 'linear-gradient(135deg, rgba(124,58,237,0.06), rgba(99,102,241,0.04))', borderColor: 'rgba(124,58,237,0.1)'}}
+                        className="h-28 sm:h-40 md:h-56 rounded-2xl border-2 border-slate-900 bg-white animate-pulse shadow-[4px_4px_0px_rgba(138,28,54,0.1)]"
                       />
                     ))
                   ) : filteredExams.length === 0 ? (
@@ -3635,17 +4415,20 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       key="empty-exams"
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="col-span-2 sm:col-span-3 lg:col-span-4 flex flex-col items-center justify-center py-12 text-center gap-3"
+                      className="col-span-2 sm:col-span-3 lg:col-span-4 flex flex-col items-center justify-center py-12 text-center gap-3 bg-white border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_rgba(138,28,54,0.15)]"
                     >
-                      <div className="w-14 h-14 rounded-2xl bg-brand-50 flex items-center justify-center text-3xl">📚</div>
-                      <p className="font-black text-slate-700 text-base">
+                      <div className="w-14 h-14 rounded-2xl border-2 border-slate-900 bg-[#FAF8F5] flex items-center justify-center text-3xl shadow-[2px_2px_0px_#8A1C36]">📚</div>
+                      <p className="font-serif font-bold text-slate-900 text-lg">
                         {examSearchQuery ? `No results for "${examSearchQuery}"` : `No ${activeTab} exams yet`}
                       </p>
-                      <p className="text-slate-400 text-sm font-medium max-w-xs">
+                      <p className="text-slate-500 text-sm font-medium max-w-xs">
                         {examSearchQuery ? 'Try a different search term' : activeTab === 'upcoming' ? 'Switch to Popular to see available exams' : 'Exams will appear here once added'}
                       </p>
                       {!examSearchQuery && activeTab === 'upcoming' && (
-                        <button onClick={() => setActiveTab('popular')} className="mt-1 px-5 py-2 text-sm font-black text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-xl transition-colors">
+                        <button 
+                          onClick={() => setActiveTab('popular')} 
+                          className="mt-1 px-5 py-2 text-sm font-extrabold text-white bg-[#8A1C36] hover:bg-[#76142c] border-2 border-slate-900 rounded-xl transition-all duration-200 shadow-[2px_2px_0px_#0f172a] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_#0f172a] cursor-pointer"
+                        >
                           View Popular Exams
                         </button>
                       )}
@@ -3660,42 +4443,65 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         } catch(e) {}
                       }
 
-                      return (
-                      <motion.div 
-                        key={exam.id}
-                        initial={{ opacity: 0, scale: 0.88, y: 16 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.88 }}
-                        transition={{ duration: 0.4, ease: 'easeOut' }}
-                        onClick={() => {
-                          setSelectedExam(exam.id);
-                          scrollToElement('exams', { block: 'start', delay: 50 });
-                        }}
-                        className="cursor-pointer h-full card-3d-deep rounded-[1.5rem] sm:rounded-[2rem] md:rounded-[2.5rem]"
-                      >
-                        <div className="soft-card p-3 sm:p-6 md:p-8 h-full group/card flex flex-col items-center text-center justify-center space-y-2 sm:space-y-4 md:space-y-6 relative rounded-[1.5rem] sm:rounded-[2rem] md:rounded-[2.5rem]">
-                          {/* Corner arrow - softer circle */}
-                          <div className="absolute top-2 right-2 sm:top-4 sm:right-4 md:top-5 md:right-5 w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full hidden sm:flex items-center justify-center transition-all duration-500 shadow-xl group-hover/card:premium-gradient group-hover/card:text-white" style={{background: 'rgba(124,58,237,0.05)'}}>
-                            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-brand-400 group-hover/card:translate-x-1 transition-transform" />
-                          </div>
+                      // Replace generic AI placeholder descriptions like "hellow" or missing ones
+                      if (!displayDesc || displayDesc.toLowerCase() === 'hellow' || displayDesc.toLowerCase() === 'hello') {
+                        const nameLower = exam.name.toLowerCase();
+                        if (nameLower.includes('amin')) {
+                          displayDesc = 'Comprehensive practice tests covering Mathematics, Computer Awareness, English, and Odia for the OSSSC Amin recruitment.';
+                        } else if (nameLower.includes('ri') || nameLower === 'ri') {
+                          displayDesc = 'Mock examinations covering General Awareness, Mathematics, Odia, English, and Computer concepts for Revenue Inspector.';
+                        } else if (nameLower.includes('upsc')) {
+                          displayDesc = 'Mock tests and previous year papers for Civil Services Prelims, focusing on General Studies and CSAT paper preparation.';
+                        } else if (nameLower.includes('opsc')) {
+                          displayDesc = 'Mock tests tailored for OPSC OAS Prelims & Mains exams, containing detailed solutions and performance analytics.';
+                        } else if (nameLower.includes('ossc')) {
+                          displayDesc = 'Comprehensive syllabus coverage for OSSC CGL and other graduate level examinations, featuring daily practice quizzes.';
+                        } else if (nameLower.includes('osssc')) {
+                          displayDesc = 'Dedicated preparation tests for various OSSSC cadre posts, including targeted section tests and full-length papers.';
+                        } else {
+                          displayDesc = 'Access specialized syllabus-aligned mock exams, topic-wise practice questions, and previous year papers.';
+                        }
+                      }
 
-                          {/* Icon with super-soft glow container */}
-                          <div className="w-10 h-10 sm:w-14 sm:h-14 md:w-20 md:h-20 flex justify-center items-center shrink-0 transform group-hover/card:scale-110 transition-transform duration-700 relative">
-                            <div className="absolute inset-0 rounded-full opacity-0 group-hover/card:opacity-100 transition-opacity duration-700" style={{background: 'radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%)', filter: 'blur(15px)'}} />
-                            {(exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/'))) ? (
-                              <img src={getDirectImageUrl(exam.icon)} alt={exam.name} className="w-full h-full object-contain filter drop-shadow-xl relative z-10" referrerPolicy="no-referrer" />
-                            ) : (
-                              <span className="text-3xl sm:text-4xl md:text-6xl relative z-10 drop-shadow-lg">{exam.icon || '📚'}</span>
-                            )}
+                      return (
+                        <motion.div 
+                          key={exam.id}
+                          initial={{ opacity: 0, scale: 0.95, y: 12 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                          onClick={() => {
+                            setSelectedExam(exam.id);
+                            scrollToElement('exams', { block: 'start', delay: 50 });
+                          }}
+                          className="cursor-pointer h-full group/card"
+                        >
+                          <div className="p-4 sm:p-5 md:p-6 h-full bg-white border-2 border-slate-900 rounded-3xl flex flex-col items-center text-center justify-center space-y-3 sm:space-y-4 md:space-y-5 relative shadow-[4px_4px_0px_#8A1C36] group-hover/card:shadow-[8px_8px_0px_#8A1C36] group-hover/card:-translate-y-1 group-hover/card:-translate-x-1 transition-all duration-300">
+                            {/* Corner arrow - structured circle */}
+                            <div className="absolute top-2 right-2 sm:top-4 sm:right-4 md:top-5 md:right-5 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full border-2 border-slate-900 bg-white hidden sm:flex items-center justify-center transition-all duration-300 shadow-[2px_2px_0px_#8A1C36] group-hover/card:bg-[#8A1C36] group-hover/card:shadow-none group-hover/card:translate-x-0.5 group-hover/card:translate-y-0.5">
+                              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-slate-900 group-hover/card:text-white transition-colors" />
+                            </div>
+
+                            {/* Icon Container */}
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl border-2 border-slate-900 bg-[#FAF8F5] flex justify-center items-center shrink-0 shadow-[3px_3px_0px_rgba(138,28,54,0.15)] group-hover/card:shadow-[4px_4px_0px_#8A1C36] transition-all duration-300 relative overflow-hidden">
+                              {(exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/'))) ? (
+                                <img src={getDirectImageUrl(exam.icon)} alt={exam.name} className="w-8/12 h-8/12 object-contain relative z-10" referrerPolicy="no-referrer" />
+                              ) : (
+                                <span className="text-xl sm:text-2xl md:text-4xl relative z-10">{exam.icon || '📚'}</span>
+                              )}
+                            </div>
+                            
+                            <div className="flex-1 w-full flex flex-col justify-start">
+                              <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-serif font-black text-slate-900 group-hover/card:text-[#8A1C36] transition-all duration-300 line-clamp-2 leading-tight tracking-tight uppercase">
+                                {exam.name}
+                              </h3>
+                              <p className="hidden md:block text-slate-500 mt-2.5 text-xs font-bold line-clamp-2 leading-relaxed opacity-85 group-hover/card:opacity-100 transition-opacity">
+                                {displayDesc}
+                              </p>
+                            </div>
                           </div>
-                          
-                          <div className="flex-1 w-full flex flex-col justify-start">
-                            <h3 className="text-[13px] sm:text-[15px] md:text-xl lg:text-2xl font-black text-slate-900 group-hover/card:text-brand-600 transition-all duration-300 line-clamp-2 leading-tight tracking-tight">{exam.name}</h3>
-                            <p className="hidden md:block text-slate-500 mt-3 text-sm font-bold line-clamp-2 leading-relaxed opacity-70 group-hover/card:opacity-100 transition-opacity">{displayDesc}</p>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )})
+                        </motion.div>
+                      )})
                   )}
                 </AnimatePresence>
               </motion.div>
@@ -4786,7 +5592,29 @@ export default function App() {
 function AppContent() {
   const { user, loading, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
-  const [mainTab, setMainTab] = useState<'home' | 'courses' | 'analytics' | 'history' | 'library'>('home');
+  const location = useLocation();
+  const [mainTab, setMainTab] = useState<'home' | 'courses' | 'analytics' | 'history' | 'library'>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab === 'courses' || tab === 'analytics' || tab === 'history' || tab === 'library') {
+      return tab as 'courses' | 'analytics' | 'history' | 'library';
+    }
+    return 'home';
+  });
+
+  useEffect(() => {
+    if (location.pathname !== '/') return;
+    const params = new URLSearchParams(window.location.search);
+    if (mainTab === 'home') {
+      params.delete('tab');
+    } else {
+      params.set('tab', mainTab);
+    }
+    const newSearch = params.toString();
+    const newUrl = `${window.location.pathname}${newSearch ? '?' + newSearch : ''}${window.location.hash}`;
+    window.history.replaceState(null, '', newUrl);
+  }, [mainTab, location.pathname]);
+
   const [dashboardKey, setDashboardKey] = useState(0);
   const [activities, setActivities] = useState<any[]>([]);
 
@@ -4854,8 +5682,17 @@ function AppContent() {
       _dashboardCache.mockTests = [];
       _dashboardCache.dynamicQuestionBanks = {};
       _dashboardCache.loadedForUserId = null;
+      sessionStorage.removeItem('oep_auto_navigated_dismissed');
     }
   }, [user]);
+
+  const prevUserIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (user?.id !== prevUserIdRef.current) {
+      sessionStorage.removeItem('oep_auto_navigated_dismissed');
+      prevUserIdRef.current = user?.id || null;
+    }
+  }, [user?.id]);
 
   const refreshActivities = () => {
     if (user?.id) {

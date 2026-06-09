@@ -126,32 +126,40 @@ export default function TestResultsView({ results, onClose }: { results: any, on
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-28 sm:pb-20 font-sans">
+    <div className="relative w-full min-h-screen bg-[#F8FAFC] pb-28 sm:pb-20 font-sans overflow-hidden">
+      {/* Background gradients for ambient atmosphere */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] bg-gradient-to-br from-brand-100/20 via-purple-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" />
+      <div className="fixed bottom-0 right-0 w-[800px] h-[600px] bg-gradient-to-tl from-indigo-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" />
+
       <header className="h-16 sm:h-20 glass border-b border-slate-200/50 flex items-center justify-between px-4 sm:px-10 sticky top-0 z-[100] w-full mb-4 sm:mb-8">
         <h1 className="font-black text-lg sm:text-2xl text-slate-900 tracking-tight line-clamp-1">Performance Report</h1>
         <Button onClick={onClose} variant="outline" className="px-4 sm:px-6 py-1.5 sm:py-2 text-sm sm:text-base border-2 border-slate-200 rounded-xl font-extrabold hover:bg-slate-100">Back</Button>
       </header>
 
       {/* TOP SECTION: Overall Performance & Results (Overview) */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-6">
           
           {/* Overall Score Card */}
-          <div className="lg:col-span-1 glass p-6 sm:p-8 rounded-[2rem] border border-slate-200 premium-shadow text-center bg-white/60 flex flex-col justify-between">
-            <div>
-              <h3 className="text-xs sm:text-sm font-black text-slate-400 uppercase tracking-widest mb-3">Total Score</h3>
-              <div className="text-4xl sm:text-5xl font-black text-brand-600 mb-1">
+          <div className="lg:col-span-1 relative overflow-hidden bg-white/65 backdrop-blur-xl p-6 sm:p-8 rounded-[2.5rem] border border-white/85 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] flex flex-col justify-between group transition-all duration-500 cursor-default">
+            {/* Background Glow */}
+            <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#8a1c36]/5 rounded-full blur-3xl pointer-events-none group-hover:bg-[#8a1c36]/10 transition-colors duration-500" />
+            <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-indigo-500/3 rounded-full blur-3xl pointer-events-none group-hover:bg-indigo-500/5 transition-colors duration-500" />
+
+            <div className="relative z-10 text-center">
+              <h3 className="text-[10px] font-sans font-black text-slate-400/90 uppercase tracking-widest mb-4">Total Score</h3>
+              <div className="text-5xl sm:text-6xl font-serif font-black text-[#8a1c36] tracking-tight mb-2 drop-shadow-sm">
                 {Number.isInteger(finalScore) ? finalScore : finalScore.toFixed(2)}
-                <span className="text-xl sm:text-2xl text-slate-400"> / {totalMarks}</span>
+                <span className="text-xl sm:text-2xl font-sans font-extrabold text-slate-400"> / {totalMarks}</span>
               </div>
               
-              <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-slate-500 font-extrabold mb-6 bg-slate-50 w-fit mx-auto px-3.5 py-1.5 rounded-xl border border-slate-100">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500"/> {accuracy}% Accuracy
+              <div className="flex items-center justify-center gap-1.5 text-xs font-black text-emerald-700 bg-emerald-50/70 border border-emerald-100/60 px-3.5 py-1.5 rounded-2xl w-fit mx-auto mt-4 shadow-sm transition-transform duration-300 group-hover:scale-103">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500"/> {accuracy}% Accuracy
               </div>
             </div>
 
             {/* Performance Calculation Breakdown */}
-            <div className="bg-slate-50/50 rounded-2xl border border-slate-100/80 p-4 text-left space-y-2.5">
+            <div className="relative z-10 bg-white/45 border border-white/60 backdrop-blur-md rounded-2xl p-4 text-left space-y-2.5 mt-8 hover:bg-white/80 transition-all duration-300">
               <div className="flex justify-between items-center text-xs font-bold text-slate-500">
                 <span>Total Marks</span>
                 <span className="text-slate-800 font-extrabold">{totalMarks} Marks</span>
@@ -166,57 +174,100 @@ export default function TestResultsView({ results, onClose }: { results: any, on
                   <span className="text-rose-600 font-extrabold">-{Number.isInteger(penaltyDeduction) ? penaltyDeduction : penaltyDeduction.toFixed(2)}</span>
                 </div>
               )}
-              <div className="border-t border-slate-200/50 pt-2.5 flex justify-between items-center text-xs sm:text-sm font-extrabold text-slate-700">
+              <div className="border-t border-slate-200/50 pt-2.5 flex justify-between items-center text-xs sm:text-sm font-black text-slate-700">
                 <span>Final Score</span>
-                <span className="text-brand-600 font-black">{Number.isInteger(finalScore) ? finalScore : finalScore.toFixed(2)} / {totalMarks}</span>
+                <span className="text-[#8a1c36] font-black">{Number.isInteger(finalScore) ? finalScore : finalScore.toFixed(2)} / {totalMarks}</span>
               </div>
             </div>
           </div>
 
           {/* Performance Summary Cards Grid */}
           <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
-            <div className="bg-white p-5 rounded-[1.5rem] border border-slate-200/60 shadow-sm flex flex-col justify-between">
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Time Taken</div>
-              <div className="text-lg sm:text-2xl font-black text-slate-800 flex items-center gap-2">
-                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-brand-500 shrink-0"/>
-                <span className="truncate">{formatTime(timeTaken)}</span>
+            
+            {/* Time Taken */}
+            <div className="relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
+              <div className="absolute -top-12 -right-12 w-28 h-28 bg-[#8a1c36]/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
+              <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
+                <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Time Taken</span>
+                <div className="p-2 bg-[#8a1c36]/5 border border-[#8a1c36]/10 rounded-xl text-[#8a1c36] group-hover:scale-105 group-hover:rotate-2 transition-all duration-300">
+                  <Clock className="w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0"/>
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-sans font-black text-slate-900 leading-none tracking-tight relative z-10 truncate">
+                {formatTime(timeTaken)}
               </div>
             </div>
-            <div className="bg-white p-5 rounded-[1.5rem] border border-slate-200/60 shadow-sm flex flex-col justify-between">
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Average Speed</div>
-              <div className="text-lg sm:text-2xl font-black text-slate-800 flex items-center gap-2">
-                <BarChart className="w-4 h-4 sm:w-5 sm:h-5 text-brand-500 shrink-0"/>
-                <span>{avgSpeed}s / Q</span>
+
+            {/* Average Speed */}
+            <div className="relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
+              <div className="absolute -top-12 -right-12 w-28 h-28 bg-[#8a1c36]/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
+              <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
+                <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Average Speed</span>
+                <div className="p-2 bg-[#8a1c36]/5 border border-[#8a1c36]/10 rounded-xl text-[#8a1c36] group-hover:scale-105 group-hover:rotate-2 transition-all duration-300">
+                  <BarChart className="w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0"/>
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-sans font-black text-slate-900 leading-none tracking-tight relative z-10">
+                {avgSpeed}<span className="text-xs font-bold text-slate-400 ml-1">s / Q</span>
               </div>
             </div>
-            <div className="bg-white p-5 rounded-[1.5rem] border border-slate-200/60 shadow-sm flex flex-col justify-between">
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Marked Review</div>
-              <div className="text-lg sm:text-2xl font-black text-slate-800 flex items-center gap-2">
-                <Flag className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 shrink-0"/>
-                <span>{markedForReview.length}</span>
+
+            {/* Marked Review */}
+            <div className="relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
+              <div className="absolute -top-12 -right-12 w-28 h-28 bg-amber-500/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
+              <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
+                <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Marked Review</span>
+                <div className="p-2 bg-amber-50/70 border border-amber-100/50 rounded-xl text-amber-600 group-hover:scale-105 group-hover:rotate-2 transition-all duration-300">
+                  <Flag className="w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0"/>
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-sans font-black text-slate-900 leading-none tracking-tight relative z-10">
+                {markedForReview.length}
               </div>
             </div>
-            <div className="bg-white p-5 rounded-[1.5rem] border border-slate-200/60 shadow-sm flex flex-col justify-between">
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Correct Answers</div>
-              <div className="text-lg sm:text-2xl font-black text-emerald-600 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0"/>
-                <span>{correctCount}</span>
+
+            {/* Correct Answers */}
+            <div className="relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
+              <div className="absolute -top-12 -right-12 w-28 h-28 bg-emerald-500/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
+              <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
+                <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Correct Answers</span>
+                <div className="p-2 bg-emerald-50/70 border border-emerald-100/50 rounded-xl text-emerald-600 group-hover:scale-105 group-hover:rotate-2 transition-all duration-300">
+                  <CheckCircle2 className="w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0"/>
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-sans font-black text-emerald-600 leading-none tracking-tight relative z-10">
+                {correctCount}
               </div>
             </div>
-            <div className="bg-white p-5 rounded-[1.5rem] border border-slate-200/60 shadow-sm flex flex-col justify-between">
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Incorrect Answers</div>
-              <div className="text-lg sm:text-2xl font-black text-rose-600 flex items-center gap-2">
-                <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500 shrink-0"/>
-                <span>{incorrectCount}</span>
+
+            {/* Incorrect Answers */}
+            <div className="relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
+              <div className="absolute -top-12 -right-12 w-28 h-28 bg-rose-500/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
+              <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
+                <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Incorrect Answers</span>
+                <div className="p-2 bg-rose-50/70 border border-rose-100/50 rounded-xl text-rose-600 group-hover:scale-105 group-hover:rotate-2 transition-all duration-300">
+                  <XCircle className="w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0"/>
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-sans font-black text-rose-600 leading-none tracking-tight relative z-10">
+                {incorrectCount}
               </div>
             </div>
-            <div className="bg-white p-5 rounded-[1.5rem] border border-slate-200/60 shadow-sm flex flex-col justify-between">
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Unanswered</div>
-              <div className="text-lg sm:text-2xl font-black text-slate-500 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 shrink-0"/>
-                <span>{unansweredCount}</span>
+
+            {/* Unanswered */}
+            <div className="relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
+              <div className="absolute -top-12 -right-12 w-28 h-28 bg-slate-500/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
+              <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
+                <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Unanswered</span>
+                <div className="p-2 bg-slate-50/70 border border-slate-150 rounded-xl text-slate-500 group-hover:scale-105 group-hover:rotate-2 transition-all duration-300">
+                  <AlertCircle className="w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0"/>
+                </div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-sans font-black text-slate-700 leading-none tracking-tight relative z-10">
+                {unansweredCount}
               </div>
             </div>
+
           </div>
 
         </div>

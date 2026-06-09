@@ -1,31 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Fraunces", Georgia, serif;
   
-  --color-brand-50: #f0ebff;
-  --color-brand-100: #e0d5ff;
-  --color-brand-200: #c4b0ff;
-  --color-brand-300: #a07dff;
-  --color-brand-400: #8b5cf6;
-  --color-brand-500: #7c3aed;
-  --color-brand-600: #6d28d9;
-  --color-brand-700: #5b21b6;
-  --color-brand-800: #4c1d95;
-  --color-brand-900: #3b1578;
-  --color-brand-950: #1e0a4f;
+  --color-brand-50: #fdf2f4;
+  --color-brand-100: #fce7eb;
+  --color-brand-200: #f8d3dc;
+  --color-brand-300: #f4b0be;
+  --color-brand-400: #ee8198;
+  --color-brand-500: #8a1c36;
+  --color-brand-600: #76142c;
+  --color-brand-700: #630e21;
+  --color-brand-800: #520b1a;
+  --color-brand-900: #460b18;
+  --color-brand-950: #27020a;
 
-  --color-slate-950: #080c18;
+  --color-slate-950: #0d1117;
 }
 
 /* ============================================================
    GLOBAL BASE
    ============================================================ */
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto; /* Custom RAF easing in scrollManager.ts handles programmatic scrolling */
   overscroll-behavior: contain;
-  scroll-padding-top: 80px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -35,15 +35,15 @@ html {
 }
 
 body {
-  @apply antialiased selection:bg-brand-200 selection:text-brand-900;
-  background-color: #f4f0ff;
+  @apply antialiased selection:bg-brand-100 selection:text-brand-900;
+  background-color: #fbf9f6;
   background-image:
-    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(124, 58, 237, 0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(99, 102, 241, 0.07) 0%, transparent 60%),
-    radial-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 28px 28px;
-  color: #0f172a;
-  font-family: "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(138, 28, 54, 0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(12, 35, 64, 0.04) 0%, transparent 60%),
+    radial-gradient(rgba(138, 28, 54, 0.05) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 32px 32px;
+  color: #1b1b1b;
+  font-family: var(--font-sans);
 }
 
 /* ============================================================
@@ -89,19 +89,19 @@ body {
 
   /* ---------- Gradient Utilities ---------- */
   .premium-gradient {
-    background: linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, #8b5cf6 100%);
+    background: linear-gradient(135deg, #8a1c36 0%, #0c2340 100%);
   }
 
   .premium-gradient-diagonal {
-    background: linear-gradient(135deg, #6d28d9 0%, #7c3aed 40%, #6366f1 100%);
+    background: linear-gradient(135deg, #76142c 0%, #8a1c36 40%, #0c2340 100%);
   }
 
   .hero-gradient {
-    background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+    background: linear-gradient(135deg, #8a1c36 0%, #0c2340 100%);
   }
 
   .premium-text-gradient {
-    background: linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, #a78bfa 100%);
+    background: linear-gradient(135deg, #8a1c36 0%, #0c2340 50%, #b83a55 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -109,7 +109,7 @@ body {
   }
 
   .premium-text-gradient-gold {
-    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #d97706 100%);
+    background: linear-gradient(135deg, #c58f17 0%, #e5ad23 50%, #9e6f0b 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -119,28 +119,28 @@ body {
   /* ---------- Premium Shadows ---------- */
   .premium-shadow {
     box-shadow:
-      0 1px 0 rgba(255,255,255,0.5) inset,
-      0 20px 80px rgba(0,0,0,0.04),
-      0 40px 120px rgba(124,58,237,0.03);
+      0 1px 0 rgba(255,255,255,0.6) inset,
+      0 12px 40px rgba(0,0,0,0.03),
+      0 20px 80px rgba(138,28,54,0.02);
   }
 
   .premium-shadow-lg {
     box-shadow:
-      0 2px 6px rgba(0,0,0,0.04),
-      0 8px 24px rgba(124,58,237,0.12),
-      0 24px 64px rgba(124,58,237,0.08),
-      0 0 0 1px rgba(124,58,237,0.06);
+      0 2px 6px rgba(0,0,0,0.03),
+      0 8px 24px rgba(138,28,54,0.06),
+      0 24px 64px rgba(138,28,54,0.04),
+      0 0 0 1px rgba(138,28,54,0.03);
   }
 
   .premium-glow {
     box-shadow:
-      0 0 20px rgba(124, 58, 237, 0.35),
-      0 0 60px rgba(124, 58, 237, 0.15),
-      0 0 0 1px rgba(124, 58, 237, 0.2) inset;
+      0 0 20px rgba(138, 28, 54, 0.15),
+      0 0 60px rgba(138, 28, 54, 0.05),
+      0 0 0 1px rgba(138, 28, 54, 0.1) inset;
   }
 
   .premium-glow-sm {
-    box-shadow: 0 0 12px rgba(124, 58, 237, 0.4), 0 4px 16px rgba(124,58,237,0.2);
+    box-shadow: 0 0 12px rgba(138, 28, 54, 0.2), 0 4px 16px rgba(138,28,54,0.1);
   }
 
   .depth-shadow {
@@ -412,7 +412,6 @@ body {
     font-weight: 800 !important;
   }
 }
-}
 
 /* ============================================================
    ANIMATIONS
@@ -524,18 +523,18 @@ body {
 
 /* ---- Navbar ---- */
 .navbar-glass {
-  background: rgba(255,255,255,0.8);
-  backdrop-filter: blur(40px) saturate(200%);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
-  border-bottom: 1px solid rgba(124,58,237,0.06);
-  box-shadow: 0 4px 30px rgba(124,58,237,0.04), 0 1px 0 rgba(255,255,255,0.8) inset;
+  background: rgba(250, 248, 245, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 2px solid #0f172a;
 }
 
 .navbar-scrolled {
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(48px) saturate(220%);
-  -webkit-backdrop-filter: blur(48px) saturate(220%);
-  box-shadow: 0 10px 40px rgba(124,58,237,0.08), 0 1px 0 rgba(255,255,255,1) inset;
+  background: rgba(250, 248, 245, 0.95);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border-bottom: 2px solid #0f172a;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
 }
 
 .nav-link {
@@ -587,8 +586,8 @@ body {
 
 /* ---- Ticker bar ---- */
 .ticker-bar {
-  background: linear-gradient(90deg, #0a0618 0%, #120a2e 50%, #0a0618 100%);
-  border-bottom: 1px solid rgba(124,58,237,0.12);
+  background: #0f172a;
+  border-bottom: 2px solid #0f172a;
 }
 
 /* ---- Feature icon ---- */
@@ -608,16 +607,16 @@ body {
    DARK THEME OVERRIDES (minimal)
    ============================================================ */
 .dark body {
-  background-color: #070310;
+  background-color: #090306;
   background-image:
-    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(124,58,237,0.15) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(99,102,241,0.12) 0%, transparent 60%);
-  color: #f1f5f9;
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(138, 28, 54, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(12, 35, 64, 0.1) 0%, transparent 60%);
+  color: #e2e8f0;
 }
 
 /* Premium Backgrounds & Text */
 .premium-text-gradient {
-  background: linear-gradient(135deg, #7c3ced 0%, #6366f1 50%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #8a1c36 0%, #0c2340 50%, #b83a55 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -625,15 +624,15 @@ body {
 
 .mesh-bg {
   background: 
-    radial-gradient(at 0% 0%, rgba(124, 58, 237, 0.05) 0px, transparent 50%),
-    radial-gradient(at 50% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(167, 139, 250, 0.05) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(138, 28, 54, 0.03) 0px, transparent 50%),
+    radial-gradient(at 50% 0%, rgba(12, 35, 64, 0.03) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(138, 28, 54, 0.02) 0px, transparent 50%);
 }
 
 .grid-bg {
   background-image: 
-    linear-gradient(rgba(124, 58, 237, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124, 58, 237, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(138, 28, 54, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(138, 28, 54, 0.02) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 

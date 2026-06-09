@@ -4,12 +4,12 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   AreaChart, Area, PieChart, Pie, Cell,
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-  BarChart, Bar, Legend
+  BarChart, Bar
 } from 'recharts';
 import { 
   TrendingUp, TrendingDown, Target, Zap, 
   Timer, History, LayoutDashboard, Rocket,
-  ArrowRight, ChevronDown
+  ArrowRight, ChevronDown, Crosshair, Flame
 } from 'lucide-react';
 import { activityTracker } from './lib/activityTracker';
 import { cn } from './lib/utils';
@@ -21,7 +21,7 @@ const AnimatedCounter = ({ value, suffix = "", decimals = 0 }: { value: number, 
   useEffect(() => {
     let start = 0;
     const end = value;
-    const duration = 1200;
+    const duration = 850;
     let timer: any;
     
     const step = (timestamp: number) => {
@@ -44,14 +44,14 @@ const AnimatedCounter = ({ value, suffix = "", decimals = 0 }: { value: number, 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white p-4 rounded-xl shadow-lg border border-slate-100">
-        <p className="text-xs font-bold text-slate-500 mb-2">{label}</p>
-        <div className="space-y-2">
+      <div className="bg-slate-950/90 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-slate-800 text-white">
+        <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">{label}</p>
+        <div className="space-y-1.5">
           {payload.map((entry: any, index: number) => (
-            <div key={index} className="flex items-center gap-4">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-              <span className="text-sm font-semibold text-slate-700">{entry.name}:</span>
-              <span className="text-sm font-bold text-slate-900">{entry.value}%</span>
+            <div key={index} className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: entry.color }} />
+              <span className="text-xs font-semibold text-slate-350">{entry.name}:</span>
+              <span className="text-xs font-bold text-white">{entry.value}%</span>
             </div>
           ))}
         </div>
@@ -61,72 +61,314 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-const SubjectRow = ({ subject }: { subject: any }) => {
+const Sparkline = ({ data, color = "#8a1c36", id }: { data: number[]; color?: string; id: string }) => {
+  if (!data || data.length < 2) return null;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min === 0 ? 1 : max - min;
+  const height = 32;
+  const width = 100;
+  
+  const points = data.map((val, index) => {
+    const x = (index / (data.length - 1)) * width;
+    const y = height - ((val - min) / range) * height + 2;
+    return { x, y };
+  });
+
+  const polylinePoints = points.map(p => `${p.x},${p.y}`).join(' ');
+  const areaPoints = [
+    `0,${height + 4}`,
+    ...points.map(p => `${p.x},${p.y}`),
+    `${width},${height + 4}`
+  ].join(' ');
+
+  const gradId = `sparkline-grad-${id}`;
+
+  return (
+    <svg className="w-24 h-10 overflow-visible" viewBox={`0 0 ${width} ${height}`}>
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={0.25} />
+          <stop offset="100%" stopColor={color} stopOpacity={0.0} />
+        </linearGradient>
+      </defs>
+      <polygon
+        fill={`url(#${gradId})`}
+        points={areaPoints}
+      />
+      <polyline
+        fill="none"
+        stroke={color}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={polylinePoints}
+      />
+    </svg>
+  );
+};
+
+function StatCard({ icon, title, value, suffix = "", trend, decimals = 0, sparklineData, color = "brand" }: any) {
+  const isPositive = (trend ?? 0) >= 0;
+  const strokeColor = color === "brand" ? "#8a1c36" : color === "success" ? "#10b981" : color === "warning" ? "#d97706" : "#6366f1";
+  
+  const iconBg = color === "brand" 
+    ? "bg-[#8a1c36]/5 text-[#8a1c36] border-[#8a1c36]/10 hover:bg-[#8a1c36]/10" 
+    : color === "success" 
+      ? "bg-emerald-50/70 text-emerald-600 border-emerald-100/60 hover:bg-emerald-100/50" 
+      : color === "warning" 
+        ? "bg-amber-50/70 text-amber-600 border-amber-100/60 hover:bg-amber-100/50" 
+        : "bg-indigo-50/70 text-indigo-600 border-indigo-100/60 hover:bg-indigo-100/50";
+
+  return (
+    <motion.div 
+      variants={stagger.itemFadeUp} 
+      whileHover={{ y: -6, scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      className={cn(
+        "relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-white/80 flex flex-col justify-between group transition-all duration-500 cursor-default",
+        color === "brand" ? "hover:shadow-[0_20px_40px_rgba(138,28,54,0.065)] hover:border-brand-200/50" :
+        color === "success" ? "hover:shadow-[0_20px_40px_rgba(16,185,129,0.065)] hover:border-emerald-200/50" :
+        color === "warning" ? "hover:shadow-[0_20px_40px_rgba(217,119,6,0.065)] hover:border-amber-200/50" :
+        "hover:shadow-[0_20px_40px_rgba(99,102,241,0.065)] hover:border-indigo-200/50"
+      )}
+    >
+      <div className={cn(
+        "absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl pointer-events-none opacity-20 group-hover:opacity-30 transition-all duration-500",
+        color === "brand" ? "bg-[#8a1c36]" :
+        color === "success" ? "bg-[#10b981]" :
+        color === "warning" ? "bg-[#d97706]" :
+        "bg-[#6366f1]"
+      )} />
+      
+      <div className="relative z-10 flex items-center justify-between mb-5">
+         <div className={cn("p-3 rounded-2xl border shadow-sm transition-all duration-300 group-hover:scale-105 group-hover:rotate-2", iconBg)}>
+            {icon}
+         </div>
+         {trend !== undefined && trend !== 0 && (
+            <div className={cn(
+               "flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black shadow-sm border border-white/80 transition-transform duration-300 group-hover:scale-103",
+               isPositive ? "bg-emerald-50/80 text-emerald-700 border-emerald-100" : "bg-rose-50/80 text-rose-700 border-rose-100"
+            )}>
+               {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+               {Math.abs(Math.round(trend))}%
+            </div>
+         )}
+      </div>
+
+      <div className="relative z-10 flex items-end justify-between mt-auto">
+        <div className="space-y-1.5 flex-1">
+          <h4 className="text-[10px] font-sans font-black tracking-widest text-slate-400/90 uppercase leading-none">{title}</h4>
+          <div className="text-3xl sm:text-4xl font-sans font-black text-slate-900 flex items-baseline tracking-tight group-hover:text-slate-950 transition-colors duration-300 leading-none mt-1">
+             <AnimatedCounter value={value} decimals={decimals} />
+             {suffix && <span className="text-sm font-sans font-black text-slate-400/80 ml-1 leading-none">{suffix}</span>}
+          </div>
+        </div>
+        
+        {sparklineData && sparklineData.length >= 2 && (
+          <div className="pb-1 pl-4 opacity-85 group-hover:opacity-100 transition-opacity duration-300 shrink-0">
+            <Sparkline data={sparklineData} color={strokeColor} id={title.replace(/\s+/g, '-').toLowerCase()} />
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+function AccuracyRow({ label, value, total, color }: { label: string, value: number, total: number, color: string }) {
+  const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+  const circleColor = color === "bg-rose-500" ? "bg-rose-500" : color;
+
+  return (
+    <div className="flex items-center justify-between p-3.5 bg-white/40 border border-white/60 backdrop-blur-md rounded-[1.25rem] hover:bg-white/80 hover:border-slate-200/50 shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.025)] hover:-translate-y-0.5 transition-all duration-300 group">
+       <div className="flex items-center gap-3 font-sans">
+          <div className={cn("w-2.5 h-2.5 rounded-full border-2 border-white shadow-[0_0_6px_rgba(0,0,0,0.05)]", circleColor)} />
+          <span className="text-[10px] font-black text-slate-500 group-hover:text-slate-800 transition-colors uppercase tracking-wider">{label}</span>
+       </div>
+       <div className="flex items-center gap-4 font-sans">
+          <span className="text-xs font-black text-slate-800">{value}</span>
+          <span className="text-[10px] font-black text-slate-450 px-2.5 py-0.5 bg-white border border-slate-100 rounded-lg leading-none">{percentage}%</span>
+       </div>
+    </div>
+  );
+}
+
+const SubjectRow = ({ subject }: { subject: any; key?: string }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const incorrect = Math.max(0, subject.attempted - subject.correct);
+  const correctPct = subject.attempted > 0 ? Math.round((subject.correct / subject.attempted) * 100) : 0;
+  const incorrectPct = subject.attempted > 0 ? Math.round((incorrect / subject.attempted) * 100) : 0;
+
   return (
     <div 
       onClick={() => setIsExpanded(!isExpanded)}
-      className="flex flex-col p-4 bg-white/60 backdrop-blur-md rounded-2xl border border-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group cursor-pointer"
+      className={cn(
+        "flex flex-col p-4 bg-white/45 backdrop-blur-md rounded-2xl border border-white/60 shadow-[0_2px_8px_rgba(0,0,0,0.005)] hover:bg-white/80 hover:border-brand-200/40 hover:-translate-y-0.5 transition-all duration-300 group cursor-pointer relative overflow-hidden",
+        isExpanded && "bg-white/85 border-brand-200/30 shadow-[0_8px_20px_rgba(138,28,54,0.02)]"
+      )}
     >
-       <div className="flex items-center justify-between gap-3">
-          <span className={cn("font-extrabold text-slate-700 min-w-0 flex-1 group-hover:text-brand-700 transition-colors text-sm", isExpanded ? "" : "truncate")} title={subject.name}>
-             {subject.name}
-          </span>
+       <div className="flex items-center justify-between gap-3 relative z-10">
+          <div className="flex flex-col min-w-0 flex-1">
+             <span 
+                className={cn(
+                   "font-sans font-black text-slate-800 group-hover:text-[#8a1c36] transition-colors text-xs sm:text-sm", 
+                   isExpanded ? "" : "truncate"
+                )} 
+                title={subject.name}
+             >
+                {subject.name}
+             </span>
+          </div>
           <div className="flex items-center gap-3 shrink-0">
-            <span className="text-sm font-black text-slate-400 group-hover:text-brand-500 transition-colors">{subject.avgScore}%</span>
-            <span className={cn("px-3 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap shadow-sm border border-white", subject.status === 'Strong' ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700")}>
+            <span className="text-xs sm:text-sm font-sans font-black text-slate-800 group-hover:text-[#8a1c36] transition-colors">{subject.avgScore}%</span>
+            <span className={cn(
+              "px-2.5 py-1 rounded-lg text-[9px] font-sans font-black uppercase tracking-wider leading-none shadow-sm border", 
+              subject.status === 'Strong' 
+                 ? "bg-emerald-50 text-emerald-700 border-emerald-100/70" 
+                 : "bg-rose-50 text-rose-700 border-rose-100/70"
+            )}>
                {subject.status}
             </span>
-            <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform duration-300", isExpanded && "rotate-180")} />
+            <ChevronDown className={cn("w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-all duration-300", isExpanded && "rotate-180")} />
           </div>
        </div>
        
+       {/* Subtle Accuracy Meter underneath */}
+       {!isExpanded && (
+         <div className="w-full h-1 bg-slate-100/60 rounded-full overflow-hidden mt-2.5">
+            <motion.div 
+               initial={{ width: 0 }}
+               animate={{ width: `${subject.avgScore}%` }}
+               transition={{ duration: 0.85, ease: "easeOut" }}
+               className={cn(
+                 "h-full rounded-full bg-gradient-to-r", 
+                 subject.avgScore >= 70 ? "from-emerald-500 to-emerald-400" : "from-rose-500 to-rose-450"
+               )}
+            />
+         </div>
+       )}
+       
        <AnimatePresence>
          {isExpanded && (
-           <motion.div
-             initial={{ height: 0, opacity: 0 }}
-             animate={{ height: 'auto', opacity: 1 }}
-             exit={{ height: 0, opacity: 0 }}
-             className="overflow-hidden"
-           >
-             <div className="pt-4 mt-3 border-t border-slate-200/50 flex items-center justify-between">
-                <div className="flex gap-6">
-                  <div className="flex flex-col">
-                    <span className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Attempted</span>
-                    <span className="text-slate-700 font-extrabold text-sm">{subject.attempted}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Correct</span>
-                    <span className="text-emerald-600 font-extrabold text-sm">{subject.correct}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Incorrect</span>
-                    <span className="text-rose-600 font-extrabold text-sm">{subject.attempted - subject.correct}</span>
-                  </div>
-                </div>
-             </div>
-           </motion.div>
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="pt-4 mt-3 border-t border-slate-100/60 relative z-10">
+                 <div className="grid grid-cols-3 gap-2.5">
+                   {/* Attempted stat box */}
+                   <div className="p-2.5 bg-slate-50/50 border border-slate-100 rounded-xl text-center flex flex-col justify-between items-center hover:bg-slate-100/40 transition-colors">
+                     <span className="text-slate-400 font-sans font-black uppercase tracking-widest text-[8px] leading-none mb-1">Attempted</span>
+                     <span className="text-slate-800 font-sans font-black text-sm">{subject.attempted}</span>
+                     <span className="text-[7.5px] font-bold text-slate-400 uppercase mt-1 leading-none">Questions</span>
+                   </div>
+                   
+                   {/* Correct stat box */}
+                   <div className="p-2.5 bg-emerald-50/30 border border-emerald-100/40 rounded-xl text-center flex flex-col justify-between items-center hover:bg-emerald-50/55 transition-colors">
+                     <span className="text-emerald-700/80 font-sans font-black uppercase tracking-widest text-[8px] leading-none mb-1">Correct</span>
+                     <span className="text-emerald-600 font-sans font-black text-sm">{subject.correct}</span>
+                     <span className="text-[7.5px] font-sans font-black text-emerald-500/80 uppercase mt-1 leading-none">{correctPct}% Acc</span>
+                   </div>
+                   
+                   {/* Incorrect stat box */}
+                   <div className="p-2.5 bg-rose-50/30 border border-rose-100/40 rounded-xl text-center flex flex-col justify-between items-center hover:bg-rose-50/55 transition-colors">
+                     <span className="text-rose-700/80 font-sans font-black uppercase tracking-widest text-[8px] leading-none mb-1">Incorrect</span>
+                     <span className="text-rose-600 font-sans font-black text-sm">{incorrect}</span>
+                     <span className="text-[7.5px] font-sans font-black text-rose-500/80 uppercase mt-1 leading-none">{incorrectPct}% Pct</span>
+                   </div>
+                 </div>
+              </div>
+            </motion.div>
          )}
        </AnimatePresence>
     </div>
   );
 };
 
-export default function AnalyticsView({ user, onNavigate }: { user: any, onNavigate?: (tab: any) => void }) {
-  const [activities, setActivities] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+function SkeletonStatCard() {
+  return (
+    <div className="relative overflow-hidden bg-white/60 backdrop-blur-xl p-5 sm:p-6 rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-white/80 flex flex-col justify-between min-h-[142px] animate-pulse">
+      <div className="absolute -top-24 -right-24 w-48 h-48 bg-slate-150/40 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative z-10 flex items-center justify-between mb-4">
+        <div className="p-3 bg-slate-200/50 rounded-2xl border border-slate-150/60 w-11 h-11" />
+        <div className="px-2.5 py-1.5 bg-slate-200/50 rounded-xl w-14 h-7 border border-slate-150/60" />
+      </div>
+      <div className="relative z-10 flex items-end justify-between mt-auto">
+        <div className="space-y-2 flex-1">
+          <div className="h-3 w-20 bg-slate-200/60 rounded-md" />
+          <div className="h-9 w-28 bg-slate-200/70 rounded-xl mt-1.5" />
+        </div>
+        <div className="w-24 h-10 bg-slate-200/40 rounded-xl shrink-0 ml-4" />
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsSkeleton() {
+  return (
+    <div className="w-full mx-auto space-y-6 sm:space-y-8 pb-20 relative z-10">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+        <SkeletonStatCard />
+        <SkeletonStatCard />
+        <SkeletonStatCard />
+        <SkeletonStatCard />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
+        {/* Trend skeleton */}
+        <div className="lg:col-span-8 relative bg-white/60 backdrop-blur-xl rounded-[2.0rem] p-6 sm:p-8 border border-white animate-pulse overflow-hidden">
+           <div className="absolute -top-32 -right-32 w-64 h-64 bg-slate-100 rounded-full blur-3xl pointer-events-none" />
+           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+              <div className="space-y-2">
+                 <div className="h-6 w-40 bg-slate-200 rounded-lg" />
+                 <div className="h-4 w-60 bg-slate-150 rounded-md" />
+              </div>
+              <div className="w-28 h-8 bg-slate-200 rounded-xl" />
+           </div>
+           <div className="w-full h-[300px] bg-slate-100/55 rounded-2xl border border-slate-150/40 flex items-center justify-center animate-pulse" />
+        </div>
+
+        {/* Pie skeleton */}
+        <div className="lg:col-span-4 bg-white/66 backdrop-blur-xl rounded-[2.0rem] p-6 border border-white animate-pulse flex flex-col items-center overflow-hidden">
+           <div className="h-6 w-40 bg-slate-200 rounded-md mb-8" />
+           <div className="w-44 h-44 rounded-full border-[12px] border-slate-100 flex items-center justify-center mb-8 relative">
+              <div className="flex flex-col items-center gap-1.5">
+                 <div className="h-7 w-12 bg-slate-200 rounded-lg" />
+                 <div className="h-3.5 w-14 bg-slate-150 rounded-md" />
+              </div>
+           </div>
+           <div className="w-full space-y-3">
+              <div className="h-12 bg-slate-100/80 rounded-2xl" />
+              <div className="h-12 bg-slate-100/80 rounded-2xl" />
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { user: any, activities?: any[], onNavigate?: (tab: any) => void }) {
+  const [activities, setActivities] = useState<any[]>(() => {
+    const rawData = (propActivities && propActivities.length > 0)
+      ? propActivities
+      : (user?.id ? activityTracker.getActivities(user.id) : []);
+    return rawData.filter(a => a.type === 'mock_test_completed')
+      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  });
+  const [loading, setLoading] = useState(() => !user?.id);
 
   useEffect(() => {
-    const fetchActivities = async () => {
-      if (!user?.id) return;
-      const data = await activityTracker.getActivities(user.id);
-      const completions = data.filter(a => a.type === 'mock_test_completed')
-        .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-      setActivities(completions);
-      setLoading(false);
-    };
-    fetchActivities();
-  }, [user?.id]);
+    const rawData = (propActivities && propActivities.length > 0)
+      ? propActivities
+      : (user?.id ? activityTracker.getActivities(user.id) : []);
+    const completions = rawData.filter(a => a.type === 'mock_test_completed')
+      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    setActivities(completions);
+    setLoading(false);
+  }, [user?.id, propActivities]);
 
   const stats = useMemo(() => {
     if (activities.length === 0) return null;
@@ -138,7 +380,6 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
     let totalTimeTaken = 0;
     let totalCalculatedScore = 0;
 
-    // Rule 4: Recalculate results from raw answers instead of trusting stored summary values
     const recalculatedActivities = activities.map(a => {
       const rawAnswers = a.metadata?.answers || {};
       const questions = a.metadata?.test?.questions || [];
@@ -148,8 +389,6 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
       let actWrong = 0;
       let actAttempted = 0;
       let actTotalQ = 0;
-      
-      // Negative marking defaults to 0 if not defined
       let negativeMarking = a.metadata?.test?.negativeMarking ?? 0;
 
       if (hasRawData) {
@@ -166,20 +405,14 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
           }
         });
       } else {
-        // Safe fallback ONLY if raw data is missing
         actCorrect = a.correct || a.score || 0;
         actWrong = a.incorrect || 0;
         actAttempted = a.metadata?.attempted || (actCorrect + actWrong);
         actTotalQ = a.total || actAttempted;
       }
 
-      // Rule 2: Score = Correct Answers - (Wrong Answers × Negative Marking)
       const actScore = Math.max(0, actCorrect - (actWrong * negativeMarking));
-      
-      // Rule 2: Accuracy (%) = (Correct Answers / Attempted Questions) * 100
       const actAccuracy = actAttempted > 0 ? (actCorrect / actAttempted) * 100 : 0;
-      
-      // Rule 6: Time Calculation
       const timeTaken = a.metadata?.timeTaken || a.timeSpent || 0;
 
       totalCorrect += actCorrect;
@@ -202,27 +435,21 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
     });
 
     const totalTests = recalculatedActivities.length;
-    
     const avgAccuracy = totalAttempted > 0 ? (totalCorrect / totalAttempted) * 100 : 0;
-    // Rule 6: Average Time per Question = Time Taken / Attempted Questions
     const avgTimePerQuestion = totalAttempted > 0 ? (totalTimeTaken / totalAttempted) : 0;
-
-    // Rule 2: Unattempted = Total Questions - Attempted
     const totalSkipped = Math.max(0, totalQuestions - totalAttempted);
 
     const pieData = [
       { name: 'Correct', value: totalCorrect, color: '#10b981' },
-      { name: 'Wrong', value: totalWrong, color: '#ef4444' },
+      { name: 'Wrong', value: totalWrong, color: '#f43f5e' },
       { name: 'Skipped', value: totalSkipped, color: '#94a3b8' }
     ];
 
     let impScore = 0;
     let impAcc = 0;
     if (totalTests >= 2) {
-      const last = recalculatedActivities[0];
-      const prev = recalculatedActivities[1];
-      // Rule 5: Improvement = Current Test Score - Previous Test Score
-      // Normalizing score to percentage for direct comparison
+      const last = recalculatedActivities[recalculatedActivities.length - 1];
+      const prev = recalculatedActivities[recalculatedActivities.length - 2];
       const lastScorePct = (last.recal_score / (last.recal_totalQ || 1)) * 100;
       const prevScorePct = (prev.recal_score / (prev.recal_totalQ || 1)) * 100;
       
@@ -230,27 +457,24 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
       impAcc = last.recal_accuracy - prev.recal_accuracy;
     }
 
-    // Limit chart to newest 15 tests, ordered chronologically (left=oldest, right=newest)
-    const recent15 = recalculatedActivities.slice(0, 15).reverse();
+    const recent15 = recalculatedActivities.slice(-15);
     const chartData = recent15.map((a, i) => ({
       name: `T${totalTests - recent15.length + i + 1}`,
       score: Math.round((a.recal_score / (a.recal_totalQ || 1)) * 100),
       accuracy: Math.round(a.recal_accuracy),
+      time: a.recal_attempted > 0 ? Math.round(a.recal_time / a.recal_attempted) : 0,
     }));
 
-    // Rule 7: Accuracy per subject calculated from actual question-level data
-    // Group subjects by Exam, then split between Practice and Mock
     const examGroups = new Map<string, {
       lastAttemptDate: string,
       totalAttempts: number,
       practiceMap: Map<string, { correct: number, attempted: number }>,
       mockMap: Map<string, { correct: number, attempted: number }>
     }>();
+
     const cleanSubjectName = (name: string) => {
       if (!name) return "Mixed Questions";
-      
       let cleaned = name;
-      // Strip out ugly backend UUIDs and system tags if they leaked into the name
       if (cleaned.match(/[0-9a-f]{8}-[0-9a-f]{4}/) || cleaned.match(/[0-9a-f]{8}/) || cleaned.includes('mockTest')) {
          cleaned = cleaned.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/ig, '')
                           .replace(/[0-9a-f]{8}/ig, '')
@@ -259,7 +483,6 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
                           .replace(/\s+/g, ' ')
                           .trim();
       }
-      
       if (!cleaned || cleaned.length === 0 || cleaned === '•') {
          if (name.includes('•')) {
             const parts = name.split('•');
@@ -268,11 +491,9 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
             cleaned = "Mixed Questions";
          }
       }
-      
       if (cleaned.toLowerCase() === "general") {
          return "General Practice";
       }
-
       return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
     };
 
@@ -321,14 +542,11 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
         examGroups.set(examName, { lastAttemptDate: dateStr, totalAttempts: 0, practiceMap: new Map(), mockMap: new Map() });
       }
       const group = examGroups.get(examName)!;
-      // Activities are ordered chronologically (newest first).
-      // The initialization above captures the newest date, so we don't overwrite it.
       group.totalAttempts++;
 
       const rawAnswers = a.metadata?.answers || {};
       const questions = a.metadata?.test?.questions || [];
       const catMeta = a.metadata?.testCategory || a.metadata?.test?.category;
-
       const mapToUse = isMockTest ? group.mockMap : group.practiceMap;
 
       if (questions.length > 0 && Object.keys(rawAnswers).length > 0) {
@@ -398,7 +616,6 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
     const enduranceScore = Math.min(100, (totalQuestions / 300) * 100);
     const attemptedWithoutSkips = totalCorrect + totalWrong;
     const precisionScore = attemptedWithoutSkips > 0 ? (totalCorrect / attemptedWithoutSkips) * 100 : 0;
-    const scoringScore = totalQuestions > 0 ? (totalCalculatedScore / totalQuestions) * 100 : 0;
     const momentumScore = Math.max(0, Math.min(100, 50 + (impScore * 2)));
 
     const skillProfile = [
@@ -428,9 +645,10 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
   }, [activities]);
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center py-48">
-      <div className="w-12 h-12 border-4 border-slate-100 border-t-brand-600 rounded-full animate-spin shadow-lg shadow-brand-500/20"></div>
-      <p className="mt-4 text-slate-500 font-medium">Loading precise analytics...</p>
+    <div className="relative w-full min-h-screen overflow-hidden">
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] bg-gradient-to-br from-brand-100/20 via-purple-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" />
+      <div className="fixed bottom-0 right-0 w-[800px] h-[600px] bg-gradient-to-tl from-indigo-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" />
+      <AnalyticsSkeleton />
     </div>
   );
 
@@ -443,7 +661,7 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
       >
         <LayoutDashboard className="w-10 h-10 text-brand-600" />
       </motion.div>
-      <h2 className="text-3xl font-extrabold text-slate-900 mb-3 tracking-tight">No Data Available</h2>
+      <h2 className="text-3xl font-serif font-extrabold text-slate-900 mb-3 tracking-tight">No Data Available</h2>
       <p className="text-slate-500 mb-8 font-medium text-lg leading-relaxed">Complete your first mock test to generate highly accurate performance metrics.</p>
       <motion.button 
         whileHover={{ y: -2, scale: 1.02 }}
@@ -459,9 +677,8 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
 
   return (
     <div className="relative w-full min-h-screen overflow-hidden">
-      {/* Decorative Glass Background */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] bg-gradient-to-br from-brand-100/30 via-purple-100/20 to-transparent blur-[120px] -z-10 pointer-events-none" />
-      <div className="fixed bottom-0 right-0 w-[800px] h-[600px] bg-gradient-to-tl from-indigo-100/20 to-transparent blur-[120px] -z-10 pointer-events-none" />
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] bg-gradient-to-br from-brand-100/20 via-purple-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" />
+      <div className="fixed bottom-0 right-0 w-[800px] h-[600px] bg-gradient-to-tl from-indigo-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" />
 
       <motion.div 
         variants={stagger.containerDelay(0.1, 0.1)}
@@ -469,316 +686,435 @@ export default function AnalyticsView({ user, onNavigate }: { user: any, onNavig
         animate="show"
         className="w-full mx-auto space-y-6 sm:space-y-8 pb-20 relative z-10"
       >
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
-          <StatCard icon={<Zap className="w-5 h-5 text-brand-600" />} title="Average Score" value={stats.avgScore} suffix="%" trend={stats.impScore} />
-          <StatCard icon={<Target className="w-5 h-5 text-emerald-600" />} title="Accuracy" value={stats.avgAccuracy} suffix="%" trend={stats.impAcc} />
-          <StatCard icon={<Timer className="w-5 h-5 text-amber-600" />} title="Time per Question" value={stats.avgTimePerQuestion} suffix="s" decimals={1} />
-          <StatCard icon={<History className="w-5 h-5 text-indigo-600" />} title="Total Attempts" value={stats.totalTests} />
+        {/* Redesigned Stat Cards Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+          <StatCard 
+            icon={<Zap className="w-5 h-5" />} 
+            title="Average Score" 
+            value={stats.avgScore} 
+            suffix="%" 
+            trend={stats.impScore}
+            color="brand"
+            sparklineData={stats.chartData.map(d => d.score)}
+          />
+          <StatCard 
+            icon={<Target className="w-5 h-5" />} 
+            title="Accuracy" 
+            value={stats.avgAccuracy} 
+            suffix="%" 
+            trend={stats.impAcc}
+            color="success"
+            sparklineData={stats.chartData.map(d => d.accuracy)}
+          />
+          <StatCard 
+            icon={<Timer className="w-5 h-5" />} 
+            title="Time per Question" 
+            value={stats.avgTimePerQuestion} 
+            suffix="s" 
+            decimals={1}
+            color="warning"
+            sparklineData={stats.chartData.map(d => d.time)}
+          />
+          <StatCard 
+            icon={<History className="w-5 h-5" />} 
+            title="Total Attempts" 
+            value={stats.totalTests}
+            color="info"
+            sparklineData={stats.chartData.map((_, i) => i + 1)}
+          />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-          <div className="lg:col-span-2 space-y-6 sm:space-y-8">
-            <motion.div 
-              variants={stagger.itemFadeUp} 
-              className="relative bg-white/70 backdrop-blur-2xl rounded-[2rem] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-500 overflow-hidden group"
-            >
-               <div className="absolute -top-32 -right-32 w-64 h-64 bg-brand-500/5 rounded-full blur-3xl group-hover:bg-brand-500/10 transition-colors duration-500 pointer-events-none" />
-               <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                  <div>
-                     <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Performance Trend</h3>
-                     <p className="text-sm font-medium text-slate-500">Your score history over time</p>
-                  </div>
-                  {stats.impScore !== 0 && (
-                    <div className={cn("px-3 py-1.5 rounded-xl flex items-center gap-2 text-sm font-bold shadow-sm border border-white/50", stats.impScore > 0 ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700")}>
-                       {stats.impScore > 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                       {Math.abs(stats.impScore)}% {stats.impScore > 0 ? 'Improvement' : 'Drop'}
+        {/* Charts & Breakdown Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
+           {/* Performance Trend Card */}
+           <motion.div 
+             variants={stagger.itemFadeUp} 
+             className="lg:col-span-8 relative overflow-hidden bg-white/65 backdrop-blur-xl rounded-[2.5rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-white/80 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-all duration-500 group"
+           >
+              <div className="absolute -top-32 -right-32 w-72 h-72 bg-brand-500/5 rounded-full blur-[80px] group-hover:bg-brand-500/8 group-hover:scale-110 transition-all duration-700 pointer-events-none" />
+              <div className="absolute -bottom-32 -left-32 w-72 h-72 bg-indigo-500/3 rounded-full blur-[80px] group-hover:bg-indigo-500/5 transition-all duration-700 pointer-events-none" />
+              
+              <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                 <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-1 h-5 bg-[#8a1c36] rounded-full shrink-0" />
+                      <h3 className="text-lg sm:text-xl font-sans font-black text-slate-900 tracking-tight">Performance Trend</h3>
                     </div>
-                  )}
-               </div>
-               
-               {stats.chartData.length > 0 ? (
-                 <div className="w-full h-[300px] relative z-10">
-                    <ResponsiveContainer width="100%" height="100%">
-                       <AreaChart data={stats.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                          <defs>
-                             <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.25}/>
-                                <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
-                             </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                          <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} dy={10} />
-                          <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} domain={[0, 100]} />
-                          <Tooltip content={<CustomTooltip />} />
-                          <Area type="monotone" dataKey="score" name="Score" stroke="#4f46e5" strokeWidth={4} fillOpacity={1} fill="url(#scoreGrad)" activeDot={{ r: 6, strokeWidth: 0, fill: '#4f46e5', style: { filter: 'drop-shadow(0px 4px 8px rgba(79,70,229,0.5))' } }} />
-                       </AreaChart>
-                    </ResponsiveContainer>
+                    <p className="text-xs font-semibold text-slate-450 leading-none mt-1">Your mock exam score progression history</p>
                  </div>
-               ) : (
-                 <div className="w-full h-[300px] flex items-center justify-center bg-slate-50/50 rounded-2xl border border-slate-100/50">
-                   <p className="text-slate-400 font-bold text-sm">Not enough data to plot a trend.</p>
-                 </div>
-               )}
-            </motion.div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <motion.div variants={stagger.itemFadeUp} whileHover={{ y: -4, scale: 0.99 }} className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-300 flex gap-5 items-start">
-                   <div className={cn("p-3.5 rounded-2xl shrink-0 shadow-sm border border-white", stats.impScore >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600")}>
-                      {stats.impScore >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
-                  </div>
-                  <div>
-                     <h4 className="font-extrabold text-slate-900 mb-1.5 tracking-tight">{stats.impScore >= 0 ? "You are improving" : "Scores dropped recently"}</h4>
-                     <p className="text-sm font-medium text-slate-500 leading-relaxed">{stats.impScore >= 0 ? "Your latest test scores show positive momentum. Keep up the good work!" : "Review your recent mistakes to get back on track."}</p>
-                  </div>
-               </motion.div>
-                <motion.div variants={stagger.itemFadeUp} whileHover={{ y: -4, scale: 0.99 }} className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-300 flex gap-5 items-start">
-                   <div className={cn("p-3.5 rounded-2xl shrink-0 shadow-sm border border-white", stats.avgTimePerQuestion > 60 ? "bg-amber-50 text-amber-600" : "bg-brand-50 text-brand-600")}>
-                     <Timer className="w-6 h-6" />
-                  </div>
-                  <div>
-                     <h4 className="font-extrabold text-slate-900 mb-1.5 tracking-tight">{stats.avgTimePerQuestion > 60 ? "You need to improve speed" : "Your speed is good"}</h4>
-                     <p className="text-sm font-medium text-slate-500 leading-relaxed">You are averaging {stats.avgTimePerQuestion.toFixed(1)}s per question. {stats.avgTimePerQuestion > 60 ? "Try to solve familiar questions faster." : "Maintain this pace in real exams."}</p>
-                  </div>
-               </motion.div>
-            </div>
-
-            <motion.div 
-              variants={stagger.itemFadeUp} 
-              whileHover={{ y: -4 }}
-              className="relative bg-gradient-to-br from-brand-600 via-indigo-600 to-purple-700 rounded-[2rem] p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between shadow-[0_15px_40px_-10px_rgba(79,70,229,0.5)] border border-brand-400/30 gap-6 overflow-hidden transition-all duration-500 hover:shadow-[0_25px_50px_-12px_rgba(79,70,229,0.6)]"
-            >
-              <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-              <div className="text-center sm:text-left relative z-10">
-                <h3 className="text-2xl font-extrabold text-white mb-2 tracking-tight">What to improve next</h3>
-                <p className="text-brand-100 text-sm font-medium text-opacity-90">Focus on your weak topics in the next mock test to maximize your score.</p>
+                 {stats.impScore !== 0 && (
+                   <div className={cn(
+                     "px-2.5 py-1.5 rounded-xl flex items-center gap-1 text-[9px] font-sans font-black uppercase tracking-widest shadow-sm border transition-all duration-300 group-hover:scale-103",
+                     stats.impScore > 0 
+                       ? "bg-emerald-500/8 text-emerald-700 border-emerald-200/50 shadow-[0_2px_10px_rgba(16,185,129,0.02)]" 
+                       : "bg-rose-500/8 text-rose-700 border-rose-200/50 shadow-[0_2px_10px_rgba(244,63,94,0.02)]"
+                   )}>
+                      {stats.impScore > 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                      {Math.abs(Math.round(stats.impScore))}% {stats.impScore > 0 ? 'Improvement' : 'Drop'}
+                   </div>
+                 )}
               </div>
-              <motion.button 
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.96 }}
-                onClick={() => onNavigate?.('home')} 
-                className="relative z-10 px-8 py-3.5 bg-white text-brand-700 rounded-2xl font-extrabold shadow-[0_8px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_15px_25px_rgba(0,0,0,0.2)] transition-all duration-300 flex items-center gap-2 shrink-0 whitespace-nowrap"
-              >
-                Start Next Test
-                <ArrowRight className="w-5 h-5" />
-              </motion.button>
-            </motion.div>
-          </div>
+              
+              {stats.chartData.length > 0 ? (
+                <div className="w-full h-[300px] relative z-10 pr-2">
+                   <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={stats.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                         <defs>
+                            <filter id="areaLineShadow" x="-5%" y="-5%" width="110%" height="115%">
+                              <feDropShadow dx="0" dy="5" stdDeviation="4" floodColor="#8a1c36" floodOpacity="0.15" />
+                            </filter>
+                            <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
+                               <stop offset="0%" stopColor="#8a1c36" stopOpacity={0.22}/>
+                               <stop offset="100%" stopColor="#8a1c36" stopOpacity={0}/>
+                             </linearGradient>
+                         </defs>
+                         <CartesianGrid strokeDasharray="6 6" vertical={false} stroke="#e2e8f0/60" />
+                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-sans)', letterSpacing: '0.05em' }} dy={10} />
+                         <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-sans)' }} domain={[0, 100]} />
+                         <Tooltip content={<CustomTooltip />} />
+                         <Area type="monotone" dataKey="score" name="Score" stroke="#8a1c36" strokeWidth={3.5} fillOpacity={1} fill="url(#scoreGrad)" activeDot={{ r: 6, stroke: '#ffffff', strokeWidth: 2, fill: '#8a1c36', style: { filter: 'drop-shadow(0px 4px 8px rgba(138,28,54,0.4))' } }} isAnimationActive={true} animationDuration={850} animationEasing="ease-out" style={{ filter: 'url(#areaLineShadow)' }} />
+                      </AreaChart>
+                   </ResponsiveContainer>
+                </div>
+              ) : (
+                 <div className="w-full h-[300px] flex items-center justify-center bg-slate-50/40 rounded-2xl border border-slate-150/50">
+                    <p className="text-slate-400 font-bold text-sm">Not enough data to plot a trend.</p>
+                 </div>
+              )}
+           </motion.div>
 
-          <div className="space-y-6 sm:space-y-8">
-            <motion.div variants={stagger.itemFadeUp} className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-500 relative overflow-hidden group">
-               <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-brand-500/5 rounded-full blur-3xl group-hover:bg-brand-500/10 transition-colors duration-500 pointer-events-none" />
-               <h3 className="text-xl font-extrabold text-slate-900 mb-8 tracking-tight relative z-10 text-center">Accuracy Breakdown</h3>
-               
-               {stats.totalQuestions > 0 ? (
-                 <div className="relative z-10">
-                   <div className="w-full aspect-square relative max-w-[200px] mx-auto mb-8 drop-shadow-xl">
+           {/* Accuracy Breakdown Card */}
+           <motion.div 
+             variants={stagger.itemFadeUp} 
+             className="lg:col-span-4 relative overflow-hidden bg-white/65 backdrop-blur-xl rounded-[2.5rem] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-white/80 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-all duration-500 group"
+           >
+              <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-slate-100/50 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand-500/3 rounded-full blur-3xl group-hover:bg-brand-500/5 transition-colors duration-500 pointer-events-none" />
+              
+              <div className="flex items-center gap-2.5 mb-8 justify-center">
+                <div className="w-1 h-5 bg-[#8a1c36] rounded-full shrink-0" />
+                <h3 className="text-lg font-sans font-black text-slate-900 tracking-tight text-center">Accuracy Breakdown</h3>
+              </div>
+              
+              {stats.totalQuestions > 0 ? (
+                <div className="relative z-10">
+                   <div className="w-full aspect-square relative max-w-[190px] mx-auto mb-8 drop-shadow-md">
                       <ResponsiveContainer width="100%" height="100%">
                          <PieChart>
-                            <Pie data={stats.pieData} innerRadius={65} outerRadius={90} paddingAngle={6} dataKey="value" stroke="none">
+                            <Pie data={stats.pieData} innerRadius={60} outerRadius={85} paddingAngle={6} dataKey="value" stroke="none" isAnimationActive={true} animationDuration={850} animationEasing="ease-out">
                                {stats.pieData.map((entry: any, index: number) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                             </Pie>
                          </PieChart>
                       </ResponsiveContainer>
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                         <span className="text-4xl font-black text-slate-900 leading-none tracking-tight">{stats.totalQuestions}</span>
-                         <span className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">Total Qs</span>
+                         <span className="text-3xl sm:text-4xl font-sans font-black text-slate-900 leading-none tracking-tight">{stats.totalQuestions}</span>
+                         <span className="text-[9px] font-sans font-black text-slate-400 mt-1.5 uppercase tracking-widest">Total Qs</span>
                       </div>
                    </div>
-                   <div className="space-y-3">
+                   <div className="space-y-2.5">
                       <AccuracyRow label="Correct" value={stats.totalCorrect} total={stats.totalQuestions} color="bg-emerald-500" />
                       <AccuracyRow label="Wrong" value={stats.totalWrong} total={stats.totalQuestions} color="bg-rose-500" />
                       <AccuracyRow label="Skipped" value={stats.totalSkipped} total={stats.totalQuestions} color="bg-slate-400" />
                    </div>
+                </div>
+              ) : (
+                 <div className="p-4 bg-slate-50/40 rounded-2xl border border-slate-150/50 text-center text-xs font-bold text-slate-450">
+                    No question breakdown history available.
                  </div>
-               ) : (
-                 <div className="p-4 bg-white/50 backdrop-blur-sm rounded-2xl border border-white/60 text-center text-sm font-semibold text-slate-500">
-                   No question data available to calculate breakdown.
-                 </div>
-               )}
-            </motion.div>
+              )}
+           </motion.div>
 
-            <motion.div variants={stagger.itemFadeUp} className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-500 relative overflow-hidden group">
-               <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-brand-500/5 rounded-full blur-3xl group-hover:bg-brand-500/10 transition-colors duration-500 pointer-events-none" />
-               <h3 className="text-xl font-extrabold text-slate-900 mb-8 tracking-tight relative z-10 text-center">Overall Skill Profile</h3>
+            {/* Skill Radar Card */}
+            <motion.div 
+              variants={stagger.itemFadeUp} 
+              className="lg:col-span-12 relative overflow-hidden bg-white/70 backdrop-blur-2xl rounded-[2.5rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-white/80 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-all duration-500 group"
+            >
+               <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-slate-50 rounded-full blur-3xl pointer-events-none" />
+               <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/3 rounded-full blur-3xl group-hover:bg-indigo-500/5 transition-colors duration-500 pointer-events-none" />
+               
+               <div className="flex flex-col gap-1.5 mb-6 text-center">
+                 <div className="flex justify-center">
+                   <span className="text-[9px] font-sans font-black text-[#8a1c36] uppercase tracking-widest bg-[#8a1c36]/5 px-3 py-1 rounded-full border border-[#8a1c36]/10 leading-none">
+                      Metrics Overview
+                   </span>
+                 </div>
+                 <h3 className="text-xl font-serif font-black text-slate-900 tracking-tight mt-1.5">Overall Skill Profile</h3>
+                 <p className="text-[11px] font-bold text-slate-400">Analysis of your core exam-taking dimensions</p>
+               </div>
                
                {stats.skillProfile && stats.totalQuestions > 0 ? (
-                 <div className="w-full h-[300px] sm:h-[350px] mb-4 mt-2 relative z-10 drop-shadow-sm flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
-                       <RadarChart cx="50%" cy="50%" outerRadius={window.innerWidth > 640 ? "55%" : "60%"} data={stats.skillProfile} margin={{ top: 10, right: 35, bottom: 10, left: 35 }}>
-                          <defs>
-                             <linearGradient id="overallRadarGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#4f46e5" stopOpacity={0.7}/>
-                                <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.15}/>
-                             </linearGradient>
-                          </defs>
-                          <PolarGrid stroke="#cbd5e1" strokeDasharray="4 4" />
-                          <PolarAngleAxis dataKey="name" tick={{ fill: '#475569', fontSize: window.innerWidth > 640 ? 12 : 10, fontWeight: 700 }} />
-                          <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} tickCount={6} />
-                          <Radar 
-                            name="Skill Level" 
-                            dataKey="value" 
-                            stroke="#4f46e5" 
-                            strokeWidth={3} 
-                            fill="url(#overallRadarGrad)" 
-                            activeDot={{ r: 5, fill: '#4f46e5', strokeWidth: 2, stroke: '#ffffff', style: { filter: 'drop-shadow(0px 2px 4px rgba(79,70,229,0.5))' } }} 
-                          />
-                          <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#94a3b8', strokeWidth: 1, strokeDasharray: '3 3' }} />
-                       </RadarChart>
-                    </ResponsiveContainer>
+                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                    {/* Radar Chart Container */}
+                    <div className="lg:col-span-5 w-full h-[280px] relative z-10 flex items-center justify-center">
+                       <ResponsiveContainer width="100%" height="100%">
+                          <RadarChart cx="50%" cy="50%" outerRadius="58%" data={stats.skillProfile} margin={{ top: 10, right: 40, bottom: 10, left: 40 }}>
+                             <defs>
+                                <filter id="radarShadow" x="-10%" y="-10%" width="120%" height="120%">
+                                  <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#8a1c36" floodOpacity="0.12" />
+                                </filter>
+                                <linearGradient id="overallRadarGrad" x1="0" y1="0" x2="0" y2="1">
+                                   <stop offset="0%" stopColor="#8a1c36" stopOpacity={0.65}/>
+                                   <stop offset="100%" stopColor="#6366f1" stopOpacity={0.10}/>
+                                </linearGradient>
+                             </defs>
+                             <PolarGrid stroke="#cbd5e1" strokeOpacity={0.5} strokeDasharray="4 4" />
+                             <PolarAngleAxis dataKey="name" tickFormatter={(t) => t.toUpperCase()} tick={{ fill: '#64748b', fontSize: 9, fontWeight: 900, fontFamily: 'var(--font-sans)', letterSpacing: '0.05em' }} />
+                             <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} tickCount={6} />
+                             <Radar 
+                               name="Skill Level" 
+                               dataKey="value" 
+                               stroke="#8a1c36" 
+                               strokeWidth={2.5} 
+                               fill="url(#overallRadarGrad)" 
+                               activeDot={{ r: 5, fill: '#8a1c36', strokeWidth: 2, stroke: '#ffffff', style: { filter: 'drop-shadow(0px 2px 4px rgba(138,28,54,0.4))' } }} 
+                               isAnimationActive={true}
+                               animationDuration={850}
+                               animationEasing="ease-out"
+                               style={{ filter: 'url(#radarShadow)' }}
+                             />
+                             <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '3 3' }} />
+                          </RadarChart>
+                       </ResponsiveContainer>
+                    </div>
+ 
+                    {/* Detailed breakdown items */}
+                    <div className="lg:col-span-7 space-y-3.5 relative z-10">
+                      {stats.skillProfile.map((skill: any, idx: number) => {
+                         let icon = <Target className="w-4 h-4 text-emerald-500" />;
+                         let colorClass = "from-emerald-500 to-emerald-400";
+                         let desc = "Correctness rate on attempts";
+                         let bgClass = "bg-emerald-50/50 border-emerald-100/50";
+                         let textClass = "text-emerald-700";
+
+                         if (skill.name === "Accuracy") {
+                            icon = <Target className="w-4 h-4 text-emerald-600" />;
+                            colorClass = "from-emerald-600 to-emerald-400";
+                            desc = "Accuracy on attempted questions";
+                            bgClass = "bg-emerald-50/50 border-emerald-100/50";
+                            textClass = "text-emerald-700";
+                         } else if (skill.name === "Precision") {
+                            icon = <Crosshair className="w-4 h-4 text-[#8a1c36]" />;
+                            colorClass = "from-[#8a1c36] to-[#b83c5a]";
+                            desc = "Consistency & focus in answers";
+                            bgClass = "bg-brand-50/50 border-brand-100/50";
+                            textClass = "text-brand-700";
+                         } else if (skill.name === "Speed") {
+                            icon = <Timer className="w-4 h-4 text-amber-600" />;
+                            colorClass = "from-amber-600 to-amber-400";
+                            desc = "Pace answering questions";
+                            bgClass = "bg-amber-50/50 border-amber-100/50";
+                            textClass = "text-amber-700";
+                         } else if (skill.name === "Endurance") {
+                            icon = <Flame className="w-4 h-4 text-indigo-600" />;
+                            colorClass = "from-indigo-600 to-indigo-400";
+                            desc = "Volume of questions practiced";
+                            bgClass = "bg-indigo-50/50 border-indigo-100/50";
+                            textClass = "text-indigo-700";
+                         } else if (skill.name === "Momentum") {
+                            icon = <TrendingUp className="w-4 h-4 text-cyan-600" />;
+                            colorClass = "from-cyan-600 to-cyan-400";
+                            desc = "Test-to-test improvement rate";
+                            bgClass = "bg-cyan-50/50 border-cyan-100/50";
+                            textClass = "text-cyan-700";
+                         }
+
+                         return (
+                            <div key={idx} className="p-3 bg-white/40 border border-slate-100/60 rounded-2xl flex flex-col gap-2 hover:bg-white/80 hover:border-slate-200/50 transition-all duration-350 shadow-[0_2px_8px_rgba(0,0,0,0.005)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.015)]">
+                               <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2.5">
+                                     <div className={cn("p-1.5 rounded-xl border shrink-0", bgClass)}>
+                                        {icon}
+                                     </div>
+                                     <div className="flex flex-col min-w-0">
+                                        <span className="text-xs font-sans font-black text-slate-800 leading-none">{skill.name}</span>
+                                        <span className="text-[9px] font-bold text-slate-400 leading-none mt-1 truncate">{desc}</span>
+                                     </div>
+                                  </div>
+                                  <span className={cn("text-xs font-sans font-black tracking-tight", textClass)}>{skill.value}%</span>
+                               </div>
+                               <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                  <motion.div 
+                                     initial={{ width: 0 }}
+                                     animate={{ width: `${skill.value}%` }}
+                                     transition={{ duration: 0.85, ease: "easeOut", delay: idx * 0.05 }}
+                                     className={cn("h-full rounded-full bg-gradient-to-r", colorClass)}
+                                  />
+                                </div>
+                            </div>
+                         );
+                      })}
+                   </div>
                  </div>
                ) : (
-                 <div className="p-4 bg-white/50 backdrop-blur-sm rounded-2xl border border-white/60 text-center text-sm font-semibold text-slate-500">
-                   No subject data available to map your profile.
+                 <div className="p-4 bg-slate-50/40 rounded-2xl border border-slate-150/50 text-center text-xs font-bold text-slate-450">
+                    Complete tests to compile your skill profile.
                  </div>
-               )}
-            </motion.div>
+              )}
+           </motion.div>
 
-            {stats.examAnalysis && stats.examAnalysis.length > 0 && (
-              <div className="flex flex-col gap-6 sm:gap-8 max-h-[600px] lg:max-h-[750px] overflow-y-auto custom-scrollbar pr-2 sm:pr-4 pb-2 -mr-2 sm:-mr-4 relative">
-                {stats.examAnalysis.map((exam: any, idx: number) => (
-                  <motion.div key={idx} variants={stagger.itemFadeUp} className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] transition-all duration-500 relative overflow-hidden flex flex-col shrink-0">
-                 <div className="mb-6 relative z-10">
-                    <div className="mb-3">
-                       <span className="px-3 py-1.5 bg-slate-900 text-white text-[11px] font-extrabold rounded-lg uppercase tracking-widest shadow-md">
-                          {exam.examName} – Analytics
-                       </span>
-                    </div>
-                    <h3 className="text-xl font-extrabold text-slate-900 leading-tight mb-1 tracking-tight">Performance Breakdown</h3>
-                    <p className="text-sm text-slate-500 font-bold">Total Attempts: {exam.totalAttempts} • Last Attempt: {exam.lastAttemptDate}</p>
-                 </div>
+           {/* Performance Breakdown Card */}
+           {stats.examAnalysis && stats.examAnalysis.length > 0 && (
+             <div className="lg:col-span-12 flex flex-col gap-6 relative">
+               {stats.examAnalysis.map((exam: any, idx: number) => {
+                 const combinedSubjects = [...(exam.mockTests || []), ...(exam.practiceTests || [])];
+                 const uniqueMap = new Map();
                  
-                 {(() => {
-                   const combinedSubjects = [...(exam.mockTests || []), ...(exam.practiceTests || [])];
-                   const uniqueMap = new Map();
-                   
-                   // Ensure 100% data accuracy by truly merging all correct and attempted counts for the same subject
-                   combinedSubjects.forEach(s => {
-                     if (!uniqueMap.has(s.name)) {
-                       uniqueMap.set(s.name, { ...s });
-                     } else {
-                       const existing = uniqueMap.get(s.name);
-                       existing.correct += (s.correct || 0);
-                       existing.attempted += (s.attempted || 0);
-                       const newAcc = existing.attempted > 0 ? (existing.correct / existing.attempted) * 100 : 0;
-                       existing.avgScore = Math.round(newAcc);
-                       existing.status = newAcc >= 70 ? 'Strong' : 'Weak';
-                     }
-                   });
-                   let uniqueSubjects = Array.from(uniqueMap.values());
-                   
-                   if (uniqueSubjects.length > 0) {
-                     return (
-                       <div className="w-full h-[220px] mb-6 relative z-10">
-                          <ResponsiveContainer width="100%" height="100%">
-                             <BarChart data={uniqueSubjects} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                <defs>
-                                   <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.9}/>
-                                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.6}/>
-                                   </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }} dy={10} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }} domain={[0, 100]} />
-                                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
-                                <Bar dataKey="avgScore" name="Accuracy" fill="url(#barGrad)" radius={[4, 4, 0, 0]} barSize={40} />
-                             </BarChart>
-                          </ResponsiveContainer>
-                       </div>
-                     );
+                 combinedSubjects.forEach(s => {
+                   if (!uniqueMap.has(s.name)) {
+                     uniqueMap.set(s.name, { ...s });
+                   } else {
+                     const existing = uniqueMap.get(s.name);
+                     existing.correct += (s.correct || 0);
+                     existing.attempted += (s.attempted || 0);
+                     const newAcc = existing.attempted > 0 ? (existing.correct / existing.attempted) * 100 : 0;
+                     existing.avgScore = Math.round(newAcc);
+                     existing.status = newAcc >= 70 ? 'Strong' : 'Weak';
                    }
-                   return null;
-                 })()}
+                 });
+                 const uniqueSubjects = Array.from(uniqueMap.values());
 
-                 <div className="w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent mb-6 relative z-10" />
-
-                 <div className="space-y-6 max-h-[400px] overflow-y-auto custom-scrollbar pr-2 relative z-10">
-                    {exam.mockTests && exam.mockTests.length > 0 && (
-                      <div>
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pl-1">Mock Tests</h4>
-                        <div className="space-y-3">
-                          {exam.mockTests.map((subject: any, i: number) => (
-                             <SubjectRow key={`m-${i}`} subject={subject} />
-                          ))}
+                 return (
+                   <motion.div key={idx} variants={stagger.itemFadeUp} className="bg-white/70 backdrop-blur-2xl rounded-[2.5rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-white/80 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-all duration-500 relative overflow-hidden flex flex-col shrink-0">
+                     <div className="mb-6 relative z-10 flex flex-col gap-3">
+                        <div>
+                           <span className="px-3 py-1.5 bg-[#8a1c36]/8 text-[#8a1c36] text-[9px] font-sans font-black rounded-xl uppercase tracking-widest border border-[#8a1c36]/15 shadow-sm leading-none">
+                              {exam.examName}
+                           </span>
                         </div>
-                      </div>
-                    )}
-
-                    {exam.practiceTests && exam.practiceTests.length > 0 && (
-                      <div>
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pl-1">Practice Sessions</h4>
-                        <div className="space-y-3">
-                          {exam.practiceTests.map((subject: any, i: number) => (
-                             <SubjectRow key={`p-${i}`} subject={subject} />
-                          ))}
+                        <div>
+                           <h3 className="text-xl font-serif font-black text-slate-900 leading-tight mb-1">Performance Breakdown</h3>
+                           <p className="text-[11px] text-slate-400 font-bold flex items-center gap-1.5">
+                              Attempts: <span className="text-slate-800 font-black">{exam.totalAttempts}</span>
+                              <span className="text-slate-200">•</span>
+                              Last Attempt: <span className="text-[#8a1c36] font-black">{exam.lastAttemptDate}</span>
+                           </p>
                         </div>
-                      </div>
-                    )}
+                     </div>
+                     
+                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-10">
+                        {/* Left column: Bar Chart */}
+                        {uniqueSubjects.length > 0 ? (
+                          <div className="lg:col-span-5 w-full h-[240px] flex items-center justify-center">
+                             <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={uniqueSubjects} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                                   <defs>
+                                      <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                                         <stop offset="5%" stopColor="#8a1c36" stopOpacity={0.95}/>
+                                         <stop offset="95%" stopColor="#6366f1" stopOpacity={0.65}/>
+                                      </linearGradient>
+                                   </defs>
+                                   <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#cbd5e1" strokeOpacity={0.25} />
+                                   <XAxis dataKey="name" axisLine={false} tickLine={false} tickFormatter={(val) => val.length > 24 ? `${val.substring(0, 22)}...` : val} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} dy={10} />
+                                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} domain={[0, 100]} />
+                                   <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
+                                   <Bar dataKey="avgScore" name="Accuracy" fill="url(#barGrad)" radius={[8, 8, 0, 0]} barSize={28} isAnimationActive={true} animationDuration={850} animationEasing="ease-out" />
+                                </BarChart>
+                             </ResponsiveContainer>
+                          </div>
+                        ) : null}
+  
+                        {/* Divider on mobile only */}
+                        {uniqueSubjects.length > 0 && (
+                          <div className="w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent my-1 lg:hidden" />
+                        )}
+  
+                        {/* Right column: Expandable List */}
+                        <div className={cn("space-y-4 max-h-[380px] overflow-y-auto custom-scrollbar pr-1", uniqueSubjects.length > 0 ? "lg:col-span-7" : "lg:col-span-12")}>
+                           {exam.mockTests && exam.mockTests.length > 0 && (
+                             <div className="space-y-3">
+                               <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Mock Tests</h4>
+                               <div className="space-y-3">
+                                 {exam.mockTests.map((subject: any, i: number) => (
+                                    <SubjectRow key={`m-${i}`} subject={subject} />
+                                 ))}
+                               </div>
+                             </div>
+                           )}
+      
+                           {exam.practiceTests && exam.practiceTests.length > 0 && (
+                             <div className="space-y-3">
+                               <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1 mt-2">Practice Sessions</h4>
+                               <div className="space-y-3">
+                                 {exam.practiceTests.map((subject: any, i: number) => (
+                                    <SubjectRow key={`p-${i}`} subject={subject} />
+                                 ))}
+                               </div>
+                             </div>
+                           )}
+      
+                           {(!exam.practiceTests || exam.practiceTests.length === 0) && (!exam.mockTests || exam.mockTests.length === 0) && (
+                             <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 text-center text-xs font-semibold text-slate-450">
+                               No subject metrics compiled yet.
+                             </div>
+                           )}
+                        </div>
+                     </div>
+                  </motion.div>
+                 );
+               })}
+             </div>
+           )}
 
-                    {(!exam.practiceTests || exam.practiceTests.length === 0) && (!exam.mockTests || exam.mockTests.length === 0) && (
-                      <div className="p-4 bg-white/50 backdrop-blur-sm rounded-2xl border border-white/60 text-center text-sm font-semibold text-slate-500">
-                        No subject data available. Complete more diverse tests to build this profile.
-                      </div>
-                    )}
+           {/* Visual Action cards */}
+           <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+               <motion.div variants={stagger.itemFadeUp} whileHover={{ y: -3 }} className="bg-white/80 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(15,23,42,0.015)] border border-slate-200/50 hover:border-slate-200 flex gap-5 items-start">
+                  <div className={cn("p-3 rounded-2xl shrink-0 shadow-sm border border-slate-100", stats.impScore >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600")}>
+                     {stats.impScore >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+                 </div>
+                 <div>
+                    <h4 className="font-extrabold text-slate-800 mb-1 tracking-tight text-sm sm:text-base">{stats.impScore >= 0 ? "You are improving" : "Scores dropped recently"}</h4>
+                    <p className="text-xs sm:text-sm font-medium text-slate-450 leading-relaxed">{stats.impScore >= 0 ? "Your latest test scores show positive momentum. Keep up the good work!" : "Review your recent mistakes to get back on track."}</p>
                  </div>
               </motion.div>
-                ))}
-              </div>
-            )}
-          </div>
+               <motion.div variants={stagger.itemFadeUp} whileHover={{ y: -3 }} className="bg-white/80 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(15,23,42,0.015)] border border-slate-200/50 hover:border-slate-200 flex gap-5 items-start">
+                  <div className={cn("p-3 rounded-2xl shrink-0 shadow-sm border border-slate-100", stats.avgTimePerQuestion > 60 ? "bg-amber-50 text-amber-600" : "bg-brand-50 text-brand-600")}>
+                    <Timer className="w-5 h-5" />
+                 </div>
+                 <div>
+                    <h4 className="font-extrabold text-slate-800 mb-1 tracking-tight text-sm sm:text-base">{stats.avgTimePerQuestion > 60 ? "Improve Question Speed" : "Optimal Solving Pace"}</h4>
+                    <p className="text-xs sm:text-sm font-medium text-slate-450 leading-relaxed">Averaging {stats.avgTimePerQuestion.toFixed(1)}s per question. {stats.avgTimePerQuestion > 60 ? "Try to solve familiar questions faster." : "Excellent pacing, maintain this rate in real exams."}</p>
+                 </div>
+              </motion.div>
+           </div>
+
+           {/* Premium action banner */}
+           <motion.div 
+             variants={stagger.itemFadeUp} 
+             whileHover={{ y: -3 }}
+             className="lg:col-span-5 relative bg-gradient-to-br from-slate-900 via-slate-950 to-indigo-950 rounded-[2rem] p-6 sm:p-8 flex flex-col justify-between shadow-xl border border-slate-800 gap-6 overflow-hidden transition-all duration-500 min-h-[160px]"
+           >
+             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-500/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3 pointer-events-none animate-pulse-soft" />
+             <div className="text-left relative z-10">
+               <h3 className="text-xl sm:text-2xl font-serif font-black text-white mb-2 tracking-tight">Unlock Your Potential</h3>
+               <p className="text-slate-400 text-xs sm:text-sm font-medium">Focus on weak subjects in targeted mock sessions to optimize your overall score.</p>
+             </div>
+             <div className="mt-auto pt-2 flex justify-start">
+                <motion.button 
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => onNavigate?.('home')} 
+                  className="relative z-10 px-8 py-3.5 bg-[#8A1C36] hover:bg-[#76142c] text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-2 shrink-0 whitespace-nowrap cursor-pointer shadow-lg shadow-brand-500/20"
+                >
+                  Start Practice Mocks
+                  <ArrowRight className="w-4 h-4" />
+                </motion.button>
+             </div>
+           </motion.div>
         </div>
       </motion.div>
     </div>
   );
 }
 
-function StatCard({ icon, title, value, suffix = "", trend, decimals = 0 }: any) {
-  const isPositive = (trend ?? 0) >= 0;
-  return (
-    <motion.div 
-      variants={stagger.itemFadeUp} 
-      whileHover={{ y: -6, scale: 0.99 }}
-      whileTap={{ scale: 0.97 }}
-      className="relative overflow-hidden bg-white/70 backdrop-blur-xl p-4 sm:p-7 rounded-[1.5rem] sm:rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white hover:border-brand-100/50 flex flex-col justify-between group transition-all duration-500 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] cursor-default"
-    >
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand-500/5 rounded-full blur-3xl group-hover:bg-brand-500/10 transition-colors duration-700 pointer-events-none" />
-      <div className="relative z-10 flex items-center justify-between mb-3 sm:mb-6">
-         <div className="p-2 sm:p-3 bg-white rounded-xl sm:rounded-2xl shadow-sm border border-slate-100 text-slate-600 group-hover:text-brand-600 group-hover:bg-brand-50 transition-colors duration-300">
-            {icon}
-         </div>
-         {trend !== undefined && trend !== 0 && (
-            <div className={cn(
-               "flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-extrabold shadow-sm border border-white",
-               isPositive ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
-            )}>
-               {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-               {Math.abs(Math.round(trend))}%
-            </div>
-         )}
-      </div>
-      <div className="relative z-10 mt-auto">
-        <div className="text-[1.75rem] sm:text-4xl font-black text-slate-900 flex items-baseline gap-1 mb-0.5 sm:mb-1.5 tracking-tight group-hover:text-brand-900 transition-colors duration-300 leading-none">
-           <AnimatedCounter value={value} decimals={decimals} />
-           {suffix && <span className="text-sm sm:text-lg font-bold text-slate-400">{suffix}</span>}
-        </div>
-        <h4 className="text-[11px] sm:text-sm font-bold text-slate-500 leading-tight mt-1 sm:mt-0">{title}</h4>
-      </div>
-    </motion.div>
-  );
-}
+const areActivitiesEqual = (a: any[] | undefined, b: any[] | undefined) => {
+  if (!a || !b) return a === b;
+  if (a.length !== b.length) return false;
+  return a.every((val, index) => val.id === b[index].id && val.timestamp === b[index].timestamp);
+};
 
-function AccuracyRow({ label, value, total, color }: { label: string, value: number, total: number, color: string }) {
-  const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-  return (
-    <div className="flex items-center justify-between p-3.5 bg-white/60 backdrop-blur-md rounded-2xl border border-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
-       <div className="flex items-center gap-3.5">
-          <div className={cn("w-3.5 h-3.5 rounded-full shadow-inner", color)} />
-          <span className="text-sm font-extrabold text-slate-700 group-hover:text-slate-900 transition-colors">{label}</span>
-       </div>
-       <div className="flex items-center gap-5">
-          <span className="text-base font-black text-slate-900">{value}</span>
-          <span className="text-sm font-extrabold text-slate-400 w-10 text-right">{percentage}%</span>
-       </div>
-    </div>
-  );
-}
+const AnalyticsView = React.memo(AnalyticsViewInner, (prevProps, nextProps) => {
+  return prevProps.user?.id === nextProps.user?.id && 
+         areActivitiesEqual(prevProps.activities, nextProps.activities);
+});
+
+export default AnalyticsView;

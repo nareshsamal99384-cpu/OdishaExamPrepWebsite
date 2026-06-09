@@ -83,7 +83,7 @@ function safeParse<T>(json: string | null | undefined, fallback: T): T {
   if (!json) return fallback;
   try {
     const parsed = JSON.parse(json);
-    return Array.isArray(fallback) ? (Array.isArray(parsed) ? parsed : fallback) : parsed;
+    return (Array.isArray(fallback) ? (Array.isArray(parsed) ? parsed : fallback) : parsed) as T;
   } catch {
     return fallback;
   }

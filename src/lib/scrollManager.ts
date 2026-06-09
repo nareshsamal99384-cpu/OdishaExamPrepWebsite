@@ -1,5 +1,38 @@
 const isBrowser = typeof window !== 'undefined';
 
+/** Premium eased window scroll to a target Y position.
+ *  Uses easeInOutCubic curve so the animation decelerates naturally.
+ *  Duration scales with distance: short hops feel snappy, long jumps feel cinematic. */
+function smoothScrollWindow(targetY: number, duration = 700): Promise<void> {
+  return new Promise((resolve) => {
+    const startY = window.scrollY;
+    const distance = targetY - startY;
+    if (Math.abs(distance) < 2) { resolve(); return; }
+
+    // Scale duration: ~600ms for short, up to 900ms for very long scrolls
+    const scaledDuration = Math.min(Math.max(Math.abs(distance) * 0.35, 500), 900);
+
+    const t0 = performance.now();
+
+    const easeInOutCubic = (t: number) =>
+      t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+    const tick = (now: number) => {
+      const elapsed = now - t0;
+      const progress = Math.min(elapsed / scaledDuration, 1);
+      const eased = easeInOutCubic(progress);
+      window.scrollTo(0, startY + distance * eased);
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        resolve();
+      }
+    };
+
+    requestAnimationFrame(tick);
+  });
+}
+
 export function scrollToElement(
   idOrEl: string | HTMLElement | null,
   options?: {
@@ -8,29 +41,27 @@ export function scrollToElement(
     delay?: number;
   }
 ): Promise<void> {
-  const { block = 'start', behavior = 'smooth', delay = 0 } = options || {};
+  const { block = 'start', delay = 0 } = options || {};
 
   const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
   if (!el) return Promise.resolve();
 
   return new Promise((resolve) => {
     const doScroll = () => {
-      el.scrollIntoView({ behavior, block });
-      if (behavior === 'smooth') {
-        let finished = false;
-        const check = () => {
-          const pos = el.getBoundingClientRect();
-          if (Math.abs(pos.top - (block === 'start' ? 0 : pos.height)) < 2) {
-            finished = true;
-            resolve();
-          } else if (!finished) {
-            requestAnimationFrame(check);
-          }
-        };
-        requestAnimationFrame(check);
+      const rect = el.getBoundingClientRect();
+      const NAVBAR_OFFSET = 96; // matches scroll-mt-24 on sections
+      let targetY: number;
+
+      if (block === 'start') {
+        targetY = window.scrollY + rect.top - NAVBAR_OFFSET;
+      } else if (block === 'center') {
+        targetY = window.scrollY + rect.top - window.innerHeight / 2 + rect.height / 2;
       } else {
-        resolve();
+        targetY = window.scrollY + rect.top - NAVBAR_OFFSET;
       }
+
+      targetY = Math.max(0, Math.min(targetY, document.documentElement.scrollHeight - window.innerHeight));
+      smoothScrollWindow(targetY).then(resolve);
     };
 
     if (delay > 0) {
@@ -42,14 +73,11 @@ export function scrollToElement(
 }
 
 export function scrollToTop(options?: { behavior?: ScrollBehavior; delay?: number }): Promise<void> {
-  const { behavior = 'smooth', delay = 0 } = options || {};
+  const { delay = 0 } = options || {};
 
   return new Promise((resolve) => {
     const doScroll = () => {
-      window.scrollTo({ top: 0, behavior });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-      resolve();
+      smoothScrollWindow(0).then(resolve);
     };
 
     if (delay > 0) {
