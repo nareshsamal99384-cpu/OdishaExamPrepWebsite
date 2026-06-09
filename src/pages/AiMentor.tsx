@@ -3,23 +3,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, 
   Send, 
-  Cpu, 
-  Coins, 
-  AlertCircle, 
   Trash2, 
   Play, 
   Copy, 
   CheckCircle2, 
   Clock3, 
   Calendar, 
-  Palette, 
-  Type, 
-  Info,
   ArrowRight,
   BookOpen,
-  Target,
   Award,
-  ChevronRight
+  ChevronRight,
+  User,
+  Cpu
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -33,20 +28,16 @@ export default function AiMentor({ user }: { user: any }) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Namaskar! I am your AI Exam Preparation Coach. I am here to help you study for OPSC OAS, OSSC CGL, and OSSSC RI/ARI/Amin exams. Ask me about Odisha History & Geography, Indian Polity & Constitution, Odia Grammar rules, English Translation, or Quantitative Aptitude shortcut tricks! You can also use the Study Planner on the right to schedule a session and generate a custom outline."
+      content: "Namaskar! I am your personal Study Coach. I am here to help you prepare for OPSC OAS, OSSC CGL, and OSSSC RI/ARI/Amin exams. Ask me any questions about Odisha History & Geography, Indian Polity, Odia Grammar rules, or Quantitative Aptitude shortcuts! You can also use the scheduler on the right to plan your revision session."
     }
   ]);
   const [input, setInput] = useState('');
-  const [model, setModel] = useState<'deepseek-ai/deepseek-v4-flash' | 'deepseek-ai/deepseek-v4-pro'>('deepseek-ai/deepseek-v4-flash');
   const [loading, setLoading] = useState(false);
-  const [temperature, setTemperature] = useState(0.2);
-  const [estimatedCost, setEstimatedCost] = useState(0);
 
   // Study Planner States
   const [plannerCategory, setPlannerCategory] = useState('General Studies (Odisha GK)');
   const [studyDate, setStudyDate] = useState('');
   const [studyTime, setStudyTime] = useState('');
-  const [plannerOutputActive, setPlannerOutputActive] = useState(false);
 
   // Auto-scroll ref
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -79,24 +70,6 @@ export default function AiMentor({ user }: { user: any }) {
     }
   ];
 
-  // Token & Credit Estimator Logic (Word count based)
-  useEffect(() => {
-    const text = input.trim();
-    if (!text) {
-      setEstimatedCost(0);
-      return;
-    }
-    const words = text.split(/\s+/).length;
-    const promptTokens = Math.ceil(words * 1.3);
-    const expectedCompletionTokens = 300; // Expected completion length
-    
-    // NIM credits mapping
-    const rate = model.includes('flash') ? 0.075 : 0.5; // per 1k tokens
-    const totalEstTokens = promptTokens + expectedCompletionTokens;
-    const estimatedCredits = (totalEstTokens / 1000) * rate;
-    setEstimatedCost(Number(estimatedCredits.toFixed(4)));
-  }, [input, model]);
-
   // Chat Submission
   const handleSendMessage = async (textToSend: string) => {
     if (!textToSend.trim() || loading) return;
@@ -110,7 +83,7 @@ export default function AiMentor({ user }: { user: any }) {
       // Context history pruning (keep last 4 messages to save tokens)
       const recentHistory = messages.slice(-4); 
 
-      const systemPrompt = `You are an expert AI Exam Preparation Coach for Odisha governmental examinations (OPSC civil services, OSSC CGL, and OSSSC RI/ARI/Amin recruitments).
+      const systemPrompt = `You are the official expert AI Study Coach for Odisha governmental examinations (OPSC civil services, OSSC CGL, and OSSSC RI/ARI/Amin recruitments).
 Your goal is to provide highly focused, accurate, and structured academic mentorship.
 
 Topics of expertise:
@@ -123,7 +96,8 @@ Topics of expertise:
 CREDIT-CONSCIOUS DIRECTIVES:
 - Keep explanations brief, direct, and structured with bullet points.
 - Avoid generic pleasantries, chat filler, or lengthy introductions.
-- Deliver maximum educational value per token to save student AI credits.`;
+- Deliver maximum educational value per token to save student AI credits.
+- Do NOT mention NVIDIA, DeepSeek, or other external AI brands. Introduce yourself only as the Website's Study Coach.`;
 
       const apiMessages = [
         { role: 'system', content: systemPrompt },
@@ -131,22 +105,23 @@ CREDIT-CONSCIOUS DIRECTIVES:
         { role: 'user', content: textToSend }
       ];
 
+      // Call local proxy endpoint to bypass CORS and protect API key
       const response = await fetch('/api/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: model,
+          model: 'deepseek-ai/deepseek-v4-flash', // Default standard model on backend
           messages: apiMessages,
-          temperature: temperature,
+          temperature: 0.2,
           max_tokens: 750,
           stream: true
         })
       });
 
       if (!response.ok) {
-        throw new Error(`API returned error code ${response.status}`);
+        throw new Error(`Connection issue (status ${response.status})`);
       }
 
       const reader = response.body?.getReader();
@@ -211,7 +186,7 @@ CREDIT-CONSCIOUS DIRECTIVES:
         ...prev,
         {
           role: 'assistant',
-          content: `⚠️ Error reaching DeepSeek NIM: ${error.message || "Please check your API key in .env"}`
+          content: "⚠️ Connection to study coach failed. Please check your internet connection and try again."
         }
       ]);
     } finally {
@@ -226,7 +201,6 @@ CREDIT-CONSCIOUS DIRECTIVES:
       return;
     }
     const outlinePrompt = `Create a highly structured study plan for my scheduled session on ${studyDate} at ${studyTime} focusing on "${plannerCategory}". Suggest 3 core subtopics to cover and 1 speed practice strategy. Keep it extremely brief.`;
-    setPlannerOutputActive(true);
     handleSendMessage(outlinePrompt);
   };
 
@@ -236,14 +210,14 @@ CREDIT-CONSCIOUS DIRECTIVES:
       <div className="flex flex-col items-center text-center space-y-4">
         <span className="section-chip">
           <Sparkles className="w-3.5 h-3.5 animate-pulse text-[#8A1C36]" />
-          Odisha Exam Prep Smart Coach
+          Smart Study Suite
         </span>
         <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-900 tracking-tight">
-          AI Study <span className="premium-text-gradient font-serif font-extrabold">Copilot</span>
+          Personal Study <span className="premium-text-gradient font-serif font-extrabold">Coach</span>
         </h2>
         <div className="section-divider" />
         <p className="text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed">
-          Ask questions, get concept summaries, test your knowledge, or plan custom mock sessions with our DeepSeek NIM mentor.
+          Ask questions, get core summaries, clear doubts, or schedule revision sessions directly with your personal tutor.
         </p>
       </div>
 
@@ -251,45 +225,25 @@ CREDIT-CONSCIOUS DIRECTIVES:
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* Left Pane: Chat Interface */}
-        <div className="lg:col-span-7 bg-[#0b0f19] text-slate-300 border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col h-[650px] relative noise-overlay">
+        <div className="lg:col-span-7 bg-[#0b0f19] text-slate-300 border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col h-[600px] relative noise-overlay">
           {/* Declaring dark color-scheme on the dark chat console to enable dark-themed scrollbars and select default popups */}
           <div style={{ colorScheme: 'dark' }} className="absolute inset-0 flex flex-col">
             
             {/* Header Control Panel */}
-            <div className="p-4 border-b border-white/10 bg-slate-950/60 backdrop-blur-md flex flex-wrap justify-between items-center gap-3 z-10">
+            <div className="p-4 border-b border-white/10 bg-slate-950/60 backdrop-blur-md flex justify-between items-center z-10">
               <div className="flex items-center gap-2">
-                <Cpu className="w-5 h-5 text-brand-400" />
-                <select 
-                  value={model} 
-                  onChange={(e: any) => setModel(e.target.value)}
-                  className="bg-slate-900 border border-white/10 text-white rounded-lg text-xs font-bold py-1.5 px-3 focus:outline-none focus:border-brand-500"
-                >
-                  <option value="deepseek-ai/deepseek-v4-flash">DeepSeek V4 Flash (Fast / Credits Saver)</option>
-                  <option value="deepseek-ai/deepseek-v4-pro">DeepSeek V4 Pro (Deep Reasoner)</option>
-                </select>
-              </div>
-
-              {/* Temperature Slider */}
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] uppercase font-black tracking-widest text-slate-500 font-mono">Temp: {temperature}</span>
-                <input 
-                  type="range" 
-                  min="0.1" 
-                  max="0.8" 
-                  step="0.1" 
-                  value={temperature}
-                  onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                  className="w-20 accent-brand-400 cursor-pointer h-1 rounded" 
-                />
+                <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
+                <span className="text-xs font-black uppercase tracking-wider text-slate-200">Study Coach Online</span>
               </div>
 
               {/* Clear Chat */}
               <button 
                 onClick={() => setMessages([{ role: 'assistant', content: "Chat cleared! What shall we revise next?" }])}
-                className="p-1.5 hover:bg-white/10 hover:text-white rounded-lg text-slate-400 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 rounded-xl text-xs font-bold transition-all cursor-pointer"
                 title="Clear Chat History"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Clear Chat</span>
               </button>
             </div>
 
@@ -306,7 +260,7 @@ CREDIT-CONSCIOUS DIRECTIVES:
                   )}
                 >
                   <div className="flex items-center gap-1.5 mb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    {m.role === 'user' ? 'Aspirant' : 'AI Exam Coach'}
+                    {m.role === 'user' ? 'Student' : 'Study Coach'}
                   </div>
                   <div className="whitespace-pre-wrap font-sans">
                     {m.content || (
@@ -321,14 +275,6 @@ CREDIT-CONSCIOUS DIRECTIVES:
               ))}
               <div ref={chatEndRef} />
             </div>
-
-            {/* Warning when character count is high */}
-            {input.length > 400 && (
-              <div className="mx-6 p-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl text-xs flex items-center gap-2 animate-scale-in">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>Long question. Keep it concise to prevent credit consumption!</span>
-              </div>
-            )}
 
             {/* Chat Input Console */}
             <div className="p-4 border-t border-white/10 bg-slate-950/60 backdrop-blur-md">
@@ -351,15 +297,6 @@ CREDIT-CONSCIOUS DIRECTIVES:
                   <Send className="w-4 h-4" />
                 </button>
               </form>
-
-              {/* Credit Estimator HUD */}
-              <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 mt-3 px-1">
-                <span className="flex items-center gap-1 font-mono">
-                  <Coins className="w-3.5 h-3.5 text-amber-500/80 animate-spin-slow" />
-                  Cost Est: <span className="text-amber-400 font-bold">{estimatedCost} Credits</span>
-                </span>
-                <span className="font-mono">Pruning Active (Last 4 messages)</span>
-              </div>
             </div>
 
           </div>
@@ -460,7 +397,7 @@ CREDIT-CONSCIOUS DIRECTIVES:
               Quick Revision Cards
             </h4>
             <p className="text-slate-500 text-xs font-semibold leading-relaxed">
-              Click any fast-track template below to launch a credit-saving query focused on core state syllabus.
+              Click any fast-track template below to launch a targeted revision query focused on core state syllabus.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {presetPrompts.map((p, idx) => (
