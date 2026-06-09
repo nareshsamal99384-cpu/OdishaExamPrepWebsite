@@ -69,6 +69,7 @@ const SearchableSelect = React.lazy(() => import('./components/SearchableSelect'
 const YouTubeCarousel = React.lazy(() => import('./components/YouTubeCarousel'));
 const BlogList = React.lazy(() => import('./pages/BlogList'));
 const BlogPost = React.lazy(() => import('./pages/BlogPost'));
+const AiMentor = React.lazy(() => import('./pages/AiMentor'));
 
 const HistoryView = ({ user, onViewResults, onResumeTest }: { user: any, onViewResults?: (results: any) => void, onResumeTest?: (test: any, state: any) => void }) => {
   const [activities, setActivities] = useState<any[]>([]);
@@ -4137,6 +4138,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     );
   }
 
+  if (mainTab === 'ai_mentor') {
+    return <AiMentor user={user} />;
+  }
+
   if (!selectedExam) {
     let globalVideoIds: string[] | null = exams.length === 0 ? null : [];
     
@@ -5593,11 +5598,11 @@ function AppContent() {
   const { user, loading, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [mainTab, setMainTab] = useState<'home' | 'courses' | 'analytics' | 'history' | 'library'>(() => {
+  const [mainTab, setMainTab] = useState<'home' | 'courses' | 'analytics' | 'history' | 'library' | 'ai_mentor'>(() => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab');
-    if (tab === 'courses' || tab === 'analytics' || tab === 'history' || tab === 'library') {
-      return tab as 'courses' | 'analytics' | 'history' | 'library';
+    if (tab === 'courses' || tab === 'analytics' || tab === 'history' || tab === 'library' || tab === 'ai_mentor') {
+      return tab as 'courses' | 'analytics' | 'history' | 'library' | 'ai_mentor';
     }
     return 'home';
   });
@@ -5791,6 +5796,12 @@ function AppContent() {
                       <BookMarked className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
                     <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">Library</span>
+                  </button>
+                  <button onClick={() => setMainTab('ai_mentor')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'ai_mentor' ? 'text-brand-600' : 'text-slate-400'}`}>
+                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform ${mainTab === 'ai_mentor' ? 'bg-brand-50' : 'hover:bg-slate-50'}`}>
+                      <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
+                    </div>
+                    <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">AI Studio</span>
                   </button>
                 </nav>
               </div>

@@ -921,3 +921,22 @@ body {
 .option-card:active {
   transform: scale(0.98);
 }
+
+/* Custom teal webkit indicators for native dark inputs */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(72%) sepia(35%) saturate(834%) hue-rotate(124deg) brightness(97%) contrast(89%);
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px;
+  margin-right: -2px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  background: rgba(45, 212, 191, 0.15); /* Subtle teal glow */
+  transform: scale(1.15); /* Responsive micro-scale */
+  filter: invert(85%) sepia(45%) saturate(1000%) hue-rotate(124deg) brightness(100%) contrast(100%); /* Brighter teal hover */
+}
+
