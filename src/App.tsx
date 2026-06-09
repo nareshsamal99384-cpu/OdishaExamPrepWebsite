@@ -5801,7 +5801,7 @@ function AppContent() {
                     <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform ${mainTab === 'ai_mentor' ? 'bg-brand-50' : 'hover:bg-slate-50'}`}>
                       <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
-                    <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">AI Studio</span>
+                    <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">AI Mentor</span>
                   </button>
                 </nav>
               </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, 
@@ -16,6 +16,9 @@ import {
   Type, 
   Info,
   ArrowRight,
+  BookOpen,
+  Target,
+  Award,
   ChevronRight
 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -30,21 +33,20 @@ export default function AiMentor({ user }: { user: any }) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Namaskar! I am your AI Design & Frontend Mentor. I'm here to help you build distinctive, premium user interfaces that avoid generic 'AI slop' aesthetics. Ask me anything about typography pairings, HSL color harmony, CSS glassmorphism, native dark picker indicators, or asymmetrical layouts!"
+      content: "Namaskar! I am your AI Exam Preparation Coach. I am here to help you study for OPSC OAS, OSSC CGL, and OSSSC RI/ARI/Amin exams. Ask me about Odisha History & Geography, Indian Polity & Constitution, Odia Grammar rules, English Translation, or Quantitative Aptitude shortcut tricks! You can also use the Study Planner on the right to schedule a session and generate a custom outline."
     }
   ]);
   const [input, setInput] = useState('');
   const [model, setModel] = useState<'deepseek-ai/deepseek-v4-flash' | 'deepseek-ai/deepseek-v4-pro'>('deepseek-ai/deepseek-v4-flash');
   const [loading, setLoading] = useState(false);
-  const [temperature, setTemperature] = useState(0.3);
+  const [temperature, setTemperature] = useState(0.2);
   const [estimatedCost, setEstimatedCost] = useState(0);
 
-  // Playground States
+  // Study Planner States
+  const [plannerCategory, setPlannerCategory] = useState('General Studies (Odisha GK)');
   const [studyDate, setStudyDate] = useState('');
   const [studyTime, setStudyTime] = useState('');
-  const [activeFontPair, setActiveFontPair] = useState(0);
-  const [customText, setCustomText] = useState('Explore the beauty of Odisha Exam Prep');
-  const [copiedColor, setCopiedColor] = useState<string | null>(null);
+  const [plannerOutputActive, setPlannerOutputActive] = useState(false);
 
   // Auto-scroll ref
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -53,77 +55,42 @@ export default function AiMentor({ user }: { user: any }) {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  // Fonts definition from uiux-designer.md / SKILL.md
-  const fontPairs = [
-    {
-      name: "Refined Editorial (Serif + Sans)",
-      heading: "font-serif font-extrabold tracking-tight",
-      headingFont: "Fraunces, Georgia",
-      body: "font-sans font-medium",
-      bodyFont: "Plus Jakarta Sans, sans-serif",
-      desc: "Perfect for education dashboards, blogs, and official recruitment journals."
-    },
-    {
-      name: "Sleek Tech (Sans Display + Mono)",
-      heading: "font-sans font-black uppercase tracking-wider",
-      headingFont: "Plus Jakarta Sans (Extra Bold)",
-      body: "font-mono text-sm",
-      bodyFont: "Courier New, monospace",
-      desc: "Great for CBT exam rooms, developer dashboards, and timer interfaces."
-    }
-  ];
-
-  // HSL Palette Generator
-  const generatedHSLColors = [
-    { name: "Primary Deep Wine", hsl: "hsl(346, 66%, 32%)", hex: "#8A1C36" },
-    { name: "Secondary Dark Navy", hsl: "hsl(213, 78%, 15%)", hex: "#0C2340" },
-    { name: "Accent Light Teal", hsl: "hsl(172, 66%, 50%)", hex: "#2DD4BF" },
-    { name: "Card Dark Translucent", hsl: "hsl(220, 40%, 8%)", hex: "#080B12" }
-  ];
-
-  const handleCopyColor = (color: string) => {
-    navigator.clipboard.writeText(color);
-    setCopiedColor(color);
-    setTimeout(() => setCopiedColor(null), 2000);
-  };
-
-  // Preset Prompts - optimized for low token credit consumption
+  // Exam Preparation presets - highly optimized for credit saving
   const presetPrompts = [
     {
-      title: "Palette Critique",
-      prompt: "Evaluate this palette: Primary Wine (#8A1C36), Navy (#0C2340), Accent Teal (#2DD4BF) on a Dark Slate background. Is the contrast accessible?",
-      desc: "Get HSL contrast critique"
+      title: "Paika Rebellion",
+      prompt: "Summarize the key causes, leaders, and significance of the Paika Rebellion (1817) in Odisha history in 2 concise bullet points.",
+      desc: "Odisha History quick revision"
     },
     {
-      title: "Glassmorphism CSS",
-      prompt: "Give me the CSS rules for a sleek dark glassmorphic card container with border highlights and a subtle backdrop filter.",
-      desc: "CSS glass template"
+      title: "President's Rule",
+      prompt: "Explain the difference between Article 356 (President's Rule) and Article 360 (Financial Emergency) of the Indian Constitution in one sentence each.",
+      desc: "Indian Polity core facts"
     },
     {
-      title: "Asymmetrical Grid",
-      prompt: "Generate a responsive Tailwind grid layout template with asymmetrical, grid-breaking elements for a syllabus roadmap card.",
-      desc: "Tailwind grid snippet"
+      title: "Odisha GK Quiz",
+      prompt: "Generate 3 high-yield multiple-choice questions on Odisha Rivers and Geography with a brief explanation for each.",
+      desc: "Quick self-assessment quiz"
     },
     {
-      title: "Styled Date Picker",
-      prompt: "Show me the webkit calendar picker CSS and the react showPicker() trigger code to make date/time inputs premium.",
-      desc: "Native indicator styling"
+      title: "Time & Work Trick",
+      prompt: "Show me a shortcut formula and speed calculation method to solve 'A and B together can do a work' questions in under 30 seconds.",
+      desc: "Aptitude speed shortcuts"
     }
   ];
 
-  // Credit Estimator Logic (Word count based)
+  // Token & Credit Estimator Logic (Word count based)
   useEffect(() => {
     const text = input.trim();
     if (!text) {
       setEstimatedCost(0);
       return;
     }
-    // Estimate tokens: roughly 1 word = 1.3 tokens
     const words = text.split(/\s+/).length;
     const promptTokens = Math.ceil(words * 1.3);
-    const expectedCompletionTokens = 350; // Average completion length
+    const expectedCompletionTokens = 300; // Expected completion length
     
-    // NIM NIM Credits: Flash is $0.000075 / 1k tokens, Pro is $0.0005 / 1k tokens
+    // NIM credits mapping
     const rate = model.includes('flash') ? 0.075 : 0.5; // per 1k tokens
     const totalEstTokens = promptTokens + expectedCompletionTokens;
     const estimatedCredits = (totalEstTokens / 1000) * rate;
@@ -147,26 +114,23 @@ export default function AiMentor({ user }: { user: any }) {
         throw new Error("NVIDIA NIM API key is not configured in your .env file.");
       }
 
-      // CREDIT-CONSCIOUS HISTORY PRUNING
-      // We prune the history to send only the system instruction, the last 4 messages, 
-      // and the current query. This saves substantial credit tokens!
+      // Context history pruning (keep last 4 messages to save tokens)
       const recentHistory = messages.slice(-4); 
 
-      const systemPrompt = `You are an elite Professional UI/UX Designer & Frontend Developer Mentor.
-Your role is to guide students in applying high-end frontend design (as detailed in SKILL.md) and efficient development practices (as detailed in SKILL_EFFICIENT_DEVELOPMENT.md).
+      const systemPrompt = `You are an expert AI Exam Preparation Coach for Odisha governmental examinations (OPSC civil services, OSSC CGL, and OSSSC RI/ARI/Amin recruitments).
+Your goal is to provide highly focused, accurate, and structured academic mentorship.
 
-Key Styling Rules to advocate:
-1. Avoid generic "AI slop" aesthetics (like Inter on plain white/purple gradients). Prefer Fraunces for headings and Plus Jakarta Sans for body.
-2. Commit to bold, extreme tones (e.g. brutally minimal, retro-futuristic, magazine editorial, dark glassmorphism).
-3. Pair distinctive display fonts with readable body text.
-4. Colors: Dominant brand HSL colors with sharp high-contrast accents (e.g. bright teal #2dd4bf).
-5. CSS Animations: Orchestrate staggered delays on load instead of spamming micro-animations on hover.
-6. Layout: Unexpected layouts, grid-breaking, asymmetry, diagonal flow, overlap.
-7. Backgrounds: Add depth via gradient meshes, noise texture overlays, and translucent card panels.
-8. Native Dark inputs: Add color-scheme: dark; to native pickers, use webkit-calendar-picker-indicator filter transitions, and trigger showPicker() on click.
+Topics of expertise:
+1. Odisha History & Heritage (e.g., Kalinga War, Kharavela, Gajapati Dynasty, Paika Rebellion, Salt Satyagraha in Odisha).
+2. Odisha Geography & Resources (e.g., Mahanadi river system, Similipal, Chilika lake, mineral wealth).
+3. Indian Constitution & Polity (e.g., Preamble, Fundamental Rights, Emergency Provisions, Odisha legislative structure).
+4. Quantitative Aptitude & Logical Reasoning (tricks, shortcuts, timers, speed math).
+5. Language Core: English and Odia Grammar, translation mappings, and writing styles.
 
-IMPORTANT CREDIT-SAVING INSTRUCTION:
-Be extremely concise. Avoid generic conversational filler, wordy introductions, or chat summaries. Directly provide answers, design critique, and code snippets in brief, highly professional formatting. This directly saves student tokens and NIM credits.`;
+CREDIT-CONSCIOUS DIRECTIVES:
+- Keep explanations brief, direct, and structured with bullet points.
+- Avoid generic pleasantries, chat filler, or lengthy introductions.
+- Deliver maximum educational value per token to save student AI credits.`;
 
       const apiMessages = [
         { role: 'system', content: systemPrompt },
@@ -184,8 +148,8 @@ Be extremely concise. Avoid generic conversational filler, wordy introductions, 
           model: model,
           messages: apiMessages,
           temperature: temperature,
-          max_tokens: 800,
-          stream: true // Stream responses for a highly dynamic visual feedback
+          max_tokens: 750,
+          stream: true
         })
       });
 
@@ -193,12 +157,10 @@ Be extremely concise. Avoid generic conversational filler, wordy introductions, 
         throw new Error(`API returned error code ${response.status}`);
       }
 
-      // Set up streaming reader
       const reader = response.body?.getReader();
       const decoder = new TextDecoder("utf-8");
       let assistantResponse = "";
 
-      // Push initial empty response card
       setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
       if (reader) {
@@ -223,7 +185,6 @@ Be extremely concise. Avoid generic conversational filler, wordy introductions, 
                 const chunkContent = parsed.choices[0]?.delta?.content || "";
                 assistantResponse += chunkContent;
 
-                // Update the last message in real-time
                 setMessages(prev => {
                   const updated = [...prev];
                   if (updated.length > 0) {
@@ -234,14 +195,11 @@ Be extremely concise. Avoid generic conversational filler, wordy introductions, 
                   }
                   return updated;
                 });
-              } catch (e) {
-                // Parse non-JSON lines gracefully
-              }
+              } catch (e) {}
             }
           }
         }
       } else {
-        // Fallback to non-streaming if reader is unavailable
         const resJson = await response.json();
         const fullContent = resJson.choices[0]?.message?.content || "No response received.";
         setMessages(prev => {
@@ -269,29 +227,40 @@ Be extremely concise. Avoid generic conversational filler, wordy introductions, 
     }
   };
 
+  // Generate Study Outline from Planner
+  const handleGenerateOutline = () => {
+    if (!studyDate || !studyTime) {
+      alert("Please select both a date and time for your study session!");
+      return;
+    }
+    const outlinePrompt = `Create a highly structured study plan for my scheduled session on ${studyDate} at ${studyTime} focusing on "${plannerCategory}". Suggest 3 core subtopics to cover and 1 speed practice strategy. Keep it extremely brief.`;
+    setPlannerOutputActive(true);
+    handleSendMessage(outlinePrompt);
+  };
+
   return (
     <div className="space-y-10">
       {/* Header and Chip */}
       <div className="flex flex-col items-center text-center space-y-4">
         <span className="section-chip">
-          <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-          AI Studio & Design Lab
+          <Sparkles className="w-3.5 h-3.5 animate-pulse text-[#8A1C36]" />
+          Odisha Exam Prep Smart Coach
         </span>
         <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-900 tracking-tight">
-          AI Design <span className="premium-text-gradient font-serif font-extrabold">Mentor</span>
+          AI Study <span className="premium-text-gradient font-serif font-extrabold">Copilot</span>
         </h2>
         <div className="section-divider" />
         <p className="text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed">
-          Chat with the DeepSeek NIM Copilot to master professional UI/UX, or test custom styled dark-themed native inputs live.
+          Ask questions, get concept summaries, test your knowledge, or plan custom mock sessions with our DeepSeek NIM mentor.
         </p>
       </div>
 
       {/* Main Dual-pane Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {/* Left Pane: NIM Chat Interface */}
+        {/* Left Pane: Chat Interface */}
         <div className="lg:col-span-7 bg-[#0b0f19] text-slate-300 border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col h-[650px] relative noise-overlay">
-          {/* Declaring dark color-scheme on the dark chat console */}
+          {/* Declaring dark color-scheme on the dark chat console to enable dark-themed scrollbars and select default popups */}
           <div style={{ colorScheme: 'dark' }} className="absolute inset-0 flex flex-col">
             
             {/* Header Control Panel */}
@@ -303,14 +272,14 @@ Be extremely concise. Avoid generic conversational filler, wordy introductions, 
                   onChange={(e: any) => setModel(e.target.value)}
                   className="bg-slate-900 border border-white/10 text-white rounded-lg text-xs font-bold py-1.5 px-3 focus:outline-none focus:border-brand-500"
                 >
-                  <option value="deepseek-ai/deepseek-v4-flash">DeepSeek V4 Flash (Fast/Cheap)</option>
-                  <option value="deepseek-ai/deepseek-v4-pro">DeepSeek V4 Pro (Deep Code)</option>
+                  <option value="deepseek-ai/deepseek-v4-flash">DeepSeek V4 Flash (Fast / Credits Saver)</option>
+                  <option value="deepseek-ai/deepseek-v4-pro">DeepSeek V4 Pro (Deep Reasoner)</option>
                 </select>
               </div>
 
               {/* Temperature Slider */}
               <div className="flex items-center gap-3">
-                <span className="text-[10px] uppercase font-black tracking-widest text-slate-500">Temp: {temperature}</span>
+                <span className="text-[10px] uppercase font-black tracking-widest text-slate-500 font-mono">Temp: {temperature}</span>
                 <input 
                   type="range" 
                   min="0.1" 
@@ -324,7 +293,7 @@ Be extremely concise. Avoid generic conversational filler, wordy introductions, 
 
               {/* Clear Chat */}
               <button 
-                onClick={() => setMessages([{ role: 'assistant', content: "Chat cleared! How can I help you design today?" }])}
+                onClick={() => setMessages([{ role: 'assistant', content: "Chat cleared! What shall we revise next?" }])}
                 className="p-1.5 hover:bg-white/10 hover:text-white rounded-lg text-slate-400 transition-colors cursor-pointer"
                 title="Clear Chat History"
               >
@@ -345,7 +314,7 @@ Be extremely concise. Avoid generic conversational filler, wordy introductions, 
                   )}
                 >
                   <div className="flex items-center gap-1.5 mb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    {m.role === 'user' ? 'Aspirant Student' : 'Design Mentor'}
+                    {m.role === 'user' ? 'Aspirant' : 'AI Exam Coach'}
                   </div>
                   <div className="whitespace-pre-wrap font-sans">
                     {m.content || (
@@ -361,15 +330,15 @@ Be extremely concise. Avoid generic conversational filler, wordy introductions, 
               <div ref={chatEndRef} />
             </div>
 
-            {/* Warn message if user enters very long prompt */}
-            {input.length > 500 && (
+            {/* Warning when character count is high */}
+            {input.length > 400 && (
               <div className="mx-6 p-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl text-xs flex items-center gap-2 animate-scale-in">
                 <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>Long prompt detected! Consider summarizing to save NIM AI credits.</span>
+                <span>Long question. Keep it concise to prevent credit consumption!</span>
               </div>
             )}
 
-            {/* Footer Form & Credits display */}
+            {/* Chat Input Console */}
             <div className="p-4 border-t border-white/10 bg-slate-950/60 backdrop-blur-md">
               <form 
                 onSubmit={(e) => { e.preventDefault(); handleSendMessage(input); }}
@@ -379,7 +348,7 @@ Be extremely concise. Avoid generic conversational filler, wordy introductions, 
                   type="text" 
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask for feedback on colors, layout, pickers, typography..."
+                  placeholder="Ask a question about Odisha history, GS, math, grammar..."
                   className="flex-1 bg-slate-900/80 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500 transition-all font-semibold"
                 />
                 <button 
@@ -391,30 +360,115 @@ Be extremely concise. Avoid generic conversational filler, wordy introductions, 
                 </button>
               </form>
 
-              {/* Cost Estimator HUD */}
+              {/* Credit Estimator HUD */}
               <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 mt-3 px-1">
-                <span className="flex items-center gap-1">
-                  <Coins className="w-3.5 h-3.5 text-amber-500/80" />
-                  Estimated Cost: <span className="text-amber-400">{estimatedCost} Credits</span>
+                <span className="flex items-center gap-1 font-mono">
+                  <Coins className="w-3.5 h-3.5 text-amber-500/80 animate-spin-slow" />
+                  Cost Est: <span className="text-amber-400 font-bold">{estimatedCost} Credits</span>
                 </span>
-                <span>Max Context Pruning Active (Last 4 msgs)</span>
+                <span className="font-mono">Pruning Active (Last 4 messages)</span>
               </div>
             </div>
 
           </div>
         </div>
 
-        {/* Right Pane: Design Lab & Interactive Playground */}
+        {/* Right Pane: Smart Planner & Facts Board */}
         <div className="lg:col-span-5 space-y-6">
           
-          {/* Quick Prompts Panel */}
+          {/* Section 1: Study Planner (Applying SKILL_EFFICIENT_DEVELOPMENT.md inputs & pickers) */}
+          <div 
+            style={{ colorScheme: 'dark' }} 
+            className="bg-[#080b12] text-slate-200 border border-white/10 rounded-[2rem] p-6 shadow-2xl space-y-6 relative overflow-hidden noise-overlay"
+          >
+            {/* Ambient gradients */}
+            <div className="absolute -top-10 -right-10 w-24 h-24 bg-[#8A1C36]/10 rounded-full blur-xl pointer-events-none" />
+            <div className="absolute -bottom-10 -left-10 w-20 h-20 bg-teal-500/10 rounded-full blur-xl pointer-events-none" />
+
+            <div className="space-y-1">
+              <span className="inline-flex px-2.5 py-0.5 bg-teal-500/10 border border-teal-500/20 text-teal-400 rounded text-[9px] font-black uppercase tracking-wider">
+                Study Scheduler
+              </span>
+              <h4 className="font-serif font-extrabold text-white text-lg">
+                Interactive Session Planner
+              </h4>
+              <p className="text-slate-500 text-[11px] font-semibold leading-relaxed">
+                Schedule a mock test or reading session. We apply custom Webkit indicators and full-input onClick triggers to launch browser pickers easily.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Category Select Dropdown */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Exam Focus Category</label>
+                <select 
+                  value={plannerCategory}
+                  onChange={(e) => setPlannerCategory(e.target.value)}
+                  className="w-full bg-[#111625]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-teal-500/50 transition-colors font-bold"
+                >
+                  <option>General Studies (Odisha GK)</option>
+                  <option>Indian Polity & Constitution</option>
+                  <option>Arithmetic Core & DI Shortcuts</option>
+                  <option>Odia Language & Grammar Rules</option>
+                  <option>English Comprehension & Vocabulary</option>
+                </select>
+              </div>
+
+              {/* Date Input with full-box click and Webkit style custom teal indicator */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Select Study Date</label>
+                <input 
+                  type="date" 
+                  value={studyDate}
+                  onChange={(e) => setStudyDate(e.target.value)}
+                  onClick={(e) => {
+                    try {
+                      e.currentTarget.showPicker();
+                    } catch (err) {
+                      console.warn("Native date picker support error:", err);
+                    }
+                  }}
+                  className="w-full bg-[#111625]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white cursor-pointer hover:border-teal-500/50 transition-colors font-bold outline-none"
+                />
+              </div>
+
+              {/* Time Input with full-box click and Webkit style custom teal indicator */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Select Session Time</label>
+                <input 
+                  type="time" 
+                  value={studyTime}
+                  onChange={(e) => setStudyTime(e.target.value)}
+                  onClick={(e) => {
+                    try {
+                      e.currentTarget.showPicker();
+                    } catch (err) {
+                      console.warn("Native time picker support error:", err);
+                    }
+                  }}
+                  className="w-full bg-[#111625]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white cursor-pointer hover:border-teal-500/50 transition-colors font-bold outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Action trigger */}
+            <button 
+              onClick={handleGenerateOutline}
+              className="w-full inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl border-2 border-teal-500 text-xs font-black uppercase tracking-widest text-teal-400 hover:bg-teal-500 hover:text-slate-950 transition-all cursor-pointer shadow-[3px_3px_0px_rgba(45,212,191,0.2)] active:translate-y-0.5 active:translate-x-0.5 active:shadow-none"
+            >
+              Generate Custom Study Outline
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Section 2: Study Presets */}
           <div className="bg-white border-2 border-slate-900 rounded-[2rem] p-6 shadow-[5px_5px_0px_rgba(0,0,0,1)] space-y-4">
             <h4 className="font-serif font-extrabold text-slate-900 text-lg flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-brand-600" />
-              Token-Saving Presets
+              <BookOpen className="w-5 h-5 text-[#8A1C36]" />
+              Quick Revision Cards
             </h4>
             <p className="text-slate-500 text-xs font-semibold leading-relaxed">
-              Click any optimized template below to execute a compact query that saves credits.
+              Click any fast-track template below to launch a credit-saving query focused on core state syllabus.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {presetPrompts.map((p, idx) => (
@@ -427,148 +481,38 @@ Be extremely concise. Avoid generic conversational filler, wordy introductions, 
                   className="text-left p-3.5 bg-slate-50 hover:bg-[#fce7eb]/60 rounded-2xl border border-slate-200/60 hover:border-[#8A1C36]/50 transition-all cursor-pointer group shadow-sm flex flex-col justify-between h-24"
                 >
                   <span className="font-black text-slate-800 text-xs block group-hover:text-[#8A1C36] transition-colors">{p.title}</span>
-                  <span className="text-[10px] text-slate-400 font-bold leading-tight mt-1 line-clamp-2">{p.desc}</span>
+                  <span className="text-[10px] text-slate-400 font-bold leading-tight mt-1.5 line-clamp-2">{p.desc}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Interactive Playground: Dark Native inputs */}
-          <div 
-            style={{ colorScheme: 'dark' }} 
-            className="bg-[#080b12] text-slate-200 border border-white/10 rounded-[2rem] p-6 shadow-2xl space-y-6 relative overflow-hidden noise-overlay"
-          >
-            {/* Visual effects orbs */}
-            <div className="absolute -top-10 -right-10 w-24 h-24 bg-brand-500/10 rounded-full blur-xl pointer-events-none" />
-            <div className="absolute -bottom-10 -left-10 w-20 h-20 bg-teal-500/10 rounded-full blur-xl pointer-events-none" />
-
-            <div className="space-y-1">
-              <span className="inline-flex px-2 py-0.5 bg-teal-500/10 border border-teal-500/20 text-teal-400 rounded text-[9px] font-black uppercase tracking-wider">
-                Native Elements Studio
-              </span>
-              <h4 className="font-serif font-extrabold text-white text-lg">
-                Dark Mode Picker Playground
-              </h4>
-              <p className="text-slate-500 text-[11px] font-medium leading-relaxed">
-                Applying section 2 & 3 of `SKILL_EFFICIENT_DEVELOPMENT.md`. Clicking anywhere on the input programmatically triggers `showPicker()`.
-              </p>
-            </div>
-
-            {/* Inputs Group */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Study Session Date</label>
-                <div className="relative">
-                  <input 
-                    type="date" 
-                    value={studyDate}
-                    onChange={(e) => setStudyDate(e.target.value)}
-                    onClick={(e) => {
-                      try {
-                        e.currentTarget.showPicker();
-                      } catch (err) {
-                        console.warn("Native picker not supported:", err);
-                      }
-                    }}
-                    className="w-full bg-[#111625]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white cursor-pointer hover:border-teal-500/50 transition-colors font-bold outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Mock Exam Timer Time</label>
-                <div className="relative">
-                  <input 
-                    type="time" 
-                    value={studyTime}
-                    onChange={(e) => setStudyTime(e.target.value)}
-                    onClick={(e) => {
-                      try {
-                        e.currentTarget.showPicker();
-                      } catch (err) {
-                        console.warn("Native picker not supported:", err);
-                      }
-                    }}
-                    className="w-full bg-[#111625]/90 border border-white/10 rounded-xl px-4 py-3 text-sm text-white cursor-pointer hover:border-teal-500/50 transition-colors font-bold outline-none"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* HSL Color Harmony copy-board */}
-            <div className="space-y-3 pt-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1 block">HSL Palette Generator</label>
-              <div className="grid grid-cols-2 gap-2.5">
-                {generatedHSLColors.map((color, idx) => (
-                  <div 
-                    key={idx}
-                    onClick={() => handleCopyColor(color.hsl)}
-                    className="bg-[#111625]/60 border border-white/5 p-2.5 rounded-xl flex items-center justify-between cursor-pointer hover:bg-[#111625] hover:border-white/10 transition-all group"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 rounded-md border border-white/10" style={{ backgroundColor: color.hex }} />
-                      <div className="text-left leading-none">
-                        <span className="text-[9px] font-black block text-slate-300 group-hover:text-white transition-colors">{color.name}</span>
-                        <span className="text-[8px] text-slate-500 font-mono mt-0.5 block">{color.hsl}</span>
-                      </div>
-                    </div>
-                    {copiedColor === color.hsl ? (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-                    ) : (
-                      <Copy className="w-3 h-3 text-slate-600 group-hover:text-slate-400 transition-colors shrink-0" />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
-
-          {/* Typography pairing tool */}
-          <div className="bg-white border-2 border-slate-900 rounded-[2rem] p-6 shadow-[5px_5px_0px_rgba(0,0,0,1)] space-y-4">
+          {/* Section 3: Odisha GK Revision Board (Asymmetrical layout as required by SKILL.md) */}
+          <div className="bg-white border-2 border-slate-900 rounded-[2rem] p-6 shadow-[5px_5px_0px_rgba(0,0,0,1)] space-y-5">
             <h4 className="font-serif font-extrabold text-slate-900 text-lg flex items-center gap-2">
-              <Type className="w-5 h-5 text-[#8A1C36]" />
-              Typography Pair Tester
+              <Award className="w-5 h-5 text-indigo-600" />
+              Syllabus High-Yield Facts
             </h4>
-            <div className="flex gap-2">
-              {fontPairs.map((pair, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveFontPair(idx)}
-                  className={cn(
-                    "flex-1 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer border-2",
-                    activeFontPair === idx
-                      ? "bg-slate-900 text-white border-slate-900"
-                      : "text-slate-600 bg-white border-slate-200 hover:border-slate-400"
-                  )}
-                >
-                  Pair {idx + 1}
-                </button>
-              ))}
-            </div>
-
-            {/* Test Input and Output container */}
+            
+            {/* Asymmetrical fact list */}
             <div className="space-y-3">
-              <input 
-                type="text" 
-                value={customText}
-                onChange={(e) => setCustomText(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold focus:outline-none focus:border-brand-500"
-                placeholder="Type sample text to preview..."
-              />
-
-              <div className="p-5 bg-[#FAF8F5] border border-slate-200 rounded-2xl space-y-3">
+              {/* Fact 1 */}
+              <div className="p-4 bg-slate-50 border border-slate-200/60 rounded-2xl flex items-start gap-3 hover:border-slate-300 transition-colors">
+                <span className="text-2xl p-1.5 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-600 shrink-0">🏛️</span>
                 <div className="text-left">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-[#8A1C36] block mb-1">Heading (Display) Preview:</span>
-                  <h3 className={cn(fontPairs[activeFontPair].heading, "text-2xl text-slate-900 leading-tight")}>
-                    {customText}
-                  </h3>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-indigo-600">Odisha History</span>
+                  <h5 className="font-serif font-bold text-slate-900 text-sm mt-0.5">Kalinga War (261 BC)</h5>
+                  <p className="text-slate-500 text-xs mt-1 leading-relaxed">Fought on the banks of Daya River near Dhauli hills, leading to Ashoka adopting Buddhism.</p>
                 </div>
-                <div className="text-left pt-2 border-t border-slate-200/60">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-1">Body text style:</span>
-                  <p className={cn(fontPairs[activeFontPair].body, "text-xs text-slate-500 leading-relaxed")}>
-                    {fontPairs[activeFontPair].desc} Active Fonts: {fontPairs[activeFontPair].headingFont} & {fontPairs[activeFontPair].bodyFont}.
-                  </p>
+              </div>
+
+              {/* Fact 2 - Asymmetric placement & styling */}
+              <div className="p-4 bg-slate-50 border border-slate-200/60 rounded-2xl flex items-start gap-3 hover:border-slate-300 transition-colors ml-4 md:ml-6 border-l-4 border-l-[#8A1C36]">
+                <span className="text-2xl p-1.5 bg-[#fdf2f4] border border-[#fce7eb] rounded-xl text-[#8A1C36] shrink-0">🏞️</span>
+                <div className="text-left">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-[#8A1C36]">Odisha Geography</span>
+                  <h5 className="font-serif font-bold text-slate-900 text-sm mt-0.5">Mahanadi River System</h5>
+                  <p className="text-slate-500 text-xs mt-1 leading-relaxed">Odisha's longest river. Features Hirakud Dam, the world's longest earthen dam (Sambalpur).</p>
                 </div>
               </div>
             </div>
