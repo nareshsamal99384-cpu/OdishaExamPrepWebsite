@@ -118,6 +118,65 @@ async function startServer() {
     }
   });
 
+  // AI NIM Chat completions proxy route
+  app.post("/api/chat/completions", async (req, res) => {
+    try {
+      const apiKey = process.env.VITE_DEEPSEEK_API_KEY || process.env.VITE_DENTA_RESPONSE_AI;
+      const baseUrl = process.env.VITE_DEEPSEEK_BASE_URL || 'https://integrate.api.nvidia.com/v1';
+
+      if (!apiKey) {
+        console.error("NVIDIA NIM API key is missing in env");
+        return res.status(500).json({ error: "NVIDIA NIM API key is not configured on server." });
+      }
+
+      const { model, messages, temperature, max_tokens, stream } = req.body;
+
+      const response = await fetch(`${baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature,
+          max_tokens,
+          stream,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("NIM API error status:", response.status, errorText);
+        return res.status(response.status).json({ error: errorText });
+      }
+
+      if (stream) {
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+
+        const reader = response.body?.getReader();
+
+        if (reader) {
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            res.write(value);
+          }
+        }
+        res.end();
+      } else {
+        const data = await response.json();
+        res.json(data);
+      }
+    } catch (error: any) {
+      console.error("NIM proxy error:", error);
+      res.status(500).json({ error: error.message || "Failed to communicate with DeepSeek NIM" });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

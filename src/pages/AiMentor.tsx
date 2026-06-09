@@ -107,13 +107,6 @@ export default function AiMentor({ user }: { user: any }) {
     setLoading(true);
 
     try {
-      const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY || import.meta.env.VITE_DENTA_RESPONSE_AI;
-      const baseUrl = import.meta.env.VITE_DEEPSEEK_BASE_URL || 'https://integrate.api.nvidia.com/v1';
-
-      if (!apiKey) {
-        throw new Error("NVIDIA NIM API key is not configured in your .env file.");
-      }
-
       // Context history pruning (keep last 4 messages to save tokens)
       const recentHistory = messages.slice(-4); 
 
@@ -138,11 +131,10 @@ CREDIT-CONSCIOUS DIRECTIVES:
         { role: 'user', content: textToSend }
       ];
 
-      const response = await fetch(`${baseUrl}/chat/completions`, {
+      const response = await fetch('/api/chat/completions', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           model: model,
