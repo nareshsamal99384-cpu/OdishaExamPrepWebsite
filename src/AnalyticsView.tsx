@@ -141,280 +141,6 @@ const MarkdownMathRenderer = ({ text, isUser = false }: { text: string; isUser?:
   );
 };
 
-const cleanSubjectName = (name: string) => {
-  if (!name) return "Mixed Questions";
-  let cleaned = name;
-  if (cleaned.match(/[0-9a-f]{8}-[0-9a-f]{4}/) || cleaned.match(/[0-9a-f]{8}/) || cleaned.includes('mockTest')) {
-     cleaned = cleaned.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/ig, '')
-                      .replace(/[0-9a-f]{8}/ig, '')
-                      .replace(/mockTest/ig, '')
-                      .replace(/-/g, ' ')
-                      .replace(/\s+/g, ' ')
-                      .trim();
-  }
-  if (!cleaned || cleaned.length === 0 || cleaned === '•') {
-     if (name.includes('•')) {
-        const parts = name.split('•');
-        cleaned = parts[0].trim();
-     } else {
-        cleaned = "Mixed Questions";
-     }
-  }
-  if (cleaned.toLowerCase() === "general") {
-     return "General Practice";
-  }
-  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-};
-
-const extractSubjectFromTitle = (title: string, examName: string) => {
-  let t = title.replace(new RegExp(examName, 'i'), '')
-               .replace(/practice/i, '')
-               .replace(/test/i, '')
-               .replace(/mock/i, '')
-               .replace(/session/i, '')
-               .replace(/pyq/i, '')
-               .replace(/daily/i, '')
-               .replace(/-/g, '')
-               .trim();
-  return t.length > 0 ? t : "Full Subject";
-};
-
-const calculateStats = (completions: any[]) => {
-  if (completions.length === 0) return null;
-
-  let totalCorrect = 0;
-  let totalWrong = 0;
-  let totalAttempted = 0;
-  let totalQuestions = 0;
-  let totalTimeTaken = 0;
-  let totalCalculatedScore = 0;
-
-  const recalculatedActivities = completions.map(a => {
-    const rawAnswers = a.metadata?.answers || {};
-    const questions = a.metadata?.test?.questions || [];
-    const hasRawData = questions.length > 0 && Object.keys(rawAnswers).length > 0;
-
-    let actCorrect = 0;
-    let actWrong = 0;
-    let actAttempted = 0;
-    let actTotalQ = 0;
-    let negativeMarking = a.metadata?.test?.negativeMarking ?? 0;
-
-    if (hasRawData) {
-      actTotalQ = questions.length;
-      actAttempted = Object.keys(rawAnswers).length;
-      
-      Object.entries(rawAnswers).forEach(([qIdxStr, ansIdx]) => {
-        const qIdx = parseInt(qIdxStr);
-        const q = questions[qIdx];
-        if (q && q.correctAnswerIndex === ansIdx) {
-          actCorrect++;
-        } else {
-          actWrong++;
-        }
-      });
-    } else {
-      actCorrect = a.correct || a.score || 0;
-      actWrong = a.incorrect || 0;
-      actAttempted = a.metadata?.attempted || (actCorrect + actWrong);
-      actTotalQ = a.total || actAttempted;
-    }
-
-    const actScore = Math.max(0, actCorrect - (actWrong * negativeMarking));
-    const actAccuracy = actAttempted > 0 ? (actCorrect / actAttempted) * 100 : 0;
-    const timeTaken = a.metadata?.timeTaken || a.timeSpent || 0;
-
-    totalCorrect += actCorrect;
-    totalWrong += actWrong;
-    totalAttempted += actAttempted;
-    totalQuestions += actTotalQ;
-    totalTimeTaken += timeTaken;
-    totalCalculatedScore += actScore;
-
-    return {
-      ...a,
-      recal_score: actScore,
-      recal_accuracy: actAccuracy,
-      recal_correct: actCorrect,
-      recal_wrong: actWrong,
-      recal_attempted: actAttempted,
-      recal_totalQ: actTotalQ,
-      recal_time: timeTaken
-    };
-  });
-
-  const totalTests = recalculatedActivities.length;
-  const avgAccuracy = totalAttempted > 0 ? (totalCorrect / totalAttempted) * 100 : 0;
-  const avgTimePerQuestion = totalAttempted > 0 ? (totalTimeTaken / totalAttempted) : 0;
-  const totalSkipped = Math.max(0, totalQuestions - totalAttempted);
-
-  const pieData = [
-    { name: 'Correct', value: totalCorrect, color: '#10b981' },
-    { name: 'Wrong', value: totalWrong, color: '#f43f5e' },
-    { name: 'Skipped', value: totalSkipped, color: '#94a3b8' }
-  ];
-
-  let impScore = 0;
-  let impAcc = 0;
-  if (totalTests >= 2) {
-    const last = recalculatedActivities[recalculatedActivities.length - 1];
-    const prev = recalculatedActivities[recalculatedActivities.length - 2];
-    const lastScorePct = (last.recal_score / (last.recal_totalQ || 1)) * 100;
-    const prevScorePct = (prev.recal_score / (prev.recal_totalQ || 1)) * 100;
-    
-    impScore = lastScorePct - prevScorePct;
-    impAcc = last.recal_accuracy - prev.recal_accuracy;
-  }
-
-  const recent15 = recalculatedActivities.slice(-15);
-  const chartData = recent15.map((a, i) => ({
-    name: `T${totalTests - recent15.length + i + 1}`,
-    score: Math.round((a.recal_score / (a.recal_totalQ || 1)) * 100),
-    accuracy: Math.round(a.recal_accuracy),
-    time: a.recal_attempted > 0 ? Math.round(a.recal_time / a.recal_attempted) : 0,
-  }));
-
-  const examGroups = new Map<string, {
-    lastAttemptDate: string,
-    totalAttempts: number,
-    practiceMap: Map<string, { correct: number, attempted: number }>,
-    mockMap: Map<string, { correct: number, attempted: number }>
-  }>();
-
-  recalculatedActivities.forEach(a => {
-    let rawTitle = a.title || "";
-    if (rawTitle.includes('mockTest') || rawTitle.match(/[0-9a-f]{8}/)) {
-      rawTitle = rawTitle.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/ig, '')
-                         .replace(/[0-9a-f]{8}/ig, '')
-                         .replace(/mockTest/ig, '')
-                         .replace(/_/g, ' ')
-                         .trim();
-      if (!rawTitle) {
-        rawTitle = "Practice Session";
-      }
-    }
-
-    let examName = a.metadata?.examName || a.metadata?.test?.exam;
-    if (!examName || examName.match(/[0-9a-f]{8}/)) {
-       if (rawTitle.includes('-')) {
-          examName = rawTitle.split('-')[0].trim();
-       } else {
-          examName = "General";
-       }
-    }
-
-    const isMockTest = a.metadata?.testCategory 
-       ? a.metadata.testCategory !== 'Practice Test'
-       : (a.type === 'mock_test' || a.metadata?.test?.type === 'mock_test' || rawTitle.toLowerCase().includes('mock'));
-       
-    const dateStr = new Date(a.timestamp || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
-    if (!examGroups.has(examName)) {
-      examGroups.set(examName, { lastAttemptDate: dateStr, totalAttempts: 0, practiceMap: new Map(), mockMap: new Map() });
-    }
-    const group = examGroups.get(examName)!;
-    group.totalAttempts++;
-
-    const rawAnswers = a.metadata?.answers || {};
-    const questions = a.metadata?.test?.questions || [];
-    const catMeta = a.metadata?.testCategory || a.metadata?.test?.category;
-    const mapToUse = isMockTest ? group.mockMap : group.practiceMap;
-
-    if (questions.length > 0 && Object.keys(rawAnswers).length > 0) {
-      Object.entries(rawAnswers).forEach(([qIdxStr, ansIdx]) => {
-        const qIdx = parseInt(qIdxStr);
-        const q = questions[qIdx];
-        if (q) {
-          let rawSub = q.subject || q.topic;
-          if (!rawSub || rawSub.toLowerCase() === 'general' || rawSub.match(/[0-9a-f]{8}/)) {
-             rawSub = extractSubjectFromTitle(rawTitle, examName);
-          }
-          if (isMockTest && catMeta && !catMeta.match(/[0-9a-f]{8}/)) {
-             rawSub = rawSub.toLowerCase() === "full subject" || rawSub.toLowerCase() === "general" 
-                ? catMeta 
-                : `${catMeta} • ${rawSub}`;
-          }
-          const subject = cleanSubjectName(rawSub);
-          const existing = mapToUse.get(subject) || { correct: 0, attempted: 0 };
-          const isCorrect = q.correctAnswerIndex === ansIdx;
-          
-          mapToUse.set(subject, {
-            correct: existing.correct + (isCorrect ? 1 : 0),
-            attempted: existing.attempted + 1
-          });
-        }
-      });
-    } else {
-       let rawSub = extractSubjectFromTitle(rawTitle, examName);
-       if (isMockTest && catMeta && !catMeta.match(/[0-9a-f]{8}/)) {
-          rawSub = rawSub.toLowerCase() === "full subject" || rawSub.toLowerCase() === "general" 
-             ? catMeta 
-             : `${catMeta} • ${rawSub}`;
-       }
-       const subject = cleanSubjectName(rawSub);
-       const existing = mapToUse.get(subject) || { correct: 0, attempted: 0 };
-       mapToUse.set(subject, {
-          correct: existing.correct + a.recal_correct,
-          attempted: existing.attempted + a.recal_attempted
-       });
-    }
-  });
-  
-  const parsedExamAnalysis = Array.from(examGroups.entries()).map(([name, data]) => {
-    const formatMap = (m: Map<string, any>) => {
-      return Array.from(m.entries()).map(([subName, sData]) => {
-        const acc = sData.attempted > 0 ? (sData.correct / sData.attempted) * 100 : 0;
-        return { 
-           name: subName, 
-           avgScore: Math.round(acc), 
-           status: acc >= 70 ? 'Strong' : 'Weak',
-           correct: sData.correct,
-           attempted: sData.attempted
-        };
-      }).sort((a, b) => b.avgScore - a.avgScore);
-    };
-
-    return {
-      examName: name,
-      lastAttemptDate: data.lastAttemptDate,
-      totalAttempts: data.totalAttempts,
-      practiceTests: formatMap(data.practiceMap),
-      mockTests: formatMap(data.mockMap)
-    };
-  });
-
-  const speedScore = Math.max(0, Math.min(100, 100 - ((avgTimePerQuestion - 30) / (120 - 30)) * 100));
-  const enduranceScore = Math.min(100, (totalQuestions / 300) * 100);
-  const attemptedWithoutSkips = totalCorrect + totalWrong;
-  const precisionScore = attemptedWithoutSkips > 0 ? (totalCorrect / attemptedWithoutSkips) * 100 : 0;
-  const momentumScore = Math.max(0, Math.min(100, 50 + (impScore * 2)));
-
-  const skillProfile = [
-     { name: "Accuracy", value: Math.round(avgAccuracy) },
-     { name: "Precision", value: Math.round(precisionScore) },
-     { name: "Speed", value: Math.round(speedScore || 0) },
-     { name: "Endurance", value: Math.round(enduranceScore) },
-     { name: "Momentum", value: Math.round(momentumScore || 50) }
-  ];
-
-  return {
-    totalTests,
-    avgScore: Math.round(totalQuestions > 0 ? (totalCalculatedScore / totalQuestions) * 100 : 0),
-    avgAccuracy: Math.round(avgAccuracy),
-    avgTimePerQuestion,
-    pieData,
-    chartData,
-    totalCorrect,
-    totalWrong,
-    totalSkipped,
-    totalQuestions,
-    impScore: Math.round(impScore),
-    impAcc: Math.round(impAcc),
-    skillProfile,
-    examAnalysis: parsedExamAnalysis
-  };
-};
-
 const AnimatedCounter = ({ value, suffix = "", decimals = 0 }: { value: number, suffix?: string, decimals?: number }) => {
   const [displayValue, setDisplayValue] = useState(0);
   
@@ -752,9 +478,9 @@ function AnalyticsSkeleton() {
 
 function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { user: any, activities?: any[], onNavigate?: (tab: any) => void }) {
   const [activities, setActivities] = useState<any[]>(() => {
-    const rawData = (user?.id)
-      ? activityTracker.getActivities(user.id)
-      : (propActivities && propActivities.length > 0 ? propActivities : []);
+    const rawData = (propActivities && propActivities.length > 0)
+      ? propActivities
+      : (user?.id ? activityTracker.getActivities(user.id) : []);
     return rawData.filter(a => a.type === 'mock_test_completed')
       .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   });
@@ -767,6 +493,7 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
   const [scanningPhase, setScanningPhase] = useState<number>(0); // 0 = idle, 1 = scanning, 2 = loaded
   const [scanStep, setScanStep] = useState<string>('');
   const [aiPanelTab, setAiPanelTab] = useState<'diagnostic' | 'actionPlan' | 'chat'>('diagnostic');
+  const [scanCount, setScanCount] = useState<number>(0); // increments on every scan to rotate prompts
   const [chatInput, setChatInput] = useState<string>('');
   const [rawChatHistory, setRawChatHistory] = useState<any[]>(() => {
     try {
@@ -818,16 +545,288 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
   }, [chatHistory, chatLoading]);
 
   useEffect(() => {
-    const rawData = (user?.id)
-      ? activityTracker.getActivities(user.id)
-      : (propActivities && propActivities.length > 0 ? propActivities : []);
+    const rawData = (propActivities && propActivities.length > 0)
+      ? propActivities
+      : (user?.id ? activityTracker.getActivities(user.id) : []);
     const completions = rawData.filter(a => a.type === 'mock_test_completed')
       .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     setActivities(completions);
     setLoading(false);
   }, [user?.id, propActivities]);
 
-  const stats = useMemo(() => calculateStats(activities), [activities]);
+  const stats = useMemo(() => {
+    if (activities.length === 0) return null;
+
+    let totalCorrect = 0;
+    let totalWrong = 0;
+    let totalAttempted = 0;
+    let totalQuestions = 0;
+    let totalTimeTaken = 0;
+    let totalCalculatedScore = 0;
+
+    const recalculatedActivities = activities.map(a => {
+      const rawAnswers = a.metadata?.answers || {};
+      const questions = a.metadata?.test?.questions || [];
+      const hasRawData = questions.length > 0 && Object.keys(rawAnswers).length > 0;
+
+      let actCorrect = 0;
+      let actWrong = 0;
+      let actAttempted = 0;
+      let actTotalQ = 0;
+      let negativeMarking = a.metadata?.test?.negativeMarking ?? 0;
+
+      if (hasRawData) {
+        actTotalQ = questions.length;
+        actAttempted = Object.keys(rawAnswers).length;
+        
+        Object.entries(rawAnswers).forEach(([qIdxStr, ansIdx]) => {
+          const qIdx = parseInt(qIdxStr);
+          const q = questions[qIdx];
+          if (q && q.correctAnswerIndex === ansIdx) {
+            actCorrect++;
+          } else {
+            actWrong++;
+          }
+        });
+      } else {
+        actCorrect = a.correct || a.score || 0;
+        actWrong = a.incorrect || 0;
+        actAttempted = a.metadata?.attempted || (actCorrect + actWrong);
+        actTotalQ = a.total || actAttempted;
+      }
+
+      const actScore = Math.max(0, actCorrect - (actWrong * negativeMarking));
+      const actAccuracy = actAttempted > 0 ? (actCorrect / actAttempted) * 100 : 0;
+      const timeTaken = a.metadata?.timeTaken || a.timeSpent || 0;
+
+      totalCorrect += actCorrect;
+      totalWrong += actWrong;
+      totalAttempted += actAttempted;
+      totalQuestions += actTotalQ;
+      totalTimeTaken += timeTaken;
+      totalCalculatedScore += actScore;
+
+      return {
+        ...a,
+        recal_score: actScore,
+        recal_accuracy: actAccuracy,
+        recal_correct: actCorrect,
+        recal_wrong: actWrong,
+        recal_attempted: actAttempted,
+        recal_totalQ: actTotalQ,
+        recal_time: timeTaken
+      };
+    });
+
+    const totalTests = recalculatedActivities.length;
+    const avgAccuracy = totalAttempted > 0 ? (totalCorrect / totalAttempted) * 100 : 0;
+    const avgTimePerQuestion = totalAttempted > 0 ? (totalTimeTaken / totalAttempted) : 0;
+    const totalSkipped = Math.max(0, totalQuestions - totalAttempted);
+
+    const pieData = [
+      { name: 'Correct', value: totalCorrect, color: '#10b981' },
+      { name: 'Wrong', value: totalWrong, color: '#f43f5e' },
+      { name: 'Skipped', value: totalSkipped, color: '#94a3b8' }
+    ];
+
+    let impScore = 0;
+    let impAcc = 0;
+    if (totalTests >= 2) {
+      const last = recalculatedActivities[recalculatedActivities.length - 1];
+      const prev = recalculatedActivities[recalculatedActivities.length - 2];
+      const lastScorePct = (last.recal_score / (last.recal_totalQ || 1)) * 100;
+      const prevScorePct = (prev.recal_score / (prev.recal_totalQ || 1)) * 100;
+      
+      impScore = lastScorePct - prevScorePct;
+      impAcc = last.recal_accuracy - prev.recal_accuracy;
+    }
+
+    const recent15 = recalculatedActivities.slice(-15);
+    const chartData = recent15.map((a, i) => ({
+      name: `T${totalTests - recent15.length + i + 1}`,
+      score: Math.round((a.recal_score / (a.recal_totalQ || 1)) * 100),
+      accuracy: Math.round(a.recal_accuracy),
+      time: a.recal_attempted > 0 ? Math.round(a.recal_time / a.recal_attempted) : 0,
+    }));
+
+    const examGroups = new Map<string, {
+      lastAttemptDate: string,
+      totalAttempts: number,
+      practiceMap: Map<string, { correct: number, attempted: number }>,
+      mockMap: Map<string, { correct: number, attempted: number }>
+    }>();
+
+    const cleanSubjectName = (name: string) => {
+      if (!name) return "Mixed Questions";
+      let cleaned = name;
+      if (cleaned.match(/[0-9a-f]{8}-[0-9a-f]{4}/) || cleaned.match(/[0-9a-f]{8}/) || cleaned.includes('mockTest')) {
+         cleaned = cleaned.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/ig, '')
+                          .replace(/[0-9a-f]{8}/ig, '')
+                          .replace(/mockTest/ig, '')
+                          .replace(/-/g, ' ')
+                          .replace(/\s+/g, ' ')
+                          .trim();
+      }
+      if (!cleaned || cleaned.length === 0 || cleaned === '•') {
+         if (name.includes('•')) {
+            const parts = name.split('•');
+            cleaned = parts[0].trim();
+         } else {
+            cleaned = "Mixed Questions";
+         }
+      }
+      if (cleaned.toLowerCase() === "general") {
+         return "General Practice";
+      }
+      return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+    };
+
+    const extractSubjectFromTitle = (title: string, examName: string) => {
+      let t = title.replace(new RegExp(examName, 'i'), '')
+                   .replace(/practice/i, '')
+                   .replace(/test/i, '')
+                   .replace(/mock/i, '')
+                   .replace(/session/i, '')
+                   .replace(/pyq/i, '')
+                   .replace(/daily/i, '')
+                   .replace(/-/g, '')
+                   .trim();
+      return t.length > 0 ? t : "Full Subject";
+    };
+
+    recalculatedActivities.forEach(a => {
+      let rawTitle = a.title || "";
+      if (rawTitle.includes('mockTest') || rawTitle.match(/[0-9a-f]{8}/)) {
+        rawTitle = rawTitle.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/ig, '')
+                           .replace(/[0-9a-f]{8}/ig, '')
+                           .replace(/mockTest/ig, '')
+                           .replace(/_/g, ' ')
+                           .trim();
+        if (!rawTitle) {
+          rawTitle = "Practice Session";
+        }
+      }
+
+      let examName = a.metadata?.examName || a.metadata?.test?.exam;
+      if (!examName || examName.match(/[0-9a-f]{8}/)) {
+         if (rawTitle.includes('-')) {
+            examName = rawTitle.split('-')[0].trim();
+         } else {
+            examName = "General";
+         }
+      }
+
+      const isMockTest = a.metadata?.testCategory 
+         ? a.metadata.testCategory !== 'Practice Test'
+         : (a.type === 'mock_test' || a.metadata?.test?.type === 'mock_test' || rawTitle.toLowerCase().includes('mock'));
+         
+      const dateStr = new Date(a.timestamp || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+      if (!examGroups.has(examName)) {
+        examGroups.set(examName, { lastAttemptDate: dateStr, totalAttempts: 0, practiceMap: new Map(), mockMap: new Map() });
+      }
+      const group = examGroups.get(examName)!;
+      group.totalAttempts++;
+
+      const rawAnswers = a.metadata?.answers || {};
+      const questions = a.metadata?.test?.questions || [];
+      const catMeta = a.metadata?.testCategory || a.metadata?.test?.category;
+      const mapToUse = isMockTest ? group.mockMap : group.practiceMap;
+
+      if (questions.length > 0 && Object.keys(rawAnswers).length > 0) {
+        Object.entries(rawAnswers).forEach(([qIdxStr, ansIdx]) => {
+          const qIdx = parseInt(qIdxStr);
+          const q = questions[qIdx];
+          if (q) {
+            let rawSub = q.subject || q.topic;
+            if (!rawSub || rawSub.toLowerCase() === 'general' || rawSub.match(/[0-9a-f]{8}/)) {
+               rawSub = extractSubjectFromTitle(rawTitle, examName);
+            }
+            if (isMockTest && catMeta && !catMeta.match(/[0-9a-f]{8}/)) {
+               rawSub = rawSub.toLowerCase() === "full subject" || rawSub.toLowerCase() === "general" 
+                  ? catMeta 
+                  : `${catMeta} • ${rawSub}`;
+            }
+            const subject = cleanSubjectName(rawSub);
+            const existing = mapToUse.get(subject) || { correct: 0, attempted: 0 };
+            const isCorrect = q.correctAnswerIndex === ansIdx;
+            
+            mapToUse.set(subject, {
+              correct: existing.correct + (isCorrect ? 1 : 0),
+              attempted: existing.attempted + 1
+            });
+          }
+        });
+      } else {
+         let rawSub = extractSubjectFromTitle(rawTitle, examName);
+         if (isMockTest && catMeta && !catMeta.match(/[0-9a-f]{8}/)) {
+            rawSub = rawSub.toLowerCase() === "full subject" || rawSub.toLowerCase() === "general" 
+               ? catMeta 
+               : `${catMeta} • ${rawSub}`;
+         }
+         const subject = cleanSubjectName(rawSub);
+         const existing = mapToUse.get(subject) || { correct: 0, attempted: 0 };
+         mapToUse.set(subject, {
+            correct: existing.correct + a.recal_correct,
+            attempted: existing.attempted + a.recal_attempted
+         });
+      }
+    });
+    
+    const parsedExamAnalysis = Array.from(examGroups.entries()).map(([name, data]) => {
+      const formatMap = (m: Map<string, any>) => {
+        return Array.from(m.entries()).map(([subName, sData]) => {
+          const acc = sData.attempted > 0 ? (sData.correct / sData.attempted) * 100 : 0;
+          return { 
+             name: subName, 
+             avgScore: Math.round(acc), 
+             status: acc >= 70 ? 'Strong' : 'Weak',
+             correct: sData.correct,
+             attempted: sData.attempted
+          };
+        }).sort((a, b) => b.avgScore - a.avgScore);
+      };
+
+      return {
+        examName: name,
+        lastAttemptDate: data.lastAttemptDate,
+        totalAttempts: data.totalAttempts,
+        practiceTests: formatMap(data.practiceMap),
+        mockTests: formatMap(data.mockMap)
+      };
+    });
+
+    const speedScore = Math.max(0, Math.min(100, 100 - ((avgTimePerQuestion - 30) / (120 - 30)) * 100));
+    const enduranceScore = Math.min(100, (totalQuestions / 300) * 100);
+    const attemptedWithoutSkips = totalCorrect + totalWrong;
+    const precisionScore = attemptedWithoutSkips > 0 ? (totalCorrect / attemptedWithoutSkips) * 100 : 0;
+    const momentumScore = Math.max(0, Math.min(100, 50 + (impScore * 2)));
+
+    const skillProfile = [
+       { name: "Accuracy", value: Math.round(avgAccuracy) },
+       { name: "Precision", value: Math.round(precisionScore) },
+       { name: "Speed", value: Math.round(speedScore || 0) },
+       { name: "Endurance", value: Math.round(enduranceScore) },
+       { name: "Momentum", value: Math.round(momentumScore || 50) }
+    ];
+
+    return {
+      totalTests,
+      avgScore: Math.round(totalQuestions > 0 ? (totalCalculatedScore / totalQuestions) * 100 : 0),
+      avgAccuracy: Math.round(avgAccuracy),
+      avgTimePerQuestion,
+      pieData,
+      chartData,
+      totalCorrect,
+      totalWrong,
+      totalSkipped,
+      totalQuestions,
+      impScore: Math.round(impScore),
+      impAcc: Math.round(impAcc),
+      skillProfile,
+      examAnalysis: parsedExamAnalysis
+    };
+  }, [activities]);
 
   const assistantChips = useMemo(() => {
     const defaultChips = [
@@ -841,6 +840,8 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
 
     let weakestSub = "";
     let lowestScore = 100;
+    let strongestSub = "";
+    let highestScore = 0;
     
     stats.examAnalysis.forEach(exam => {
       const allTests = [...(exam.practiceTests || []), ...(exam.mockTests || [])];
@@ -849,44 +850,94 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
           lowestScore = test.avgScore;
           weakestSub = test.name;
         }
+        if (test.avgScore > highestScore && test.name) {
+          highestScore = test.avgScore;
+          strongestSub = test.name;
+        }
       });
     });
 
-    const chips: string[] = [];
-
     const speed = stats.avgTimePerQuestion;
-    if (speed > 45) {
-      chips.push(`How can I reduce my slow speed of ${speed.toFixed(0)}s per question?`);
-    } else if (speed < 20 && stats.avgAccuracy < 60) {
-      chips.push(`My speed is fast (${speed.toFixed(0)}s) but accuracy is low (${stats.avgAccuracy}%). How do I balance them?`);
-    } else {
-      chips.push("Analyze my speed versus accuracy balance.");
-    }
-
-    if (weakestSub && lowestScore < 75) {
-      chips.push(`Explain the high-yield topics and shortcuts for ${weakestSub}.`);
-    } else {
-      chips.push("Give me high-yield shortcuts for Mathematics.");
-    }
-
-    const momentum = stats.skillProfile.find(s => s.name === "Momentum")?.value ?? 50;
-    if (momentum < 45) {
-      chips.push(`Why is my performance momentum dropping and how do I fix it?`);
-    } else if (stats.impScore > 0) {
-      chips.push(`How do I sustain my recent +${stats.impScore}% score improvement?`);
-    } else {
-      chips.push("Why is my momentum score low compared to accuracy?");
-    }
-
     const targetScore = Math.min(95, Math.max(75, stats.avgScore + 10));
-    if (stats.avgScore < 50) {
-      chips.push(`Design a 7-day emergency study roadmap to hit ${targetScore}% score.`);
+    const momentum = stats.skillProfile.find(s => s.name === "Momentum")?.value ?? 50;
+    const endurance = stats.skillProfile.find(s => s.name === "Endurance")?.value ?? 50;
+    const precision = stats.skillProfile.find(s => s.name === "Precision")?.value ?? 50;
+
+    // Pool of context-aware prompt variants per category, rotated by scan count
+    const slot0Options: string[] = [];
+    if (speed > 45) {
+      slot0Options.push(`How can I reduce my slow speed of ${speed.toFixed(0)}s per question?`);
+      slot0Options.push(`Give me a timed drill plan to get below 30s per question.`);
+      slot0Options.push(`What question-skipping strategies work when I run out of time?`);
+    } else if (speed < 20 && stats.avgAccuracy < 60) {
+      slot0Options.push(`My speed is fast (${speed.toFixed(0)}s) but accuracy is low (${stats.avgAccuracy}%). How do I balance them?`);
+      slot0Options.push(`I answer quickly but keep making mistakes — what cognitive habit should I change?`);
+      slot0Options.push(`How do I slow down on tricky questions without losing overall pace?`);
     } else {
-      chips.push(`Design a 5-day custom plan to scale my score to ${targetScore}%.`);
+      slot0Options.push("Analyze my overall speed versus accuracy tradeoff.");
+      slot0Options.push(`My speed is ${speed.toFixed(0)}s per question — is that competitive for OPSC exams?`);
+      slot0Options.push("What is the ideal time management strategy per question type?");
     }
 
-    return chips;
-  }, [stats]);
+    const slot1Options: string[] = [];
+    if (weakestSub && lowestScore < 75) {
+      slot1Options.push(`Explain the high-yield topics and shortcuts for ${weakestSub}.`);
+      slot1Options.push(`Give me 3 targeted practice strategies to improve my ${weakestSub} score from ${lowestScore}%.`);
+      slot1Options.push(`What are the most commonly repeated questions in ${weakestSub} for Odisha exams?`);
+    } else {
+      slot1Options.push("Give me high-yield shortcuts for Odisha GK & History.");
+      slot1Options.push("What are the most repeated topics across OPSC OAS previous years?");
+      slot1Options.push("Summarize the key focus areas for OSSSC RI/ARI exam preparation.");
+    }
+
+    const slot2Options: string[] = [];
+    if (momentum < 45) {
+      slot2Options.push(`Why is my performance momentum dropping and how do I reverse it?`);
+      slot2Options.push(`What is causing my declining score trend and how do I recover?`);
+      slot2Options.push(`Design a confidence-building 3-day plan to get my momentum back.`);
+    } else if (stats.impScore > 0) {
+      slot2Options.push(`How do I sustain my recent +${stats.impScore}% score improvement?`);
+      slot2Options.push(`My scores are rising — what should I focus on to keep improving?`);
+      slot2Options.push(`I improved by ${stats.impScore}% recently. What's the next milestone to target?`);
+    } else if (precision < 60) {
+      slot2Options.push(`My precision score is low (${precision}%). How do I stop making careless mistakes?`);
+      slot2Options.push("What techniques help reduce wrong answers from overconfidence?");
+      slot2Options.push("How do I build better answer verification habits under time pressure?");
+    } else {
+      slot2Options.push("Why is my momentum score low compared to my accuracy?");
+      slot2Options.push("How do I turn consistent practice into a steady score improvement curve?");
+      slot2Options.push("What psychological habits help maintain exam performance consistency?");
+    }
+
+    const slot3Options: string[] = [];
+    if (stats.avgScore < 50) {
+      slot3Options.push(`Design a 7-day emergency study roadmap to hit ${targetScore}% score.`);
+      slot3Options.push(`My average score is ${stats.avgScore}% — what is the fastest path to ${targetScore}%?`);
+      slot3Options.push(`Create a priority topic list I must master this week to improve quickly.`);
+    } else if (endurance < 50) {
+      slot3Options.push(`Design a 5-day custom plan to scale my score to ${targetScore}% while improving endurance.`);
+      slot3Options.push("How do I build stamina to maintain performance across a full 150-question mock test?");
+      slot3Options.push("What is a good daily practice volume to improve my endurance score?");
+    } else if (strongestSub) {
+      slot3Options.push(`Design a 5-day custom plan to push my ${strongestSub} score above 90%.`);
+      slot3Options.push(`I am strongest in ${strongestSub} — how do I maximize marks from it in the actual exam?`);
+      slot3Options.push(`Design a hybrid study plan combining my strength in ${strongestSub} with improving ${weakestSub || 'weaker areas'}.`);
+    } else {
+      slot3Options.push(`Design a 5-day custom plan to scale my score to ${targetScore}%.`);
+      slot3Options.push("Create a balanced weekly study schedule for Odisha competitive exam preparation.");
+      slot3Options.push("Design a revision plan targeting maximum score improvement in 10 days.");
+    }
+
+    // Rotate variant selection based on scan count so each scan gives different chips
+    const pick = (options: string[]) => options[scanCount % options.length];
+
+    return [
+      pick(slot0Options),
+      pick(slot1Options),
+      pick(slot2Options),
+      pick(slot3Options),
+    ];
+  }, [stats, scanCount]);
 
   // Load AI Insights from cache if available
   useEffect(() => {
@@ -916,26 +967,11 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
   };
 
   const runAiAnalysis = async (force = false) => {
-    let currentStats = stats;
-
-    if (force && user?.id) {
-      try {
-        const rawData = activityTracker.getActivities(user.id);
-        const completions = rawData.filter(a => a.type === 'mock_test_completed')
-          .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-        setActivities(completions);
-        if (completions.length > 0) {
-          currentStats = calculateStats(completions);
-        }
-      } catch (e) {
-        console.error("Failed to refresh activities:", e);
-      }
-    }
-
-    if (!currentStats) return;
-    const cacheKey = `oep_ai_insights_${user?.id}_${currentStats.totalTests}_${currentStats.avgScore}`;
+    if (!stats) return;
+    const cacheKey = `oep_ai_insights_${user?.id}_${stats.totalTests}_${stats.avgScore}`;
     
     setChatHistory([]);
+    setScanCount(prev => prev + 1);
     setLoadingAi(true);
     setScanningPhase(1);
     
@@ -969,7 +1005,7 @@ Your output must be a JSON object with:
           model: 'meta/llama-3.3-70b-instruct',
           messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: `Analyze this student data and return JSON:\n${JSON.stringify(currentStats, null, 2)}` }
+            { role: 'user', content: `Analyze this student data and return JSON:\n${JSON.stringify(stats, null, 2)}` }
           ],
           temperature: 0.3,
           response_format: { type: 'json_object' }
@@ -989,7 +1025,7 @@ Your output must be a JSON object with:
       console.error(err);
       // Fallback
       const fallbackData = {
-        diagnostic: `Based on your ${currentStats.totalTests} completed mock tests, you have shown an average accuracy of ${currentStats.avgAccuracy}%. Your speed is ${currentStats.avgTimePerQuestion.toFixed(0)}s per question. Focus on reviewing wrong answers and practicing weaker subjects.`,
+        diagnostic: `Based on your ${stats.totalTests} completed mock tests, you have shown an average accuracy of ${stats.avgAccuracy}%. Your speed is ${stats.avgTimePerQuestion.toFixed(0)}s per question. Focus on reviewing wrong answers and practicing weaker subjects.`,
         actionPlan: [
           { task: "Practice 15 topic-wise tests in your weakest subjects", boost: "+8%", timeframe: "3 days" },
           { task: "Attempt a full-length mock test focusing on speed (under 45s per Q)", boost: "+5%", timeframe: "5 days" },
