@@ -543,27 +543,57 @@ const ExamRegistrySection = ({
   );
 };
 
-const SyllabusPathsSection = () => {
-  const [activeTab, setActiveTab] = useState<'gs' | 'lang' | 'quant'>('gs');
+const SYLLABUS_ROADMAPS_DEFAULT = [
+  {
+    id: 'gs',
+    label: 'General Studies',
+    topics: [
+      { name: 'Odisha History & Heritage', count: 12, label: 'Crucial for OPSC Prelims' },
+      { name: 'Indian Constitution & Polity', count: 8, label: 'Core Weightage' },
+      { name: 'Geography of Odisha & Climate', count: 10, label: 'High-scoring Section' },
+      { name: 'General Science & Technology', count: 15, label: 'Daily Current Mappings' },
+    ],
+  },
+  {
+    id: 'lang',
+    label: 'Language Core',
+    topics: [
+      { name: 'Odia Grammar & Composition', count: 8, label: 'OSSC CGL Compulsory' },
+      { name: 'English Comprehension', count: 6, label: 'Vocabulary & Common Errors' },
+      { name: 'Translation & Precise Writing', count: 4, label: 'Mains Answer Prep' },
+    ],
+  },
+  {
+    id: 'quant',
+    label: 'Aptitude & DI',
+    topics: [
+      { name: 'Number System & Arithmetic', count: 14, label: 'OSSSC Exam Primary Focus' },
+      { name: 'Logical Reasoning & Analogies', count: 12, label: 'Timer Speed Practice' },
+      { name: 'Data Interpretation (DI) Charts', count: 9, label: 'High-level Practice Sets' },
+    ],
+  },
+];
 
-  const topics = {
-    gs: [
-      { name: "Odisha History & Heritage", count: 12, label: "Crucial for OPSC Prelims" },
-      { name: "Indian Constitution & Polity", count: 8, label: "Core Weightage" },
-      { name: "Geography of Odisha & Climate", count: 10, label: "High-scoring Section" },
-      { name: "General Science & Technology", count: 15, label: "Daily Current Mappings" }
-    ],
-    lang: [
-      { name: "Odia Grammar & Composition", count: 8, label: "OSSC CGL Compulsory" },
-      { name: "English Comprehension", count: 6, label: "Vocabulary & Common Errors" },
-      { name: "Translation & Precise Writing", count: 4, label: "Mains Answer Prep" }
-    ],
-    quant: [
-      { name: "Number System & Arithmetic", count: 14, label: "OSSSC Exam Primary Focus" },
-      { name: "Logical Reasoning & Analogies", count: 12, label: "Timer Speed Practice" },
-      { name: "Data Interpretation (DI) Charts", count: 9, label: "High-level Practice Sets" }
-    ]
-  };
+const SyllabusPathsSection = () => {
+  const [tabs, setTabs] = useState<any[]>(SYLLABUS_ROADMAPS_DEFAULT);
+  const [activeTabIdx, setActiveTabIdx] = useState(0);
+
+  useEffect(() => {
+    examService.getAllExams().then((allExams: any[]) => {
+      const setting = allExams.find((e: any) => e.name === 'SYSTEM_SETTINGS_SYLLABUS_ROADMAPS');
+      if (setting && setting.description) {
+        try {
+          const parsed = JSON.parse(setting.description);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setTabs(parsed);
+            setActiveTabIdx(0);
+          }
+        } catch (e) { /* keep defaults */ }
+      }
+    }).catch(() => { /* keep defaults */ });
+  }, []);
+
+  const activeTab = tabs[activeTabIdx] || tabs[0];
 
   return (
     <section id="syllabus-paths" className="py-12 md:py-16 scroll-mt-24 border-b border-slate-200/50">
@@ -583,19 +613,15 @@ const SyllabusPathsSection = () => {
         </div>
 
         {/* Tab switcher */}
-        <div className="flex justify-center gap-2 sm:gap-4 p-1.5 bg-slate-100/60 rounded-2xl max-w-md mx-auto border border-slate-200/50">
-          {[
-            { id: 'gs', label: 'General Studies' },
-            { id: 'lang', label: 'Language Core' },
-            { id: 'quant', label: 'Aptitude & DI' }
-          ].map(tab => (
+        <div className="flex justify-center gap-2 sm:gap-4 p-1.5 bg-slate-100/60 rounded-2xl max-w-2xl mx-auto border border-slate-200/50 flex-wrap">
+          {tabs.map((tab, i) => (
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              key={tab.id || i}
+              onClick={() => setActiveTabIdx(i)}
               className={cn(
-                "flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
-                activeTab === tab.id 
-                  ? "bg-white text-slate-900 shadow-sm border border-slate-200" 
+                "flex-1 min-w-[100px] py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
+                activeTabIdx === i
+                  ? "bg-white text-slate-900 shadow-sm border border-slate-200"
                   : "text-slate-400 hover:text-slate-700"
               )}
             >
@@ -605,28 +631,30 @@ const SyllabusPathsSection = () => {
         </div>
 
         {/* Pathway List */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-          {topics[activeTab].map((topic, i) => (
-            <div 
-              key={i} 
-              className="bg-white border-2 border-slate-900/80 rounded-2xl p-5 sm:p-6 shadow-[4px_4px_0px_rgba(0,0,0,1)] flex items-start justify-between gap-4"
-            >
-              <div className="space-y-1.5">
-                <p className="text-[10px] font-black uppercase tracking-wider text-[#8A1C36]">
-                  {topic.label}
-                </p>
-                <h4 className="text-base sm:text-lg font-serif font-extrabold text-slate-900 leading-tight">
-                  {topic.name}
-                </h4>
+        {activeTab && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+            {(activeTab.topics || []).map((topic: any, i: number) => (
+              <div
+                key={i}
+                className="bg-white border-2 border-slate-900/80 rounded-2xl p-5 sm:p-6 shadow-[4px_4px_0px_rgba(0,0,0,1)] flex items-start justify-between gap-4"
+              >
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-[#8A1C36]">
+                    {topic.label}
+                  </p>
+                  <h4 className="text-base sm:text-lg font-serif font-extrabold text-slate-900 leading-tight">
+                    {topic.name}
+                  </h4>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="inline-flex px-2.5 py-1 bg-brand-50 text-[#8A1C36] rounded font-mono text-xs font-black uppercase border border-brand-100">
+                    {topic.count} Sets
+                  </span>
+                </div>
               </div>
-              <div className="text-right shrink-0">
-                <span className="inline-flex px-2.5 py-1 bg-brand-50 text-[#8A1C36] rounded font-mono text-xs font-black uppercase border border-brand-100">
-                  {topic.count} Sets
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

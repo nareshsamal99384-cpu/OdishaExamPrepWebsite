@@ -239,6 +239,37 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
     "✅ Real-time rank analysis enabled for all premium mock tests"
   ].join('\n');
 
+  // Syllabus Roadmaps state
+  const DEFAULT_SYLLABUS_ROADMAPS = [
+    {
+      id: 'gs', label: 'General Studies',
+      topics: [
+        { name: 'Odisha History & Heritage', count: 12, label: 'Crucial for OPSC Prelims' },
+        { name: 'Indian Constitution & Polity', count: 8, label: 'Core Weightage' },
+        { name: 'Geography of Odisha & Climate', count: 10, label: 'High-scoring Section' },
+        { name: 'General Science & Technology', count: 15, label: 'Daily Current Mappings' },
+      ],
+    },
+    {
+      id: 'lang', label: 'Language Core',
+      topics: [
+        { name: 'Odia Grammar & Composition', count: 8, label: 'OSSC CGL Compulsory' },
+        { name: 'English Comprehension', count: 6, label: 'Vocabulary & Common Errors' },
+        { name: 'Translation & Precise Writing', count: 4, label: 'Mains Answer Prep' },
+      ],
+    },
+    {
+      id: 'quant', label: 'Aptitude & DI',
+      topics: [
+        { name: 'Number System & Arithmetic', count: 14, label: 'OSSSC Exam Primary Focus' },
+        { name: 'Logical Reasoning & Analogies', count: 12, label: 'Timer Speed Practice' },
+        { name: 'Data Interpretation (DI) Charts', count: 9, label: 'High-level Practice Sets' },
+      ],
+    },
+  ];
+  const [syllabusRoadmaps, setSyllabusRoadmaps] = useState<any[]>(DEFAULT_SYLLABUS_ROADMAPS);
+  const [syllabusActiveTab, setSyllabusActiveTab] = useState(0);
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -309,6 +340,14 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         try {
           const parsed = JSON.parse(registrySettings.description);
           if (Array.isArray(parsed) && parsed.length > 0) setExamRegistry(parsed);
+        } catch(e) {}
+      }
+
+      const syllabusSettings = ex.find(e => e.name === 'SYSTEM_SETTINGS_SYLLABUS_ROADMAPS');
+      if (syllabusSettings && syllabusSettings.description) {
+        try {
+          const parsed = JSON.parse(syllabusSettings.description);
+          if (Array.isArray(parsed) && parsed.length > 0) { setSyllabusRoadmaps(parsed); setSyllabusActiveTab(0); }
         } catch(e) {}
       }
     } catch (error) {
@@ -2265,8 +2304,244 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   </button>
                 </div>
               </div>
+
+              {/* ── Syllabus Roadmaps Editor ── */}
+              <div className="mt-10 border-t-2 border-dashed border-slate-200 pt-10 space-y-8">
+                <div>
+                  <h3 className="text-3xl font-black text-slate-900 tracking-tight">📚 Syllabus Roadmaps</h3>
+                  <p className="text-slate-500 font-medium mt-2 text-lg">Manage the tabbed subject cards in the homepage "Syllabus Roadmaps" section.</p>
+                </div>
+
+                <div className="bg-violet-50 p-5 rounded-2xl border border-violet-100 flex gap-4 items-start shadow-sm">
+                  <AlertCircle className="w-6 h-6 text-violet-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-extrabold text-slate-800">Full control — tabs, topics, counts, labels!</p>
+                    <p className="text-sm font-medium text-slate-600">Add up to 5 tabs (e.g. General Studies, Language Core). Each tab can have up to 8 topic cards with a name, badge label, and set count.</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
+                  {/* LEFT: Tab list + editor */}
+                  <div className="xl:col-span-3 space-y-6">
+                    {/* Tab selector bar */}
+                    <div className="flex gap-2 flex-wrap items-center">
+                      {syllabusRoadmaps.map((tab: any, ti: number) => (
+                        <div key={ti} className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setSyllabusActiveTab(ti)}
+                            className={cn(
+                              "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border-2 transition-all",
+                              syllabusActiveTab === ti
+                                ? "bg-brand-600 text-white border-brand-600 shadow"
+                                : "bg-white text-slate-600 border-slate-200 hover:border-brand-400"
+                            )}
+                          >
+                            {tab.label || `Tab ${ti + 1}`}
+                          </button>
+                          {syllabusRoadmaps.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = syllabusRoadmaps.filter((_: any, i: number) => i !== ti);
+                                setSyllabusRoadmaps(updated);
+                                setSyllabusActiveTab(Math.max(0, ti - 1));
+                              }}
+                              className="p-1 rounded-lg text-rose-400 hover:bg-rose-50 hover:text-rose-600 transition-all"
+                              title="Delete tab"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      {syllabusRoadmaps.length < 5 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newTab = { id: `tab${Date.now()}`, label: 'New Tab', topics: [] };
+                            setSyllabusRoadmaps([...syllabusRoadmaps, newTab]);
+                            setSyllabusActiveTab(syllabusRoadmaps.length);
+                          }}
+                          className="px-3 py-2 rounded-xl border-2 border-dashed border-slate-300 text-xs font-extrabold text-slate-400 hover:border-brand-400 hover:text-brand-600 transition-all flex items-center gap-1"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Add Tab
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Active tab editor */}
+                    {syllabusRoadmaps[syllabusActiveTab] && (() => {
+                      const tab = syllabusRoadmaps[syllabusActiveTab];
+                      const updateTab = (changes: any) => {
+                        const updated = [...syllabusRoadmaps];
+                        updated[syllabusActiveTab] = { ...updated[syllabusActiveTab], ...changes };
+                        setSyllabusRoadmaps(updated);
+                      };
+                      return (
+                        <div className="space-y-5">
+                          {/* Tab label */}
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">Tab Label</label>
+                            <input
+                              type="text"
+                              value={tab.label}
+                              onChange={e => updateTab({ label: e.target.value })}
+                              className="w-full px-4 py-2.5 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-bold text-sm bg-white"
+                              placeholder="e.g. General Studies"
+                            />
+                          </div>
+
+                          {/* Topics */}
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <label className="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">Topics ({(tab.topics || []).length}/8)</label>
+                            </div>
+                            {(tab.topics || []).map((topic: any, ti2: number) => (
+                              <div key={ti2} className="bg-white border-2 border-slate-100 rounded-xl p-4 space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Topic {ti2 + 1}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newTopics = (tab.topics || []).filter((_: any, i: number) => i !== ti2);
+                                      updateTab({ topics: newTopics });
+                                    }}
+                                    className="p-1 rounded-lg text-rose-400 hover:bg-rose-50 hover:text-rose-600 transition-all"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                  <div className="sm:col-span-2 space-y-1">
+                                    <label className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Topic Name</label>
+                                    <input
+                                      type="text"
+                                      value={topic.name}
+                                      onChange={e => {
+                                        const newTopics = [...(tab.topics || [])];
+                                        newTopics[ti2] = { ...newTopics[ti2], name: e.target.value };
+                                        updateTab({ topics: newTopics });
+                                      }}
+                                      className="w-full px-3 py-2 rounded-lg border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold text-xs bg-slate-50"
+                                      placeholder="e.g. Odisha History & Heritage"
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Sets Count</label>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      value={topic.count}
+                                      onChange={e => {
+                                        const newTopics = [...(tab.topics || [])];
+                                        newTopics[ti2] = { ...newTopics[ti2], count: parseInt(e.target.value) || 0 };
+                                        updateTab({ topics: newTopics });
+                                      }}
+                                      className="w-full px-3 py-2 rounded-lg border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold text-xs bg-slate-50"
+                                    />
+                                  </div>
+                                  <div className="sm:col-span-3 space-y-1">
+                                    <label className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Badge Label</label>
+                                    <input
+                                      type="text"
+                                      value={topic.label}
+                                      onChange={e => {
+                                        const newTopics = [...(tab.topics || [])];
+                                        newTopics[ti2] = { ...newTopics[ti2], label: e.target.value };
+                                        updateTab({ topics: newTopics });
+                                      }}
+                                      className="w-full px-3 py-2 rounded-lg border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold text-xs bg-slate-50"
+                                      placeholder="e.g. Crucial for OPSC Prelims"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                            {(tab.topics || []).length < 8 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newTopics = [...(tab.topics || []), { name: '', count: 0, label: '' }];
+                                  updateTab({ topics: newTopics });
+                                }}
+                                className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-xs font-extrabold text-slate-400 hover:border-brand-400 hover:text-brand-600 hover:bg-brand-50/30 transition-all flex items-center justify-center gap-2"
+                              >
+                                <Plus className="w-3.5 h-3.5" /> Add Topic Card
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* RIGHT: Live preview */}
+                  <div className="xl:col-span-2 space-y-3">
+                    <label className="text-[10px] font-extrabold text-slate-700 uppercase tracking-wider">Live Preview</label>
+                    {/* Tabs */}
+                    <div className="flex gap-1.5 flex-wrap p-1.5 bg-slate-100/60 rounded-xl border border-slate-200/50">
+                      {syllabusRoadmaps.map((tab: any, i: number) => (
+                        <span
+                          key={i}
+                          className={cn(
+                            "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                            i === syllabusActiveTab ? "bg-white text-slate-900 shadow-sm border border-slate-200" : "text-slate-400"
+                          )}
+                        >
+                          {tab.label || `Tab ${i + 1}`}
+                        </span>
+                      ))}
+                    </div>
+                    {/* Topic cards */}
+                    <div className="grid grid-cols-1 gap-2">
+                      {((syllabusRoadmaps[syllabusActiveTab]?.topics) || []).slice(0, 6).map((topic: any, i: number) => (
+                        <div key={i} className="bg-white border-2 border-slate-900/70 rounded-xl p-3 shadow-[3px_3px_0px_rgba(0,0,0,0.9)] flex items-center justify-between gap-3">
+                          <div className="space-y-0.5 min-w-0">
+                            <p className="text-[8px] font-black uppercase tracking-wider text-[#8A1C36] truncate">{topic.label || 'Badge Label'}</p>
+                            <p className="text-xs font-serif font-extrabold text-slate-900 leading-tight truncate">{topic.name || 'Topic Name'}</p>
+                          </div>
+                          <span className="shrink-0 inline-flex px-2 py-0.5 bg-brand-50 text-[#8A1C36] rounded font-mono text-[9px] font-black border border-brand-100">{topic.count || 0} Sets</span>
+                        </div>
+                      ))}
+                      {((syllabusRoadmaps[syllabusActiveTab]?.topics) || []).length === 0 && (
+                        <p className="text-xs text-slate-400 font-semibold text-center py-6">Add topics above to see preview</p>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-400 font-semibold text-center">Showing active tab preview</p>
+                  </div>
+                </div>
+
+                {/* Save */}
+                <div className="flex justify-end pt-4 border-t border-slate-100">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const updated = {
+                          name: 'SYSTEM_SETTINGS_SYLLABUS_ROADMAPS',
+                          description: JSON.stringify(syllabusRoadmaps),
+                          icon: '📚',
+                          category: 'system' as const
+                        };
+                        const exists = exams.find(e => e.name === 'SYSTEM_SETTINGS_SYLLABUS_ROADMAPS');
+                        if (exists && exists.id) {
+                          await examService.updateExam(exists.id, updated);
+                        } else {
+                          await examService.addExam(updated);
+                        }
+                        await fetchData();
+                        alert('✅ Syllabus Roadmaps saved and published to homepage!');
+                      } catch (err: any) { alert(`Failed to save: ${err.message || 'Unknown error'}`); }
+                    }}
+                    className="px-10 py-3.5 premium-gradient text-white font-extrabold rounded-xl shadow-lg shadow-brand-500/20 hover:premium-glow transition-all active:scale-95 text-lg"
+                  >
+                    Publish Roadmaps
+                  </button>
+                </div>
+              </div>
              </div>
           ) : activeTab === 'updates' ? (
+
             <div className="glass rounded-[2rem] border border-slate-200/50 shadow-xl overflow-hidden bg-white/70 p-8 sm:p-12 space-y-8">
                <div>
                  <h3 className="text-3xl font-black text-slate-900 tracking-tight">Exam Updates & News Ticker</h3>
