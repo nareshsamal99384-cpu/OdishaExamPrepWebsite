@@ -7,8 +7,10 @@ import {
   History, 
   Settings, 
   LogOut, 
+  ChevronLeft,
   ChevronRight, 
   ChevronDown,
+  ChevronUp,
   Clock, 
   Target, 
   Award,
@@ -44,6 +46,7 @@ import {
   Timer,
   Clock3
 } from 'lucide-react';
+import { Toaster } from 'react-hot-toast';
 import { useAuth } from './lib/AuthContext';
 import { supabase } from './lib/supabase';
 import { cn, getDirectImageUrl } from './lib/utils';
@@ -130,7 +133,7 @@ const HistoryView = ({ user, onViewResults, onResumeTest }: { user: any, onViewR
                      </span>
                    )}
                    {a.type === 'test_incomplete' && (
-                     <span className="inline-flex items-center px-2 py-0.5 bg-amber-50 text-amber-600 rounded text-[10px] font-bold uppercase tracking-wider">
+                     <span className="inline-flex items-center px-2 py-0.5 bg-brand-50 text-brand-600 rounded text-[10px] font-bold uppercase tracking-wider">
                        Incomplete
                      </span>
                    )}
@@ -148,7 +151,7 @@ const HistoryView = ({ user, onViewResults, onResumeTest }: { user: any, onViewR
               <div className="flex items-center gap-6">
                  {a.type === 'test_incomplete' && (
                    <div className="flex flex-col items-end">
-                      <span className="text-[10px] font-black uppercase text-amber-600 mb-1">In Progress</span>
+                      <span className="text-[10px] font-black uppercase text-brand-600 mb-1">In Progress</span>
                       <div className="flex items-center gap-1.5 text-slate-400">
                         <Clock className="w-3 h-3" />
                         <span className="text-xs font-bold">{Object.keys(a.metadata?.answers || {}).length} Answered</span>
@@ -165,10 +168,7 @@ const HistoryView = ({ user, onViewResults, onResumeTest }: { user: any, onViewR
                 
                  {(isTestResult || a.type === 'test_incomplete') && (
                    <div className={cn(
-                     "w-10 h-10 rounded-full flex items-center justify-center transition-all",
-                     a.type === 'test_incomplete' 
-                        ? "bg-amber-50 text-amber-600 group-hover:bg-amber-600 group-hover:text-white" 
-                        : "bg-brand-50 text-brand-600 group-hover:scale-110 group-hover:bg-brand-600 group-hover:text-white"
+                     "w-10 h-10 rounded-full flex items-center justify-center transition-all bg-brand-50 text-brand-600 group-hover:scale-110 group-hover:bg-brand-600 group-hover:text-white"
                    )}>
                      {a.type === 'test_incomplete' ? <Play className="w-4 h-4 ml-0.5" /> : <ChevronRight className="w-5 h-5 ml-0.5" />}
                    </div>
@@ -2278,7 +2278,15 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
   // Helper: strip JSON_METADATA_ prefixed descriptions
   const cleanDesc = (d: string) => {
     if (!d) return '';
-    if (d.startsWith('JSON_METADATA_') || d.startsWith('{')) return '';
+    if (d.startsWith('JSON_METADATA_')) {
+      try {
+        const meta = JSON.parse(d.replace('JSON_METADATA_', ''));
+        return meta.description || '';
+      } catch (e) {
+        return '';
+      }
+    }
+    if (d.startsWith('{')) return '';
     return d;
   };
 
@@ -2660,7 +2668,7 @@ const OnboardingModal = ({
               <Target className="w-3.5 h-3.5" />
               Set Your Target Goal
             </span>
-            <h3 className="text-2xl sm:text-3xl font-serif font-extrabold text-slate-955 tracking-tight">
+            <h3 className="text-2xl sm:text-3xl font-serif font-extrabold text-slate-950 tracking-tight">
               Personalize Your Prep
             </h3>
             <p className="text-slate-500 text-xs sm:text-sm font-medium max-w-sm mx-auto">
@@ -2778,7 +2786,57 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   };
   const [showAdmin, setShowAdmin] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const hasAutoNavigated = useRef(false);
+
+  // Refs and scroll handlers for horizontal lists
+  const continuePracticeRef = useRef<HTMLDivElement>(null);
+  const recentActivityRef = useRef<HTMLDivElement>(null);
+
+  const smoothScroll = (element: HTMLDivElement | null, direction: 'left' | 'right') => {
+    if (!element) return;
+    const { scrollLeft, clientWidth } = element;
+    const scrollAmount = clientWidth * 0.75;
+    const targetOffset = direction === 'left' 
+      ? Math.max(0, scrollLeft - scrollAmount) 
+      : Math.min(element.scrollWidth - clientWidth, scrollLeft + scrollAmount);
+
+    const startOffset = scrollLeft;
+    const change = targetOffset - startOffset;
+    if (change === 0) return;
+    const duration = 500; // 500ms
+    const startTime = performance.now();
+
+    // Disable snap scroll during scroll animation to prevent stutter
+    element.style.scrollSnapType = 'none';
+
+    const easeInOutCubic = (t: number) => {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    };
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easeProgress = easeInOutCubic(progress);
+
+      element.scrollLeft = startOffset + change * easeProgress;
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // Restore snap scroll
+        element.style.scrollSnapType = '';
+      }
+    };
+
+    requestAnimationFrame(animate);
+  };
+
+  const scrollContinuePractice = (direction: 'left' | 'right') => {
+    smoothScroll(continuePracticeRef.current, direction);
+  };
+
+  const scrollRecentActivity = (direction: 'left' | 'right') => {
+    smoothScroll(recentActivityRef.current, direction);
+  };
 
   useEffect(() => {
     if (selectedExam) sessionStorage.setItem('oep_selectedExam', selectedExam);
@@ -3466,36 +3524,6 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   const [loadingExams, setLoadingExams] = useState(() => _dashboardCache.exams.length === 0);
   const [selectedMockCategory, setSelectedMockCategory] = useState<string | null>(() => sessionStorage.getItem('oep_selectedMockCategory') || null);
 
-  useEffect(() => {
-    if (hasAutoNavigated.current) return;
-    if (sessionStorage.getItem('oep_auto_navigated_dismissed') === 'true') {
-      hasAutoNavigated.current = true;
-      return;
-    }
-
-    if (user?.user_metadata?.targetExam) {
-      if (exams.length > 0) {
-        hasAutoNavigated.current = true;
-        if (!selectedExam) {
-          const target = user.user_metadata.targetExam.toLowerCase();
-          let matched = null;
-          if (target.includes('opsc')) {
-            matched = exams.find(e => e.name.toLowerCase().includes('opsc'));
-          } else if (target.includes('osssc')) {
-            matched = exams.find(e => e.name.toLowerCase().includes('osssc'));
-          } else if (target.includes('ossc')) {
-            matched = exams.find(e => e.name.toLowerCase().includes('ossc') && !e.name.toLowerCase().includes('osssc'));
-          }
-          if (matched) {
-            setSelectedExam(matched.id);
-          }
-        }
-      }
-    } else {
-      // No target exam set, so no auto-navigation is needed
-      hasAutoNavigated.current = true;
-    }
-  }, [exams, user, selectedExam]);
 
   const handleSaveOnboarding = async (exam: string, timeline: string, prepLevel: string) => {
     try {
@@ -4203,8 +4231,34 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             </div>
 
             {/* Horizontal snap-scroll — bleeds to screen edges on mobile */}
-            <div className="-mx-4 px-4 sm:mx-0 sm:px-0">
-              <div className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-1">
+            <div className="relative -mx-4 px-4 sm:mx-0 sm:px-0 group/scroll">
+              {/* Left Scroll Button */}
+              <button 
+                type="button"
+                onClick={() => scrollContinuePractice('left')}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/95 border border-slate-200/60 text-slate-600 hover:text-brand-600 shadow-md flex items-center justify-center cursor-pointer transition-all duration-200 z-20 opacity-0 group-hover/scroll:opacity-100 hover:scale-105 active:scale-95 hidden md:flex"
+                title="Scroll Left"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              {/* Right Scroll Button */}
+              <button 
+                type="button"
+                onClick={() => scrollContinuePractice('right')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/95 border border-slate-200/60 text-slate-600 hover:text-brand-600 shadow-md flex items-center justify-center cursor-pointer transition-all duration-200 z-20 opacity-0 group-hover/scroll:opacity-100 hover:scale-105 active:scale-95 hidden md:flex"
+                title="Scroll Right"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+
+              <div 
+                ref={continuePracticeRef}
+                className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pt-3 pb-3 px-4 sm:px-6"
+                style={{
+                  WebkitMaskImage: 'linear-gradient(to right, transparent, white 24px, white calc(100% - 24px), transparent)',
+                  maskImage: 'linear-gradient(to right, transparent, white 24px, white calc(100% - 24px), transparent)'
+                }}
+              >
                 {incompleteTests.slice(0, 6).map((a: any, i: number) => {
                   // Support both full-question activities (local) and lite cloud-synced ones
                   const answeredCount = (() => {
@@ -4233,8 +4287,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   return (
                     <motion.div
                       key={i}
-                      {...scaleIn}
-                      transition={{ ...scaleIn.transition, delay: i * 0.06 }}
+                      initial={{ opacity: 0, y: 15, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 200, damping: 22, delay: i * 0.06 }}
                       whileHover={whileHover.subtle}
                       whileTap={whileTap.press}
                       onClick={() => {
@@ -4242,20 +4297,20 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         setActiveTestState({ ...a.metadata, resumeSessionId: a.metadata?.resumeSessionId || a.metadata?.test?.id });
                         setActiveTest(a.metadata.test);
                       }}
-                      className={`snap-start shrink-0 w-[72vw] sm:w-[300px] lg:w-[340px] bg-white rounded-2xl border border-amber-100 hover:border-amber-400 hover:shadow-md hover:shadow-amber-500/10 transition-all group active:scale-[0.97] p-4 sm:p-5 flex flex-col gap-3 premium-shine-container ${
+                      className={`snap-start shrink-0 w-[72vw] sm:w-[300px] lg:w-[340px] bg-white rounded-2xl border border-slate-100 hover:border-brand-200/60 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 group p-4 sm:p-5 flex flex-col gap-3 premium-shine-container ${
                         canResume ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed'
                       }`}
                     >
                       {/* Top row: icon + text */}
                       <div className="flex items-center gap-3 relative z-10">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center shrink-0 shadow-md shadow-amber-500/30 group-hover:scale-110 transition-transform">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shrink-0 shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform duration-300">
                           <Play className="w-4 h-4 text-white fill-white ml-0.5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-extrabold text-sm text-slate-900 line-clamp-1 group-hover:text-amber-600 transition-colors">{a.title || 'Practice Session'}</h4>
+                          <h4 className="font-extrabold text-sm text-slate-900 line-clamp-1 group-hover:text-brand-600 transition-colors duration-300">{a.title || 'Practice Session'}</h4>
                           <p className="text-[11px] text-slate-400 font-medium mt-0.5">Last practiced {timeAgo}</p>
                           {a.metadata?.testCategory && (
-                            <span className="text-[9px] font-black uppercase tracking-widest text-amber-600">{a.metadata.testCategory}</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-brand-600">{a.metadata.testCategory}</span>
                           )}
                           {!canResume && (
                             <span className="text-[9px] font-bold text-slate-400">Open app to resume</span>
@@ -4264,10 +4319,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       </div>
                       {/* Progress bar at bottom */}
                       <div className="flex items-center gap-2 relative z-10">
-                        <div className="flex-1 h-1.5 bg-amber-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-amber-500 rounded-full" style={{ width: `${progressPct}%` }} />
+                        <div className="flex-1 h-1.5 bg-brand-50 rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-full" style={{ width: `${progressPct}%` }} />
                         </div>
-                        <span className="text-[10px] font-black text-amber-600 shrink-0">{progressPct}%</span>
+                        <span className="text-[10px] font-black text-brand-600 shrink-0">{progressPct}%</span>
                       </div>
                     </motion.div>
                   );
@@ -4291,8 +4346,34 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             </div>
 
             {/* Horizontal snap-scroll slider — bleeds to screen edges on mobile */}
-            <div className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
-              <div className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-2">
+            <div className="relative -mx-4 px-4 sm:mx-0 sm:px-0 group/scroll-recent">
+              {/* Left Scroll Button */}
+              <button 
+                type="button"
+                onClick={() => scrollRecentActivity('left')}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/95 border border-slate-200/60 text-slate-600 hover:text-brand-600 shadow-md flex items-center justify-center cursor-pointer transition-all duration-200 z-20 opacity-0 group-hover/scroll-recent:opacity-100 hover:scale-105 active:scale-95 hidden md:flex"
+                title="Scroll Left"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              {/* Right Scroll Button */}
+              <button 
+                type="button"
+                onClick={() => scrollRecentActivity('right')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/95 border border-slate-200/60 text-slate-600 hover:text-brand-600 shadow-md flex items-center justify-center cursor-pointer transition-all duration-200 z-20 opacity-0 group-hover/scroll-recent:opacity-100 hover:scale-105 active:scale-95 hidden md:flex"
+                title="Scroll Right"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+
+              <div 
+                ref={recentActivityRef}
+                className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pt-3 pb-3 px-4 sm:px-6"
+                style={{
+                  WebkitMaskImage: 'linear-gradient(to right, transparent, white 24px, white calc(100% - 24px), transparent)',
+                  maskImage: 'linear-gradient(to right, transparent, white 24px, white calc(100% - 24px), transparent)'
+                }}
+              >
                 {activities.filter((a: any) => a.type !== 'test_incomplete').slice(0, 6).map((a: any, i: number) => {
                   const isTestResult = a.type === 'mock_test_completed' || a.type === 'practice_test_completed';
                   const scoreLabel = a.metadata?.score !== undefined
@@ -4303,15 +4384,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   return (
                     <motion.div
                       key={i}
-                      {...scaleIn}
-                      transition={{ ...scaleIn.transition, delay: i * 0.06 }}
+                      initial={{ opacity: 0, y: 15, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 200, damping: 22, delay: i * 0.06 }}
                       whileHover={whileHover.subtle}
                       whileTap={whileTap.press}
                       onClick={() => {
                         if (isTestResult) setTestResults(a.metadata);
                         else if (a.type === 'question_bank_accessed' && a.metadata?.pdfUrl) window.open(a.metadata.pdfUrl, '_blank');
                       }}
-                      className="snap-start shrink-0 w-[72vw] sm:w-[300px] lg:w-[340px] bg-white rounded-2xl border border-slate-100 hover:border-brand-200 hover:shadow-md hover:shadow-brand-500/10 transition-all cursor-pointer group active:scale-[0.97] flex items-center gap-3 sm:gap-4 p-4 sm:p-5 premium-shine-container"
+                      className="snap-start shrink-0 w-[72vw] sm:w-[300px] lg:w-[340px] bg-white rounded-2xl border border-slate-100 hover:border-brand-200/60 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 cursor-pointer group flex items-center gap-3 sm:gap-4 p-4 sm:p-5 premium-shine-container"
                     >
                       {/* Icon */}
                       <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 bg-brand-500/10 text-brand-600 group-hover:scale-110 transition-transform relative z-10">
@@ -4347,29 +4429,35 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         <div className="flex flex-col space-y-5 sm:space-y-7">
           {/* Controls Bar */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-            <div className="border-2 border-slate-900 bg-white p-1 rounded-2xl flex gap-1.5 shrink-0 shadow-[4px_4px_0px_rgba(138,28,54,0.15)]">
-              <button
-                onClick={() => { setActiveTab('upcoming'); setExamSearchQuery(''); }}
-                className={cn(
-                  "px-5 sm:px-8 py-2 sm:py-3 rounded-xl font-extrabold text-xs sm:text-sm transition-all duration-200 cursor-pointer",
-                  (examSearchQuery ? filteredExams.some(e => e.category === 'upcoming') : activeTab === 'upcoming')
-                    ? "bg-[#8A1C36] text-white shadow-[2px_2px_0px_#0f172a] -translate-y-0.5" 
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                )}
-              >
-                Upcoming
-              </button>
-              <button
-                onClick={() => { setActiveTab('popular'); setExamSearchQuery(''); }}
-                className={cn(
-                  "px-5 sm:px-8 py-2 sm:py-3 rounded-xl font-extrabold text-xs sm:text-sm transition-all duration-200 cursor-pointer",
-                  (examSearchQuery ? filteredExams.some(e => e.category === 'popular') : activeTab === 'popular')
-                    ? "bg-[#8A1C36] text-white shadow-[2px_2px_0px_#0f172a] -translate-y-0.5" 
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                )}
-              >
-                Popular
-              </button>
+            <div className="border-2 border-slate-900 bg-white p-1 rounded-2xl flex gap-1.5 shrink-0 shadow-[4px_4px_0px_rgba(138,28,54,0.15)] relative">
+              {(['upcoming', 'popular'] as const).map((tab) => {
+                const isTabActive = examSearchQuery 
+                  ? filteredExams.some(e => e.category === tab) 
+                  : activeTab === tab;
+                
+                return (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => { setActiveTab(tab); setExamSearchQuery(''); }}
+                    className={cn(
+                      "px-5 sm:px-8 py-2 sm:py-3 rounded-xl font-extrabold text-xs sm:text-sm cursor-pointer relative transition-all duration-300 focus:outline-none select-none",
+                      isTabActive 
+                        ? "text-white -translate-y-0.5" 
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-50/50"
+                    )}
+                  >
+                    {isTabActive && (
+                      <motion.div
+                        layoutId="activeExamTabBg"
+                        className="absolute inset-0 bg-[#8A1C36] rounded-xl shadow-[2px_2px_0px_#0f172a] z-0"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    <span className="relative z-10 capitalize">{tab}</span>
+                  </button>
+                );
+              })}
             </div>
 
             <div className="relative flex-1 min-w-0">
@@ -4448,8 +4536,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         } catch(e) {}
                       }
 
-                      // Replace generic AI placeholder descriptions like "hellow" or missing ones
-                      if (!displayDesc || displayDesc.toLowerCase() === 'hellow' || displayDesc.toLowerCase() === 'hello') {
+                      // Replace generic AI placeholder descriptions if empty
+                      if (!displayDesc || displayDesc.trim() === '') {
                         const nameLower = exam.name.toLowerCase();
                         if (nameLower.includes('amin')) {
                           displayDesc = 'Comprehensive practice tests covering Mathematics, Computer Awareness, English, and Odia for the OSSSC Amin recruitment.';
@@ -4704,7 +4792,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 <h1 className="text-3xl font-black text-slate-950 tracking-tight">
                   {currentExam?.name}
                 </h1>
-                <p className="text-slate-500 font-medium">Select your preparation path</p>
+                <p className="text-slate-500 font-medium">
+                  {!hasBundle && examDescription ? examDescription : 'Select your preparation path'}
+                </p>
               </div>
             </div>
           </div>
@@ -4882,10 +4972,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         }}
                         className="text-slate-400 text-sm sm:text-base lg:text-lg font-medium leading-relaxed"
                       >
-                        {hasAccessTo(`exam_bundle_${selectedExam}`) 
+                        {examDescription || (hasAccessTo(`exam_bundle_${selectedExam}`) 
                           ? 'You have unlocked lifetime access to all Question Banks, Practice Mode, Premium Mock Tests, and PDF notes. Best of luck with your preparation!'
                           : 'Get full lifetime access to all Question Banks, Practice Mode, Premium Mock Tests, PDF notes, and any future content added to this exam. Complete your preparation with the ultimate bundle.'
-                        }
+                        )}
                       </motion.p>
                     </div>
                   </div>
@@ -5518,6 +5608,8 @@ const WhatsAppButton = () => {
   }, []);
 
   if (isTestMode) return null;
+  if (user) return null; // Hide for logged-in users
+
 
   const defaultMessage = "Hello! I am reaching out from the OdishaExamPrep website. I have a query.";
   const userMessage = user?.email ? `Hello! I am ${user.email} reaching out from the OdishaExamPrep website. I have a query.` : defaultMessage;
@@ -5588,6 +5680,21 @@ const ScrollToTop = () => {
 export default function App() {
   return (
     <BrowserRouter>
+      {/* Single global Toaster — must be here (root) so StrictMode never renders two instances */}
+      <Toaster
+        position="top-center"
+        reverseOrder={false}
+        toastOptions={{
+          duration: 3500,
+          style: {
+            fontFamily: 'var(--font-sans)',
+            fontWeight: 700,
+            fontSize: '14px',
+            borderRadius: '12px',
+            padding: '12px 16px',
+          },
+        }}
+      />
       <ScrollToTop />
       <AppContent />
     </BrowserRouter>
@@ -5606,6 +5713,7 @@ function AppContent() {
     }
     return 'home';
   });
+  const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
 
   useEffect(() => {
     if (location.pathname !== '/') return;
@@ -5687,13 +5795,22 @@ function AppContent() {
       _dashboardCache.mockTests = [];
       _dashboardCache.dynamicQuestionBanks = {};
       _dashboardCache.loadedForUserId = null;
+      sessionStorage.removeItem('oep_selectedExam');
+      sessionStorage.removeItem('oep_selectedBankType');
+      sessionStorage.removeItem('oep_practiceSettings');
+      sessionStorage.removeItem('oep_selectedMockCategory');
       sessionStorage.removeItem('oep_auto_navigated_dismissed');
+      setMainTab('home');
     }
   }, [user]);
 
   const prevUserIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (user?.id !== prevUserIdRef.current) {
+      sessionStorage.removeItem('oep_selectedExam');
+      sessionStorage.removeItem('oep_selectedBankType');
+      sessionStorage.removeItem('oep_practiceSettings');
+      sessionStorage.removeItem('oep_selectedMockCategory');
       sessionStorage.removeItem('oep_auto_navigated_dismissed');
       prevUserIdRef.current = user?.id || null;
     }
@@ -5725,7 +5842,7 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-900">
+    <div className="min-h-screen min-h-[100dvh] bg-[#F8FAFC] font-sans text-slate-900">
       <AnimatedRoutes>
         <Route path="/admin-login" element={<AdminLoginPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
@@ -5747,10 +5864,15 @@ function AppContent() {
             !user ? (
               <LandingPage />
             ) : (
-              <div className="flex flex-col min-h-screen">
+              <div className="flex flex-col min-h-screen min-h-[100dvh]">
                 <Navbar user={user} isAdmin={isAdmin} onHomeClick={handleHomeClick} />
 
-                <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pt-4 md:pt-8 overflow-hidden">
+                <main className={cn(
+                  "flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pt-4 md:pt-8 overflow-x-hidden transition-all duration-500",
+                  isBottomNavVisible 
+                    ? "pb-28 sm:pb-24 lg:pb-32" 
+                    : "pb-12 sm:pb-16 lg:pb-20"
+                )}>
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={`${mainTab}-${dashboardKey}`}
@@ -5766,7 +5888,22 @@ function AppContent() {
                 </main>
 
                 {/* Mobile Bottom Nav */}
-                <nav className="glass border-t border-slate-200/50 px-2 sm:px-8 py-3 sm:py-4 flex justify-around items-center sticky bottom-0 z-30 rounded-t-[2rem]">
+                <motion.nav 
+                  initial={false}
+                  animate={{ y: isBottomNavVisible ? 0 : '100%' }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  className="glass border-t border-slate-200/50 px-2 sm:px-8 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:py-4 flex justify-around items-center fixed bottom-0 left-0 right-0 z-30 rounded-t-[2rem]"
+                >
+                  {/* Hide Navigation Toggle Tab */}
+                  <button 
+                    type="button"
+                    onClick={() => setIsBottomNavVisible(false)}
+                    className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white/95 border-t border-l border-r border-slate-200/50 hover:bg-slate-50 text-slate-400 hover:text-slate-700 rounded-t-xl px-4 py-1 flex items-center justify-center cursor-pointer shadow-[0_-4px_10px_rgba(0,0,0,0.03)] backdrop-blur-md transition-colors z-40 group focus:outline-none"
+                    title="Hide Navigation"
+                  >
+                    <ChevronDown className="w-4 h-4 transition-transform group-hover:translate-y-0.5 duration-200" />
+                  </button>
+
                   <button onClick={handleHomeClick} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'home' ? 'text-brand-600' : 'text-slate-400'}`}>
                     <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform ${mainTab === 'home' ? 'bg-brand-50' : 'hover:bg-slate-50'}`}>
                       <LayoutDashboard className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -5803,7 +5940,25 @@ function AppContent() {
                     </div>
                     <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">AI Mentor</span>
                   </button>
-                </nav>
+                </motion.nav>
+
+                {/* Show Navigation Trigger Tab */}
+                <AnimatePresence>
+                  {!isBottomNavVisible && (
+                    <motion.button 
+                      initial={{ y: 50, opacity: 0, x: '-50%' }}
+                      animate={{ y: 0, opacity: 1, x: '-50%' }}
+                      exit={{ y: 50, opacity: 0, x: '-50%' }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                      type="button"
+                      onClick={() => setIsBottomNavVisible(true)}
+                      className="fixed bottom-0 left-1/2 bg-white/95 border-t border-l border-r border-slate-200/50 hover:bg-slate-50 text-slate-500 hover:text-slate-800 rounded-t-xl px-5 py-1.5 flex items-center justify-center cursor-pointer shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur-md z-40 group focus:outline-none"
+                      title="Show Navigation"
+                    >
+                      <ChevronUp className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 duration-200" />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
               </div>
             )
           } 

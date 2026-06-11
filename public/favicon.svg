@@ -1,18 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
   <defs>
-    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#6366f1" />
-      <stop offset="100%" stop-color="#4338ca" />
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8a1c36" />
+      <stop offset="100%" stop-color="#0c2340" />
     </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-opacity="0.25"/>
-    </filter>
   </defs>
-  <!-- Background squircle -->
-  <rect width="256" height="256" rx="64" fill="url(#grad1)" />
-  <!-- Book Icon inside -->
-  <g stroke="#ffffff" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" fill="none" filter="url(#shadow)">
-    <path d="M56 72c20-12 52-12 72 0 20-12 52-12 72 0v112c-20-12-52-12-72 0-20-12-52-12-72 0z" />
-    <path d="M128 72v112" />
+
+  <!-- Rounded square background — matches premium-gradient + rounded-2xl -->
+  <rect width="256" height="256" rx="56" fill="url(#bg)" />
+
+  <!-- BookOpen icon — matches the Lucide BookOpen used in the navbar logo -->
+  <!-- Scaled and centered to fill the icon nicely -->
+  <g transform="translate(44, 52)" stroke="white" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Left page -->
+    <path d="M84 16 C64 8, 24 10, 4 22 L4 142 C24 130, 64 128, 84 136 Z" />
+    <!-- Right page -->
+    <path d="M84 16 C104 8, 144 10, 164 22 L164 142 C144 130, 104 128, 84 136 Z" />
+    <!-- Center spine -->
+    <line x1="84" y1="16" x2="84" y2="136" />
   </g>
 </svg>

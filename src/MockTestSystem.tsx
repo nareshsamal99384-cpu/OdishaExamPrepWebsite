@@ -60,6 +60,13 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [showMobilePalette, setShowMobilePalette] = useState(false);
+  const [currentMode, setCurrentMode] = useState<'mock' | 'practice'>(mode);
+  const [untimedPractice, setUntimedPractice] = useState(false);
+  const [targetScore, setTargetScore] = useState(() => {
+    const totalQs = test.questions.length;
+    const testTotalMarks = test.totalMarks || totalQs;
+    return Math.round(testTotalMarks * 0.8);
+  });
   const questionTextRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
   // Show overview only for new tests; skip if user is genuinely resuming saved progress
@@ -105,21 +112,25 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
   useEffect(() => {
     if (!isStarted) return; // Don't tick timer on the overview screen
     const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 0) {
-          clearInterval(timer);
-          handleSubmit();
-          return 0;
-        }
-        return prev - 1;
-      });
+      if (currentMode === 'practice' && untimedPractice) {
+        // Untimed Practice Mode - do not tick down time
+      } else {
+        setTimeLeft((prev) => {
+          if (prev <= 0) {
+            clearInterval(timer);
+            handleSubmit();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }
       setTimeSpent(prev => ({
         ...prev,
         [currentQuestionIndex]: (prev[currentQuestionIndex] || 0) + 1
       }));
     }, 1000);
     return () => clearInterval(timer);
-  }, [currentQuestionIndex, isStarted]);
+  }, [currentQuestionIndex, isStarted, currentMode, untimedPractice]);
 
   // Auto-scroll desktop palette to keep current question in view
   useEffect(() => {
@@ -159,13 +170,13 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
   }, []);
 
   const handleAnswer = useCallback((optionIndex: number) => {
-    if (mode === 'practice' && answersRef.current[currentQuestionIndex] !== undefined) return;
+    if (currentMode === 'practice' && answersRef.current[currentQuestionIndex] !== undefined) return;
     
     setAnswers(prev => ({ ...prev, [currentQuestionIndex]: optionIndex }));
-    if (mode === 'practice') {
+    if (currentMode === 'practice') {
       setShowExplanation(true);
     }
-  }, [mode, currentQuestionIndex]);
+  }, [currentMode, currentQuestionIndex]);
 
   const toggleMarkForReview = useCallback(() => {
     setMarkedForReview(prev => 
@@ -182,6 +193,43 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
       return copy;
     });
   }, [currentQuestionIndex]);
+
+  const topicDistribution = useMemo(() => {
+    let polity = 0;
+    let geography = 0;
+    let historyCount = 0;
+    let math = 0;
+    let general = 0;
+
+    test.questions.forEach(q => {
+      const txt = q.questionText.toLowerCase();
+      if (txt.includes('article') || txt.includes('president') || txt.includes('governor') || txt.includes('amendment') || txt.includes('constitution') || txt.includes('legislature') || txt.includes('parliament') || txt.includes('court') || txt.includes('high court')) {
+        polity++;
+      } else if (txt.includes('river') || txt.includes('lake') || txt.includes('soil') || txt.includes('district') || txt.includes('forest') || txt.includes('dam') || txt.includes('national park') || txt.includes('climate') || txt.includes('geography') || txt.includes('mineral')) {
+        geography++;
+      } else if (txt.includes('war') || txt.includes('battle') || txt.includes('rebellion') || txt.includes('independence') || txt.includes('dynasty') || txt.includes('king') || txt.includes('ashoka') || txt.includes('temple') || txt.includes('british') || txt.includes('freedom') || txt.includes('history')) {
+        historyCount++;
+      } else if (txt.includes('time') || txt.includes('work') || txt.includes('speed') || txt.includes('average') || txt.includes('ratio') || txt.includes('percent') || txt.includes('profit') || txt.includes('interest') || txt.includes('math') || txt.includes('arithmetic') || txt.includes('solve')) {
+        math++;
+      } else {
+        general++;
+      }
+    });
+
+    const total = test.questions.length;
+    if (total === 0) return [];
+
+    return [
+      { name: 'Polity & Constitution', count: polity, color: 'bg-indigo-500' },
+      { name: 'Geography & Environment', count: geography, color: 'bg-emerald-500' },
+      { name: 'History & Art', count: historyCount, color: 'bg-amber-500' },
+      { name: 'Quantitative & Logic', count: math, color: 'bg-rose-500' },
+      { name: 'General Awareness', count: general, color: 'bg-slate-500' }
+    ].filter(t => t.count > 0).map(t => ({
+      ...t,
+      percentage: Math.round((t.count / total) * 100)
+    }));
+  }, [test.questions]);
 
   const handleSubmit = useCallback(() => {
     const totalQuestions = test.questions.length;
@@ -216,13 +264,16 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
       accuracy,
       total: totalQuestions,
       answers,
-      timeTaken: test.durationMinutes * 60 - timeLeft,
+      timeTaken: currentMode === 'practice' && untimedPractice
+        ? Object.keys(timeSpent).reduce((a, b) => a + (timeSpent[Number(b)] || 0), 0)
+        : test.durationMinutes * 60 - timeLeft,
       timeSpent,
       markedForReview,
       test,
+      mode: currentMode,
       isComplete: true
     });
-  }, [test, answers, timeLeft, timeSpent, markedForReview, onComplete]);
+  }, [test, answers, timeLeft, timeSpent, markedForReview, currentMode, untimedPractice, onComplete]);
 
   const handleExit = useCallback(() => {
     onExit({
@@ -231,9 +282,10 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
       timeSpent,
       markedForReview,
       currentQuestionIndex,
-      test
+      test,
+      mode: currentMode
     });
-  }, [answers, timeLeft, timeSpent, markedForReview, currentQuestionIndex, test, onExit]);
+  }, [answers, timeLeft, timeSpent, markedForReview, currentQuestionIndex, test, currentMode, onExit]);
 
   const nextQuestion = useCallback(() => {
     if (currentQuestionIndex < test.questions.length - 1) {
@@ -308,14 +360,102 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
             {/* Motivation Header */}
             <div className="text-center space-y-3 max-w-2xl mx-auto">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#8a1c36]/5 border border-[#8a1c36]/15 rounded-full text-[#8a1c36] text-[10px] font-black uppercase tracking-widest">
-                <BookOpen className="w-3.5 h-3.5" /> {mode === 'practice' ? 'Practice Mode Enabled' : 'Official Mock Exam'}
+                <BookOpen className="w-3.5 h-3.5" /> {currentMode === 'practice' ? 'Practice Mode Active' : 'Official Mock Exam'}
               </div>
               <h1 className="text-3xl sm:text-4xl font-serif font-black text-slate-900 tracking-tight leading-tight">
                 {test.title}
               </h1>
               <p className="text-slate-500 text-sm sm:text-base font-medium leading-relaxed">
-                Review the marking rubrics, time limits, and instructions below. Once started, the timer cannot be paused.
+                Review the marking rubrics, select your preparation mode, analyze the distribution of topics, and initiate when ready.
               </p>
+            </div>
+
+            {/* Mode Selection Panel */}
+            <div className="bg-white border border-slate-200/60 rounded-[2rem] p-6 shadow-sm max-w-4xl mx-auto space-y-4">
+              <div className="text-center">
+                <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest block leading-none">Select Session Style</span>
+                <h3 className="text-slate-800 text-base font-black tracking-tight mt-1.5">Choose How You Want to Study</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Exam Mode Option */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrentMode('mock');
+                    setUntimedPractice(false);
+                  }}
+                  className={cn(
+                    "p-5 rounded-2xl border-2 text-left transition-all duration-300 flex flex-col justify-between space-y-3 cursor-pointer",
+                    currentMode === 'mock'
+                      ? "border-[#8a1c36] bg-[#8a1c36]/5 shadow-sm"
+                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className={cn(
+                      "px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded-md border",
+                      currentMode === 'mock'
+                        ? "bg-[#8a1c36] border-[#8a1c36] text-white font-black"
+                        : "bg-slate-100 border-slate-200 text-slate-500"
+                    )}>
+                      🏆 Exam Mode
+                    </span>
+                    <span className="text-[10px] font-black uppercase text-slate-400">Strict Timed</span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-slate-800">Official Exam Simulation</h4>
+                    <p className="text-[11px] text-slate-500 font-semibold leading-relaxed mt-1">
+                      Strict countdown timer. Negative markings apply. Answers and explanations will be shown only after you submit the test.
+                    </p>
+                  </div>
+                </button>
+
+                {/* Practice Mode Option */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentMode('practice')}
+                  className={cn(
+                    "p-5 rounded-2xl border-2 text-left transition-all duration-300 flex flex-col justify-between space-y-3 cursor-pointer",
+                    currentMode === 'practice'
+                      ? "border-emerald-500 bg-emerald-500/5 shadow-sm"
+                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className={cn(
+                      "px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded-md border",
+                      currentMode === 'practice'
+                        ? "bg-emerald-500 border-emerald-500 text-white font-black"
+                        : "bg-slate-100 border-slate-200 text-slate-500"
+                    )}>
+                      📖 Practice Mode
+                    </span>
+                    <span className="text-[10px] font-black uppercase text-slate-400">Self-Paced</span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-slate-800">Interactive Self-Study</h4>
+                    <p className="text-[11px] text-slate-500 font-semibold leading-relaxed mt-1">
+                      Immediate feedback after each response. Detailed step-by-step solutions are shown instantly. Select timed or untimed practice.
+                    </p>
+                  </div>
+                </button>
+              </div>
+
+              {/* Practice Mode Configurations */}
+              {currentMode === 'practice' && (
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-center gap-6 animate-fade-in">
+                  <label className="flex items-center gap-2.5 text-xs text-slate-700 font-bold cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={untimedPractice}
+                      onChange={(e) => setUntimedPractice(e.target.checked)}
+                      className="rounded text-[#8a1c36] focus:ring-[#8a1c36]/40 w-4 h-4 accent-[#8a1c36]"
+                    />
+                    <span>Untimed Session (Disable strict countdown timer)</span>
+                  </label>
+                </div>
+              )}
             </div>
 
             {/* Asymmetric Columns (3:2 split) */}
@@ -328,7 +468,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                 <div className="grid grid-cols-3 gap-4">
                   {[
                     { label: 'Questions', value: String(totalQs), sub: 'Total count' },
-                    { label: 'Duration', value: test.durationMinutes + ' min', sub: 'Countdown' },
+                    { label: 'Duration', value: currentMode === 'practice' && untimedPractice ? 'No Limit' : test.durationMinutes + ' min', sub: 'Countdown limit' },
                     { label: 'Total Marks', value: String(testTotalMarks), sub: 'Maximum raw' },
                   ].map(s => (
                     <div key={s.label} className="bg-white border border-slate-200/60 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow">
@@ -339,6 +479,96 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                   ))}
                 </div>
 
+                {/* Target Score & Attempts Planner */}
+                <div className="bg-white border border-slate-200/60 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
+                  <h3 className="text-slate-900 font-serif font-black flex items-center gap-2.5 text-base sm:text-lg">
+                    <Target className="w-5 h-5 text-[#8a1c36]" /> Target Score & Attempts Planner
+                  </h3>
+                  <p className="text-slate-500 text-xs font-semibold leading-relaxed">
+                    Set your goal for this session and analyze your permitted room for error under negative marking conditions.
+                  </p>
+                  
+                  <div className="space-y-4 pt-1">
+                    <div className="flex justify-between items-center text-xs font-bold">
+                      <span className="text-slate-500">Your Target Score Goal:</span>
+                      <span className="text-[#8a1c36] font-black text-sm">{targetScore} / {testTotalMarks} Marks ({Math.round(targetScore / testTotalMarks * 100)}%)</span>
+                    </div>
+                    
+                    <input
+                      type="range"
+                      min={Math.round(testTotalMarks * 0.5)}
+                      max={testTotalMarks}
+                      step={1}
+                      value={targetScore}
+                      onChange={(e) => setTargetScore(parseInt(e.target.value))}
+                      className="w-full accent-[#8a1c36] h-1.5 bg-slate-100 rounded-lg cursor-pointer"
+                    />
+                    
+                    {/* Calculation Output Cards */}
+                    {(() => {
+                      const minCorrect = Math.ceil(targetScore / marksPerQ);
+                      const maxIncorrect = negMarkVal > 0 
+                        ? Math.floor((testTotalMarks - targetScore) / (marksPerQ + negMarkVal))
+                        : totalQs - minCorrect;
+                      
+                      return (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+                          <div className="bg-[#FBF9F6] border border-slate-200/40 rounded-xl p-3.5 space-y-1">
+                            <span className="text-[9px] text-slate-400 font-black uppercase tracking-wider block">Min. Correct Needed</span>
+                            <div className="text-slate-800 text-base font-black">{minCorrect} Questions</div>
+                            <p className="text-[10px] text-slate-500 font-semibold leading-relaxed">
+                              You must answer at least {minCorrect} questions correctly to meet your target.
+                            </p>
+                          </div>
+                          
+                          <div className="bg-[#FBF9F6] border border-slate-200/40 rounded-xl p-3.5 space-y-1">
+                            <span className="text-[9px] text-slate-400 font-black uppercase tracking-wider block">Max Allowed Mistakes</span>
+                            <div className="text-slate-800 text-base font-black">{maxIncorrect >= 0 ? maxIncorrect : 0} Questions</div>
+                            <p className="text-[10px] text-slate-500 font-semibold leading-relaxed">
+                              If you attempt every question, you can afford at most {maxIncorrect >= 0 ? maxIncorrect : 0} mistakes under penalty.
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Automated Topic Distribution Visualizer */}
+                {topicDistribution.length > 0 && (
+                  <div className="bg-white border border-slate-200/60 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
+                    <h3 className="text-slate-900 font-serif font-black flex items-center gap-2.5 text-base sm:text-lg">
+                      <BookOpen className="w-5 h-5 text-[#8a1c36]" /> Syllabus Topic Breakdown
+                    </h3>
+                    <p className="text-slate-500 text-xs font-semibold leading-relaxed">
+                      Analysis of this test paper showing the concentration of core syllabus topics.
+                    </p>
+                    
+                    {/* Visual Segmented Bar */}
+                    <div className="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden flex border border-slate-200/40 mt-1">
+                      {topicDistribution.map((t) => (
+                        <div
+                          key={t.name}
+                          className={t.color}
+                          style={{ width: `${t.percentage}%` }}
+                          title={`${t.name}: ${t.count} Qs (${t.percentage}%)`}
+                        />
+                      ))}
+                    </div>
+                    
+                    {/* Legends Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
+                      {topicDistribution.map((t) => (
+                        <div key={t.name} className="flex items-center gap-2 text-[10px] sm:text-[11px] font-semibold text-slate-600">
+                          <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", t.color)} />
+                          <span className="truncate">{t.name}:</span>
+                          <span className="text-slate-800 font-extrabold">{t.count} Qs ({t.percentage}%)</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Marking Rubric Details */}
                 <div className="bg-white border border-slate-200/60 rounded-2xl p-5 sm:p-6 space-y-5 shadow-sm">
                   <h3 className="text-slate-900 font-serif font-black flex items-center gap-2.5 text-base sm:text-lg">
@@ -346,7 +576,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                   </h3>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="flex items-center gap-3 bg-emerald-550/5 border border-emerald-100 rounded-xl p-3.5">
+                    <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-250 rounded-xl p-3.5">
                       <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
                         <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                       </div>
@@ -400,7 +630,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                     <div className="bg-[#FBF9F6] rounded-xl p-4 border border-slate-200/50">
                       <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Duration Budget</div>
                       <div className="text-slate-800 font-serif font-extrabold text-xl sm:text-2xl">
-                        {test.durationMinutes} <span className="text-xs font-sans font-semibold text-slate-400 uppercase tracking-widest ml-1">minutes</span>
+                        {currentMode === 'practice' && untimedPractice ? 'No Time Limit' : test.durationMinutes + ' minutes'}
                       </div>
                     </div>
                     <div className="bg-[#FBF9F6] rounded-xl p-4 border border-slate-200/50">
@@ -417,8 +647,36 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
               {/* Right Column: Instructions, start button (Col Span 2) */}
               <div className="lg:col-span-2 space-y-6">
                 
+                {/* CBT Keyboard Navigation Guide */}
+                <div className="bg-white border border-slate-200/60 rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm">
+                  <h3 className="text-slate-900 font-serif font-black text-base flex items-center gap-2">
+                    <Zap className="w-4.5 h-4.5 text-amber-500" /> CBT Keyboard Shortcuts
+                  </h3>
+                  <p className="text-slate-500 text-[11px] font-semibold leading-relaxed">
+                     OdishaExamPrep CBT engine supports fully functional keyboard shortcuts for quick and efficient test-taking.
+                  </p>
+                  <div className="grid grid-cols-1 gap-2.5">
+                    {[
+                      { keys: ['1', '2', '3', '4'], desc: 'Select option A, B, C, or D' },
+                      { keys: ['ArrowRight', 'Enter'], desc: 'Save Response & Next' },
+                      { keys: ['ArrowLeft'], desc: 'Go Back to Previous' },
+                      { keys: ['M'], desc: 'Flag Question for Review' },
+                      { keys: ['C'], desc: 'Clear Current Response' }
+                    ].map(sh => (
+                      <div key={sh.desc} className="flex items-center gap-3 bg-slate-50 border border-slate-200/40 p-2.5 rounded-xl text-[11px] font-semibold">
+                        <div className="flex gap-1 shrink-0">
+                          {sh.keys.map(k => (
+                            <kbd key={k} className="px-1.5 py-0.5 bg-white border border-slate-350 shadow-sm rounded text-[9px] font-black text-slate-700 font-mono">{k}</kbd>
+                          ))}
+                        </div>
+                        <span className="text-slate-600 font-medium leading-tight">{sh.desc}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Instructions Panel */}
-                <div className="bg-white border border-slate-200/60 rounded-3xl p-6 space-y-5 shadow-md relative overflow-hidden">
+                <div className="bg-white border border-slate-200/60 rounded-3xl p-6 space-y-5 shadow-sm relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-[#8a1c36]/3 rounded-full blur-2xl pointer-events-none" />
                   
                   <h3 className="text-slate-900 font-serif font-black text-lg">Instructions for Candidates</h3>
@@ -427,9 +685,9 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                     {[
                       'Read each problem statement carefully before selecting options.',
                       'You can bookmark questions for review and return to them anytime.',
-                      'The count-down timer starts instantly when you click the Start button.',
+                      currentMode === 'practice' && untimedPractice ? 'You are taking this session as an untimed practice.' : 'The count-down timer starts instantly when you click the Start button.',
                       'Closing the browser pauses progress; you can resume from your dashboard.',
-                      negMarkVal > 0 ? `Incorrect responses incur a penalty of ${fmt(negMarkVal)} marks.` : 'There are no scoring penalties for incorrect answers.',
+                      negMarkVal > 0 && currentMode === 'mock' ? `Incorrect responses incur a penalty of ${fmt(negMarkVal)} marks.` : 'There are no scoring penalties for incorrect answers in Practice mode.',
                       'The question palette is available for quick vertical navigation.',
                     ].map((ins, i) => (
                       <li key={i} className="flex items-start gap-3 text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
@@ -455,7 +713,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
             onClick={() => setIsStarted(true)}
             className="max-w-3xl w-full py-4 sm:py-4.5 rounded-2xl bg-[#8a1c36] hover:bg-[#76142c] text-white font-black text-sm sm:text-base transition-all duration-300 shadow-lg shadow-[#8a1c36]/20 flex items-center justify-center gap-2.5 active:scale-[0.98] cursor-pointer premium-btn-transition"
           >
-            <Play className="w-4.5 h-4.5 fill-white" /> Initiate Examination
+            <Play className="w-4.5 h-4.5 fill-white" /> Initiate Session
           </button>
         </div>
       </div>
@@ -488,15 +746,23 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
         <div className="flex items-center gap-2.5 sm:gap-4 relative z-10">
           <div className={cn(
             "flex items-center gap-2 px-4 py-2 rounded-xl font-mono font-black text-sm sm:text-base border transition-all duration-300 shadow-sm",
-            timeLeft < 60
-              ? "bg-rose-50 text-rose-600 border-rose-200"
-              : timeLeft < 300
-                ? "bg-amber-50 text-amber-700 border-amber-200"
-                : "bg-slate-50 text-slate-700 border-slate-200/80"
+            currentMode === 'practice' && untimedPractice
+              ? "bg-emerald-50 text-emerald-700 border-emerald-250"
+              : timeLeft < 60
+                ? "bg-rose-50 text-rose-600 border-rose-200"
+                : timeLeft < 300
+                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                  : "bg-slate-50 text-slate-700 border-slate-200/80"
           )}>
-            <Timer className={cn("w-4.5 h-4.5 text-[#8A1C36]", timeLeft < 300 && "animate-pulse")} />
-            <span className="hidden sm:inline text-[11px] font-black uppercase text-slate-400 font-sans tracking-wider leading-none mt-0.5">Time Left:</span>
-            <span className="tracking-widest">{formatTime(timeLeft)}</span>
+            <Timer className={cn("w-4.5 h-4.5 text-[#8A1C36]", timeLeft < 300 && !(currentMode === 'practice' && untimedPractice) && "animate-pulse")} />
+            <span className="hidden sm:inline text-[11px] font-black uppercase text-slate-400 font-sans tracking-wider leading-none mt-0.5">
+              {currentMode === 'practice' && untimedPractice ? "Time Elapsed:" : "Time Left:"}
+            </span>
+            <span className="tracking-widest">
+              {currentMode === 'practice' && untimedPractice 
+                ? formatTime(Object.keys(timeSpent).reduce((a, b) => a + (timeSpent[Number(b)] || 0), 0))
+                : formatTime(timeLeft)}
+            </span>
           </div>
 
           <button 
@@ -561,7 +827,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                       {currentQuestion.options.map((option, idx) => {
                         const isSelected = answers[currentQuestionIndex] === idx;
                         const isCorrect = idx === currentQuestion.correctAnswerIndex;
-                        const showResult = mode === 'practice' && answers[currentQuestionIndex] !== undefined;
+                        const showResult = currentMode === 'practice' && answers[currentQuestionIndex] !== undefined;
 
                         return (
                           <button
@@ -941,7 +1207,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
               <div className="px-6 py-5 border-t border-slate-200 bg-slate-50/50 shrink-0">
                 <div className="grid grid-cols-2 gap-2.5 text-[10px] font-bold text-slate-600 max-w-sm mx-auto">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-5 h-5 rounded-lg bg-emerald-550/5 border border-emerald-100 shrink-0" />
+                    <span className="w-5 h-5 rounded-lg bg-emerald-50 border border-emerald-250 shrink-0" />
                     <span>Answered</span>
                   </div>
                   <div className="flex items-center gap-1.5">
