@@ -2360,22 +2360,37 @@ const LandingPage = () => {
 
                   {/* Password field (Login, Signup, Reset Password) */}
                   {authMode !== 'forgotPassword' && (
-                    <div className="relative">
-                      <input 
-                        type={showPassword ? "text" : "password"} 
-                        placeholder={authMode === 'resetPassword' ? "New Password" : "Password"} 
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base pr-12" 
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
-                      >
-                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                      </button>
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <input 
+                          type={showPassword ? "text" : "password"} 
+                          placeholder={authMode === 'resetPassword' ? "New Password" : "Password"} 
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base pr-12" 
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+
+                      {/* Forgot Password Link (Login only, tightly grouped under Password input) */}
+                      {authMode === 'login' && (
+                        <div className="flex justify-end px-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setAuthMode('forgotPassword')}
+                            className="text-xs font-semibold text-slate-400 hover:text-[#8A1C36] transition-colors"
+                          >
+                            Forgot Password?
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -2390,19 +2405,6 @@ const LandingPage = () => {
                         required
                         className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base pr-12" 
                       />
-                    </div>
-                  )}
-
-                  {/* Forgot Password Link (Login only) */}
-                  {authMode === 'login' && (
-                    <div className="flex justify-end pt-1">
-                      <button
-                        type="button"
-                        onClick={() => setAuthMode('forgotPassword')}
-                        className="text-xs font-bold text-slate-400 hover:text-[#8A1C36] transition-colors"
-                      >
-                        Forgot Password?
-                      </button>
                     </div>
                   )}
                 </div>
