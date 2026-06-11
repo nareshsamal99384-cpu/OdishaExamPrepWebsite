@@ -1916,25 +1916,37 @@ const InteractiveHeroPreview = () => {
 const LandingPage = () => {
   const { loading, user } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'signup' | 'forgotPassword' | 'resetPassword'>('login');
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showGuideToast, setShowGuideToast] = useState(false);
   const [authMessage, setAuthMessage] = useState<{ type: 'error' | 'info' | 'success', text: string } | null>(null);
 
   useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setAuthMode('resetPassword');
+        setShowAuthModal(true);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
     setEmail('');
     setPassword('');
     setFullName('');
+    setConfirmPassword('');
     setShowPassword(false);
     setAuthMessage(null);
   }, [showAuthModal, authMode]);
 
   useEffect(() => {
     setAuthMessage(null);
-  }, [email, password, fullName]);
+  }, [email, password, fullName, confirmPassword]);
 
   const [announcements, setAnnouncements] = useState<string[]>([
     `🚀 New Mock Test Series released for OSSC CGL ${new Date().getFullYear()}`,
@@ -2018,6 +2030,55 @@ const LandingPage = () => {
       setAuthMessage({
         type: 'error',
         text: error.message || 'An unexpected error occurred. Please try again.'
+      });
+    }
+  };
+
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthMessage(null);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin,
+      });
+      if (error) throw error;
+      setAuthMessage({
+        type: 'success',
+        text: 'A password reset link has been sent to your email. Please check your inbox!'
+      });
+    } catch (error: any) {
+      setAuthMessage({
+        type: 'error',
+        text: error.message || 'Failed to send reset link. Please verify your email.'
+      });
+    }
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthMessage(null);
+    if (password !== confirmPassword) {
+      setAuthMessage({
+        type: 'error',
+        text: 'Passwords do not match!'
+      });
+      return;
+    }
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      setAuthMessage({
+        type: 'success',
+        text: 'Password updated successfully! You are now logged in. Redirecting...'
+      });
+      setTimeout(() => {
+        setShowAuthModal(false);
+        window.location.reload();
+      }, 2000);
+    } catch (error: any) {
+      setAuthMessage({
+        type: 'error',
+        text: error.message || 'Failed to update password.'
       });
     }
   };
@@ -2235,7 +2296,10 @@ const LandingPage = () => {
             >
               <div className="flex justify-between items-center sticky top-0 bg-white/0 z-10">
                 <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                  {authMode === 'login' ? 'Welcome Back' : 'Join OdishaExamPrep'}
+                  {authMode === 'login' && 'Welcome Back'}
+                  {authMode === 'signup' && 'Join OdishaExamPrep'}
+                  {authMode === 'forgotPassword' && 'Reset Password'}
+                  {authMode === 'resetPassword' && 'Create New Password'}
                 </h3>
                 <button onClick={() => setShowAuthModal(false)} className="p-2 -mr-2 bg-slate-100/50 hover:bg-slate-200/50 rounded-full transition-colors backdrop-blur-md">
                   <X className="w-6 h-6 text-slate-400" />
@@ -2262,8 +2326,15 @@ const LandingPage = () => {
                 </motion.div>
               )}
 
-               <form onSubmit={handleEmailAuth} className="space-y-5">
+               <form onSubmit={
+                 authMode === 'forgotPassword'
+                   ? handleForgotPasswordSubmit
+                   : authMode === 'resetPassword'
+                     ? handleResetPasswordSubmit
+                     : handleEmailAuth
+               } className="space-y-5">
                 <div className="space-y-4">
+                  {/* Full Name field (Signup only) */}
                   {authMode === 'signup' && (
                     <input 
                       type="text" 
@@ -2274,46 +2345,98 @@ const LandingPage = () => {
                       className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base" 
                     />
                   )}
-                  <input 
-                    type="email" 
-                    placeholder="Email Address" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base" 
-                  />
-                  <div className="relative">
+
+                  {/* Email field (Login, Signup, Forgot Password) */}
+                  {authMode !== 'resetPassword' && (
                     <input 
-                      type={showPassword ? "text" : "password"} 
-                      placeholder="Password" 
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      type="email" 
+                      placeholder="Email Address" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base pr-12" 
+                      className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base" 
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
+                  )}
+
+                  {/* Password field (Login, Signup, Reset Password) */}
+                  {authMode !== 'forgotPassword' && (
+                    <div className="relative">
+                      <input 
+                        type={showPassword ? "text" : "password"} 
+                        placeholder={authMode === 'resetPassword' ? "New Password" : "Password"} 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base pr-12" 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Confirm Password field (Reset Password only) */}
+                  {authMode === 'resetPassword' && (
+                    <div className="relative">
+                      <input 
+                        type={showPassword ? "text" : "password"} 
+                        placeholder="Confirm New Password" 
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base pr-12" 
+                      />
+                    </div>
+                  )}
+
+                  {/* Forgot Password Link (Login only) */}
+                  {authMode === 'login' && (
+                    <div className="flex justify-end pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setAuthMode('forgotPassword')}
+                        className="text-xs font-bold text-slate-400 hover:text-[#8A1C36] transition-colors"
+                      >
+                        Forgot Password?
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <Button type="submit" className="w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl text-base sm:text-lg">
-                  {authMode === 'login' ? 'Sign In' : 'Create Account'}
+                  {authMode === 'login' && 'Sign In'}
+                  {authMode === 'signup' && 'Create Account'}
+                  {authMode === 'forgotPassword' && 'Send Reset Link'}
+                  {authMode === 'resetPassword' && 'Update Password'}
                 </Button>
               </form>
 
-              <p className="text-center text-sm text-slate-500 font-medium">
-                {authMode === 'login' ? "New to OdishaExamPrep? " : "Already a member? "}
-                <button 
-                  onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-                  className="text-brand-600 font-extrabold hover:underline transition-all"
-                >
-                  {authMode === 'login' ? 'Register' : 'Login'}
-                </button>
-              </p>
+              {(authMode === 'login' || authMode === 'signup') && (
+                <p className="text-center text-sm text-slate-500 font-medium">
+                  {authMode === 'login' ? "New to OdishaExamPrep? " : "Already a member? "}
+                  <button 
+                    onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                    className="text-brand-600 font-extrabold hover:underline transition-all"
+                  >
+                    {authMode === 'login' ? 'Register' : 'Login'}
+                  </button>
+                </p>
+              )}
+
+              {authMode === 'forgotPassword' && (
+                <p className="text-center text-sm text-slate-500 font-medium">
+                  Remember your password?{" "}
+                  <button 
+                    onClick={() => setAuthMode('login')}
+                    className="text-brand-600 font-extrabold hover:underline transition-all"
+                  >
+                    Login
+                  </button>
+                </p>
+              )}
             </motion.div>
           </div>
         )}
