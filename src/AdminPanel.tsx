@@ -2569,7 +2569,352 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                     }}
                     className="px-10 py-3.5 premium-gradient text-white font-extrabold rounded-xl shadow-lg shadow-brand-500/20 hover:premium-glow transition-all active:scale-95 text-lg"
                   >
-                    Publish Roadmaps
+                  </button>
+                </div>
+              </div>
+
+              {/* ── Success Journeys (Achievers Journal) Editor ── */}
+              <div className="mt-10 border-t-2 border-dashed border-slate-200 pt-10 space-y-8">
+                <div>
+                  <h3 className="text-3xl font-black text-slate-900 tracking-tight">🏆 Success Journeys / Achievers Journal</h3>
+                  <p className="text-slate-500 font-medium mt-2 text-lg">Manage student success journey cards, stats, and testimonials shown on the homepage.</p>
+                </div>
+
+                <div className="bg-emerald-50 p-5 rounded-2xl border border-emerald-100 flex gap-4 items-start shadow-sm">
+                  <Award className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-extrabold text-slate-800">Achievers' Card Control</p>
+                    <p className="text-sm font-medium text-slate-600">You can edit stats, quotes, districts, exam categories, and rearrange the display order of the success journeys.</p>
+                  </div>
+                </div>
+
+                {/* Main Editor Layout: Left Panel = List & Search, Right Panel = Form */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                  {/* Left Panel: Search & Scrollable list of Journeys */}
+                  <div className="lg:col-span-7 space-y-4">
+                    <div className="flex items-center gap-4 justify-between">
+                      <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Current Journeys ({achieversJournal.length})</label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingAchieverIndex(null);
+                          setAchieverForm({
+                            name: '',
+                            rank: '',
+                            examCategory: 'opsc',
+                            story: '',
+                            avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=New',
+                            stats: { score: '', accuracy: '', time: '' },
+                            district: ''
+                          });
+                          setIsAddingAchiever(true);
+                        }}
+                        className="px-4 py-2 bg-[#8A1C36] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md hover:bg-[#6c152a] active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer font-extrabold"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Add New Story
+                      </button>
+                    </div>
+
+                    <div className="relative">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Quick filter by name, rank, district..."
+                        value={achieverSearch}
+                        onChange={e => setAchieverSearch(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all font-bold text-sm bg-white"
+                      />
+                    </div>
+
+                    <div className="border border-slate-200 rounded-2xl bg-slate-50/50 p-3 max-h-[500px] overflow-y-auto space-y-2">
+                      {achieversJournal
+                        .map((story, originalIdx) => ({ story, originalIdx }))
+                        .filter(item => {
+                          const q = achieverSearch.toLowerCase();
+                          return (
+                            item.story.name.toLowerCase().includes(q) ||
+                            item.story.rank.toLowerCase().includes(q) ||
+                            item.story.district.toLowerCase().includes(q)
+                          );
+                        })
+                        .map(({ story, originalIdx }, displayIdx) => (
+                          <div
+                            key={originalIdx}
+                            className={cn(
+                              "flex items-center justify-between p-3 rounded-xl border transition-all",
+                              editingAchieverIndex === originalIdx
+                                ? "bg-brand-50/40 border-brand-200 shadow-sm"
+                                : "bg-white border-slate-100 hover:border-slate-200"
+                            )}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-black text-xs text-slate-700 uppercase shrink-0">
+                                {story.name ? story.name.substring(0, 2) : '??'}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-black text-slate-900 truncate">{story.name || 'Unnamed'}</p>
+                                <p className="text-[10px] font-bold text-slate-500 truncate">{story.rank || 'No rank info'} • {story.district}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0 ml-4">
+                              <button
+                                type="button"
+                                disabled={originalIdx === 0}
+                                onClick={() => {
+                                  const list = [...achieversJournal];
+                                  const temp = list[originalIdx];
+                                  list[originalIdx] = list[originalIdx - 1];
+                                  list[originalIdx - 1] = temp;
+                                  setAchieversJournal(list);
+                                }}
+                                className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600 disabled:opacity-30 disabled:pointer-events-none"
+                              >
+                                ▲
+                              </button>
+                              <button
+                                type="button"
+                                disabled={originalIdx === achieversJournal.length - 1}
+                                onClick={() => {
+                                  const list = [...achieversJournal];
+                                  const temp = list[originalIdx];
+                                  list[originalIdx] = list[originalIdx + 1];
+                                  list[originalIdx + 1] = temp;
+                                  setAchieversJournal(list);
+                                }}
+                                className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600 disabled:opacity-30 disabled:pointer-events-none"
+                              >
+                                ▼
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingAchieverIndex(originalIdx);
+                                  setAchieverForm({ ...story });
+                                  setIsAddingAchiever(false);
+                                }}
+                                className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-brand-600 rounded-lg transition-colors"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm(`Are you sure you want to delete ${story.name || 'this story'}?`)) {
+                                    const list = achieversJournal.filter((_, i) => i !== originalIdx);
+                                    setAchieversJournal(list);
+                                    if (editingAchieverIndex === originalIdx) {
+                                      setEditingAchieverIndex(null);
+                                      setIsAddingAchiever(false);
+                                    }
+                                  }
+                                }}
+                                className="p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      {achieversJournal.length === 0 && (
+                        <p className="text-xs text-slate-400 font-semibold text-center py-8">No stories added yet. Click "Add New Story" above.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Panel: Story Add/Edit Form */}
+                  <div className="lg:col-span-5 bg-slate-50/50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                    <div className="border-b border-slate-200 pb-3 flex justify-between items-center">
+                      <h4 className="text-sm font-black text-slate-800 uppercase tracking-wider">
+                        {isAddingAchiever ? '➕ Add New Story' : editingAchieverIndex !== null ? '📝 Edit Story' : '🔍 Select a Story'}
+                      </h4>
+                      {(isAddingAchiever || editingAchieverIndex !== null) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingAchieverIndex(null);
+                            setIsAddingAchiever(false);
+                          }}
+                          className="text-xs text-slate-400 hover:text-slate-600 font-bold"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+
+                    {(isAddingAchiever || editingAchieverIndex !== null) ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Full Name</label>
+                            <input
+                              type="text"
+                              required
+                              value={achieverForm.name}
+                              onChange={e => setAchieverForm(f => ({ ...f, name: e.target.value }))}
+                              className="w-full px-3 py-2 rounded-xl border-2 border-slate-200 outline-none focus:border-brand-500 text-xs font-bold bg-white"
+                              placeholder="e.g. Satyajit Behera"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Category</label>
+                            <select
+                              value={achieverForm.examCategory}
+                              onChange={e => setAchieverForm(f => ({ ...f, examCategory: e.target.value as any }))}
+                              className="w-full px-3 py-2 rounded-xl border-2 border-slate-200 outline-none focus:border-brand-500 text-xs font-bold bg-white"
+                            >
+                              <option value="opsc">OPSC</option>
+                              <option value="ossc">OSSC</option>
+                              <option value="osssc">OSSSC</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Subtitle / Rank</label>
+                            <input
+                              type="text"
+                              value={achieverForm.rank}
+                              onChange={e => setAchieverForm(f => ({ ...f, rank: e.target.value }))}
+                              className="w-full px-3 py-2 rounded-xl border-2 border-slate-200 outline-none focus:border-brand-500 text-xs font-bold bg-white"
+                              placeholder="e.g. OPSC OAS Rank 42"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">District</label>
+                            <input
+                              type="text"
+                              value={achieverForm.district}
+                              onChange={e => setAchieverForm(f => ({ ...f, district: e.target.value }))}
+                              className="w-full px-3 py-2 rounded-xl border-2 border-slate-200 outline-none focus:border-brand-500 text-xs font-bold bg-white"
+                              placeholder="e.g. Cuttack"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Story Text / Testimonial</label>
+                          <textarea
+                            rows={3}
+                            required
+                            value={achieverForm.story}
+                            onChange={e => setAchieverForm(f => ({ ...f, story: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border-2 border-slate-200 outline-none focus:border-brand-500 text-xs font-bold bg-white resize-none"
+                            placeholder="Write their preparation experience here..."
+                          />
+                        </div>
+
+                        <div className="border-t border-slate-200 my-2 pt-2">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Metrics/Stats Cards</p>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-extrabold text-slate-500 uppercase">Score</label>
+                              <input
+                                type="text"
+                                value={achieverForm.stats.score}
+                                onChange={e => setAchieverForm(f => ({ ...f, stats: { ...f.stats, score: e.target.value } }))}
+                                className="w-full px-2 py-1.5 rounded-lg border border-slate-200 outline-none focus:border-brand-500 text-[11px] font-bold bg-white"
+                                placeholder="128.5 / 200"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-extrabold text-slate-500 uppercase">Accuracy</label>
+                              <input
+                                type="text"
+                                value={achieverForm.stats.accuracy}
+                                onChange={e => setAchieverForm(f => ({ ...f, stats: { ...f.stats, accuracy: e.target.value } }))}
+                                className="w-full px-2 py-1.5 rounded-lg border border-slate-200 outline-none focus:border-brand-500 text-[11px] font-bold bg-white"
+                                placeholder="94% Accuracy"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[9px] font-extrabold text-slate-500 uppercase">Timeline</label>
+                              <input
+                                type="text"
+                                value={achieverForm.stats.time}
+                                onChange={e => setAchieverForm(f => ({ ...f, stats: { ...f.stats, time: e.target.value } }))}
+                                className="w-full px-2 py-1.5 rounded-lg border border-slate-200 outline-none focus:border-brand-500 text-[11px] font-bold bg-white"
+                                placeholder="8 Months Prep"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 items-end pt-2">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Avatar Seed</label>
+                            <input
+                              type="text"
+                              value={achieverForm.name ? achieverForm.name.split(' ')[0] : 'Satyajit'}
+                              disabled
+                              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-100 text-slate-400 text-xs font-bold"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!achieverForm.name.trim()) {
+                                alert('Please enter a name first.');
+                                return;
+                              }
+                              const seed = achieverForm.name.trim().split(' ')[0];
+                              const newAvatar = `https://api.dicebear.com/7.x/initials/svg?seed=${seed}`;
+                              const preparedForm = {
+                                ...achieverForm,
+                                avatar: newAvatar
+                              };
+
+                              if (isAddingAchiever) {
+                                setAchieversJournal(list => [preparedForm, ...list]);
+                                alert('✅ Added story to local list!');
+                              } else if (editingAchieverIndex !== null) {
+                                const list = [...achieversJournal];
+                                list[editingAchieverIndex] = preparedForm;
+                                setAchieversJournal(list);
+                                alert('✅ Updated story in local list!');
+                              }
+                              setEditingAchieverIndex(null);
+                              setIsAddingAchiever(false);
+                            }}
+                            className="w-full py-2 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-800 transition-all cursor-pointer font-extrabold"
+                          >
+                            {isAddingAchiever ? 'Confirm Add' : 'Confirm Edit'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <Award className="w-8 h-8 text-slate-300 mb-2" />
+                        <p className="text-xs text-slate-400 font-bold">Select a story from the left panel to edit its details, or click "Add New Story" to create a new journey card.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Save Success Journeys */}
+                <div className="flex justify-end pt-4 border-t border-slate-100">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const updated = {
+                          name: 'SYSTEM_SETTINGS_ACHIEVERS_JOURNAL',
+                          description: JSON.stringify(achieversJournal),
+                          icon: '🏆',
+                          category: 'system' as const
+                        };
+                        const exists = exams.find(e => e.name === 'SYSTEM_SETTINGS_ACHIEVERS_JOURNAL');
+                        if (exists && exists.id) {
+                          await examService.updateExam(exists.id, updated);
+                        } else {
+                          await examService.addExam(updated);
+                        }
+                        await fetchData();
+                        alert('✅ Success Journeys saved and published to homepage!');
+                      } catch (err: any) { alert(`Failed to save: ${err.message || 'Unknown error'}`); }
+                    }}
+                    className="px-10 py-3.5 premium-gradient text-white font-extrabold rounded-xl shadow-lg shadow-brand-500/20 hover:premium-glow transition-all active:scale-95 text-lg"
+                  >
+                    Publish Success Journeys
                   </button>
                 </div>
               </div>
