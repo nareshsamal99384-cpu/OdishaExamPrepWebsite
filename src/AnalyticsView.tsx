@@ -752,9 +752,9 @@ function AnalyticsSkeleton() {
 
 function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { user: any, activities?: any[], onNavigate?: (tab: any) => void }) {
   const [activities, setActivities] = useState<any[]>(() => {
-    const rawData = (propActivities && propActivities.length > 0)
-      ? propActivities
-      : (user?.id ? activityTracker.getActivities(user.id) : []);
+    const rawData = (user?.id)
+      ? activityTracker.getActivities(user.id)
+      : (propActivities && propActivities.length > 0 ? propActivities : []);
     return rawData.filter(a => a.type === 'mock_test_completed')
       .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   });
@@ -818,9 +818,9 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
   }, [chatHistory, chatLoading]);
 
   useEffect(() => {
-    const rawData = (propActivities && propActivities.length > 0)
-      ? propActivities
-      : (user?.id ? activityTracker.getActivities(user.id) : []);
+    const rawData = (user?.id)
+      ? activityTracker.getActivities(user.id)
+      : (propActivities && propActivities.length > 0 ? propActivities : []);
     const completions = rawData.filter(a => a.type === 'mock_test_completed')
       .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     setActivities(completions);
@@ -920,9 +920,7 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
 
     if (force && user?.id) {
       try {
-        const rawData = (propActivities && propActivities.length > 0)
-          ? propActivities
-          : activityTracker.getActivities(user.id);
+        const rawData = activityTracker.getActivities(user.id);
         const completions = rawData.filter(a => a.type === 'mock_test_completed')
           .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
         setActivities(completions);
