@@ -20,6 +20,7 @@ import {
   Play,
   CheckCircle2,
   AlertCircle,
+  Info,
   X,
   Menu,
   Star,
@@ -1921,15 +1922,19 @@ const LandingPage = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showGuideToast, setShowGuideToast] = useState(false);
+  const [authMessage, setAuthMessage] = useState<{ type: 'error' | 'info' | 'success', text: string } | null>(null);
 
   useEffect(() => {
-    if (!showAuthModal) {
-      setEmail('');
-      setPassword('');
-      setFullName('');
-      setShowPassword(false);
-    }
+    setEmail('');
+    setPassword('');
+    setFullName('');
+    setShowPassword(false);
+    setAuthMessage(null);
   }, [showAuthModal, authMode]);
+
+  useEffect(() => {
+    setAuthMessage(null);
+  }, [email, password, fullName]);
 
   const [announcements, setAnnouncements] = useState<string[]>([
     `🚀 New Mock Test Series released for OSSC CGL ${new Date().getFullYear()}`,
@@ -1982,6 +1987,7 @@ const LandingPage = () => {
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthMessage(null);
     try {
       if (authMode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -1999,14 +2005,20 @@ const LandingPage = () => {
         });
         if (error) throw error;
         if (data?.user && !data?.session) {
-            alert('Account already exists or requires email verification. Please check your inbox or try logging in!');
+            setAuthMessage({
+              type: 'info',
+              text: 'Account already exists or requires email verification. Please check your inbox or try logging in!'
+            });
             setAuthMode('login');
             return;
         }
         setShowAuthModal(false);
       }
     } catch (error: any) {
-      alert(error.message);
+      setAuthMessage({
+        type: 'error',
+        text: error.message || 'An unexpected error occurred. Please try again.'
+      });
     }
   };
 
@@ -2229,6 +2241,26 @@ const LandingPage = () => {
                   <X className="w-6 h-6 text-slate-400" />
                 </button>
               </div>
+
+              {authMessage && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={cn(
+                    "p-4 border rounded-2xl flex items-start gap-3 text-xs font-semibold leading-relaxed shadow-sm",
+                    authMessage.type === 'error' && "bg-rose-50 border-rose-100/80 text-rose-700",
+                    authMessage.type === 'info' && "bg-blue-50 border-blue-100/80 text-blue-700",
+                    authMessage.type === 'success' && "bg-emerald-50 border-emerald-100/80 text-emerald-700"
+                  )}
+                >
+                  {authMessage.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />}
+                  {authMessage.type === 'info' && <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />}
+                  {authMessage.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />}
+                  <div className="flex-1">
+                    {authMessage.text}
+                  </div>
+                </motion.div>
+              )}
 
                <form onSubmit={handleEmailAuth} className="space-y-5">
                 <div className="space-y-4">
