@@ -793,6 +793,65 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
     };
   }, [activities]);
 
+  const assistantChips = useMemo(() => {
+    const defaultChips = [
+      "Analyze my speed versus accuracy.",
+      "Give me shortcuts for Mathematics.",
+      "Why is my momentum score low?",
+      "Design a 5-day custom study plan."
+    ];
+
+    if (!stats) return defaultChips;
+
+    let weakestSub = "";
+    let lowestScore = 100;
+    
+    stats.examAnalysis.forEach(exam => {
+      const allTests = [...(exam.practiceTests || []), ...(exam.mockTests || [])];
+      allTests.forEach(test => {
+        if (test.avgScore < lowestScore && test.name) {
+          lowestScore = test.avgScore;
+          weakestSub = test.name;
+        }
+      });
+    });
+
+    const chips: string[] = [];
+
+    const speed = stats.avgTimePerQuestion;
+    if (speed > 45) {
+      chips.push(`How can I reduce my slow speed of ${speed.toFixed(0)}s per question?`);
+    } else if (speed < 20 && stats.avgAccuracy < 60) {
+      chips.push(`My speed is fast (${speed.toFixed(0)}s) but accuracy is low (${stats.avgAccuracy}%). How do I balance them?`);
+    } else {
+      chips.push("Analyze my speed versus accuracy balance.");
+    }
+
+    if (weakestSub && lowestScore < 75) {
+      chips.push(`Explain the high-yield topics and shortcuts for ${weakestSub}.`);
+    } else {
+      chips.push("Give me high-yield shortcuts for Mathematics.");
+    }
+
+    const momentum = stats.skillProfile.find(s => s.name === "Momentum")?.value ?? 50;
+    if (momentum < 45) {
+      chips.push(`Why is my performance momentum dropping and how do I fix it?`);
+    } else if (stats.impScore > 0) {
+      chips.push(`How do I sustain my recent +${stats.impScore}% score improvement?`);
+    } else {
+      chips.push("Why is my momentum score low compared to accuracy?");
+    }
+
+    const targetScore = Math.min(95, Math.max(75, stats.avgScore + 10));
+    if (stats.avgScore < 50) {
+      chips.push(`Design a 7-day emergency study roadmap to hit ${targetScore}% score.`);
+    } else {
+      chips.push(`Design a 5-day custom plan to scale my score to ${targetScore}%.`);
+    }
+
+    return chips;
+  }, [stats]);
+
   // Load AI Insights from cache if available
   useEffect(() => {
     if (!user?.id || !stats) return;
@@ -1353,12 +1412,7 @@ Keep your answers short, structured, and focused on helping them improve their O
                           <p className="text-[10px] font-medium text-slate-500 leading-relaxed mb-4">Click any prompt to trigger instant diagnostics from your AI coach.</p>
                           
                           <div className="flex flex-col gap-2.5">
-                            {[
-                              "Analyze my speed versus accuracy.",
-                              "Give me shortcuts for Mathematics.",
-                              "Why is my momentum score low?",
-                              "Design a 5-day custom study plan."
-                            ].map((chip, idx) => (
+                            {assistantChips.map((chip, idx) => (
                               <button
                                 key={idx}
                                 onClick={() => sendMessage(chip)}
