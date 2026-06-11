@@ -1873,11 +1873,37 @@ const Navbar = ({
 };
 
 // --- Interactive Hero Preview Component ---
+const HERO_CARD_DEFAULT = {
+  examLabel: 'OPSC Prelims Mock',
+  questionNumber: 'Q. 42',
+  questionText: 'The historical Sun Temple of Konark, a UNESCO World Heritage site, was constructed by which ruler of the Eastern Ganga Dynasty?',
+  options: ['Anantavarman Chodagangadeva', 'Narasimhadeva I', 'Kapilendradeva', 'Purushottamadeva'],
+  correctIndex: 1,
+  explanation: 'King Langula Narasimhadeva I built the Konark Sun Temple in the 13th century (circa 1250 CE) to celebrate his military victories.',
+  marks: 1.00,
+  penalty: 0.25,
+};
+
 const InteractiveHeroPreview = () => {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(522); // 08:42
-  
+  const [card, setCard] = useState(HERO_CARD_DEFAULT);
+
+  // Load admin-configured hero card from Supabase
+  useEffect(() => {
+    examService.getAllExams().then((exams: any[]) => {
+      const setting = exams.find((e: any) => e.name === 'SYSTEM_SETTINGS_HERO_CARD');
+      if (setting && setting.description) {
+        try {
+          const parsed = JSON.parse(setting.description);
+          setCard({ ...HERO_CARD_DEFAULT, ...parsed });
+        } catch (e) { /* keep defaults */ }
+      }
+    }).catch(() => { /* keep defaults on network error */ });
+  }, []);
+
+  // Countdown timer
   useEffect(() => {
     const interval = setInterval(() => {
       setSecondsLeft((prev) => (prev > 0 ? prev - 1 : 600));
@@ -1885,22 +1911,16 @@ const InteractiveHeroPreview = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Reset interaction when question changes
+  useEffect(() => {
+    setSelectedOption(null);
+    setShowResult(false);
+  }, [card.questionText]);
+
   const formatTimer = (secs: number) => {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
-
-  const question = {
-    text: "The historical Sun Temple of Konark, a UNESCO World Heritage site, was constructed by which ruler of the Eastern Ganga Dynasty?",
-    options: [
-      "Anantavarman Chodagangadeva",
-      "Narasimhadeva I",
-      "Kapilendradeva",
-      "Purushottamadeva"
-    ],
-    correctIndex: 1,
-    explanation: "King Langula Narasimhadeva I built the Konark Sun Temple in the 13th century (circa 1250 CE) to celebrate his military victories."
   };
 
   const handleSelect = (idx: number) => {
@@ -1914,6 +1934,9 @@ const InteractiveHeroPreview = () => {
     setShowResult(false);
   };
 
+  const marksLabel = card.marks?.toFixed(2) ?? '1.00';
+  const penaltyLabel = card.penalty?.toFixed(2) ?? '0.25';
+
   return (
     <div className="w-full bg-white border-2 border-slate-900/80 rounded-[2rem] p-6 sm:p-8 shadow-[8px_8px_0px_rgba(138,28,54,1)] relative overflow-hidden font-sans">
       <div className="absolute inset-0 pointer-events-none opacity-[0.03] grid-bg" />
@@ -1921,7 +1944,7 @@ const InteractiveHeroPreview = () => {
       <div className="flex items-center justify-between border-b-2 border-slate-100 pb-4 mb-5 shrink-0 relative z-10">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 bg-[#8A1C36] rounded-full animate-pulse" />
-          <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest leading-none">OPSC Prelims Mock</span>
+          <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest leading-none">{card.examLabel}</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-200 rounded-lg font-mono text-xs font-black text-slate-700">
@@ -1929,21 +1952,21 @@ const InteractiveHeroPreview = () => {
             {formatTimer(secondsLeft)}
           </div>
           <span className="text-xs font-extrabold text-[#8A1C36] bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100">
-            Q. 42
+            {card.questionNumber}
           </span>
         </div>
       </div>
 
       <div className="space-y-4 mb-6 relative z-10">
         <h3 className="text-base sm:text-lg font-serif font-extrabold text-slate-900 leading-relaxed">
-          {question.text}
+          {card.questionText}
         </h3>
       </div>
 
       <div className="space-y-3 mb-6 relative z-10">
-        {question.options.map((opt, idx) => {
+        {card.options.map((opt, idx) => {
           const isSelected = selectedOption === idx;
-          const isCorrect = idx === question.correctIndex;
+          const isCorrect = idx === card.correctIndex;
           const showSuccess = showResult && isCorrect;
           const showFailure = showResult && isSelected && !isCorrect;
 
@@ -1998,11 +2021,11 @@ const InteractiveHeroPreview = () => {
               <div className="flex items-center gap-2">
                 <span className={cn(
                   "px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border",
-                  selectedOption === question.correctIndex 
+                  selectedOption === card.correctIndex 
                     ? "bg-emerald-50 text-emerald-700 border-emerald-100" 
                     : "bg-rose-50 text-rose-700 border-rose-100"
                 )}>
-                  {selectedOption === question.correctIndex ? "Correct Answer! (+1.00 Marks)" : "Incorrect! (-0.25 Marks)"}
+                  {selectedOption === card.correctIndex ? `Correct Answer! (+${marksLabel} Marks)` : `Incorrect! (-${penaltyLabel} Marks)`}
                 </span>
                 <button 
                   onClick={handleReset}
@@ -2013,7 +2036,7 @@ const InteractiveHeroPreview = () => {
               </div>
               <p className="text-xs font-medium text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-100 font-serif">
                 <strong className="text-slate-800 font-extrabold block mb-1">Explanation:</strong>
-                {question.explanation}
+                {card.explanation}
               </p>
             </div>
           </motion.div>
@@ -2021,8 +2044,8 @@ const InteractiveHeroPreview = () => {
       </AnimatePresence>
       
       <div className="flex items-center justify-between border-t-2 border-slate-100 pt-4 mt-5 text-[10px] font-black text-slate-400 uppercase tracking-widest relative z-10 shrink-0">
-        <div>Marks: 1.00</div>
-        <div>Penalty: 0.25</div>
+        <div>Marks: {marksLabel}</div>
+        <div>Penalty: {penaltyLabel}</div>
         <div>Status: Interactive Demo</div>
       </div>
     </div>

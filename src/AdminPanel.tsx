@@ -201,6 +201,19 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
   const [formData, setFormData] = useState<any>(initialFormData);
   const [youtubeVideosInput, setYoutubeVideosInput] = useState('');
   const [newsUpdatesInput, setNewsUpdatesInput] = useState('');
+
+  // Hero Card state
+  const DEFAULT_HERO_CARD = {
+    examLabel: 'OPSC Prelims Mock',
+    questionNumber: 'Q. 42',
+    questionText: 'The historical Sun Temple of Konark, a UNESCO World Heritage site, was constructed by which ruler of the Eastern Ganga Dynasty?',
+    options: ['Anantavarman Chodagangadeva', 'Narasimhadeva I', 'Kapilendradeva', 'Purushottamadeva'],
+    correctIndex: 1,
+    explanation: 'King Langula Narasimhadeva I built the Konark Sun Temple in the 13th century (circa 1250 CE) to celebrate his military victories.',
+    marks: 1.00,
+    penalty: 0.25,
+  };
+  const [heroCard, setHeroCard] = useState<any>(DEFAULT_HERO_CARD);
   
   const DEFAULT_NEWS_UPDATES = [
     `🚀 New Mock Test Series released for OSSC CGL ${new Date().getFullYear()}`,
@@ -265,6 +278,14 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         } catch(e) {}
       } else {
         setNewsUpdatesInput(DEFAULT_NEWS_UPDATES);
+      }
+
+      const heroSettings = ex.find(e => e.name === 'SYSTEM_SETTINGS_HERO_CARD');
+      if (heroSettings && heroSettings.description) {
+        try {
+          const parsed = JSON.parse(heroSettings.description);
+          setHeroCard({ ...DEFAULT_HERO_CARD, ...parsed });
+        } catch(e) {}
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -1826,6 +1847,225 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                      } catch(err: any) { alert(`Failed to save settings: ${err.message || 'Unknown error'}`); }
                   }} className="px-10 py-3.5 premium-gradient text-white font-extrabold rounded-xl shadow-lg shadow-brand-500/20 hover:premium-glow transition-all active:scale-95 text-lg">Save YouTube Library</button>
                 </div>
+              {/* ── Hero Card Editor ── */}
+              <div className="mt-10 border-t-2 border-dashed border-slate-200 pt-10 space-y-8">
+                <div>
+                  <h3 className="text-3xl font-black text-slate-900 tracking-tight">🃏 Hero Card Editor</h3>
+                  <p className="text-slate-500 font-medium mt-2 text-lg">Customize the interactive question card displayed on the homepage hero section.</p>
+                </div>
+
+                {/* Info banner */}
+                <div className="bg-emerald-50 p-5 rounded-2xl border border-emerald-100 flex gap-4 items-start shadow-sm">
+                  <AlertCircle className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-extrabold text-slate-800">Live on homepage after save!</p>
+                    <p className="text-sm font-medium text-slate-600">
+                      Changes publish instantly to the home page hero card. Students will see the new question next time they load the page.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                  {/* LEFT: Form */}
+                  <div className="space-y-6">
+                    {/* Row 1: Exam Label + Question Number */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Exam Label</label>
+                        <input
+                          type="text"
+                          value={heroCard.examLabel}
+                          onChange={e => setHeroCard((h: any) => ({ ...h, examLabel: e.target.value }))}
+                          className="w-full px-4 py-3 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-bold text-sm bg-white"
+                          placeholder="OPSC Prelims Mock"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Question Number</label>
+                        <input
+                          type="text"
+                          value={heroCard.questionNumber}
+                          onChange={e => setHeroCard((h: any) => ({ ...h, questionNumber: e.target.value }))}
+                          className="w-full px-4 py-3 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-bold text-sm bg-white"
+                          placeholder="Q. 42"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Question Text */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Question Text *</label>
+                      <textarea
+                        rows={3}
+                        value={heroCard.questionText}
+                        onChange={e => setHeroCard((h: any) => ({ ...h, questionText: e.target.value }))}
+                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-bold text-sm bg-white resize-none"
+                        placeholder="Enter the question..."
+                      />
+                    </div>
+
+                    {/* Options A-D */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Answer Options — click the radio to set correct answer</label>
+                      {['A', 'B', 'C', 'D'].map((letter, idx) => (
+                        <div key={idx} className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setHeroCard((h: any) => ({ ...h, correctIndex: idx }))}
+                            className={cn(
+                              "shrink-0 w-8 h-8 rounded-lg font-black text-xs flex items-center justify-center border-2 transition-all",
+                              heroCard.correctIndex === idx
+                                ? "bg-emerald-500 text-white border-emerald-500 shadow-md"
+                                : "bg-slate-100 text-slate-500 border-slate-200 hover:border-brand-400"
+                            )}
+                            title={heroCard.correctIndex === idx ? "Correct answer" : "Click to set as correct"}
+                          >
+                            {heroCard.correctIndex === idx ? '✓' : letter}
+                          </button>
+                          <input
+                            type="text"
+                            value={heroCard.options[idx] || ''}
+                            onChange={e => {
+                              const newOptions = [...heroCard.options];
+                              newOptions[idx] = e.target.value;
+                              setHeroCard((h: any) => ({ ...h, options: newOptions }));
+                            }}
+                            className={cn(
+                              "flex-1 px-4 py-2.5 rounded-xl border-2 outline-none transition-all font-bold text-sm bg-white",
+                              heroCard.correctIndex === idx
+                                ? "border-emerald-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 bg-emerald-50/50"
+                                : "border-slate-100 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+                            )}
+                            placeholder={`Option ${letter}`}
+                          />
+                        </div>
+                      ))}
+                      <p className="text-xs text-slate-400 font-semibold pt-1">
+                        🟢 Green button = correct answer. Click any button to change.
+                      </p>
+                    </div>
+
+                    {/* Explanation */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Explanation</label>
+                      <textarea
+                        rows={3}
+                        value={heroCard.explanation}
+                        onChange={e => setHeroCard((h: any) => ({ ...h, explanation: e.target.value }))}
+                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-bold text-sm bg-white resize-none"
+                        placeholder="Explain the correct answer..."
+                      />
+                    </div>
+
+                    {/* Marks + Penalty */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Marks per Q</label>
+                        <input
+                          type="number"
+                          step="0.25"
+                          min="0"
+                          value={heroCard.marks}
+                          onChange={e => setHeroCard((h: any) => ({ ...h, marks: parseFloat(e.target.value) || 1 }))}
+                          className="w-full px-4 py-3 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-bold text-sm bg-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Negative Marking</label>
+                        <input
+                          type="number"
+                          step="0.05"
+                          min="0"
+                          value={heroCard.penalty}
+                          onChange={e => setHeroCard((h: any) => ({ ...h, penalty: parseFloat(e.target.value) || 0 }))}
+                          className="w-full px-4 py-3 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-bold text-sm bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Save */}
+                    <div className="flex justify-end pt-2 border-t border-slate-100">
+                      <button
+                        onClick={async () => {
+                          try {
+                            const updated = {
+                              name: 'SYSTEM_SETTINGS_HERO_CARD',
+                              description: JSON.stringify(heroCard),
+                              icon: '🃏',
+                              category: 'system' as const
+                            };
+                            const exists = exams.find(e => e.name === 'SYSTEM_SETTINGS_HERO_CARD');
+                            if (exists && exists.id) {
+                              await examService.updateExam(exists.id, updated);
+                            } else {
+                              await examService.addExam(updated);
+                            }
+                            await fetchData();
+                            alert('✅ Hero card saved and published to homepage!');
+                          } catch (err: any) { alert(`Failed to save: ${err.message || 'Unknown error'}`); }
+                        }}
+                        className="px-10 py-3.5 premium-gradient text-white font-extrabold rounded-xl shadow-lg shadow-brand-500/20 hover:premium-glow transition-all active:scale-95 text-lg"
+                      >
+                        Save Hero Card
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* RIGHT: Live Preview */}
+                  <div className="space-y-3">
+                    <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Live Preview</label>
+                    <div className="w-full bg-white border-2 border-slate-900/80 rounded-[1.5rem] p-6 shadow-[6px_6px_0px_rgba(138,28,54,1)] relative overflow-hidden font-sans">
+                      <div className="absolute inset-0 pointer-events-none opacity-[0.03] grid-bg" />
+
+                      {/* Card Header */}
+                      <div className="flex items-center justify-between border-b-2 border-slate-100 pb-3 mb-4">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 bg-[#8A1C36] rounded-full" />
+                          <span className="text-[9px] font-black text-slate-800 uppercase tracking-widest">{heroCard.examLabel || 'EXAM LABEL'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono font-black text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">⏱ 08:42</span>
+                          <span className="text-[10px] font-extrabold text-[#8A1C36] bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100">{heroCard.questionNumber || 'Q. 1'}</span>
+                        </div>
+                      </div>
+
+                      {/* Question */}
+                      <p className="text-xs font-bold text-slate-900 leading-relaxed mb-3 line-clamp-3">{heroCard.questionText || 'Question text will appear here...'}</p>
+
+                      {/* Options */}
+                      <div className="space-y-1.5 mb-3">
+                        {(heroCard.options || []).map((opt: string, idx: number) => (
+                          <div
+                            key={idx}
+                            className={cn(
+                              "flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-[10px] font-bold",
+                              idx === heroCard.correctIndex
+                                ? "border-emerald-400 bg-emerald-50 text-emerald-800"
+                                : "border-slate-200 bg-slate-50 text-slate-700"
+                            )}
+                          >
+                            <span className={cn(
+                              "w-5 h-5 rounded flex items-center justify-center font-black text-[9px] shrink-0",
+                              idx === heroCard.correctIndex ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-500"
+                            )}>
+                              {String.fromCharCode(65 + idx)}
+                            </span>
+                            <span className="truncate">{opt || `Option ${String.fromCharCode(65 + idx)}`}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Footer */}
+                      <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                        <span>Marks: {heroCard.marks?.toFixed(2)}</span>
+                        <span>Penalty: {heroCard.penalty?.toFixed(2)}</span>
+                        <span>Status: Interactive Demo</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-400 font-semibold text-center">Preview updates as you type. Green = correct answer.</p>
+                  </div>
+                </div>
+              </div>
              </div>
           ) : activeTab === 'updates' ? (
             <div className="glass rounded-[2rem] border border-slate-200/50 shadow-xl overflow-hidden bg-white/70 p-8 sm:p-12 space-y-8">
