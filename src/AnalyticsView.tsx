@@ -497,12 +497,15 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
   const [chatHistory, setChatHistory] = useState<any[]>([]);
   const [chatLoading, setChatLoading] = useState<boolean>(false);
   const [checkedActions, setCheckedActions] = useState<Record<number, boolean>>({});
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll chat to bottom
+  // Auto-scroll chat container to bottom locally
   useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
     }
   }, [chatHistory, chatLoading]);
 
@@ -1275,7 +1278,7 @@ Keep your answers short, structured, and focused on helping them improve their O
                     >
                       {/* Left: Chat Container */}
                       <div className="lg:col-span-8 flex flex-col justify-between border border-slate-200 rounded-2xl bg-slate-50/50 overflow-hidden h-[320px]">
-                        <div className="p-4 overflow-y-auto space-y-3.5 flex-1 custom-scrollbar text-xs">
+                        <div ref={chatContainerRef} className="p-4 overflow-y-auto space-y-3.5 flex-1 custom-scrollbar text-xs">
                           {chatHistory.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 p-6">
                               <Cpu className="w-10 h-10 text-slate-400 mb-3 animate-float-gentle" />
@@ -1318,7 +1321,6 @@ Keep your answers short, structured, and focused on helping them improve their O
                               </div>
                             </div>
                           )}
-                          <div ref={chatEndRef} />
                         </div>
 
                         {/* Text Input */}
