@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -9,7 +9,9 @@ import {
 import { 
   TrendingUp, TrendingDown, Target, Zap, 
   Timer, History, LayoutDashboard, Rocket,
-  ArrowRight, ChevronDown, Crosshair, Flame
+  ArrowRight, ChevronDown, Crosshair, Flame,
+  Sparkles, Brain, Cpu, Send, Activity, 
+  Gauge, Lightbulb, Loader2, RefreshCw
 } from 'lucide-react';
 import { activityTracker } from './lib/activityTracker';
 import { cn } from './lib/utils';
@@ -360,6 +362,26 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
   });
   const [loading, setLoading] = useState(() => !user?.id);
 
+  // AI Performance Lab States
+  const [aiInsight, setAiInsight] = useState<string>('');
+  const [actionItems, setActionItems] = useState<any[]>([]);
+  const [loadingAi, setLoadingAi] = useState<boolean>(false);
+  const [scanningPhase, setScanningPhase] = useState<number>(0); // 0 = idle, 1 = scanning, 2 = loaded
+  const [scanStep, setScanStep] = useState<string>('');
+  const [aiPanelTab, setAiPanelTab] = useState<'diagnostic' | 'actionPlan' | 'chat'>('diagnostic');
+  const [chatInput, setChatInput] = useState<string>('');
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
+  const [chatLoading, setChatLoading] = useState<boolean>(false);
+  const [checkedActions, setCheckedActions] = useState<Record<number, boolean>>({});
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatHistory, chatLoading]);
+
   useEffect(() => {
     const rawData = (propActivities && propActivities.length > 0)
       ? propActivities
@@ -644,6 +666,188 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
     };
   }, [activities]);
 
+  // Load AI Insights from cache if available
+  useEffect(() => {
+    if (!user?.id || !stats) return;
+    const cacheKey = `oep_ai_insights_${user.id}_${stats.totalTests}_${stats.avgScore}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        setAiInsight(parsed.diagnostic || '');
+        setActionItems(parsed.actionPlan || []);
+        setScanningPhase(2);
+      } catch (e) {}
+    } else {
+      setScanningPhase(0);
+      setAiInsight('');
+      setActionItems([]);
+    }
+  }, [user?.id, stats?.totalTests, stats?.avgScore]);
+
+  const cleanJson = (str: string) => {
+    let cleaned = str.trim();
+    if (cleaned.startsWith('```')) {
+      cleaned = cleaned.replace(/^```(json)?/, '').replace(/```$/, '').trim();
+    }
+    return cleaned;
+  };
+
+  const runAiAnalysis = async (force = false) => {
+    if (!stats) return;
+    const cacheKey = `oep_ai_insights_${user?.id}_${stats.totalTests}_${stats.avgScore}`;
+    
+    setLoadingAi(true);
+    setScanningPhase(1);
+    
+    const steps = [
+      "Ingesting mock test history...",
+      "Correlating accuracy & speed data...",
+      "Analyzing subject-wise strengths...",
+      "Synthesizing customized action plan..."
+    ];
+
+    for (let i = 0; i < steps.length; i++) {
+      setScanStep(steps[i]);
+      await new Promise(resolve => setTimeout(resolve, 800));
+    }
+
+    try {
+      const systemPrompt = `You are the OdishaExamPrep AI Performance Laboratory, an elite exam coaching intelligence. You generate performance insights in JSON format.
+Your output must be a JSON object with:
+{
+  "diagnostic": "A detailed executive performance analysis (3-4 sentences) highlighting cognitive strengths, speed/accuracy trade-offs, and critical focus areas in Odisha exams.",
+  "actionPlan": [
+    { "task": "A highly specific recommendation, e.g., 'Attempt 25 intermediate math questions'", "boost": "+5%", "timeframe": "2 days" },
+    ... (exactly 3 items)
+  ]
+}`;
+
+      const response = await fetch('/api/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'meta/llama-3.3-70b-instruct',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `Analyze this student data and return JSON:\n${JSON.stringify(stats, null, 2)}` }
+          ],
+          temperature: 0.3,
+          response_format: { type: 'json_object' }
+        })
+      });
+
+      if (!response.ok) throw new Error('API connection failed');
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content || '';
+      
+      const parsed = JSON.parse(cleanJson(content));
+      setAiInsight(parsed.diagnostic || '');
+      setActionItems(parsed.actionPlan || []);
+      sessionStorage.setItem(cacheKey, JSON.stringify(parsed));
+      setScanningPhase(2);
+    } catch (err) {
+      console.error(err);
+      // Fallback
+      const fallbackData = {
+        diagnostic: `Based on your ${stats.totalTests} completed mock tests, you have shown an average accuracy of ${stats.avgAccuracy}%. Your speed is ${stats.avgTimePerQuestion.toFixed(0)}s per question. Focus on reviewing wrong answers and practicing weaker subjects.`,
+        actionPlan: [
+          { task: "Practice 15 topic-wise tests in your weakest subjects", boost: "+8%", timeframe: "3 days" },
+          { task: "Attempt a full-length mock test focusing on speed (under 45s per Q)", boost: "+5%", timeframe: "5 days" },
+          { task: "Review all incorrect answers in your test history log", boost: "+10%", timeframe: "1 day" }
+        ]
+      };
+      setAiInsight(fallbackData.diagnostic);
+      setActionItems(fallbackData.actionPlan);
+      setScanningPhase(2);
+    } finally {
+      setLoadingAi(false);
+    }
+  };
+
+  const sendMessage = async (customText?: string) => {
+    const textToSend = customText || chatInput;
+    if (!textToSend.trim() || chatLoading) return;
+
+    const userMsg = { role: 'user', content: textToSend };
+    setChatHistory(prev => [...prev, userMsg]);
+    setChatInput('');
+    setChatLoading(true);
+
+    try {
+      const systemPrompt = `You are the OdishaExamPrep AI Coach, an elite personal tutor. You help students understand their performance metrics.
+Use this student context in your replies:
+- Average Score: ${stats.avgScore}%
+- Accuracy: ${stats.avgAccuracy}%
+- Speed: ${stats.avgTimePerQuestion.toFixed(1)}s per question
+- Total Tests: ${stats.totalTests}
+- Strengths/Weaknesses: ${stats.examAnalysis.map(e => `${e.examName}: ${[...(e.mockTests || []), ...(e.practiceTests || [])].map(s => `${s.name} (${s.avgScore}%)`).join(', ')}`).join('; ')}
+
+Keep your answers short, structured, and focused on helping them improve their Odisha exam scores. Do not mention external AI brands.`;
+
+      const apiMessages = [
+        { role: 'system', content: systemPrompt },
+        ...chatHistory.map(m => ({ role: m.role, content: m.content })),
+        userMsg
+      ];
+
+      const response = await fetch('/api/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'meta/llama-3.1-8b-instruct',
+          messages: apiMessages,
+          temperature: 0.4,
+          stream: true
+        })
+      });
+
+      if (!response.ok) throw new Error('API connection failed');
+      
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let assistantMsg = { role: 'assistant', content: '' };
+      setChatHistory(prev => [...prev, assistantMsg]);
+
+      if (reader) {
+        let buffer = "";
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            const cleanLine = line.trim();
+            if (cleanLine.startsWith('data: ')) {
+              const jsonStr = cleanLine.substring(6);
+              if (jsonStr === '[DONE]') continue;
+              try {
+                const parsed = JSON.parse(jsonStr);
+                const text = parsed.choices?.[0]?.delta?.content || "";
+                if (text) {
+                  assistantMsg.content += text;
+                  setChatHistory(prev => {
+                    const next = [...prev];
+                    next[next.length - 1] = { ...assistantMsg };
+                    return next;
+                  });
+                }
+              } catch(e){}
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setChatHistory(prev => [...prev, { role: 'assistant', content: "Sorry, I am facing a connection issue right now. Please try again in a moment!" }]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
   if (loading) return (
     <div className="relative w-full min-h-screen overflow-hidden">
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] bg-gradient-to-br from-brand-100/20 via-purple-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" />
@@ -723,6 +927,335 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
             sparklineData={stats.chartData.map((_, i) => i + 1)}
           />
         </div>
+
+        {/* AI Performance Lab */}
+        <motion.div
+          variants={stagger.itemFadeUp}
+          className="relative overflow-hidden bg-white text-slate-800 rounded-[2.5rem] border border-slate-200/60 shadow-xl p-6 sm:p-8"
+        >
+          {/* Subtle Glow Orbs */}
+          <div className="absolute top-[-100px] right-[-100px] w-80 h-80 rounded-full bg-[#8A1C36]/5 blur-[100px] pointer-events-none" />
+          <div className="absolute bottom-[-100px] left-[-100px] w-80 h-80 rounded-full bg-indigo-500/5 blur-[100px] pointer-events-none" />
+
+          {/* Faint grid pattern background */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.008)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.008)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none opacity-40" />
+
+          <div className="relative z-10">
+            {scanningPhase === 0 && (
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6 py-4">
+                <div className="flex items-center gap-5">
+                  <div className="w-16 h-16 rounded-2xl bg-[#8A1C36]/5 border border-[#8A1C36]/15 flex items-center justify-center relative shadow-sm">
+                    <Brain className="w-9 h-9 text-[#8A1C36] animate-pulse" />
+                    <div className="absolute inset-0 rounded-2xl border-2 border-[#8A1C36]/10 animate-ping" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="px-2.5 py-0.5 bg-[#8A1C36]/10 border border-[#8A1C36]/20 text-[#8A1C36] text-[9px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1 shadow-sm leading-none">
+                        <Cpu className="w-2.5 h-2.5" /> DeepSeek NIM
+                      </span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider">Ready to diagnose</span>
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-sans font-black tracking-tight leading-tight text-slate-900">AI Performance & Diagnostic Laboratory</h3>
+                    <p className="text-slate-500 text-xs sm:text-sm font-medium mt-1.5 max-w-xl">
+                      Unlock instant cognitive diagnostics, custom time-management strategy, and a targeted exam preparation roadmap.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => runAiAnalysis()}
+                  className="w-full md:w-auto px-8 h-[52px] rounded-2xl bg-gradient-to-r from-[#8A1C36] via-[#a32240] to-indigo-600 hover:from-[#76142c] hover:to-indigo-700 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 hover:scale-[1.02] active:scale-98 transition-all flex items-center justify-center gap-2 group cursor-pointer border-none"
+                >
+                  <Sparkles className="w-4 h-4 fill-white/10 group-hover:scale-110 transition-transform" />
+                  Initialize AI Scan
+                </button>
+              </div>
+            )}
+
+            {scanningPhase === 1 && (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <div className="relative w-28 h-28 mb-6 flex items-center justify-center">
+                  <div className="absolute inset-0 rounded-full border-4 border-slate-100 border-t-[#8A1C36] animate-spin" />
+                  <div className="absolute inset-3 rounded-full border-4 border-slate-105/5 border-b-indigo-400 animate-spin [animation-duration:1.5s]" />
+                  <div className="absolute inset-6 rounded-full border-2 border-slate-105/10 border-t-emerald-400 animate-spin [animation-duration:0.8s]" />
+                  <Brain className="w-8 h-8 text-[#8A1C36] animate-pulse" />
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs font-black uppercase tracking-widest text-slate-550 flex items-center gap-1.5 justify-center">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#8A1C36]" />
+                    Holographic Scanning Active
+                  </div>
+                  <h4 className="text-lg font-black tracking-tight mt-1 text-slate-800">{scanStep}</h4>
+                  <div className="w-64 h-1 bg-slate-100 rounded-full overflow-hidden mt-4 mx-auto relative border border-slate-200/50">
+                    <motion.div 
+                      className="h-full bg-gradient-to-r from-[#8A1C36] to-indigo-500 rounded-full"
+                      animate={{ x: [-200, 200] }}
+                      transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                      style={{ width: '40%' }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {scanningPhase === 2 && (
+              <div className="space-y-6">
+                {/* AI Panel Header */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200/60 pb-5 gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center">
+                      <Cpu className="w-5.5 h-5.5 text-[#8A1C36]" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-sans font-black tracking-tight leading-none text-slate-900">AI Diagnostics Center</h3>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1.5">Synthesized via DeepSeek Cognitive Engine</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                    {/* Tab Navigation */}
+                    <div className="flex bg-slate-100 border border-slate-200/60 p-1 rounded-xl w-full sm:w-auto">
+                      {(['diagnostic', 'actionPlan', 'chat'] as const).map((tab) => (
+                        <button
+                          key={tab}
+                          onClick={() => setAiPanelTab(tab)}
+                          className={cn(
+                            "px-4 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex-1 sm:flex-initial border-none",
+                            aiPanelTab === tab 
+                              ? "bg-white text-[#8A1C36] shadow-sm border border-slate-200/40" 
+                              : "text-slate-500 hover:text-slate-800"
+                          )}
+                        >
+                          {tab === 'diagnostic' ? 'Insights' : tab === 'actionPlan' ? 'Action Plan' : 'AI Coach'}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => runAiAnalysis(true)}
+                      disabled={loadingAi}
+                      className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                      title="Re-Scan Analytics"
+                    >
+                      <RefreshCw className={cn("w-4 h-4", loadingAi && "animate-spin")} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* AI Panel Tabs Body */}
+                <div className="min-h-[220px]">
+                  {aiPanelTab === 'diagnostic' && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center"
+                    >
+                      <div className="lg:col-span-8 space-y-4">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 bg-[#8A1C36]/10 border border-[#8A1C36]/20 text-[#8A1C36] text-[9px] font-black uppercase tracking-widest rounded-lg">Performance Report</span>
+                          <span className="text-[10px] font-bold text-slate-500">Targeting Odisha Competitive Exams</span>
+                        </div>
+                        <p className="text-slate-700 text-sm sm:text-base font-medium leading-relaxed max-w-3xl">
+                          {aiInsight}
+                        </p>
+                      </div>
+
+                      {/* Visual metrics cards */}
+                      <div className="lg:col-span-4 space-y-3">
+                        <div className="p-4 bg-emerald-50/70 border border-emerald-100 rounded-2xl flex items-start gap-3.5 hover:bg-emerald-50/90 transition-colors">
+                          <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700 shadow-sm shrink-0">
+                            <Gauge className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-0.5">Top Cognitive Strength</h4>
+                            <p className="text-slate-700 text-xs font-semibold leading-relaxed">
+                              {stats.avgAccuracy >= 70 ? 'Superior Accuracy thresholds under moderate test length pacing.' : 'Consistent performance stability in fundamental core topics.'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="p-4 bg-amber-50/70 border border-amber-100 rounded-2xl flex items-start gap-3.5 hover:bg-amber-50/90 transition-colors">
+                          <div className="p-2 rounded-xl bg-amber-100 text-amber-700 shadow-sm shrink-0">
+                            <Activity className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-0.5">Primary Cognitive Blocker</h4>
+                            <p className="text-slate-700 text-xs font-semibold leading-relaxed">
+                              {stats.avgTimePerQuestion > 60 ? 'Solving speed decay. Pacing exceeds 60s limit on complex questions.' : 'Precision drop detected under high-speed snap answers.'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {aiPanelTab === 'actionPlan' && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-4"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="px-2 py-0.5 bg-[#8A1C36]/10 border border-[#8A1C36]/20 text-[#8A1C36] text-[9px] font-black uppercase tracking-widest rounded-lg">Study Checklist</span>
+                        <span className="text-[10px] font-bold text-slate-500">Check off items as you complete them to lift your score</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {actionItems.map((item, idx) => (
+                          <div 
+                            key={idx}
+                            onClick={() => setCheckedActions(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                            className={cn(
+                              "p-5 bg-slate-50/70 border border-slate-200/60 rounded-2xl flex flex-col justify-between gap-4 cursor-pointer hover:bg-slate-100/50 hover:border-[#8A1C36]/30 hover:shadow-md transition-all duration-300 relative overflow-hidden group",
+                              checkedActions[idx] && "bg-[#8A1C36]/5 border-[#8A1C36]/20 hover:border-[#8A1C36]/35"
+                            )}
+                          >
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-[#8A1C36]/2 rounded-full blur-xl group-hover:bg-[#8A1C36]/5 transition-colors" />
+
+                            <div className="flex items-start gap-3">
+                              <div className={cn(
+                                "w-5 h-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-colors",
+                                checkedActions[idx] 
+                                  ? "bg-emerald-500 border-emerald-400 text-white" 
+                                  : "border-slate-300 text-transparent"
+                              )}>
+                                <span className="text-[10px] font-black leading-none">✓</span>
+                              </div>
+                              <p className={cn(
+                                "text-slate-700 text-xs sm:text-sm font-semibold leading-relaxed group-hover:text-slate-900 transition-colors",
+                                checkedActions[idx] && "line-through text-slate-400 group-hover:text-slate-400"
+                              )}>
+                                {item.task}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-2 mt-auto pt-2">
+                              <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-[9px] font-black rounded-lg border border-emerald-250/30 uppercase">
+                                Lift {item.boost || '+5%'}
+                              </span>
+                              <span className="px-2 py-1 bg-slate-100 text-slate-650 text-[9px] font-black rounded-lg border border-slate-200 uppercase">
+                                {item.timeframe || '3 days'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {aiPanelTab === 'chat' && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch"
+                    >
+                      {/* Left: Chat Container */}
+                      <div className="lg:col-span-8 flex flex-col justify-between border border-slate-200 rounded-2xl bg-slate-50/50 overflow-hidden h-[320px]">
+                        <div className="p-4 overflow-y-auto space-y-3.5 flex-1 custom-scrollbar text-xs">
+                          {chatHistory.length === 0 ? (
+                            <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 p-6">
+                              <Cpu className="w-10 h-10 text-slate-400 mb-3 animate-float-gentle" />
+                              <p className="font-semibold text-sm text-slate-750 mb-1">Your AI Exam Coach is ready</p>
+                              <p className="text-[10px] font-medium leading-relaxed max-w-xs text-slate-500">Ask specific questions about your mock scores, speed problems, or request target study advice.</p>
+                            </div>
+                          ) : (
+                            chatHistory.map((msg, i) => (
+                              <div 
+                                key={i} 
+                                className={cn(
+                                  "flex gap-3 max-w-[85%] animate-in fade-in slide-in-from-bottom-2 duration-305",
+                                  msg.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
+                                )}
+                              >
+                                <div className={cn(
+                                  "w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-[10px] font-black shadow-sm",
+                                  msg.role === 'user' ? "bg-[#8A1C36] text-white" : "bg-slate-200 text-slate-700"
+                                )}>
+                                  {msg.role === 'user' ? 'ME' : 'AI'}
+                                </div>
+                                <div className={cn(
+                                  "p-3 rounded-2xl leading-relaxed text-xs shadow-sm",
+                                  msg.role === 'user' 
+                                    ? "bg-[#8A1C36] text-white rounded-tr-none" 
+                                    : "bg-white border border-slate-200 text-slate-800 rounded-tl-none"
+                                )}>
+                                  {msg.content}
+                                </div>
+                              </div>
+                            ))
+                          )}
+                          {chatLoading && chatHistory[chatHistory.length - 1]?.role === 'user' && (
+                            <div className="flex gap-3 max-w-[85%] items-center mr-auto">
+                              <div className="w-6 h-6 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center text-[10px] font-black shadow-sm">
+                                AI
+                              </div>
+                              <div className="p-3 rounded-2xl bg-white border border-slate-200 text-slate-550 rounded-tl-none flex items-center gap-1.5 shadow-sm">
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#8A1C36]" /> Thinking...
+                              </div>
+                            </div>
+                          )}
+                          <div ref={chatEndRef} />
+                        </div>
+
+                        {/* Text Input */}
+                        <div className="p-3 border-t border-slate-200 bg-white flex gap-2.5 items-center">
+                          <input
+                            type="text"
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                            disabled={chatLoading}
+                            placeholder="Type a query about your statistics (e.g. 'How can I fix speed?')..."
+                            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#8A1C36]/50 focus:bg-white disabled:opacity-50 transition-all font-sans"
+                          />
+                          <button
+                            onClick={() => sendMessage()}
+                            disabled={!chatInput.trim() || chatLoading}
+                            className="p-2.5 rounded-xl bg-[#8A1C36] hover:bg-[#76142c] text-white disabled:opacity-50 transition-all cursor-pointer shrink-0 border-none flex items-center justify-center"
+                          >
+                            <Send className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Right: Quick Chips Panel */}
+                      <div className="lg:col-span-4 flex flex-col justify-between gap-3 bg-slate-50/50 border border-slate-200/80 p-4 rounded-2xl">
+                        <div>
+                          <h4 className="text-[10px] font-black text-[#8A1C36] uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                            <Lightbulb className="w-3.5 h-3.5" /> Study Assistant
+                          </h4>
+                          <p className="text-[10px] font-medium text-slate-500 leading-relaxed mb-4">Click any prompt to trigger instant diagnostics from your AI coach.</p>
+                          
+                          <div className="flex flex-col gap-2.5">
+                            {[
+                              "Analyze my speed versus accuracy.",
+                              "Give me shortcuts for Mathematics.",
+                              "Why is my momentum score low?",
+                              "Design a 5-day custom study plan."
+                            ].map((chip, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => sendMessage(chip)}
+                                disabled={chatLoading}
+                                className="text-left p-2.5 bg-white hover:bg-brand-50 border border-slate-200/60 hover:border-brand-200 rounded-xl text-[11px] font-semibold text-slate-600 hover:text-[#8A1C36] transition-all cursor-pointer leading-tight disabled:opacity-50 shadow-sm"
+                              >
+                                {chip}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="text-[8.5px] font-bold text-slate-400 uppercase tracking-widest text-center mt-4">
+                          OdishaExamPrep Cognitive Lab
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
 
         {/* Charts & Breakdown Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
