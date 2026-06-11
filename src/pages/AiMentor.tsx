@@ -4564,7 +4564,7 @@ JSON structure:
                                       handleSendMessage(`Provide a comprehensive, exam-oriented study summary for: "${topic.name}" (${topic.desc}) under the context of the "${targetExam}" syllabus. List 3 high-yield exam subtopics, 2 historical/factual reference points or formulas to memorize for the exam, and 1 core takeaway/practical tip.`);
                                       scrollToElement('chat-pane', { block: 'start' });
                                     }}
-                                    className="flex-1 py-2 bg-slate-50 border border-slate-200/50 hover:border-slate-200/60 hover:bg-slate-50 text-slate-700 hover:text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 shadow-sm"
+                                    className="flex-1 py-2 bg-slate-50 border border-slate-200/60 hover:bg-[#8A1C36]/8 hover:border-[#8A1C36]/30 hover:text-[#8A1C36] text-slate-600 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 shadow-sm"
                                     title="Ask personal AI tutor for summary"
                                   >
                                     <HelpCircle className="w-3.5 h-3.5" />
