@@ -367,6 +367,19 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({ isBottomNavVisibl
     }
   }, [isOpen, isMinimized]);
 
+  // Listen for body attribute changes set by DashboardContent when a test is active
+  const [isTestMode, setIsTestMode] = useState(() => document.body.hasAttribute('data-test-mode'));
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsTestMode(document.body.hasAttribute('data-test-mode'));
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-test-mode'] });
+    return () => observer.disconnect();
+  }, []);
+
+  if (isTestMode) return null;
+
   // Only for logged-in users
   if (!user) return null;
 
