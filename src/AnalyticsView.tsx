@@ -16,6 +16,130 @@ import {
 import { activityTracker } from './lib/activityTracker';
 import { cn } from './lib/utils';
 import { stagger } from './lib/animations';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+
+const MathTextRenderer = ({ text, isUser = false }: { text: string; isUser?: boolean }) => {
+  if (!text) return null;
+  const parts = text.split(/(\$\$.*?\$\$|\$.*?\$)/g);
+  return (
+    <span>
+      {parts.map((part, index) => {
+        if (part.startsWith('$$') && part.endsWith('$$')) {
+          const math = part.slice(2, -2);
+          try {
+            const html = katex.renderToString(math, {
+              throwOnError: false,
+              displayMode: true,
+            });
+            return (
+              <span
+                key={index}
+                className="block my-2 overflow-x-auto custom-scrollbar text-center"
+                dangerouslySetInnerHTML={{ __html: html }}
+              />
+            );
+          } catch (e) {
+            return <code key={index}>{part}</code>;
+          }
+        } else if (part.startsWith('$') && part.endsWith('$')) {
+          const math = part.slice(1, -1);
+          try {
+            const html = katex.renderToString(math, {
+              throwOnError: false,
+              displayMode: false,
+            });
+            return (
+              <span
+                key={index}
+                className={cn(
+                  "inline-block px-0.5 align-middle font-serif font-bold",
+                  isUser ? "text-amber-250" : "text-[#8A1C36]"
+                )}
+                dangerouslySetInnerHTML={{ __html: html }}
+              />
+            );
+          } catch (e) {
+            return <code key={index}>{part}</code>;
+          }
+        } else {
+          return <span key={index}>{part}</span>;
+        }
+      })}
+    </span>
+  );
+};
+
+const MarkdownMathRenderer = ({ text, isUser = false }: { text: string; isUser?: boolean }) => {
+  if (!text) return null;
+  const lines = text.split('\n');
+  return (
+    <div className="space-y-2 text-left w-full whitespace-pre-wrap">
+      {lines.map((line, lineIdx) => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('### ')) {
+          return <h4 key={lineIdx} className={cn("text-xs font-black mt-3 mb-1 uppercase tracking-wider", isUser ? "text-white" : "text-[#8A1C36]")}><MathTextRenderer text={trimmed.substring(4)} isUser={isUser} /></h4>;
+        }
+        if (trimmed.startsWith('## ')) {
+          return <h3 key={lineIdx} className={cn("text-sm font-black mt-4 mb-1.5 uppercase tracking-wide", isUser ? "text-white" : "text-slate-900")}><MathTextRenderer text={trimmed.substring(3)} isUser={isUser} /></h3>;
+        }
+        if (trimmed.startsWith('# ')) {
+          return <h2 key={lineIdx} className={cn("text-base font-black mt-5 mb-2", isUser ? "text-white" : "text-slate-900")}><MathTextRenderer text={trimmed.substring(2)} isUser={isUser} /></h2>;
+        }
+
+        let isBullet = false;
+        let listContent = trimmed;
+        if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
+          isBullet = true;
+          listContent = trimmed.substring(2);
+        }
+
+        const numMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
+        let isNumbered = false;
+        let numLabel = "";
+        if (numMatch) {
+          isNumbered = true;
+          numLabel = numMatch[1];
+          listContent = numMatch[2];
+        }
+
+        const renderInline = (str: string) => {
+          const parts = str.split(/(\*\*.*?\*\*)/g);
+          return parts.map((part, pIdx) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+              return <strong key={pIdx} className={cn("font-extrabold", isUser ? "text-white" : "text-slate-900")}><MathTextRenderer text={part.slice(2, -2)} isUser={isUser} /></strong>;
+            }
+            return <span key={pIdx}><MathTextRenderer text={part} isUser={isUser} /></span>;
+          });
+        };
+
+        if (isBullet) {
+          return (
+            <div key={lineIdx} className="flex items-start gap-2 pl-3 my-0.5">
+              <span className={cn("w-1.5 h-1.5 rounded-full shrink-0 mt-2", isUser ? "bg-brand-200" : "bg-[#8A1C36]")} />
+              <span className={cn("leading-relaxed font-semibold flex-1 text-xs text-slate-700", isUser ? "text-brand-50" : "text-slate-700")}>{renderInline(listContent)}</span>
+            </div>
+          );
+        }
+
+        if (isNumbered) {
+          return (
+            <div key={lineIdx} className="flex items-start gap-2 pl-3 my-0.5">
+              <span className={cn("font-black text-xs shrink-0 mt-0.5", isUser ? "text-brand-200" : "text-[#8A1C36]")}>{numLabel}.</span>
+              <span className={cn("leading-relaxed font-semibold flex-1 text-xs text-slate-700", isUser ? "text-brand-50" : "text-slate-700")}>{renderInline(listContent)}</span>
+            </div>
+          );
+        }
+
+        return (
+          <p key={lineIdx} className={cn("leading-relaxed font-semibold text-xs text-slate-700", isUser ? "text-brand-50" : "text-slate-700")}>
+            {renderInline(line)}
+          </p>
+        );
+      })}
+    </div>
+  );
+};
 
 const AnimatedCounter = ({ value, suffix = "", decimals = 0 }: { value: number, suffix?: string, decimals?: number }) => {
   const [displayValue, setDisplayValue] = useState(0);
@@ -1179,7 +1303,7 @@ Keep your answers short, structured, and focused on helping them improve their O
                                     ? "bg-[#8A1C36] text-white rounded-tr-none" 
                                     : "bg-white border border-slate-200 text-slate-800 rounded-tl-none"
                                 )}>
-                                  {msg.content}
+                                  <MarkdownMathRenderer text={msg.content} isUser={msg.role === 'user'} />
                                 </div>
                               </div>
                             ))
