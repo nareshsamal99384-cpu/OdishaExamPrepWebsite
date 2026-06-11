@@ -214,6 +214,22 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
     penalty: 0.25,
   };
   const [heroCard, setHeroCard] = useState<any>(DEFAULT_HERO_CARD);
+
+  // Exam Registry state
+  const STATUS_OPTIONS = [
+    { value: 'notification', label: 'Notification Released', color: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+    { value: 'admit-card', label: 'Admit Card Out', color: 'bg-amber-50 text-amber-700 border-amber-100' },
+    { value: 'applications', label: 'Applications Active', color: 'bg-blue-50 text-blue-700 border-blue-100' },
+    { value: 'result', label: 'Result Declared', color: 'bg-purple-50 text-purple-700 border-purple-100' },
+    { value: 'postponed', label: 'Postponed', color: 'bg-rose-50 text-rose-700 border-rose-100' },
+    { value: 'upcoming', label: 'Upcoming', color: 'bg-slate-50 text-slate-600 border-slate-200' },
+  ];
+  const DEFAULT_EXAM_REGISTRY = [
+    { exam: 'OPSC Civil Services Examination (OCS)', status: 'notification', date: 'Prelims: July 15, 2026', actionLabel: 'Practice OPSC', examKey: 'opsc' },
+    { exam: 'OSSC Combined Graduate Level (CGL)', status: 'admit-card', date: 'Exam: June 28, 2026', actionLabel: 'Practice OSSC', examKey: 'ossc' },
+    { exam: 'OSSSC RI/ARI & Amin Recruitment', status: 'applications', date: 'Closing: June 30, 2026', actionLabel: 'Practice OSSSC', examKey: 'osssc' },
+  ];
+  const [examRegistry, setExamRegistry] = useState<any[]>(DEFAULT_EXAM_REGISTRY);
   
   const DEFAULT_NEWS_UPDATES = [
     `🚀 New Mock Test Series released for OSSC CGL ${new Date().getFullYear()}`,
@@ -285,6 +301,14 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         try {
           const parsed = JSON.parse(heroSettings.description);
           setHeroCard({ ...DEFAULT_HERO_CARD, ...parsed });
+        } catch(e) {}
+      }
+
+      const registrySettings = ex.find(e => e.name === 'SYSTEM_SETTINGS_EXAM_REGISTRY');
+      if (registrySettings && registrySettings.description) {
+        try {
+          const parsed = JSON.parse(registrySettings.description);
+          if (Array.isArray(parsed) && parsed.length > 0) setExamRegistry(parsed);
         } catch(e) {}
       }
     } catch (error) {
@@ -2064,6 +2088,178 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                     </div>
                     <p className="text-xs text-slate-400 font-semibold text-center">Preview updates as you type. Green = correct answer.</p>
                   </div>
+                </div>
+              </div>
+
+              {/* ── Exam Registry Editor ── */}
+              <div className="mt-10 border-t-2 border-dashed border-slate-200 pt-10 space-y-8">
+                <div>
+                  <h3 className="text-3xl font-black text-slate-900 tracking-tight">📋 Live Exam Registry</h3>
+                  <p className="text-slate-500 font-medium mt-2 text-lg">Manage the exam status cards shown in the homepage "Live Exam Registry" section.</p>
+                </div>
+
+                <div className="bg-blue-50 p-5 rounded-2xl border border-blue-100 flex gap-4 items-start shadow-sm">
+                  <AlertCircle className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-extrabold text-slate-800">Rows publish to homepage instantly after save!</p>
+                    <p className="text-sm font-medium text-slate-600">Add, edit or remove rows. You can have 1–5 entries. Each row shows the exam name, status badge, date/deadline and a Practice button.</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {examRegistry.map((row: any, idx: number) => (
+                    <div key={idx} className="bg-white border-2 border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm relative">
+                      {/* Row header */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Row {idx + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => setExamRegistry((r: any[]) => r.filter((_: any, i: number) => i !== idx))}
+                          className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-50 hover:text-rose-600 transition-all"
+                          title="Remove row"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Exam Name */}
+                        <div className="space-y-1.5 md:col-span-2">
+                          <label className="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">Exam Name *</label>
+                          <input
+                            type="text"
+                            value={row.exam}
+                            onChange={e => {
+                              const updated = [...examRegistry];
+                              updated[idx] = { ...updated[idx], exam: e.target.value };
+                              setExamRegistry(updated);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-bold text-sm bg-white"
+                            placeholder="e.g. OPSC Civil Services Examination (OCS)"
+                          />
+                        </div>
+
+                        {/* Status */}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">Status Badge</label>
+                          <select
+                            value={row.status}
+                            onChange={e => {
+                              const updated = [...examRegistry];
+                              updated[idx] = { ...updated[idx], status: e.target.value };
+                              setExamRegistry(updated);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-bold text-sm bg-white"
+                          >
+                            {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                          </select>
+                          {/* Live badge preview */}
+                          <div className="mt-1">
+                            <span className={cn(
+                              "inline-flex px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider border",
+                              STATUS_OPTIONS.find(s => s.value === row.status)?.color || 'bg-slate-50 text-slate-600 border-slate-200'
+                            )}>
+                              {STATUS_OPTIONS.find(s => s.value === row.status)?.label || row.status}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Date/Deadline */}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">Date / Deadline Label</label>
+                          <input
+                            type="text"
+                            value={row.date}
+                            onChange={e => {
+                              const updated = [...examRegistry];
+                              updated[idx] = { ...updated[idx], date: e.target.value };
+                              setExamRegistry(updated);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-bold text-sm bg-white"
+                            placeholder="e.g. Prelims: July 15, 2026"
+                          />
+                        </div>
+
+                        {/* Action Label */}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">Button Label</label>
+                          <input
+                            type="text"
+                            value={row.actionLabel}
+                            onChange={e => {
+                              const updated = [...examRegistry];
+                              updated[idx] = { ...updated[idx], actionLabel: e.target.value };
+                              setExamRegistry(updated);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-bold text-sm bg-white"
+                            placeholder="e.g. Practice OPSC"
+                          />
+                        </div>
+
+                        {/* Exam Key */}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">Exam Key (for Practice link)</label>
+                          <select
+                            value={row.examKey || ''}
+                            onChange={e => {
+                              const updated = [...examRegistry];
+                              updated[idx] = { ...updated[idx], examKey: e.target.value };
+                              setExamRegistry(updated);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-bold text-sm bg-white"
+                          >
+                            <option value="">— None —</option>
+                            <option value="opsc">OPSC</option>
+                            <option value="ossc">OSSC</option>
+                            <option value="osssc">OSSSC</option>
+                            <option value="police">Police</option>
+                            <option value="forest">Forest Guard</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Add row */}
+                  {examRegistry.length < 5 && (
+                    <button
+                      type="button"
+                      onClick={() => setExamRegistry((r: any[]) => [
+                        ...r,
+                        { exam: '', status: 'notification', date: '', actionLabel: 'Practice', examKey: '' }
+                      ])}
+                      className="w-full py-3.5 border-2 border-dashed border-slate-300 rounded-2xl text-sm font-extrabold text-slate-400 hover:border-brand-400 hover:text-brand-600 hover:bg-brand-50/30 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" /> Add Row
+                    </button>
+                  )}
+                </div>
+
+                {/* Save */}
+                <div className="flex justify-end pt-4 border-t border-slate-100">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const updated = {
+                          name: 'SYSTEM_SETTINGS_EXAM_REGISTRY',
+                          description: JSON.stringify(examRegistry),
+                          icon: '📋',
+                          category: 'system' as const
+                        };
+                        const exists = exams.find(e => e.name === 'SYSTEM_SETTINGS_EXAM_REGISTRY');
+                        if (exists && exists.id) {
+                          await examService.updateExam(exists.id, updated);
+                        } else {
+                          await examService.addExam(updated);
+                        }
+                        await fetchData();
+                        alert('✅ Exam Registry saved and published to homepage!');
+                      } catch (err: any) { alert(`Failed to save: ${err.message || 'Unknown error'}`); }
+                    }}
+                    className="px-10 py-3.5 premium-gradient text-white font-extrabold rounded-xl shadow-lg shadow-brand-500/20 hover:premium-glow transition-all active:scale-95 text-lg"
+                  >
+                    Publish Registry
+                  </button>
                 </div>
               </div>
              </div>
