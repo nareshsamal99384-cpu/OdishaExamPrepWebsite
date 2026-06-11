@@ -5967,7 +5967,7 @@ function AppContent() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </AnimatedRoutes>
       <WhatsAppButton />
-      <StickyAICompanion />
+      <StickyAICompanion isBottomNavVisible={isBottomNavVisible} />
     </div>
   );
 }
