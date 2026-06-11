@@ -494,7 +494,41 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
   const [scanStep, setScanStep] = useState<string>('');
   const [aiPanelTab, setAiPanelTab] = useState<'diagnostic' | 'actionPlan' | 'chat'>('diagnostic');
   const [chatInput, setChatInput] = useState<string>('');
-  const [chatHistory, setChatHistory] = useState<any[]>([]);
+  const [rawChatHistory, setRawChatHistory] = useState<any[]>(() => {
+    try {
+      const storageKey = `oep_analytics_coach_messages_${user?.id || 'guest'}`;
+      const saved = localStorage.getItem(storageKey);
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const chatHistory = rawChatHistory;
+
+  const setChatHistory = (newHistory: any[] | ((prev: any[]) => any[])) => {
+    setRawChatHistory(prev => {
+      const next = typeof newHistory === 'function' ? (newHistory as any)(prev) : newHistory;
+      try {
+        const storageKey = `oep_analytics_coach_messages_${user?.id || 'guest'}`;
+        localStorage.setItem(storageKey, JSON.stringify(next));
+      } catch (e) {
+        console.error("Failed to save chat history:", e);
+      }
+      return next;
+    });
+  };
+
+  // Sync chat history when user ID changes (e.g. login/logout)
+  useEffect(() => {
+    try {
+      const storageKey = `oep_analytics_coach_messages_${user?.id || 'guest'}`;
+      const saved = localStorage.getItem(storageKey);
+      setRawChatHistory(saved ? JSON.parse(saved) : []);
+    } catch (e) {
+      setRawChatHistory([]);
+    }
+  }, [user?.id]);
   const [chatLoading, setChatLoading] = useState<boolean>(false);
   const [checkedActions, setCheckedActions] = useState<Record<number, boolean>>({});
   const chatContainerRef = useRef<HTMLDivElement>(null);
