@@ -19,10 +19,12 @@ import {
   Award,
   BookMarked,
   GripVertical,
-  Bell
+  Bell,
+  Mail
 } from 'lucide-react';
 import { Reorder } from 'framer-motion';
 import { examService, Question, TestSeries, MockTest, Exam } from './lib/examService';
+import { DEFAULT_ACHIEVERS_JOURNAL, AchieverStory } from './lib/defaultAchievers';
 import { cn } from './lib/utils';
 import { supabase } from './lib/supabase';
 import { dropdown, modalContent, scaleIn } from './lib/animations';
@@ -114,7 +116,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder, required, d
 // --- Admin Components ---
 
 const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () => void }) => {
-  const [activeTab, setActiveTab] = useState<'questions' | 'series' | 'tests' | 'exams' | 'banks' | 'users' | 'updates'>('exams');
+  const [activeTab, setActiveTab] = useState<'questions' | 'series' | 'tests' | 'exams' | 'banks' | 'users' | 'updates' | 'settings' | 'subscribers'>('exams');
   const [questionFilter, setQuestionFilter] = useState<'all' | 'practice' | 'mock'>('all');
   const [examFilter, setExamFilter] = useState<'all' | 'popular' | 'upcoming'>('all');
   const [testFilter, setTestFilter] = useState<'all' | 'full-length' | 'sectional' | 'pyq' | 'daily'>('all');
@@ -269,6 +271,21 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
   ];
   const [syllabusRoadmaps, setSyllabusRoadmaps] = useState<any[]>(DEFAULT_SYLLABUS_ROADMAPS);
   const [syllabusActiveTab, setSyllabusActiveTab] = useState(0);
+  const [achieversJournal, setAchieversJournal] = useState<any[]>(DEFAULT_ACHIEVERS_JOURNAL);
+  const [achieverSearch, setAchieverSearch] = useState('');
+  const [editingAchieverIndex, setEditingAchieverIndex] = useState<number | null>(null);
+  const [isAddingAchiever, setIsAddingAchiever] = useState(false);
+  const [achieverForm, setAchieverForm] = useState<AchieverStory>({
+    name: '',
+    rank: '',
+    examCategory: 'opsc',
+    story: '',
+    avatar: '',
+    stats: { score: '', accuracy: '', time: '' },
+    district: ''
+  });
+  const [subscribers, setSubscribers] = useState<any[]>([]);
+  const [subscriberSearchQuery, setSubscriberSearchQuery] = useState('');
 
   const fetchData = async () => {
     setLoading(true);
@@ -350,6 +367,22 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
           if (Array.isArray(parsed) && parsed.length > 0) { setSyllabusRoadmaps(parsed); setSyllabusActiveTab(0); }
         } catch(e) {}
       }
+
+      const achieversSettings = ex.find(e => e.name === 'SYSTEM_SETTINGS_ACHIEVERS_JOURNAL');
+      if (achieversSettings && achieversSettings.description) {
+        try {
+          const parsed = JSON.parse(achieversSettings.description);
+          if (Array.isArray(parsed) && parsed.length > 0) setAchieversJournal(parsed);
+        } catch(e) {}
+      }
+
+      try {
+        const { data: subs, error: subsErr } = await supabase
+          .from('newsletter_subscribers')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!subsErr && subs) setSubscribers(subs);
+      } catch (e) {}
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -1647,6 +1680,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
               { id: 'users', label: 'Users', icon: Users },
               { id: 'updates', label: 'Exam Updates', icon: Bell },
               { id: 'settings', label: 'Site Settings', icon: Settings },
+              { id: 'subscribers', label: 'Subscribers', icon: Mail },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -2598,7 +2632,92 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                  }} className="px-10 py-3.5 premium-gradient text-white font-extrabold rounded-xl shadow-lg shadow-brand-500/20 hover:premium-glow transition-all active:scale-95 text-lg">Publish Live Updates</button>
                </div>
             </div>
-          ) : activeTab === 'users' ? (
+           ) : activeTab === 'subscribers' ? (
+              <div className="glass rounded-[2rem] border border-slate-200/50 shadow-xl overflow-hidden bg-white/70 p-8 sm:p-12 space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-3xl font-black text-slate-900 tracking-tight">Email Subscribers ({subscribers.length})</h3>
+                    <p className="text-slate-500 font-medium mt-2 text-lg">Manage emails subscribed to receive exam alert notifications.</p>
+                  </div>
+                  <div className="relative w-full sm:w-80">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search subscribers..."
+                      value={subscriberSearchQuery}
+                      onChange={e => setSubscriberSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition-all font-bold text-sm bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto border border-slate-200 rounded-2xl bg-white shadow-sm">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-slate-100/50 border-b border-slate-200/60 font-black text-xs uppercase text-slate-500 tracking-widest">
+                      <tr>
+                        <th className="px-8 py-5">Email Address</th>
+                        <th className="px-8 py-5">Subscribed At</th>
+                        <th className="px-8 py-5 text-right pr-12">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
+                      {subscribers.filter(s => 
+                        (s.email || '').toLowerCase().includes(subscriberSearchQuery.toLowerCase())
+                      ).length === 0 ? (
+                        <tr>
+                          <td colSpan={3} className="px-8 py-20 text-center text-slate-400 font-semibold">
+                            No subscribers found.
+                          </td>
+                        </tr>
+                      ) : (
+                        subscribers
+                          .filter(s => (s.email || '').toLowerCase().includes(subscriberSearchQuery.toLowerCase()))
+                          .map((sub) => (
+                            <tr key={sub.id} className="hover:bg-brand-50/10 transition-colors group">
+                              <td className="px-8 py-5">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center font-black text-xs shrink-0 border border-brand-100">
+                                    <Mail className="w-3.5 h-3.5" />
+                                  </div>
+                                  <span className="font-extrabold text-slate-900">{sub.email}</span>
+                                </div>
+                              </td>
+                              <td className="px-8 py-5 text-sm text-slate-500 font-medium">
+                                {sub.created_at ? new Date(sub.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'Unknown'}
+                              </td>
+                              <td className="px-8 py-5 text-right pr-12">
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (!confirm(`Are you sure you want to unsubscribe and delete ${sub.email}?`)) return;
+                                    try {
+                                      const { error } = await supabase
+                                        .from('newsletter_subscribers')
+                                        .delete()
+                                        .eq('id', sub.id);
+                                      if (error) {
+                                        alert(`Failed to unsubscribe: ${error.message}`);
+                                      } else {
+                                        setSubscribers(prev => prev.filter(item => item.id !== sub.id));
+                                        alert(`Unsubscribed ${sub.email} successfully.`);
+                                      }
+                                    } catch (err: any) {
+                                      alert(`Error: ${err.message || err}`);
+                                    }
+                                  }}
+                                  className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all inline-flex items-center justify-center"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+           ) : activeTab === 'users' ? (
               <div className="glass rounded-[2rem] border border-slate-200/50 shadow-xl overflow-hidden bg-white/70">
                  <table className="w-full text-left border-collapse">
                     <thead className="bg-slate-100/50 border-b border-slate-200/60 font-black text-xs uppercase text-slate-500 tracking-widest">

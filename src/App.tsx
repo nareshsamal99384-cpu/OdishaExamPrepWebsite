@@ -1271,12 +1271,31 @@ const Footer = () => {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) return;
+
+    try {
+      const { error } = await supabase
+        .from('newsletter_subscribers')
+        .insert([{ email: cleanEmail }]);
+
+      if (error) {
+        if (error.code === '23505') {
+          toast.error("You're already subscribed!");
+        } else {
+          toast.error(error.message || "Failed to subscribe.");
+        }
+        return;
+      }
+
       setSubscribed(true);
+      toast.success("Successfully subscribed for alerts!");
       setEmail('');
       setTimeout(() => setSubscribed(false), 5000);
+    } catch (err: any) {
+      toast.error("Something went wrong. Please try again.");
     }
   };
 
