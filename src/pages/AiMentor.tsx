@@ -4562,7 +4562,8 @@ JSON structure:
                                   <button
                                     onClick={() => {
                                       handleSendMessage(`Provide a comprehensive, exam-oriented study summary for: "${topic.name}" (${topic.desc}) under the context of the "${targetExam}" syllabus. List 3 high-yield exam subtopics, 2 historical/factual reference points or formulas to memorize for the exam, and 1 core takeaway/practical tip.`);
-                                      scrollToElement('chat-pane', { block: 'start' });
+                                      // Delay scroll slightly so the message appends to DOM first
+                                      setTimeout(() => scrollToElement('chat-pane', { block: 'start' }), 150);
                                     }}
                                     className="flex-1 py-2 bg-slate-50 border border-slate-200/60 hover:bg-[#8A1C36]/8 hover:border-[#8A1C36]/30 hover:text-[#8A1C36] text-slate-600 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 shadow-sm"
                                     title="Ask personal AI tutor for summary"
@@ -4572,8 +4573,10 @@ JSON structure:
                                   </button>
                                   <button
                                     onClick={() => {
+                                      // Switch to quiz tab first so quiz-pane renders in DOM, then scroll
+                                      setActiveRightTab('quiz');
                                       handleTriggerQuizFromSyllabus(topic.name);
-                                      scrollToElement('quiz-pane', { block: 'start' });
+                                      setTimeout(() => scrollToElement('quiz-pane', { block: 'start' }), 200);
                                     }}
                                     className="flex-1 py-2 bg-[#8A1C36] hover:bg-[#a12340] text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 shadow-lg shadow-red-950/20"
                                     title="Test yourself with dynamic MCQs"
