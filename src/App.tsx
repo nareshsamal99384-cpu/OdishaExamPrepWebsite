@@ -46,7 +46,8 @@ import {
   ArrowRight,
   RotateCw,
   Timer,
-  Clock3
+  Clock3,
+  MessageSquare
 } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { useAuth } from './lib/AuthContext';
@@ -1294,17 +1295,19 @@ const Footer = () => {
         {/* Pre-footer Stats Dashboard */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pb-16 mb-16 border-b border-slate-800/60">
           {[
-            { label: "Mock Tests Attempted", value: "10,000+", icon: "📊", desc: "Real exam simulations" },
-            { label: "Syllabus Coverage", value: "98.4%", icon: "🎯", desc: "Mapped to state boards" },
-            { label: "Score Analytics", value: "Real-Time", icon: "⚡", desc: "Detailed rank mapping" },
-            { label: "Expert Support", value: "24/7 Support", icon: "💬", desc: "Priority Telegram & Call" }
+            { label: "Mock Tests Attempted", value: "10,000+", icon: BarChart3, color: "text-blue-400 bg-blue-500/10", desc: "Real exam simulations" },
+            { label: "Syllabus Coverage", value: "98.4%", icon: Target, color: "text-rose-400 bg-rose-500/10", desc: "Mapped to state boards" },
+            { label: "Score Analytics", value: "Real-Time", icon: Zap, color: "text-amber-400 bg-amber-500/10", desc: "Detailed rank mapping" },
+            { label: "Expert Support", value: "24/7 Support", icon: MessageSquare, color: "text-emerald-400 bg-emerald-500/10", desc: "Priority Telegram & Call" }
           ].map((stat, idx) => (
             <div 
               key={idx}
               className="bg-slate-900/30 backdrop-blur-md border border-slate-800/80 rounded-2xl p-5 hover:border-brand-500/30 hover:bg-slate-900/60 transition-all duration-300 group hover:-translate-y-1"
             >
-              <div className="flex items-center gap-3 mb-2">
-                <span className="text-xl group-hover:scale-110 transition-transform duration-300">{stat.icon}</span>
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`p-2 rounded-lg ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
+                  <stat.icon className="w-4 h-4" />
+                </div>
                 <span className="text-xs font-black uppercase tracking-wider text-slate-500">{stat.label}</span>
               </div>
               <h5 className="font-serif font-black text-xl sm:text-2xl text-white tracking-tight leading-none mb-1">
