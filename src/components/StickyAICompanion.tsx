@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { useAuth } from '../lib/AuthContext';
+import { examService } from '../lib/examService';
 import {
   X,
   Send,
@@ -12,6 +13,8 @@ import {
   Bot,
   User,
   Loader2,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────
@@ -22,95 +25,186 @@ interface ChatMessage {
   content: string;
 }
 
+interface LiveSiteData {
+  exams: { name: string; description: string; category: string }[];
+  mockTests: { title: string; durationMinutes: number; totalMarks: number; isPremium?: boolean; price?: number }[];
+  questionBanks: { title: string; type: string; questionCount: number; isPremium: boolean; price?: number }[];
+  loadedAt: number;
+}
+
 /* ─────────────────────────────────────────────
-   Quick-prompt chips shown before first message
+   Static Quick-prompt chips
 ───────────────────────────────────────────── */
 const QUICK_PROMPTS = [
   '📚 How do I use the AI Mentor?',
-  '📊 Explain my Analytics section',
-  '💳 What are the pricing plans?',
+  '📊 What does my Analytics tab show?',
+  '💳 What are the available exam plans?',
   '🎯 How do Mock Tests work?',
-  '🏆 Which exam should I prepare for?',
   '📝 How to track my progress?',
+  '📞 How do I contact support?',
 ];
 
 /* ─────────────────────────────────────────────
-   System prompt — deep knowledge of the website
+   Build a grounded system prompt from live data
 ───────────────────────────────────────────── */
-const SYSTEM_PROMPT = `You are "OEP Buddy", the friendly and knowledgeable AI companion for OdishaExamPrep (https://odishaexamprep.com) — a premium online exam preparation platform built exclusively for Odisha government exam aspirants.
+function buildSystemPrompt(data: LiveSiteData | null, userName: string): string {
+  const popularExams = data?.exams.filter(e => e.category === 'popular') ?? [];
+  const upcomingExams = data?.exams.filter(e => e.category === 'upcoming') ?? [];
+  const allExamNames = data?.exams.map(e => e.name) ?? [];
 
-## Your Role
-You assist logged-in students with EVERYTHING related to OdishaExamPrep: how to use features, understanding their analytics, pricing, exam strategy, content navigation, and study tips. You are warm, concise, and motivational.
+  const freeTests = data?.mockTests.filter(t => !t.isPremium) ?? [];
+  const paidTests = data?.mockTests.filter(t => t.isPremium) ?? [];
 
-## Platform Features You Know
+  const freeQBanks = data?.questionBanks.filter(b => !b.isPremium) ?? [];
+  const paidQBanks = data?.questionBanks.filter(b => b.isPremium) ?? [];
 
-### 🎓 Exams Covered
-OPSC OAS, OPSC OES, OSSC (CGL, RI/ARI, Clerk), OSSSC, Police SI/Constable, Forest Guard, and other Odisha state government exams.
+  // Collect unique prices
+  const testPrices = [...new Set(paidTests.map(t => t.price).filter(Boolean))] as number[];
+  const bankPrices = [...new Set(paidQBanks.map(b => b.price).filter(Boolean))] as number[];
+  const minTestPrice = testPrices.length ? Math.min(...testPrices) : null;
+  const maxTestPrice = testPrices.length ? Math.max(...testPrices) : null;
+  const minBankPrice = bankPrices.length ? Math.min(...bankPrices) : null;
+  const maxBankPrice = bankPrices.length ? Math.max(...bankPrices) : null;
 
-### 📝 Mock Test System
-- Students can take full-length mock tests and practice tests subject-wise.
-- Tests are timed, auto-evaluated, and detailed results are shown after submission.
-- Includes difficulty levels: Easy, Medium, Hard.
-- Each question shows correct answer + explanation after the test.
-- Score, accuracy, and time-per-question are tracked.
-- Students can resume interrupted tests.
+  const examListStr = allExamNames.length
+    ? allExamNames.join(', ')
+    : 'Exams data currently unavailable';
 
-### 🤖 AI Mentor (AI Tutor Tab)
-- A full-page AI tutor powered by NVIDIA NIM (Llama 3.1 and 3.3 models).
-- Two response modes: "Quick" (fast answer) and "Best" (detailed, deep analysis).
-- Students can ask any academic question about Odisha history, polity, maths, English, Odia grammar, GK, reasoning.
-- Includes a Syllabus Manager where students maintain their topic list and get quiz/summary on any topic.
-- Includes a Dynamic MCQ Quizzer that generates AI-powered MCQs on any subject.
-- Includes a Study Planner, Formula Library, Bookmarked Questions sections.
-- Chat history is saved between sessions for continuity.
+  const popularStr = popularExams.length
+    ? popularExams.map(e => `• ${e.name}${e.description ? ` — ${e.description}` : ''}`).join('\n')
+    : 'Not loaded';
 
-### 📊 Analytics Tab (AI Performance Lab)
-- Students see their aggregated performance stats: average score, accuracy, speed (avg time per question), improvement percentage.
-- AI-generated Insights section: summarizes strengths, weaknesses, and performance patterns.
-- Action Plan section: gives a personalized 5-day or 7-day study plan.
-- AI Performance Coach: a chat interface where students can ask questions about their performance.
-- Study Assistant: contextual prompt chips that suggest smart questions based on the student's actual data.
-- Students can press "Rescan Analytics" to refresh insights with the latest test data.
+  const upcomingStr = upcomingExams.length
+    ? upcomingExams.map(e => `• ${e.name}${e.description ? ` — ${e.description}` : ''}`).join('\n')
+    : 'None listed';
 
-### 📚 Courses / Library
-- Students can browse and access curated study material series for each exam.
-- PDFs, notes, previous year questions (PYQs) are organized by subject and exam.
-- Locked content is unlocked after purchasing.
-- Full Access plan unlocks all content across all exams.
+  const mockTestStr = data?.mockTests.length
+    ? data.mockTests
+        .slice(0, 20)
+        .map(t => `• ${t.title} (${t.durationMinutes} min, ${t.totalMarks} marks, ${t.isPremium ? `₹${t.price ?? '?'}` : 'Free'})`)
+        .join('\n')
+    : 'No mock tests found in database';
 
-### 📜 History Tab
-- Shows all past mock tests, practice sessions with scores, date, duration.
-- Students can review completed tests and see result breakdowns.
+  const qBankStr = data?.questionBanks.length
+    ? data.questionBanks
+        .slice(0, 20)
+        .map(b => `• ${b.title} — ${b.questionCount} questions, Type: ${b.type}, ${b.isPremium ? `₹${b.price ?? '?'}` : 'Free'}`)
+        .join('\n')
+    : 'No question banks found';
 
-### 💰 Pricing
-- **Free Plan**: Limited mock tests (2 free practice tests), basic AI mentor access, limited questions.
-- **Full Access Plan**: ₹299 (single exam) or bundle pricing — unlocks all mock tests, all study materials, all AI features without limits.
-- Payment via Razorpay (UPI, credit/debit card, netbanking).
-- Instant access after payment, no manual approval needed.
-- Refund policy: 7-day refund window if the platform doesn't work for the student.
+  const pricingStr = (() => {
+    const parts: string[] = [];
+    if (freeTests.length) parts.push(`- ${freeTests.length} free mock test(s) available without purchase`);
+    if (paidTests.length && minTestPrice !== null) {
+      parts.push(`- Paid mock tests: ₹${minTestPrice}${maxTestPrice !== minTestPrice ? ` to ₹${maxTestPrice}` : ''} per test`);
+    }
+    if (freeQBanks.length) parts.push(`- ${freeQBanks.length} free question bank(s) available`);
+    if (paidQBanks.length && minBankPrice !== null) {
+      parts.push(`- Paid question banks: ₹${minBankPrice}${maxBankPrice !== minBankPrice ? ` to ₹${maxBankPrice}` : ''} per bank`);
+    }
+    parts.push('- Payment via Razorpay (UPI, cards, netbanking) — instant access after payment');
+    parts.push('- Refund window: 7 days if the platform doesn\'t work for you');
+    return parts.join('\n') || '- Contact support for latest pricing info';
+  })();
 
-### ⚙️ Account & Settings
-- Login via Google or Email/Password.
-- Profile shows name, email, purchased plans.
-- Students can logout from the top-right corner menu.
+  return `You are "OEP Buddy", the official AI companion for OdishaExamPrep — a premium exam preparation platform for Odisha government exam aspirants. The current student's name is "${userName}".
 
-### 📞 Support
-- WhatsApp support: +91 7377431715
+## ⚠️ CRITICAL RULES — READ CAREFULLY
+1. **Only answer based on the REAL DATA below.** Do NOT invent exam names, prices, test counts, or features that are not explicitly listed in this prompt.
+2. If specific data is not available (e.g., student asks about a specific test not in the list), say: "I don't have that specific information right now. Please check the Courses tab or contact us on WhatsApp at +91 7377431715."
+3. Never guess or hallucinate. If uncertain, redirect to support.
+4. Be warm, concise (2-4 sentences), and use bullet points for lists.
+5. Do NOT mention ChatGPT, Claude, or any external AI. You are "OEP Buddy" only.
+
+---
+
+## 🎓 REAL EXAMS IN THE PLATFORM (live from database)
+
+### Popular Exams:
+${popularStr}
+
+### Upcoming Exams:
+${upcomingStr}
+
+### All Available Exams (${allExamNames.length} total):
+${examListStr}
+
+---
+
+## 📝 REAL MOCK TESTS (live from database — showing up to 20):
+${mockTestStr}
+
+**Total mock tests in platform: ${data?.mockTests.length ?? 'unknown'}**
+**Free tests: ${freeTests.length}**
+**Paid tests: ${paidTests.length}**
+
+---
+
+## 📚 REAL QUESTION BANKS (live from database — showing up to 20):
+${qBankStr}
+
+**Total question banks: ${data?.questionBanks.length ?? 'unknown'}**
+
+---
+
+## 💰 REAL PRICING (live from database):
+${pricingStr}
+
+---
+
+## 🤖 PLATFORM FEATURES (verified, do NOT hallucinate beyond these):
+
+### AI Mentor Tab:
+- Full-page AI tutor (Quick mode: fast answers, Best mode: deep analysis)
+- Ask any academic question: Odisha history, polity, maths, English, Odia grammar, GK, reasoning
+- Syllabus Manager: maintain topics, get AI quiz or summary on any topic
+- Dynamic MCQ Quizzer: AI-generates MCQs on any subject
+- Study Planner, Formula Library, Bookmarked Questions
+- Chat history saved per session
+
+### Analytics Tab (AI Performance Lab):
+- See average score, accuracy, speed (seconds per question), improvement %
+- AI Insights: strengths & weaknesses analysis
+- Action Plan: personalized 5-day or 7-day study roadmap
+- AI Performance Coach: chat interface for performance questions
+- Study Assistant: smart prompt chips based on actual test data
+- "Rescan Analytics" button refreshes insights from latest tests
+
+### Mock Test System:
+- Timed tests, auto-evaluated with score + accuracy
+- Each question shows correct answer + detailed explanation after submission
+- Difficulty: Easy, Medium, Hard
+- Students can resume interrupted tests
+- Test history and scores tracked in History tab
+
+### Courses / Library Tab:
+- Curated study material per exam: PDFs, notes, PYQs
+- Locked content unlocked after purchase
+- Library tab shows only unlocked purchased content
+
+### History Tab:
+- All past mock tests and practice sessions with scores, date, duration
+- Can review completed tests and result breakdowns
+
+### Account:
+- Login via Google or Email/Password
+- Profile shows name, email, purchased plans
+- Logout from top-right corner menu
+
+### Support:
+- WhatsApp: +91 7377431715
 - Email: odishaexamprep365@gmail.com
-- Students can message on WhatsApp for queries, payment issues, or course guidance.
 
-## Response Style Rules
-- Be warm, encouraging, and brief (2–4 sentences max unless a detailed explanation is needed).
-- Use bullet points for lists of features or steps.
-- Always use "you" to address the student directly.
-- Add 1 relevant emoji at the start of each key point for readability.
-- Never make up features. Only answer based on what is documented above.
-- If unsure, say: "For this, please reach out to our support team on WhatsApp at +91 7377431715."
-- Do NOT mention external AI brands or refer to yourself as ChatGPT or Claude.
-- Always refer to yourself as "OEP Buddy".`;
+---
+
+## ❌ IF DATA IS MISSING:
+If the student asks about something not covered above (specific test names, exact schedules, discounts, etc.), say exactly: "I don't have that specific data right now. Please check the platform directly or WhatsApp us at +91 7377431715 for accurate information." Do not guess.
+
+Data last refreshed: ${data ? new Date(data.loadedAt).toLocaleTimeString() : 'Not loaded'}`;
+}
 
 /* ─────────────────────────────────────────────
-   Markdown-lite renderer for assistant messages
+   Markdown-lite renderer
 ───────────────────────────────────────────── */
 function RenderMessage({ text }: { text: string }) {
   if (!text) {
@@ -145,10 +239,7 @@ function RenderMessage({ text }: { text: string }) {
 
   lines.forEach((line, idx) => {
     const trimmed = line.trim();
-    if (!trimmed) {
-      flushList(String(idx));
-      return;
-    }
+    if (!trimmed) { flushList(String(idx)); return; }
     if (trimmed.startsWith('- ') || trimmed.startsWith('• ') || trimmed.startsWith('* ')) {
       listBuffer.push(trimmed.slice(2));
     } else if (/^\d+\.\s/.test(trimmed)) {
@@ -156,22 +247,13 @@ function RenderMessage({ text }: { text: string }) {
     } else if (trimmed.startsWith('### ') || trimmed.startsWith('## ') || trimmed.startsWith('# ')) {
       flushList(String(idx));
       const headText = trimmed.replace(/^#+\s/, '');
-      elements.push(
-        <p key={idx} className="text-xs font-black text-brand-700 mt-1.5 mb-0.5 uppercase tracking-wide">
-          {headText}
-        </p>
-      );
+      elements.push(<p key={idx} className="text-xs font-black text-brand-700 mt-1.5 mb-0.5 uppercase tracking-wide">{headText}</p>);
     } else {
       flushList(String(idx));
-      elements.push(
-        <p key={idx} className="text-xs leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: inlineFormat(trimmed) }}
-        />
-      );
+      elements.push(<p key={idx} className="text-xs leading-relaxed" dangerouslySetInnerHTML={{ __html: inlineFormat(trimmed) }} />);
     }
   });
   flushList('end');
-
   return <div className="space-y-1">{elements}</div>;
 }
 
@@ -193,14 +275,82 @@ const StickyAICompanion: React.FC = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [showBadge, setShowBadge] = useState(true);
+  const [siteData, setSiteData] = useState<LiveSiteData | null>(null);
+  const [dataLoading, setDataLoading] = useState(false);
+  const [dataError, setDataError] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Only render for logged-in users
+  // Only for logged-in users
   if (!user) return null;
 
-  // Auto-scroll to bottom of chat
+  const firstName = profile?.displayName?.split(' ')[0] || 'there';
+
+  /* ── Load live site data from Supabase when widget opens ── */
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const loadSiteData = async () => {
+    // Cache for 5 minutes
+    if (siteData && Date.now() - siteData.loadedAt < 5 * 60 * 1000) return;
+    setDataLoading(true);
+    setDataError(false);
+    try {
+      const [exams, mockTestsRaw, questionBanks] = await Promise.all([
+        examService.getAllExams(),
+        examService.getAllMockTestsLite(),
+        examService.getAllQuestionBanks(),
+      ]);
+
+      const mockTests = mockTestsRaw.map((t: any) => {
+        let price: number | undefined;
+        let isPremium = t.isPremium ?? false;
+        // Extract price from seriesId JSON if present
+        if (typeof t.seriesId === 'string' && t.seriesId.startsWith('{')) {
+          try {
+            const meta = JSON.parse(t.seriesId);
+            price = meta.price;
+            isPremium = meta.isPremium ?? isPremium;
+          } catch {}
+        } else if (t.seriesId && typeof t.seriesId === 'object') {
+          price = t.seriesId.price;
+          isPremium = t.seriesId.isPremium ?? isPremium;
+        }
+        return {
+          title: t.title,
+          durationMinutes: t.durationMinutes,
+          totalMarks: t.totalMarks,
+          isPremium,
+          price,
+        };
+      });
+
+      setSiteData({
+        exams: exams.map(e => ({ name: e.name, description: e.description, category: e.category })),
+        mockTests,
+        questionBanks: questionBanks.map(b => ({
+          title: b.title,
+          type: b.type,
+          questionCount: b.questionCount,
+          isPremium: b.isPremium,
+          price: undefined, // QuestionBank type doesn't have price field directly
+        })),
+        loadedAt: Date.now(),
+      });
+    } catch (err) {
+      console.error('OEP Buddy: failed to load site data', err);
+      setDataError(true);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    if (isOpen) loadSiteData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  // Auto-scroll
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     if (isOpen && !isMinimized) {
@@ -208,7 +358,7 @@ const StickyAICompanion: React.FC = () => {
     }
   }, [messages, isOpen, isMinimized]);
 
-  // Focus input when opened
+  // Focus input
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     if (isOpen && !isMinimized) {
@@ -216,8 +366,7 @@ const StickyAICompanion: React.FC = () => {
     }
   }, [isOpen, isMinimized]);
 
-  const firstName = profile?.displayName?.split(' ')[0] || 'there';
-
+  /* ── Send message with grounded system prompt ── */
   const sendMessage = async (text: string) => {
     const userText = text.trim();
     if (!userText || loading) return;
@@ -232,6 +381,7 @@ const StickyAICompanion: React.FC = () => {
 
     try {
       const history = messages.slice(-6).map(m => ({ role: m.role, content: m.content }));
+      const systemPrompt = buildSystemPrompt(siteData, firstName);
 
       const response = await fetch('/api/chat/completions', {
         method: 'POST',
@@ -239,11 +389,11 @@ const StickyAICompanion: React.FC = () => {
         body: JSON.stringify({
           model: 'meta/llama-3.1-8b-instruct',
           messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'system', content: systemPrompt },
             ...history,
             { role: 'user', content: userText },
           ],
-          temperature: 0.3,
+          temperature: 0.15, // lower = less hallucination
           stream: true,
         }),
         signal: controller.signal,
@@ -254,7 +404,6 @@ const StickyAICompanion: React.FC = () => {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder('utf-8');
       let buffer = '';
-
       if (!reader) throw new Error('No reader');
 
       while (true) {
@@ -290,7 +439,7 @@ const StickyAICompanion: React.FC = () => {
           const updated = [...prev];
           updated[updated.length - 1] = {
             ...updated[updated.length - 1],
-            content: "Sorry, I couldn't connect right now. Please try again in a moment! 🙏",
+            content: "Sorry, I couldn't connect right now. Please try again in a moment, or reach us on WhatsApp at +91 7377431715 🙏",
           };
           return updated;
         });
@@ -329,17 +478,11 @@ const StickyAICompanion: React.FC = () => {
             title="Ask OEP Buddy"
             aria-label="Open AI Companion"
           >
-            {/* Pulse ring */}
             <span className="absolute inset-0 rounded-2xl bg-brand-500 animate-ping opacity-20 group-hover:opacity-30 transition-opacity" />
-
-            {/* Button */}
             <div className="relative w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl flex items-center justify-center shadow-[0_8px_30px_rgba(138,28,54,0.4)] group-hover:shadow-[0_14px_40px_rgba(138,28,54,0.55)] transition-all duration-300 overflow-hidden">
-              {/* Shine */}
               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
               <Bot className="w-7 h-7 sm:w-8 sm:h-8 text-white relative z-10 drop-shadow-sm" />
             </div>
-
-            {/* Badge */}
             {showBadge && (
               <motion.span
                 initial={{ scale: 0 }}
@@ -349,8 +492,6 @@ const StickyAICompanion: React.FC = () => {
                 AI
               </motion.span>
             )}
-
-            {/* Tooltip */}
             <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 whitespace-nowrap bg-slate-900 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg">
               Ask OEP Buddy ✨
             </span>
@@ -363,87 +504,111 @@ const StickyAICompanion: React.FC = () => {
         {isOpen && (
           <motion.div
             key="widget"
-            initial={{ opacity: 0, scale: 0.9, y: 30, originX: 1, originY: 1 }}
+            initial={{ opacity: 0, scale: 0.9, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 30 }}
             transition={{ type: 'spring', stiffness: 320, damping: 26 }}
             className={cn(
-              'fixed right-3 sm:right-6 z-[200] w-[calc(100vw-24px)] sm:w-[380px] bg-white rounded-[1.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.15),0_4px_16px_rgba(0,0,0,0.06)] border border-slate-200/60 overflow-hidden flex flex-col',
-              isMinimized ? 'h-auto bottom-24 sm:bottom-8' : 'bottom-4 sm:bottom-8 h-[520px] sm:h-[560px]'
+              'fixed right-3 sm:right-6 z-[200] w-[calc(100vw-24px)] sm:w-[390px] bg-white rounded-[1.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.15),0_4px_16px_rgba(0,0,0,0.06)] border border-slate-200/60 overflow-hidden flex flex-col',
+              isMinimized ? 'h-auto bottom-24 sm:bottom-8' : 'bottom-4 sm:bottom-8 h-[540px] sm:h-[570px]'
             )}
           >
             {/* ── Header ── */}
             <div className="shrink-0 bg-gradient-to-r from-brand-700 via-brand-600 to-brand-500 px-4 py-3 flex items-center gap-3 relative overflow-hidden">
-              {/* Decorative shimmer */}
               <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
-
-              {/* Avatar */}
               <div className="relative shrink-0">
                 <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center border border-white/20 backdrop-blur-sm">
                   <Bot className="w-5 h-5 text-white" />
                 </div>
                 <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full" />
               </div>
-
-              {/* Title */}
               <div className="flex-1 min-w-0">
-                <p className="text-white font-black text-sm leading-tight tracking-wide">OEP Buddy</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-white font-black text-sm leading-tight tracking-wide">OEP Buddy</p>
+                  {dataLoading && (
+                    <span className="flex items-center gap-1 bg-white/15 text-white/80 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                      <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                      Loading data…
+                    </span>
+                  )}
+                  {dataError && (
+                    <span className="flex items-center gap-1 bg-amber-500/30 text-amber-200 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                      <AlertCircle className="w-2.5 h-2.5" />
+                      Offline mode
+                    </span>
+                  )}
+                  {siteData && !dataLoading && !dataError && (
+                    <span className="bg-emerald-500/30 text-emerald-200 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                      ✓ Live data
+                    </span>
+                  )}
+                </div>
                 <p className="text-white/70 text-[10px] font-semibold truncate">Your AI Study Companion ✨</p>
               </div>
-
-              {/* Actions */}
               <div className="flex items-center gap-1 relative z-10">
-                {messages.length > 0 && (
+                {siteData && (
                   <button
-                    onClick={clearChat}
+                    onClick={() => { setSiteData(null); loadSiteData(); }}
                     className="w-7 h-7 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/15 transition-all"
-                    title="Clear chat"
+                    title="Refresh website data"
                   >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {messages.length > 0 && (
+                  <button onClick={clearChat} className="w-7 h-7 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/15 transition-all" title="Clear chat">
                     <RotateCcw className="w-3.5 h-3.5" />
                   </button>
                 )}
-                <button
-                  onClick={() => setIsMinimized(v => !v)}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/15 transition-all"
-                  title={isMinimized ? 'Expand' : 'Minimize'}
-                >
+                <button onClick={() => setIsMinimized(v => !v)} className="w-7 h-7 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/15 transition-all" title={isMinimized ? 'Expand' : 'Minimize'}>
                   {isMinimized ? <Sparkles className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
                 </button>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/15 transition-all"
-                  title="Close"
-                >
+                <button onClick={() => setIsOpen(false)} className="w-7 h-7 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/15 transition-all" title="Close">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
 
-            {/* ── Body (hidden when minimized) ── */}
+            {/* ── Body ── */}
             {!isMinimized && (
               <>
-                {/* ── Messages ── */}
-                <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 scroll-smooth" style={{ scrollbarWidth: 'thin' }}>
+                {/* Data loading banner */}
+                {dataLoading && (
+                  <div className="shrink-0 bg-amber-50 border-b border-amber-100 px-4 py-2 flex items-center gap-2">
+                    <RefreshCw className="w-3 h-3 text-amber-500 animate-spin shrink-0" />
+                    <p className="text-[10px] text-amber-700 font-semibold">Fetching live exam & pricing data from the platform…</p>
+                  </div>
+                )}
+                {dataError && (
+                  <div className="shrink-0 bg-red-50 border-b border-red-100 px-4 py-2 flex items-center gap-2">
+                    <AlertCircle className="w-3 h-3 text-red-400 shrink-0" />
+                    <p className="text-[10px] text-red-600 font-semibold">Couldn't load live data. Answers may be limited.
+                      <button onClick={() => loadSiteData()} className="ml-1 underline font-bold">Retry</button>
+                    </p>
+                  </div>
+                )}
 
-                  {/* Welcome message */}
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3" style={{ scrollbarWidth: 'thin' }}>
                   {messages.length === 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="space-y-3"
-                    >
-                      {/* Bot welcome bubble */}
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                      {/* Welcome bubble */}
                       <div className="flex items-start gap-2">
                         <div className="w-6 h-6 rounded-lg bg-brand-50 border border-brand-100 flex items-center justify-center shrink-0 mt-0.5">
                           <Bot className="w-3.5 h-3.5 text-brand-600" />
                         </div>
                         <div className="bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-sm px-3 py-2.5 max-w-[88%]">
                           <p className="text-xs text-slate-700 leading-relaxed">
-                            👋 Hey <strong className="text-brand-600">{firstName}</strong>! I'm <strong>OEP Buddy</strong>, your personal AI companion for OdishaExamPrep.
+                            👋 Hey <strong className="text-brand-600">{firstName}</strong>! I'm <strong>OEP Buddy</strong> — your AI companion for OdishaExamPrep.
                           </p>
                           <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                            Ask me anything — exam tips, how to use features, your analytics, pricing, or study strategies! 🎯
+                            I have access to your platform's <strong>live exam list, mock tests, and pricing</strong>. Ask me anything! 🎯
                           </p>
+                          {siteData && (
+                            <p className="text-[10px] text-emerald-600 font-semibold mt-1.5">
+                              ✓ {siteData.exams.length} exams · {siteData.mockTests.length} mock tests · {siteData.questionBanks.length} question banks loaded
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -468,7 +633,6 @@ const StickyAICompanion: React.FC = () => {
                     </motion.div>
                   )}
 
-                  {/* Chat messages */}
                   {messages.map((msg, idx) => {
                     const isUser = msg.role === 'user';
                     return (
@@ -479,56 +643,32 @@ const StickyAICompanion: React.FC = () => {
                         transition={{ duration: 0.2 }}
                         className={cn('flex items-start gap-2', isUser ? 'flex-row-reverse' : 'flex-row')}
                       >
-                        {/* Avatar */}
-                        <div className={cn(
-                          'w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5',
-                          isUser
-                            ? 'bg-brand-600 text-white'
-                            : 'bg-brand-50 border border-brand-100'
-                        )}>
-                          {isUser
-                            ? <User className="w-3.5 h-3.5" />
-                            : <Bot className="w-3.5 h-3.5 text-brand-600" />
-                          }
+                        <div className={cn('w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5', isUser ? 'bg-brand-600 text-white' : 'bg-brand-50 border border-brand-100')}>
+                          {isUser ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5 text-brand-600" />}
                         </div>
-
-                        {/* Bubble */}
-                        <div className={cn(
-                          'px-3 py-2.5 rounded-2xl max-w-[84%] shadow-sm text-xs leading-relaxed',
-                          isUser
-                            ? 'bg-gradient-to-br from-brand-600 to-brand-700 text-white rounded-tr-sm'
-                            : 'bg-slate-50 border border-slate-100/80 text-slate-700 rounded-tl-sm'
-                        )}>
-                          {isUser
-                            ? <p>{msg.content}</p>
-                            : <RenderMessage text={msg.content} />
-                          }
+                        <div className={cn('px-3 py-2.5 rounded-2xl max-w-[84%] shadow-sm text-xs leading-relaxed', isUser ? 'bg-gradient-to-br from-brand-600 to-brand-700 text-white rounded-tr-sm' : 'bg-slate-50 border border-slate-100/80 text-slate-700 rounded-tl-sm')}>
+                          {isUser ? <p>{msg.content}</p> : <RenderMessage text={msg.content} />}
                         </div>
                       </motion.div>
                     );
                   })}
-
                   <div ref={chatEndRef} />
                 </div>
 
-                {/* ── Input Bar ── */}
+                {/* Input Bar */}
                 <div className="shrink-0 border-t border-slate-100 bg-white px-3 py-2.5">
-                  <form
-                    onSubmit={e => { e.preventDefault(); sendMessage(input); }}
-                    className="flex items-center gap-2"
-                  >
+                  <form onSubmit={e => { e.preventDefault(); sendMessage(input); }} className="flex items-center gap-2">
                     <div className="flex-1 relative">
                       <input
                         ref={inputRef}
                         type="text"
                         value={input}
                         onChange={e => setInput(e.target.value)}
-                        placeholder="Ask me anything…"
+                        placeholder="Ask about exams, pricing, features…"
                         disabled={loading}
                         className="w-full text-xs bg-slate-50 border border-slate-200/70 rounded-xl px-3 py-2.5 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-brand-300 focus:bg-white transition-all font-medium disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                     </div>
-
                     <button
                       type="submit"
                       disabled={!input.trim() || loading}
@@ -540,31 +680,22 @@ const StickyAICompanion: React.FC = () => {
                       )}
                       title="Send"
                     >
-                      {loading
-                        ? <Loader2 className="w-4 h-4 animate-spin" />
-                        : <Send className="w-3.5 h-3.5" strokeWidth={2.5} />
-                      }
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-3.5 h-3.5" strokeWidth={2.5} />}
                     </button>
                   </form>
-
                   <p className="text-[9px] text-slate-400 text-center mt-1.5 font-medium">
-                    OEP Buddy · Powered by OdishaExamPrep AI
+                    OEP Buddy · Real-time data from OdishaExamPrep
                   </p>
                 </div>
               </>
             )}
 
-            {/* Minimized state preview */}
+            {/* Minimized state */}
             {isMinimized && (
-              <button
-                onClick={() => setIsMinimized(false)}
-                className="flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-50 transition-colors w-full"
-              >
+              <button onClick={() => setIsMinimized(false)} className="flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-50 transition-colors w-full">
                 <Sparkles className="w-4 h-4 text-brand-500 shrink-0" />
                 <span className="text-xs font-semibold text-slate-600 flex-1 truncate">
-                  {messages.length > 0
-                    ? messages[messages.length - 1].content.slice(0, 50) + '…'
-                    : 'Ask me anything about OdishaExamPrep…'}
+                  {messages.length > 0 ? messages[messages.length - 1].content.slice(0, 55) + '…' : 'Ask me about exams, pricing, features…'}
                 </span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 rotate-180" />
               </button>
