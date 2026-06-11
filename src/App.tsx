@@ -1611,27 +1611,32 @@ const Navbar = ({
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="absolute top-full left-0 right-0 bg-white/95 backdrop-blur-3xl border-b border-slate-200/40 shadow-2xl overflow-y-auto md:hidden max-h-[calc(100vh-70px)]"
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="absolute top-full left-0 right-0 bg-white/90 backdrop-blur-2xl border-b border-slate-200/50 shadow-[0_20px_50px_rgba(138,28,54,0.1)] overflow-y-auto md:hidden max-h-[calc(100vh-70px)] z-50"
           >
-            <div className="p-4 flex flex-col gap-2">
+            <div className="p-5 flex flex-col gap-2.5">
               {!user && (
                 <>
                   <a 
                     href="#exam-registry" 
                     onClick={(e) => scrollToSection(e, 'exam-registry')} 
                     className={cn(
-                      "flex items-center gap-4 text-lg font-bold p-4 rounded-2xl transition-all border-l-4",
+                      "flex items-center gap-3 text-xs font-black uppercase tracking-wider p-3 rounded-xl transition-all duration-200 border-l-4 hover:translate-x-1 active:scale-98",
                       activeSection === 'exam-registry'
-                        ? "bg-[#fce7eb] text-[#8A1C36] font-extrabold border-[#8A1C36] pl-3"
-                        : "text-slate-700 hover:bg-[#fce7eb] hover:text-[#8A1C36] border-transparent hover:border-[#8A1C36]/30"
+                        ? "bg-[#8A1C36]/5 text-[#8A1C36] font-extrabold border-[#8A1C36] pl-3"
+                        : "text-slate-600 hover:bg-[#8A1C36]/5 hover:text-[#8A1C36] border-transparent"
                     )}
                   >
-                    <div className="w-10 h-10 rounded-xl bg-[#fce7eb] flex items-center justify-center text-[#8A1C36] shrink-0 shadow-sm">
-                       <Clock3 className="w-5 h-5" />
+                    <div className={cn(
+                      "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 shadow-sm border transition-colors",
+                      activeSection === 'exam-registry'
+                        ? "bg-[#8A1C36]/15 border-[#8A1C36]/20 text-[#8A1C36]"
+                        : "bg-slate-50 border-slate-200/60 text-slate-500"
+                    )}>
+                       <Clock3 className="w-4.5 h-4.5" />
                     </div>
                     <span>Registry</span>
                   </a>
@@ -1639,14 +1644,19 @@ const Navbar = ({
                     href="#exams" 
                     onClick={(e) => scrollToSection(e, 'exams')} 
                     className={cn(
-                      "flex items-center gap-4 text-lg font-bold p-4 rounded-2xl transition-all border-l-4",
+                      "flex items-center gap-3 text-xs font-black uppercase tracking-wider p-3 rounded-xl transition-all duration-200 border-l-4 hover:translate-x-1 active:scale-98",
                       activeSection === 'exams'
                         ? "bg-emerald-50 text-emerald-700 font-extrabold border-emerald-600 pl-3"
-                        : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 border-transparent hover:border-emerald-600/30"
+                        : "text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 border-transparent"
                     )}
                   >
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0 shadow-sm">
-                       <Target className="w-5 h-5" />
+                    <div className={cn(
+                      "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 shadow-sm border transition-colors",
+                      activeSection === 'exams'
+                        ? "bg-emerald-100/80 border-emerald-200/60 text-emerald-600"
+                        : "bg-slate-50 border-slate-200/60 text-slate-500"
+                    )}>
+                       <Target className="w-4.5 h-4.5" />
                     </div>
                     <span>Practice</span>
                   </a>
@@ -1654,14 +1664,19 @@ const Navbar = ({
                     href="#syllabus-paths" 
                     onClick={(e) => scrollToSection(e, 'syllabus-paths')} 
                     className={cn(
-                      "flex items-center gap-4 text-lg font-bold p-4 rounded-2xl transition-all border-l-4",
+                      "flex items-center gap-3 text-xs font-black uppercase tracking-wider p-3 rounded-xl transition-all duration-200 border-l-4 hover:translate-x-1 active:scale-98",
                       activeSection === 'syllabus-paths'
                         ? "bg-blue-50 text-blue-700 font-extrabold border-blue-600 pl-3"
-                        : "text-slate-700 hover:bg-blue-50 hover:text-blue-700 border-transparent hover:border-blue-600/30"
+                        : "text-slate-600 hover:bg-blue-50 hover:text-blue-700 border-transparent"
                     )}
                   >
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 shadow-sm">
-                       <BookOpen className="w-5 h-5" />
+                    <div className={cn(
+                      "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 shadow-sm border transition-colors",
+                      activeSection === 'syllabus-paths'
+                        ? "bg-blue-100/80 border-blue-200/60 text-blue-600"
+                        : "bg-slate-50 border-slate-200/60 text-slate-500"
+                    )}>
+                       <BookOpen className="w-4.5 h-4.5" />
                     </div>
                     <span>Syllabus</span>
                   </a>
@@ -1669,14 +1684,19 @@ const Navbar = ({
                     href="#achievers-journal" 
                     onClick={(e) => scrollToSection(e, 'achievers-journal')} 
                     className={cn(
-                      "flex items-center gap-4 text-lg font-bold p-4 rounded-2xl transition-all border-l-4",
+                      "flex items-center gap-3 text-xs font-black uppercase tracking-wider p-3 rounded-xl transition-all duration-200 border-l-4 hover:translate-x-1 active:scale-98",
                       activeSection === 'achievers-journal'
                         ? "bg-amber-50 text-amber-700 font-extrabold border-amber-600 pl-3"
-                        : "text-slate-700 hover:bg-amber-50 hover:text-amber-700 border-transparent hover:border-amber-600/30"
+                        : "text-slate-600 hover:bg-amber-50 hover:text-amber-700 border-transparent"
                     )}
                   >
-                    <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0 shadow-sm">
-                       <Award className="w-5 h-5" />
+                    <div className={cn(
+                      "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 shadow-sm border transition-colors",
+                      activeSection === 'achievers-journal'
+                        ? "bg-amber-100/80 border-amber-200/60 text-amber-600"
+                        : "bg-slate-50 border-slate-200/60 text-slate-500"
+                    )}>
+                       <Award className="w-4.5 h-4.5" />
                     </div>
                     <span>Achievers</span>
                   </a>
@@ -1686,14 +1706,19 @@ const Navbar = ({
                 to="/blog"
                 onClick={() => setMobileMenuOpen(false)}
                 className={cn(
-                  "flex items-center gap-4 text-lg font-bold p-4 rounded-2xl transition-all border-l-4",
+                  "flex items-center gap-3 text-xs font-black uppercase tracking-wider p-3 rounded-xl transition-all duration-200 border-l-4 hover:translate-x-1 active:scale-98",
                   isBlogActive
-                    ? "bg-[#fce7eb] text-[#8A1C36] font-extrabold border-[#8A1C36] pl-3"
-                    : "text-slate-700 hover:bg-[#fce7eb] hover:text-[#8A1C36] border-transparent hover:border-[#8A1C36]/30"
+                    ? "bg-[#8A1C36]/5 text-[#8A1C36] font-extrabold border-[#8A1C36] pl-3"
+                    : "text-slate-600 hover:bg-[#8A1C36]/5 hover:text-[#8A1C36] border-transparent"
                 )}
               >
-                <div className="w-10 h-10 rounded-xl bg-[#fce7eb] flex items-center justify-center text-[#8A1C36] shrink-0 shadow-sm">
-                   <FileText className="w-5 h-5" />
+                <div className={cn(
+                  "w-9 h-9 rounded-lg flex items-center justify-center shrink-0 shadow-sm border transition-colors",
+                  isBlogActive
+                    ? "bg-[#8A1C36]/15 border-[#8A1C36]/20 text-[#8A1C36]"
+                    : "bg-slate-50 border-slate-200/60 text-slate-500"
+                )}>
+                   <FileText className="w-4.5 h-4.5" />
                 </div>
                 <span>Latest Updates & Blog</span>
               </Link>
@@ -1702,34 +1727,43 @@ const Navbar = ({
                   href={supportUrl}
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center gap-4 text-lg font-bold p-4 rounded-2xl transition-all border-l-4 border-transparent text-slate-700 hover:bg-[#fce7eb] hover:text-[#8A1C36]"
+                  className="flex items-center gap-3 text-xs font-black uppercase tracking-wider p-3 rounded-xl transition-all duration-200 border-l-4 border-transparent text-slate-600 hover:bg-[#8A1C36]/5 hover:text-[#8A1C36] hover:translate-x-1 active:scale-98"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-[#fce7eb] flex items-center justify-center text-[#8A1C36] shrink-0 shadow-sm">
-                     <HelpCircle className="w-5 h-5" />
+                  <div className="w-9 h-9 rounded-lg bg-slate-50 border border-slate-200/60 flex items-center justify-center text-slate-500 shrink-0 shadow-sm hover:text-[#8A1C36] hover:bg-[#8A1C36]/10">
+                     <HelpCircle className="w-4.5 h-4.5" />
                   </div>
                   <span>Help & Support</span>
                 </a>
               )}
               {!user && onSignIn && (
-                <div className="pt-4 px-2 pb-2">
-                  <Button variant="primary" className="w-full py-4 rounded-2xl font-bold" onClick={() => { onSignIn(); setMobileMenuOpen(false); }}>
+                <div className="pt-3 pb-1">
+                  <Button variant="primary" className="w-full py-3 rounded-xl font-bold uppercase tracking-wider text-xs" onClick={() => { onSignIn(); setMobileMenuOpen(false); }}>
                     Sign In
                   </Button>
                 </div>
               )}
               {user && (
                 <>
-                  <div className="p-2 border-t border-slate-100 mt-2">
-                    <div className="flex items-center gap-3 mb-4">
-                      <UserAvatar profile={profile} user={user} className="w-10 h-10" />
-                      <div>
-                        <p className="text-sm font-black text-slate-700 truncate">{profile?.displayName || user?.email?.split('@')[0]}</p>
-                        <p className="text-xs font-bold text-slate-400 truncate">{user?.email}</p>
+                  <div className="border-t border-slate-100 pt-4 mt-2">
+                    <div className="bg-gradient-to-br from-slate-50 to-slate-100/70 border border-slate-200/40 p-4 rounded-xl shadow-sm mb-4 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="relative shrink-0">
+                          <UserAvatar profile={profile} user={user} className="w-10 h-10 border-2 border-white shadow-md rounded-full ring-2 ring-[#8A1C36]/20" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-extrabold text-slate-800 truncate leading-none mb-1">{profile?.displayName || user?.email?.split('@')[0]}</p>
+                          <p className="text-[10px] font-bold text-slate-400 truncate leading-none">{user?.email}</p>
+                        </div>
                       </div>
+                      <span className="shrink-0 bg-[#8A1C36]/10 text-[#8A1C36] text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md">Student</span>
                     </div>
                     {isAdmin && (
-                      <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 text-lg font-medium text-slate-900 p-4 hover:bg-brand-50 rounded-2xl transition-colors w-full">
-                        <Settings className="w-5 h-5 text-slate-400" /> Admin Panel
+                      <Link 
+                        to="/admin" 
+                        onClick={() => setMobileMenuOpen(false)} 
+                        className="flex items-center gap-3 text-xs font-black uppercase tracking-wider text-slate-700 p-3 hover:bg-[#8A1C36]/5 hover:text-[#8A1C36] rounded-xl transition-all w-full border border-slate-100 hover:border-[#8A1C36]/15 mb-2"
+                      >
+                        <Settings className="w-4 h-4 text-slate-500" /> Admin Panel
                       </Link>
                     )}
                     <button 
@@ -1738,13 +1772,16 @@ const Navbar = ({
                         await logout();
                         navigate('/');
                       }} 
-                      className="flex items-center gap-3 text-lg font-medium text-rose-600 p-4 hover:bg-rose-50 rounded-2xl transition-colors w-full text-left"
+                      className="flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest text-rose-600 bg-rose-50/50 hover:bg-rose-50 border border-rose-100/50 rounded-xl px-4 py-3 transition-all duration-200 w-full text-left cursor-pointer active:scale-98"
                     >
-                      <LogOut className="w-5 h-5" /> Sign Out
+                      <LogOut className="w-4 h-4 shrink-0" /> Sign Out
                     </button>
                   </div>
                 </>
               )}
+              <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest text-center mt-3 mb-1">
+                OdishaExamPrep · Education for All 🎓
+              </div>
             </div>
           </motion.div>
         )}
