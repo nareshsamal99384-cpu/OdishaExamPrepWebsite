@@ -1433,7 +1433,7 @@ Keep your answers short, structured, and focused on helping them improve their O
                       className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch"
                     >
                       {/* Left: Chat Container */}
-                      <div className="lg:col-span-8 flex flex-col justify-between border border-slate-200 rounded-2xl bg-slate-50/50 overflow-hidden h-[390px]">
+                      <div className="lg:col-span-8 flex flex-col justify-between border border-slate-200 rounded-2xl bg-slate-50/50 overflow-hidden h-[500px] sm:h-[390px]">
                         {/* Top bar with Clear Chat option */}
                         <div className="px-4 py-2.5 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
                           <div className="flex items-center gap-1.5">
