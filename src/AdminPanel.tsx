@@ -2198,7 +2198,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
 
                         {/* Exam Key */}
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">Exam Key (for Practice link)</label>
+                          <label className="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">Link to Exam (for Practice button)</label>
                           <select
                             value={row.examKey || ''}
                             onChange={e => {
@@ -2208,13 +2208,16 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                             }}
                             className="w-full px-4 py-2.5 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-bold text-sm bg-white"
                           >
-                            <option value="">— None —</option>
-                            <option value="opsc">OPSC</option>
-                            <option value="ossc">OSSC</option>
-                            <option value="osssc">OSSSC</option>
-                            <option value="police">Police</option>
-                            <option value="forest">Forest Guard</option>
+                            <option value="">— None (no scroll) —</option>
+                            {actualExams.map(ex => (
+                              <option key={ex.id as string} value={ex.id as string}>{ex.name}</option>
+                            ))}
                           </select>
+                          {row.examKey && (
+                            <p className="text-[10px] font-semibold text-brand-600 mt-1">
+                              ✓ Linked: {actualExams.find(ex => ex.id === row.examKey)?.name || row.examKey}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>

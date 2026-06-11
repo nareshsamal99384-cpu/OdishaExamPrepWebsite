@@ -462,18 +462,28 @@ const ExamRegistrySection = ({
   const handlePracticeClick = (item: any) => {
     const key = (item.examKey || '').toLowerCase();
     let matched = null;
-    if (key === 'opsc') matched = exams.find(e => e.name.toLowerCase().includes('opsc'));
-    else if (key === 'osssc') matched = exams.find(e => e.name.toLowerCase().includes('osssc'));
-    else if (key === 'ossc') matched = exams.find(e => e.name.toLowerCase().includes('ossc') && !e.name.toLowerCase().includes('osssc'));
-    else if (key === 'police') matched = exams.find(e => e.name.toLowerCase().includes('police'));
-    else if (key === 'forest') matched = exams.find(e => e.name.toLowerCase().includes('forest'));
-    else {
-      // Fallback: fuzzy match from exam name
-      const nameLower = (item.exam || '').toLowerCase();
-      if (nameLower.includes('opsc')) matched = exams.find(e => e.name.toLowerCase().includes('opsc'));
-      else if (nameLower.includes('osssc')) matched = exams.find(e => e.name.toLowerCase().includes('osssc'));
-      else if (nameLower.includes('ossc')) matched = exams.find(e => e.name.toLowerCase().includes('ossc') && !e.name.toLowerCase().includes('osssc'));
+
+    // First: try direct UUID match (new format — admin picked a real exam ID)
+    if (item.examKey) {
+      matched = exams.find(e => e.id === item.examKey);
     }
+
+    // Fallback: legacy keyword matching (opsc/ossc/osssc/police/forest)
+    if (!matched) {
+      if (key === 'opsc') matched = exams.find(e => e.name.toLowerCase().includes('opsc'));
+      else if (key === 'osssc') matched = exams.find(e => e.name.toLowerCase().includes('osssc'));
+      else if (key === 'ossc') matched = exams.find(e => e.name.toLowerCase().includes('ossc') && !e.name.toLowerCase().includes('osssc'));
+      else if (key === 'police') matched = exams.find(e => e.name.toLowerCase().includes('police'));
+      else if (key === 'forest') matched = exams.find(e => e.name.toLowerCase().includes('forest'));
+      else {
+        // Last resort: fuzzy match from the exam name text
+        const nameLower = (item.exam || '').toLowerCase();
+        if (nameLower.includes('opsc')) matched = exams.find(e => e.name.toLowerCase().includes('opsc'));
+        else if (nameLower.includes('osssc')) matched = exams.find(e => e.name.toLowerCase().includes('osssc'));
+        else if (nameLower.includes('ossc')) matched = exams.find(e => e.name.toLowerCase().includes('ossc') && !e.name.toLowerCase().includes('osssc'));
+      }
+    }
+
     if (matched) setSelectedExam(matched.id);
     else if (key === 'opsc' || (item.exam || '').toLowerCase().includes('opsc')) setSelectedExam('opsc-aio');
     scrollToElement('exams', { block: 'start' });
