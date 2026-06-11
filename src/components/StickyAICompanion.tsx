@@ -537,11 +537,6 @@ const StickyAICompanion: React.FC = () => {
                       Offline mode
                     </span>
                   )}
-                  {siteData && !dataLoading && !dataError && (
-                    <span className="bg-emerald-500/30 text-emerald-200 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
-                      ✓ Live data
-                    </span>
-                  )}
                 </div>
                 <p className="text-white/70 text-[10px] font-semibold truncate">Your AI Study Companion ✨</p>
               </div>
