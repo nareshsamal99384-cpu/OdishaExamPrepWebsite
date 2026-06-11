@@ -509,7 +509,7 @@ const StickyAICompanion: React.FC = () => {
             exit={{ opacity: 0, scale: 0.9, y: 30 }}
             transition={{ type: 'spring', stiffness: 320, damping: 26 }}
             className={cn(
-              'fixed right-3 sm:right-6 z-[200] w-[calc(100vw-24px)] sm:w-[390px] bg-white rounded-[1.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.15),0_4px_16px_rgba(0,0,0,0.06)] border border-slate-200/60 overflow-hidden flex flex-col',
+              'fixed left-3 right-3 sm:left-auto sm:right-6 z-[200] w-auto sm:w-[390px] bg-white rounded-[1.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.15),0_4px_16px_rgba(0,0,0,0.06)] border border-slate-200/60 overflow-hidden flex flex-col max-h-[85vh] sm:max-h-none',
               isMinimized ? 'h-auto bottom-24 sm:bottom-8' : 'bottom-4 sm:bottom-8 h-[540px] sm:h-[570px]'
             )}
           >
