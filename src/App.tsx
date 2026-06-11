@@ -73,6 +73,7 @@ const YouTubeCarousel = React.lazy(() => import('./components/YouTubeCarousel'))
 const BlogList = React.lazy(() => import('./pages/BlogList'));
 const BlogPost = React.lazy(() => import('./pages/BlogPost'));
 const AiMentor = React.lazy(() => import('./pages/AiMentor'));
+import StickyAICompanion from './components/StickyAICompanion';
 
 const HistoryView = ({ user, onViewResults, onResumeTest }: { user: any, onViewResults?: (results: any) => void, onResumeTest?: (test: any, state: any) => void }) => {
   const [activities, setActivities] = useState<any[]>([]);
@@ -5966,6 +5967,7 @@ function AppContent() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </AnimatedRoutes>
       <WhatsAppButton />
+      <StickyAICompanion />
     </div>
   );
 }
