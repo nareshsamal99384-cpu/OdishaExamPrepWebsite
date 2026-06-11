@@ -11,7 +11,7 @@ import {
   Timer, History, LayoutDashboard, Rocket,
   ArrowRight, ChevronDown, Crosshair, Flame,
   Sparkles, Brain, Cpu, Send, Activity, 
-  Gauge, Lightbulb, Loader2, RefreshCw
+  Gauge, Lightbulb, Loader2, RefreshCw, Trash2
 } from 'lucide-react';
 import { activityTracker } from './lib/activityTracker';
 import { cn } from './lib/utils';
@@ -1337,6 +1337,22 @@ Keep your answers short, structured, and focused on helping them improve their O
                     >
                       {/* Left: Chat Container */}
                       <div className="lg:col-span-8 flex flex-col justify-between border border-slate-200 rounded-2xl bg-slate-50/50 overflow-hidden h-[320px]">
+                        {/* Top bar with Clear Chat option */}
+                        <div className="px-4 py-2.5 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[10px] font-black text-slate-705 uppercase tracking-wider">AI Performance Coach</span>
+                          </div>
+                          {chatHistory.length > 0 && (
+                            <button
+                              onClick={() => setChatHistory([])}
+                              className="text-[9px] font-black text-slate-450 hover:text-[#8A1C36] flex items-center gap-1.5 transition-colors cursor-pointer border-none bg-transparent"
+                            >
+                              <Trash2 className="w-3 h-3" /> CLEAR CHAT
+                            </button>
+                          )}
+                        </div>
+
                         <div ref={chatContainerRef} className="p-4 overflow-y-auto space-y-3.5 flex-1 custom-scrollbar text-xs">
                           {chatHistory.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 p-6">
