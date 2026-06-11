@@ -917,6 +917,7 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
     if (!stats) return;
     const cacheKey = `oep_ai_insights_${user?.id}_${stats.totalTests}_${stats.avgScore}`;
     
+    setChatHistory([]);
     setLoadingAi(true);
     setScanningPhase(1);
     
