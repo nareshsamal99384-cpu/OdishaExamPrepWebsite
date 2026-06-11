@@ -1406,7 +1406,7 @@ const Footer = () => {
                   <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center shrink-0 group-hover:border-brand-500/50 group-hover:bg-[#8a1c36]/10 transition-all duration-300">
                     <Mail className="w-4 h-4 text-slate-400 group-hover:text-brand-400 transition-colors" />
                   </div>
-                  <span className="break-all text-sm group-hover:text-white transition-colors duration-300">
+                  <span className="break-words lg:whitespace-nowrap text-sm group-hover:text-white transition-colors duration-300">
                     odishaexamprep365@gmail.com
                   </span>
                 </a>
