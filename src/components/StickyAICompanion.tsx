@@ -282,12 +282,19 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({ isBottomNavVisibl
   const [siteData, setSiteData] = useState<LiveSiteData | null>(null);
   const [dataLoading, setDataLoading] = useState(false);
   const [dataError, setDataError] = useState(false);
+  const [isTestMode, setIsTestMode] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-
-
+  /* ── Hide during active mock/practice tests ── */
+  useEffect(() => {
+    const check = () => setIsTestMode(document.body.hasAttribute('data-test-mode'));
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-test-mode'] });
+    return () => observer.disconnect();
+  }, []);
   /* ── Load live site data from Supabase when widget opens ── */
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const loadSiteData = async () => {
@@ -367,21 +374,11 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({ isBottomNavVisibl
     }
   }, [isOpen, isMinimized]);
 
-  // Listen for body attribute changes set by DashboardContent when a test is active
-  const [isTestMode, setIsTestMode] = useState(() => document.body.hasAttribute('data-test-mode'));
-
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsTestMode(document.body.hasAttribute('data-test-mode'));
-    });
-    observer.observe(document.body, { attributes: true, attributeFilter: ['data-test-mode'] });
-    return () => observer.disconnect();
-  }, []);
-
-  if (isTestMode) return null;
-
   // Only for logged-in users
   if (!user) return null;
+
+  // Hide completely during active mock/practice tests
+  if (isTestMode) return null;
 
   const firstName = profile?.displayName?.split(' ')[0] || 'there';
 
