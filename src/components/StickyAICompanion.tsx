@@ -286,10 +286,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({ isBottomNavVisibl
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Only for logged-in users
-  if (!user) return null;
 
-  const firstName = profile?.displayName?.split(' ')[0] || 'there';
 
   /* ── Load live site data from Supabase when widget opens ── */
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -369,6 +366,11 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({ isBottomNavVisibl
       setTimeout(() => inputRef.current?.focus(), 200);
     }
   }, [isOpen, isMinimized]);
+
+  // Only for logged-in users
+  if (!user) return null;
+
+  const firstName = profile?.displayName?.split(' ')[0] || 'there';
 
   /* ── Send message with grounded system prompt ── */
   const sendMessage = async (text: string) => {
