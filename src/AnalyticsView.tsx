@@ -1309,10 +1309,18 @@ Keep your answers short, structured, and focused on helping them improve their O
                     <button
                       onClick={() => runAiAnalysis(true)}
                       disabled={loadingAi}
-                      className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                      className={cn(
+                        "flex items-center justify-center gap-2 px-4 py-2.5 sm:p-2.5 rounded-xl transition-all cursor-pointer font-bold text-xs uppercase tracking-wider shrink-0 disabled:opacity-50 border active:scale-95",
+                        loadingAi
+                          ? "bg-slate-50 border-slate-200/60 text-slate-400"
+                          : "bg-[#8A1C36]/5 hover:bg-[#8A1C36]/10 border-[#8A1C36]/10 text-[#8A1C36] hover:text-[#8A1C36]"
+                      )}
                       title="Re-Scan Analytics"
                     >
-                      <RefreshCw className={cn("w-4 h-4", loadingAi && "animate-spin")} />
+                      <RefreshCw className={cn("w-3.5 h-3.5", loadingAi && "animate-spin")} />
+                      <span className="inline-block sm:hidden lg:inline text-[10px] sm:text-xs">
+                        {loadingAi ? "Scanning..." : "Rescan Analytics"}
+                      </span>
                     </button>
                   </div>
                 </div>
