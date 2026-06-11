@@ -2884,7 +2884,7 @@ JSON structure:
                         className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white shadow-lg shadow-amber-900/30 transition-colors duration-200 shrink-0 cursor-pointer overflow-hidden group"
                         title="Stop Generation"
                       >
-                        <span className="absolute inset-0 bg-slate-100 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
                         <Square className="w-3.5 h-3.5 fill-white text-white" />
                       </motion.button>
                     ) : (
@@ -2902,8 +2902,8 @@ JSON structure:
                         )}
                         title="Send Message"
                       >
-                        {/* Shimmer on hover */}
-                        <span className="absolute inset-0 bg-slate-150 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
+                        {/* Lighten overlay on hover */}
+                        <span className="absolute inset-0 bg-white/15 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
                         <Send className="w-4 h-4 relative z-10" strokeWidth={2.5} />
                       </motion.button>
                     )}
