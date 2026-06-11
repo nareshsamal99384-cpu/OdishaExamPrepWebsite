@@ -4037,7 +4037,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     else sessionStorage.removeItem('oep_selectedMockCategory');
   }, [selectedMockCategory]);
   const actualExams = useMemo(() => {
-    return exams.filter(e => e.category !== 'blog' && e.category !== 'system' && e.name !== 'SYSTEM_SETTINGS_YOUTUBE_RESERVED');
+    return exams.filter(e => e.category !== 'blog' && e.category !== 'system' && !(e.name || '').startsWith('SYSTEM_SETTINGS_'));
   }, [exams]);
 
   useEffect(() => {
@@ -4197,7 +4197,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   const [examSearchQuery, setExamSearchQuery] = useState('');
 
   const filteredExams = exams.filter(exam => {
-    if (exam.name === 'SYSTEM_SETTINGS_YOUTUBE_RESERVED') return false;
+    if (exam.name && exam.name.startsWith('SYSTEM_SETTINGS_')) return false;
     if (exam.category === 'system' || exam.category === 'blog') return false;
     
     if (examSearchQuery) {

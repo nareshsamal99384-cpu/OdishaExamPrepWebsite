@@ -434,7 +434,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       }
       list = filtered;
     } else if (activeTab === 'exams') {
-      let filtered = exams.filter(e => e.name !== 'SYSTEM_SETTINGS_YOUTUBE_RESERVED' && e.category !== 'blog');
+      let filtered = exams.filter(e => !(e.name || '').startsWith('SYSTEM_SETTINGS_') && e.category !== 'blog');
       if (examFilter !== 'all') filtered = filtered.filter(e => e.category === examFilter);
       if (searchQuery.trim()) {
         const lowerQ = searchQuery.toLowerCase();
@@ -485,7 +485,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
   }, [activeTab, questions, series, mockTests, exams, banks, users, filterExamId, searchQuery, examFilter, questionFilter, testFilter, bankFilter]);
 
   const actualExams = React.useMemo(() => {
-    return exams.filter(e => e.category !== 'blog' && e.category !== 'system' && e.name !== 'SYSTEM_SETTINGS_YOUTUBE_RESERVED');
+    return exams.filter(e => e.category !== 'blog' && e.category !== 'system' && !(e.name || '').startsWith('SYSTEM_SETTINGS_'));
   }, [exams]);
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
