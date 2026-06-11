@@ -22,6 +22,7 @@ import {
   AlertCircle,
   Info,
   X,
+  Trash2,
   Menu,
   Star,
   Download,
@@ -47,7 +48,7 @@ import {
   Timer,
   Clock3
 } from 'lucide-react';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
 import { useAuth } from './lib/AuthContext';
 import { supabase } from './lib/supabase';
 import { cn, getDirectImageUrl } from './lib/utils';
@@ -76,29 +77,108 @@ const BlogPost = React.lazy(() => import('./pages/BlogPost'));
 const AiMentor = React.lazy(() => import('./pages/AiMentor'));
 import StickyAICompanion from './components/StickyAICompanion';
 
-const HistoryView = ({ user, onViewResults, onResumeTest }: { user: any, onViewResults?: (results: any) => void, onResumeTest?: (test: any, state: any) => void }) => {
+const HistoryView = ({ 
+  user, 
+  onViewResults, 
+  onResumeTest,
+  onActivityDeleted
+}: { 
+  user: any, 
+  onViewResults?: (results: any) => void, 
+  onResumeTest?: (test: any, state: any) => void,
+  onActivityDeleted?: () => void
+}) => {
   const [activities, setActivities] = useState<any[]>([]);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
 
-  useEffect(() => {
+  const loadActivities = useCallback(() => {
     const raw = activityTracker.getActivities(user?.id, user?.user_metadata);
     setActivities(raw);
   }, [user]);
-  
+
+  useEffect(() => {
+    loadActivities();
+  }, [loadActivities]);
+
+  const handleDeleteActivity = async (activityId: string) => {
+    if (!user?.id) return;
+    await activityTracker.deleteActivity(user.id, activityId);
+    setConfirmDeleteId(null);
+    toast.success("Activity deleted from history");
+    loadActivities();
+    onActivityDeleted?.();
+  };
+
+  const handleClearAll = async () => {
+    if (!user?.id) return;
+    await activityTracker.clearActivities(user.id);
+    setConfirmClearAll(false);
+    toast.success("Activity history cleared");
+    loadActivities();
+    onActivityDeleted?.();
+  };
+
   if (!activities || activities.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center space-y-4">
-        <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+      <div className="flex flex-col items-center justify-center p-12 text-center space-y-4 bg-white rounded-[2.5rem] border border-slate-200/50 shadow-sm">
+        <div className="w-20 h-20 bg-slate-50 border border-slate-200/60 rounded-full flex items-center justify-center mb-4">
           <History className="w-10 h-10 text-slate-400" />
         </div>
-        <h2 className="text-3xl font-bold tracking-tight text-slate-900">No History Yet</h2>
-        <p className="text-slate-500 font-medium text-lg">Start taking mock tests and practice sessions to see your progress here.</p>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">No History Yet</h2>
+        <p className="text-slate-500 font-medium text-base max-w-sm">Start taking mock tests and practice sessions to see your progress here.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Your Activity History</h2>
+      <div className="border-b border-slate-100 pb-4 space-y-3">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200/50 flex items-center justify-center shrink-0">
+              <History className="w-5.5 h-5.5 text-[#8A1C36]" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-none">Your Activity History</h2>
+          </div>
+
+          {activities.length > 0 && (
+            <div className="shrink-0">
+              {confirmClearAll ? (
+                <div className="flex items-center gap-1.5 sm:gap-2 animate-in fade-in duration-200">
+                  <span className="text-[10px] sm:text-xs font-semibold text-slate-500 hidden xs:inline">Clear all?</span>
+                  <button
+                    onClick={async () => {
+                      await handleClearAll();
+                    }}
+                    className="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-wider cursor-pointer border-none shadow-sm"
+                  >
+                    Confirm
+                  </button>
+                  <button
+                    onClick={() => setConfirmClearAll(false)}
+                    className="px-2.5 py-1.5 rounded-lg bg-slate-150 hover:bg-slate-200 text-slate-700 text-[10px] font-black uppercase tracking-wider cursor-pointer border-none"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmClearAll(true)}
+                  className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-50 hover:bg-rose-50/70 text-slate-500 hover:text-rose-650 border border-slate-200/60 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Clear All</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+        <p className="text-[10px] sm:text-xs font-semibold text-slate-455 pl-0 sm:pl-[52px]">
+          Manage and track your exam mock tests and practice sessions
+        </p>
+      </div>
+
       <div className="grid gap-4">
         {activities.map((a, i) => {
           const isTestResult = !!a.metadata && a.type !== 'question_bank_accessed';
@@ -118,11 +198,37 @@ const HistoryView = ({ user, onViewResults, onResumeTest }: { user: any, onViewR
                 }
               }}
               className={cn(
-                "bg-white rounded-2xl p-6 border border-slate-200/50 flex items-center justify-between transition-all group",
+                "relative bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/50 flex items-center justify-between transition-all group overflow-hidden history-card",
                 isInteractive ? "cursor-pointer hover:border-brand-500 hover:shadow-lg hover:shadow-brand-500/10" : ""
               )}
             >
-              <div>
+              {/* Confirm Single Delete Overlay */}
+              {confirmDeleteId === a.id && (
+                <div 
+                  className="absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-6 z-20 animate-in fade-in duration-200"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span className="text-xs sm:text-sm font-bold text-slate-800 text-center">Delete this activity from your history?</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={async () => {
+                        await handleDeleteActivity(a.id);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-[10px] sm:text-xs font-black uppercase tracking-wider cursor-pointer border-none shadow-md shadow-rose-600/20 active:scale-95 transition-all"
+                    >
+                      Delete
+                    </button>
+                    <button
+                      onClick={() => setConfirmDeleteId(null)}
+                      className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] sm:text-xs font-black uppercase tracking-wider cursor-pointer border-none active:scale-95 transition-all"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex-1 min-w-0 pr-4">
                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
                    {a.metadata?.testCategory && (
                      <span className="inline-flex items-center px-2 py-0.5 bg-brand-50 text-brand-600 rounded text-[10px] font-black uppercase tracking-wider">
@@ -140,8 +246,8 @@ const HistoryView = ({ user, onViewResults, onResumeTest }: { user: any, onViewR
                      </span>
                    )}
                  </div>
-                 <h4 className={cn("font-bold text-lg text-slate-900 transition-colors", isInteractive && "group-hover:text-brand-600")}>{a.title}</h4>
-                 <p className="text-sm text-slate-500">{new Date(a.timestamp).toLocaleString()}</p>
+                 <h4 className={cn("font-bold text-base sm:text-lg text-slate-900 transition-colors truncate", isInteractive && "group-hover:text-brand-600")}>{a.title}</h4>
+                 <p className="text-xs sm:text-sm text-slate-500">{new Date(a.timestamp).toLocaleString()}</p>
                  {a.type === 'question_bank_accessed' && (
                     <div className="inline-flex items-center px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold mt-3 transition-colors group-hover:bg-blue-100">
                       <Download className="w-3.5 h-3.5 mr-1.5" /> 
@@ -150,12 +256,12 @@ const HistoryView = ({ user, onViewResults, onResumeTest }: { user: any, onViewR
                  )}
               </div>
               
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3 sm:gap-6 shrink-0">
                  {a.type === 'test_incomplete' && (
                    <div className="flex flex-col items-end">
                       <span className="text-[10px] font-black uppercase text-brand-600 mb-1">In Progress</span>
                       <div className="flex items-center gap-1.5 text-slate-400">
-                        <Clock className="w-3 h-3" />
+                        <Clock className="w-3.5 h-3.5" />
                         <span className="text-xs font-bold">{Object.keys(a.metadata?.answers || {}).length} Answered</span>
                       </div>
                    </div>
@@ -163,18 +269,30 @@ const HistoryView = ({ user, onViewResults, onResumeTest }: { user: any, onViewR
                  
                  {a.score !== undefined && (
                    <div className="text-right">
-                      <span className="font-bold text-brand-600 text-xl">{typeof a.score === 'number' ? Number(a.score.toFixed(2)) : a.score}/{a.totalMarks}</span>
-                      <p className="text-xs font-semibold text-slate-400">{Math.round(a.accuracy || 0)}% Accuracy</p>
+                      <span className="font-bold text-brand-600 text-lg sm:text-xl">{typeof a.score === 'number' ? Number(a.score.toFixed(2)) : a.score}/{a.totalMarks}</span>
+                      <p className="text-[10px] sm:text-xs font-semibold text-slate-400">{Math.round(a.accuracy || 0)}% Accuracy</p>
                    </div>
                  )}
                 
                  {(isTestResult || a.type === 'test_incomplete') && (
                    <div className={cn(
-                     "w-10 h-10 rounded-full flex items-center justify-center transition-all bg-brand-50 text-brand-600 group-hover:scale-110 group-hover:bg-brand-600 group-hover:text-white"
+                     "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all bg-brand-50 text-brand-600 group-hover:scale-110 group-hover:bg-brand-600 group-hover:text-white"
                    )}>
-                     {a.type === 'test_incomplete' ? <Play className="w-4 h-4 ml-0.5" /> : <ChevronRight className="w-5 h-5 ml-0.5" />}
+                     {a.type === 'test_incomplete' ? <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-0.5" /> : <ChevronRight className="w-4.5 h-4.5 sm:w-5 sm:h-5 ml-0.5" />}
                    </div>
                  )}
+
+                 {/* Delete Button */}
+                 <button
+                   onClick={(e) => {
+                     e.stopPropagation();
+                     setConfirmDeleteId(a.id);
+                   }}
+                   className="delete-btn p-2 rounded-xl text-slate-350 hover:text-rose-650 hover:bg-rose-50/50 transition-all cursor-pointer border-none bg-transparent"
+                   title="Delete from history"
+                 >
+                   <Trash2 className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+                 </button>
               </div>
             </div>
           );
@@ -1925,15 +2043,6 @@ const LandingPage = () => {
   const [showGuideToast, setShowGuideToast] = useState(false);
   const [authMessage, setAuthMessage] = useState<{ type: 'error' | 'info' | 'success', text: string } | null>(null);
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setAuthMode('resetPassword');
-        setShowAuthModal(true);
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, []);
 
   useEffect(() => {
     setEmail('');
@@ -2290,7 +2399,7 @@ const LandingPage = () => {
 
       <AnimatePresence>
         {showAuthModal && (
-          <div className="fixed inset-0 bg-slate-950/40 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 backdrop-blur-md">
+          <div className="fixed inset-0 bg-slate-950/40 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 backdrop-blur-md">
             <motion.div {...slideUpPanel}
               className="glass rounded-t-[2rem] sm:rounded-3xl w-full max-w-md p-6 sm:p-10 pb-10 sm:pb-10 space-y-6 sm:space-y-8 shadow-2xl border-x-0 border-b-0 sm:border border-white/40 max-h-[90vh] overflow-y-auto no-scrollbar"
             >
@@ -2326,45 +2435,69 @@ const LandingPage = () => {
                 </motion.div>
               )}
 
-               <form onSubmit={
+              <form onSubmit={
                  authMode === 'forgotPassword'
                    ? handleForgotPasswordSubmit
                    : authMode === 'resetPassword'
                      ? handleResetPasswordSubmit
                      : handleEmailAuth
                } className="space-y-5">
-                <div className="space-y-4">
+                 <div className="space-y-4">
                   {/* Full Name field (Signup only) */}
                   {authMode === 'signup' && (
-                    <input 
-                      type="text" 
-                      placeholder="Full Name" 
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required
-                      className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base" 
-                    />
+                    <div className="space-y-1.5 text-left">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider pl-1">
+                        Full Name
+                      </label>
+                      <input 
+                        type="text" 
+                        placeholder="John Doe" 
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        required
+                        className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base" 
+                      />
+                    </div>
                   )}
 
                   {/* Email field (Login, Signup, Forgot Password) */}
                   {authMode !== 'resetPassword' && (
-                    <input 
-                      type="email" 
-                      placeholder="Email Address" 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base" 
-                    />
+                    <div className="space-y-1.5 text-left">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider pl-1">
+                        Email Address
+                      </label>
+                      <input 
+                        type="email" 
+                        placeholder="email@example.com" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base" 
+                      />
+                    </div>
                   )}
 
                   {/* Password field (Login, Signup, Reset Password) */}
                   {authMode !== 'forgotPassword' && (
-                    <div className="space-y-2">
+                    <div className="space-y-1.5 text-left">
+                      <div className="flex justify-between items-center pl-1">
+                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                          {authMode === 'resetPassword' ? "New Password" : "Password"}
+                        </label>
+                        {authMode === 'login' && (
+                          <button
+                            type="button"
+                            onClick={() => setAuthMode('forgotPassword')}
+                            className="text-[11px] font-extrabold text-brand-600 hover:text-brand-700 hover:underline transition-all focus:outline-none border-none bg-transparent cursor-pointer"
+                          >
+                            Forgot Password?
+                          </button>
+                        )}
+                      </div>
                       <div className="relative">
                         <input 
                           type={showPassword ? "text" : "password"} 
-                          placeholder={authMode === 'resetPassword' ? "New Password" : "Password"} 
+                          placeholder="••••••••" 
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
@@ -2378,33 +2511,25 @@ const LandingPage = () => {
                           {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                         </button>
                       </div>
-
-                      {/* Forgot Password Link (Login only, tightly grouped under Password input) */}
-                      {authMode === 'login' && (
-                        <div className="flex justify-end px-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setAuthMode('forgotPassword')}
-                            className="text-xs font-semibold text-slate-400 hover:text-[#8A1C36] transition-colors"
-                          >
-                            Forgot Password?
-                          </button>
-                        </div>
-                      )}
                     </div>
                   )}
 
                   {/* Confirm Password field (Reset Password only) */}
                   {authMode === 'resetPassword' && (
-                    <div className="relative">
-                      <input 
-                        type={showPassword ? "text" : "password"} 
-                        placeholder="Confirm New Password" 
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                        className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base pr-12" 
-                      />
+                    <div className="space-y-1.5 text-left">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider pl-1">
+                        Confirm New Password
+                      </label>
+                      <div className="relative">
+                        <input 
+                          type={showPassword ? "text" : "password"} 
+                          placeholder="••••••••" 
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                          className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base pr-12" 
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -2796,18 +2921,29 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
  * and re-triggering a fetch that could race with a concurrent token refresh.
  * Now we immediately populate state from this cache on re-mount.
  */
+const getCachedData = (key: string, fallback: any) => {
+  try {
+    const saved = sessionStorage.getItem(key);
+    return saved ? JSON.parse(saved) : fallback;
+  } catch (e) {
+    return fallback;
+  }
+};
+
 const _dashboardCache: {
   exams: any[];
   testSeries: any[];
   mockTests: any[];
   dynamicQuestionBanks: Record<string, any[]>;
   loadedForUserId: string | null;
+  hasFetchedThisSession: boolean;
 } = {
-  exams: [],
-  testSeries: [],
-  mockTests: [],
-  dynamicQuestionBanks: {},
-  loadedForUserId: null,
+  exams: getCachedData('oep_cached_exams', []),
+  testSeries: getCachedData('oep_cached_testSeries', []),
+  mockTests: getCachedData('oep_cached_mockTests', []),
+  dynamicQuestionBanks: getCachedData('oep_cached_dynamicQuestionBanks', {}),
+  loadedForUserId: sessionStorage.getItem('oep_cached_loadedForUserId') || null,
+  hasFetchedThisSession: false,
 };
 
 // --- Goal Onboarding Modal ---
@@ -3084,7 +3220,6 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   // --- Common UI Components (Defined early, rendered at bottom) ---
   const renderCommonModals = () => (
     <>
-        {/* Onboarding Modal */}
         <OnboardingModal 
           isOpen={showOnboarding} 
           onSave={handleSaveOnboarding} 
@@ -3093,55 +3228,124 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         {/* Detail View Modal */}
         <AnimatePresence>
           {selectedBankItem && (
-            <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
               <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="bg-white rounded-[2rem] w-[90%] max-w-sm overflow-hidden shadow-2xl flex flex-col"
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="bg-[#FAF8F5] rounded-[2rem] w-[95%] sm:w-[90%] md:w-full max-w-sm md:max-w-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] flex flex-col md:flex-row border border-slate-200/50 relative"
               >
-                <div className="h-36 relative shrink-0">
-                  <img 
-                    src={getDirectImageUrl(selectedBankItem.image)} 
-                    alt={selectedBankItem.title} 
-                    loading="lazy"
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <button 
-                    onClick={() => setSelectedBankItem(null)}
-                    className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/40 text-white rounded-xl backdrop-blur-md transition-all z-20"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                  <div className="absolute bottom-4 left-6 z-10">
-                    <h2 className="text-xl font-black text-white leading-tight">{selectedBankItem.title}</h2>
+                {/* Unified Close Button (Adaptive theme based on viewport layout context) */}
+                <button 
+                  onClick={() => setSelectedBankItem(null)}
+                  className="absolute top-5 right-5 p-2 bg-white/10 hover:bg-white/20 text-white md:bg-slate-100 md:hover:bg-slate-200 md:text-slate-500 rounded-xl backdrop-blur-md md:backdrop-blur-none transition-all z-50 hover:scale-105 active:scale-95 border-none cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                {/* Left Column: Premium Visual Branding & Stats (Fixed height on mobile, full-height banner on laptop) */}
+                <div className="relative h-48 md:h-auto md:min-h-[440px] md:w-[38%] bg-gradient-to-br from-[#12040b]/98 via-[#08020a]/99 to-[#030005]/100 border-b md:border-b-0 md:border-r border-slate-200/50 flex flex-col justify-center md:justify-between items-center p-6 md:p-8 overflow-hidden shrink-0">
+                  {/* Ambient background grid and glowing orb */}
+                  <div className="absolute inset-0 grid-bg opacity-[0.06] pointer-events-none" />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-brand-500/10 rounded-full blur-[60px] pointer-events-none" />
+                  
+                  {/* Category image as soft abstract overlay texture */}
+                  {selectedBankItem.image && (
+                    <img 
+                      src={getDirectImageUrl(selectedBankItem.image)} 
+                      alt="" 
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-cover opacity-90 pointer-events-none select-none z-0"
+                      referrerPolicy="no-referrer"
+                    />
+                  )}
+
+                  {/* Dark gradient overlay to ensure text contrast and readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/25 z-[1] pointer-events-none" />
+
+                  {/* Interactive Orbital Study Seal */}
+                  <div className="relative flex flex-col items-center justify-center space-y-3 md:space-y-4 w-full md:my-auto z-10">
+                    <div className="relative w-20 h-20 md:w-24 md:h-24 flex items-center justify-center shrink-0">
+                      <div className="absolute inset-0 rounded-full border border-dashed border-brand-500/30 animate-[spin_20s_linear_infinite]" />
+                      <div className="absolute inset-2 rounded-full border border-brand-500/10 border-t-brand-500/40 animate-[spin_5s_linear_infinite_reverse]" />
+                      <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl shadow-brand-500/20 backdrop-blur-md">
+                        <BookOpen className="w-5.5 h-5.5 md:w-6 md:h-6 text-brand-400" />
+                      </div>
+                    </div>
+                    
+                    {/* Header title for mobile */}
+                    <div className="text-center md:hidden">
+                      <h2 className="text-2xl font-serif font-extrabold text-white leading-tight">{selectedBankItem.title}</h2>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-brand-400 mt-1">Question Bank Portal</p>
+                    </div>
+
+                    {/* Branding label for laptop */}
+                    <div className="hidden md:block text-center space-y-1">
+                      <h3 className="text-xl font-serif font-extrabold text-white">
+                        Odisha<span className="font-serif italic font-normal text-brand-400">Prep</span>
+                      </h3>
+                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Study Companion</p>
+                    </div>
+                  </div>
+
+                  {/* Desktop Stats Cards (translucent style, hidden on mobile) */}
+                  <div className="relative hidden md:grid grid-cols-2 gap-3 z-10 w-full mt-auto">
+                    <div className="p-3 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md shadow-sm">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Questions</p>
+                      <p className="text-base font-black text-white">{selectedBankItem.questions}</p>
+                    </div>
+                    <div className="p-3 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md shadow-sm">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Highlight</p>
+                      <p className="text-[10px] font-black text-brand-400 truncate" title={selectedBankItem.tagline}>
+                        {selectedBankItem.tagline || "Comprehensive"}
+                      </p>
+                    </div>
                   </div>
                 </div>
                 
-                <div className="p-6 space-y-6">
-                  <p className="text-slate-500 text-sm font-medium leading-relaxed line-clamp-2">
-                    Comprehensive Question Bank and practice materials for {selectedBankItem.title}.
-                  </p>
+                {/* Right Column: Metadata, List & Actions */}
+                <div className="relative md:w-[62%] p-6 md:p-8 flex flex-col justify-between relative overflow-hidden">
+                  {/* Subtle grid background */}
+                  <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" />
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Questions</p>
-                      <p className="text-base font-black text-slate-900">{selectedBankItem.questions}</p>
-                    </div>
-                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Highlight</p>
-                      <p className="text-[11px] font-black text-brand-600 truncate">{selectedBankItem.tagline}</p>
-                    </div>
-                  </div>
+                  <div className="space-y-6 relative z-10 flex-grow flex flex-col justify-between">
+                    <div className="space-y-4">
+                      {/* Topic Title (Laptop only) */}
+                      <div className="hidden md:block space-y-1">
+                        <span className="inline-flex items-center px-2 py-0.5 bg-brand-50 text-[#8A1C36] rounded text-[9px] font-black uppercase tracking-wider border border-brand-100">
+                          Topic Focus
+                        </span>
+                        <h2 className="text-2xl md:text-3xl font-serif font-extrabold text-slate-900 leading-tight">
+                          {selectedBankItem.title}
+                        </h2>
+                      </div>
 
-                  <div className="flex flex-col gap-3">
+                      {/* Description */}
+                      <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                        Access official question banks, chapter notes, and exam practice materials customized for {selectedBankItem.title}.
+                      </p>
+                      
+                      {/* Mobile Stats Cards (Rendered here on mobile viewports) */}
+                      <div className="grid grid-cols-2 gap-3 md:hidden">
+                        <div className="p-3 bg-white border border-slate-200/60 rounded-2xl shadow-sm">
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Questions</p>
+                          <p className="text-base font-black text-slate-900">{selectedBankItem.questions}</p>
+                        </div>
+                        <div className="p-3 bg-white border border-slate-200/60 rounded-2xl shadow-sm">
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Highlight</p>
+                          <p className="text-[10px] font-black text-[#8A1C36] truncate" title={selectedBankItem.tagline}>
+                            {selectedBankItem.tagline || "Comprehensive"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Study Materials */}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between px-1">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Study Materials</p>
                         {selectedBankItem.pdfLinks && selectedBankItem.pdfLinks.length > 2 && (
-                          <span className="text-[9px] font-bold text-brand-500 animate-pulse">Scroll to view all</span>
+                          <span className="text-[9px] font-bold text-[#8A1C36] animate-pulse">Scroll to view all</span>
                         )}
                       </div>
                       
@@ -3155,7 +3359,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                             transition: { staggerChildren: 0.08 }
                           }
                         }}
-                        className="max-h-[180px] overflow-y-auto pr-1 space-y-2 custom-scrollbar"
+                        className="max-h-[160px] overflow-y-auto pr-1 space-y-2 custom-scrollbar"
                       >
                         {selectedBankItem.pdfLinks && selectedBankItem.pdfLinks.length > 0 ? (
                           selectedBankItem.pdfLinks.map((link: any, idx: number) => (
@@ -3165,7 +3369,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                 hidden: { opacity: 0, x: -10 },
                                 show: { opacity: 1, x: 0 }
                               }}
-                              className="w-full flex items-center justify-between p-3 rounded-2xl bg-slate-50/80 hover:bg-brand-50 border border-slate-100 hover:border-brand-200 transition-all group relative overflow-hidden"
+                              className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white hover:bg-brand-50/50 border border-slate-200/60 hover:border-brand-200/60 transition-all group relative overflow-hidden shadow-sm cursor-pointer"
                               onClick={() => {
                                 if (isGuest) {
                                   setShowLoginPrompt(true);
@@ -3207,11 +3411,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                               }}
                             >
                               <div className="flex items-center gap-3 relative z-10">
-                                <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-sm text-brand-600 group-hover:scale-110 group-hover:rotate-6 transition-all">
+                                <div className="w-8.5 h-8.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[#8A1C36] group-hover:scale-110 group-hover:bg-[#8A1C36] group-hover:text-white transition-all shadow-sm">
                                   <Download className="w-4 h-4" />
                                 </div>
                                 <div className="text-left">
-                                  <p className="text-xs font-black text-slate-700 group-hover:text-brand-700 truncate max-w-[180px]">
+                                  <p className="text-xs font-bold text-slate-800 group-hover:text-slate-950 truncate max-w-[160px] sm:max-w-[200px]">
                                     {link.title || 'Download PDF'}
                                   </p>
                                   <p className="text-[9px] font-bold text-slate-400">PDF Document</p>
@@ -3219,80 +3423,84 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                               </div>
                               
                               {selectedBankItem.isPremium && !hasAccessTo(selectedBankItem.id, selectedBankItem.examId) ? (
-                                <Lock className="w-4 h-4 text-slate-300 group-hover:text-brand-400 transition-colors" />
+                                <Lock className="w-4 h-4 text-slate-350 group-hover:text-[#8A1C36] transition-colors" />
                               ) : (
-                                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-brand-400 group-hover:translate-x-1 transition-all" />
+                                <ChevronRight className="w-4 h-4 text-slate-350 group-hover:text-[#8A1C36] group-hover:translate-x-1 transition-all" />
                               )}
                             </motion.button>
                           ))
                         ) : (
-                          <div className="py-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                             <FileText className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+                          <div className="py-8 text-center bg-white rounded-2xl border border-dashed border-slate-200">
+                             <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No files available</p>
                           </div>
                         )}
                       </motion.div>
                     </div>
-                    <Button 
-                      variant="secondary" 
-                      className={cn(
-                        "w-full h-12 rounded-xl text-sm font-black border-slate-200",
-                        selectedBankItem.hasPracticeMode === false && "opacity-60 cursor-not-allowed"
-                      )}
-                      onClick={() => {
-                        if (selectedBankItem.hasPracticeMode === false) {
-                          alert("Practice mode for this topic is coming soon!");
-                          return;
-                        }
-                        
-                        if (isGuest) {
-                          setShowLoginPrompt(true);
-                          return;
-                        }
 
-                        if (selectedBankItem.isPremium && !hasAccessTo(selectedBankItem.id, selectedBankItem.examId)) {
-                          setPaywallPrice(selectedBankItem.price || 499);
-                          setPaywallOriginalPrice(selectedBankItem.originalPrice || ((selectedBankItem.price || 499) * 2));
-                          setPaywallItemTitle(selectedBankItem.title || 'Premium Content');
-                          setPaywallFeatures([
-                            `${selectedBankItem.questions || selectedBankItem.questionCount || '500+'} Questions`,
-                            selectedBankItem.hasPracticeMode !== false ? 'Interactive Practice Mode' : 'Instant PDF Access',
-                            selectedBankItem.tagline || 'Detailed Solutions Provided',
-                            'Advanced Performance Analytics'
-                          ]);
-                          setPaywallItemId(selectedBankItem.id);
-                          setShowPaywall(true);
-                        } else {
-                          setSelectedBankItem(null);
-                          setSelectedBankType(null);
-                          setShowPracticeConfig(true);
-                          setPracticeSettings({
-                            ...practiceSettings, 
-                            examId: selectedExam || practiceSettings.examId,
-                            category: selectedBankType || practiceSettings.category,
-                            topic: selectedBankItem.id
-                          });
-                          scrollToElement('practice-mode-section', { block: 'start', delay: 100 });
-                        }
-                      }}
-                    >
-                      {selectedBankItem.hasPracticeMode === false ? (
-                        <>
-                          <Clock className="w-4 h-4 mr-2" />
-                          Coming Soon
-                        </>
-                      ) : selectedBankItem.isPremium && !hasAccessTo(selectedBankItem.id, selectedBankItem.examId) ? (
-                        <>
-                          <Lock className="w-4 h-4 mr-2" />
-                          Unlock to Practice
-                        </>
-                      ) : (
-                        <>
-                          <Play className="w-4 h-4 mr-2" />
-                          Practice Now
-                        </>
-                      )}
-                    </Button>
+                    {/* Bottom Action Button */}
+                    <div className="pt-2">
+                      <Button 
+                        variant="primary" 
+                        className={cn(
+                          "w-full h-13 rounded-2xl text-xs font-black uppercase tracking-widest premium-gradient text-white shadow-lg shadow-brand-500/20 hover:premium-glow",
+                          selectedBankItem.hasPracticeMode === false && "opacity-60 cursor-not-allowed"
+                        )}
+                        onClick={() => {
+                          if (selectedBankItem.hasPracticeMode === false) {
+                            alert("Practice mode for this topic is coming soon!");
+                            return;
+                          }
+                          
+                          if (isGuest) {
+                            setShowLoginPrompt(true);
+                            return;
+                          }
+
+                          if (selectedBankItem.isPremium && !hasAccessTo(selectedBankItem.id, selectedBankItem.examId)) {
+                            setPaywallPrice(selectedBankItem.price || 499);
+                            setPaywallOriginalPrice(selectedBankItem.originalPrice || ((selectedBankItem.price || 499) * 2));
+                            setPaywallItemTitle(selectedBankItem.title || 'Premium Content');
+                            setPaywallFeatures([
+                              `${selectedBankItem.questions || selectedBankItem.questionCount || '500+'} Questions`,
+                              selectedBankItem.hasPracticeMode !== false ? 'Interactive Practice Mode' : 'Instant PDF Access',
+                              selectedBankItem.tagline || 'Detailed Solutions Provided',
+                              'Advanced Performance Analytics'
+                            ]);
+                            setPaywallItemId(selectedBankItem.id);
+                            setShowPaywall(true);
+                          } else {
+                            setSelectedBankItem(null);
+                            setSelectedBankType(null);
+                            setShowPracticeConfig(true);
+                            setPracticeSettings({
+                              ...practiceSettings, 
+                              examId: selectedExam || practiceSettings.examId,
+                              category: selectedBankType || practiceSettings.category,
+                              topic: selectedBankItem.id
+                            });
+                            scrollToElement('practice-mode-section', { block: 'start', delay: 100 });
+                          }
+                        }}
+                      >
+                        {selectedBankItem.hasPracticeMode === false ? (
+                          <>
+                            <Clock className="w-4 h-4 mr-2" />
+                            Coming Soon
+                          </>
+                        ) : selectedBankItem.isPremium && !hasAccessTo(selectedBankItem.id, selectedBankItem.examId) ? (
+                          <>
+                            <Lock className="w-4 h-4 mr-2" />
+                            Unlock to Practice
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-4 h-4 mr-2 fill-current" />
+                            Practice Now
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -3791,8 +3999,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      // Skip re-fetch if we already have data for this user (tab switch remount)
-      if (_dashboardCache.loadedForUserId === (user?.id || 'guest') && _dashboardCache.exams.length > 0) {
+      // Skip re-fetch if we already fetched database updates in this session (e.g., from tab switching)
+      if (_dashboardCache.hasFetchedThisSession && _dashboardCache.loadedForUserId === (user?.id || 'guest') && _dashboardCache.exams.length > 0) {
         // Data is already in state (from cache initializer) — just ensure loading is off
         setLoadingExams(false);
         return;
@@ -3882,6 +4090,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         _dashboardCache.mockTests = fetchedTests || [];
         _dashboardCache.dynamicQuestionBanks = groupedBanks;
         _dashboardCache.loadedForUserId = user?.id || 'guest';
+        _dashboardCache.hasFetchedThisSession = true;
+
+        // Save to sessionStorage for persistent SWR caching across reloads
+        try {
+          sessionStorage.setItem('oep_cached_exams', JSON.stringify(finalExams));
+          sessionStorage.setItem('oep_cached_testSeries', JSON.stringify(fetchedSeries || []));
+          sessionStorage.setItem('oep_cached_mockTests', JSON.stringify(fetchedTests || []));
+          sessionStorage.setItem('oep_cached_dynamicQuestionBanks', JSON.stringify(groupedBanks));
+          sessionStorage.setItem('oep_cached_loadedForUserId', user?.id || 'guest');
+        } catch (e) {}
 
         // Update React state
         setExams(finalExams);
@@ -4319,7 +4537,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   }
 
   if (mainTab === 'history') {
-    return <HistoryView user={user} onViewResults={setTestResults} onResumeTest={(test, state) => { setActiveTest(test); setActiveTestState(state); }} />;
+    return <HistoryView user={user} onViewResults={setTestResults} onResumeTest={(test, state) => { setActiveTest(test); setActiveTestState(state); }} onActivityDeleted={onActivityLogged} />;
   }
 
   if (mainTab === 'library') {
@@ -4616,7 +4834,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         <div className="flex flex-col space-y-5 sm:space-y-7">
           {/* Controls Bar */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-            <div className="border-2 border-slate-900 bg-white p-1 rounded-2xl flex gap-1.5 shrink-0 shadow-[4px_4px_0px_rgba(138,28,54,0.15)] relative">
+            <div className="border-2 border-slate-900 bg-white p-1 rounded-2xl flex gap-1.5 w-full sm:w-auto shrink-0 shadow-[4px_4px_0px_rgba(138,28,54,0.15)] relative">
               {(['upcoming', 'popular'] as const).map((tab) => {
                 const isTabActive = examSearchQuery 
                   ? filteredExams.some(e => e.category === tab) 
@@ -4628,7 +4846,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     type="button"
                     onClick={() => { setActiveTab(tab); setExamSearchQuery(''); }}
                     className={cn(
-                      "px-5 sm:px-8 py-2 sm:py-3 rounded-xl font-extrabold text-xs sm:text-sm cursor-pointer relative transition-all duration-300 focus:outline-none select-none",
+                      "px-5 sm:px-8 py-2 sm:py-3 rounded-xl font-extrabold text-xs sm:text-sm cursor-pointer relative transition-all duration-300 focus:outline-none select-none flex-1 sm:flex-initial text-center",
                       isTabActive 
                         ? "text-white -translate-y-0.5" 
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-50/50"
@@ -4860,9 +5078,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             </div>
           </div>
         ) : (
-          <div className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="relative">
             <div 
-              className="max-h-[460px] md:max-h-[600px] overflow-y-auto no-scrollbar scroll-smooth pb-12 pt-4"
+              className="-mx-4 px-4 sm:mx-0 sm:px-0 max-h-[460px] md:max-h-[600px] overflow-y-auto no-scrollbar scroll-smooth pb-12 pt-4"
               style={{
                 maskImage: 'linear-gradient(to bottom, transparent, black 2rem, black calc(100% - 3rem), transparent)',
                 WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 2rem, black calc(100% - 3rem), transparent)'
@@ -4894,45 +5112,79 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               >
                 <Card 
                   onClick={() => { setSelectedBankItem(item); scrollToElement('exams', { block: 'start', delay: 50 }); }}
-                  className="group cursor-pointer hover:border-brand-300 relative overflow-hidden rounded-[1.5rem] hover:-translate-y-2 transition-all duration-500 h-full border-slate-200/60 shadow-sm hover:shadow-2xl hover:shadow-brand-500/10 flex flex-col premium-shine-container"
+                  className="group cursor-pointer hover:border-brand-300/80 relative overflow-hidden rounded-[2rem] hover:-translate-y-1.5 transition-all duration-500 h-full border-slate-200/50 bg-white shadow-sm hover:shadow-xl hover:shadow-brand-500/5 flex flex-col premium-shine-container"
                 >
-                  <div className={cn("h-44 overflow-hidden relative shrink-0", isLocked && "blur-[2px]")}>
+                  {/* Ambient grid-bg inside the card */}
+                  <div className="absolute inset-0 grid-bg opacity-[0.02] group-hover:opacity-[0.04] pointer-events-none transition-opacity duration-500" />
+                  
+                  {/* Hero Image Section */}
+                  <div className={cn("h-44 overflow-hidden relative shrink-0 border-b border-slate-100", isLocked && "blur-[1px]")}>
                     <img 
                       src={getDirectImageUrl(item.image)} 
                       alt={item.title} 
                       loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 select-none pointer-events-none"
                       referrerPolicy="no-referrer"
                     />
+                    
+                    {/* Linear contrast gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none opacity-60" />
+                    
                     {isLocked && (
-                      <div className="absolute inset-0 bg-slate-900/20 flex items-center justify-center">
-                        <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
-                          <Lock className="w-6 h-6 text-slate-900" />
+                      <div className="absolute inset-0 bg-slate-950/20 backdrop-blur-[2px] flex items-center justify-center">
+                        <div className="w-12 h-12 bg-white/95 rounded-2xl flex items-center justify-center shadow-lg border border-slate-200/50">
+                          <Lock className="w-5 h-5 text-[#8A1C36]" />
                         </div>
                       </div>
                     )}
                   </div>
-                  <div className={cn("p-6 flex flex-col flex-1 relative z-10", isLocked && "opacity-60")}>
-                    <div className="flex justify-between items-start mb-4">
-                      <h3 className="text-xl font-black text-slate-900 line-clamp-1 group-hover:text-brand-600 transition-colors uppercase tracking-tight">{item.title}</h3>
-                      {isLocked && <Lock className="w-4 h-4 text-slate-400" />}
+                  
+                  {/* Card Content Body */}
+                  <div className={cn("p-6 flex flex-col flex-1 relative z-10 bg-white/50 backdrop-blur-sm", isLocked && "opacity-60")}>
+                    <div className="flex justify-between items-start mb-3">
+                      <h3 className="text-lg font-serif font-extrabold text-slate-900 group-hover:text-brand-650 transition-colors capitalize tracking-tight leading-snug line-clamp-1">
+                        {item.title.toLowerCase()}
+                      </h3>
+                      {isLocked ? (
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[8px] font-black uppercase tracking-wider rounded border border-slate-200/40">
+                          Premium
+                        </span>
+                      ) : (
+                        <Lock className="w-4 h-4 text-slate-200" />
+                      )}
                     </div>
-                    <div className="space-y-3 mb-6">
+                    
+                    {/* Stats and Highlights */}
+                    <div className="space-y-3.5 mb-6">
                       <div className="flex items-center gap-2 text-slate-500">
-                        <HelpCircle className="w-4 h-4" />
-                        <span className="text-xs font-bold">{item.questions} Questions</span>
+                        <div className="w-6.5 h-6.5 rounded-lg bg-slate-50 border border-slate-100/60 flex items-center justify-center text-slate-400 group-hover:text-brand-500 group-hover:bg-brand-50/50 transition-all shadow-sm">
+                          <FileText className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-xs font-bold text-slate-500 group-hover:text-slate-700 transition-colors">
+                          {item.questions} Practice Questions
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2 text-brand-600 bg-brand-50/50 px-3 py-1.5 rounded-lg w-fit border border-brand-100/30">
-                        <Zap className="w-3.5 h-3.5 fill-brand-600" />
-                        <span className="text-[11px] font-black uppercase tracking-wider">{item.tagline}</span>
-                      </div>
+                      
+                      {item.tagline && (
+                        <div className="flex items-center gap-2 text-brand-650 bg-gradient-to-r from-brand-50/70 to-indigo-50/40 px-3 py-1.5 rounded-xl w-fit border border-brand-100/30">
+                          <Zap className="w-3.5 h-3.5 fill-brand-650 text-brand-650 shrink-0" />
+                          <span className="text-[10px] font-black uppercase tracking-wider">{item.tagline}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="mt-auto">
-                      <Button variant="secondary" className="w-full py-3 rounded-xl text-sm font-black relative overflow-hidden group-hover:bg-gradient-to-r group-hover:from-brand-600 group-hover:to-brand-500 group-hover:text-white group-hover:border-transparent group-hover:shadow-lg group-hover:shadow-brand-500/20 transition-all duration-500">
+                    
+                    {/* View Details Button */}
+                    <div className="mt-auto pt-2">
+                      <button 
+                        className="w-full py-3 px-6 rounded-xl font-black text-xs uppercase tracking-wider relative overflow-hidden flex items-center justify-center gap-2 transition-all duration-500 border border-brand-100 bg-brand-50/40 text-brand-600 shadow-sm hover:scale-[1.02] active:scale-95 group-hover:bg-gradient-to-r group-hover:from-brand-600 group-hover:to-brand-500 group-hover:text-white group-hover:border-transparent group-hover:shadow-lg group-hover:shadow-brand-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
                         {/* Button Shine Effect */}
                         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
-                        <span className="relative z-10">{isLocked ? 'Unlock to View' : 'View Details'}</span>
-                      </Button>
+                        <span className="relative z-10 flex items-center justify-center gap-1.5">
+                          {isLocked ? 'Unlock to View' : 'View Details'}
+                          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform relative -top-[0.5px]" />
+                        </span>
+                      </button>
                     </div>
                   </div>
                 </Card>
@@ -4972,7 +5224,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         <div className="flex flex-col gap-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" onClick={() => setSelectedExam(null)} className="p-3 rounded-2xl hover:bg-brand-50">
+              <Button variant="ghost" onClick={() => { setSelectedExam(null); scrollToElement('exams', { block: 'start', delay: 100 }); }} className="p-3 rounded-2xl hover:bg-brand-50">
                 <ChevronRight className="w-6 h-6 rotate-180 text-brand-600" />
               </Button>
               <div>
@@ -5013,65 +5265,92 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           <motion.div 
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="group relative overflow-hidden rounded-[1.5rem] lg:rounded-[2.5rem] p-[1.5px] premium-glow shadow-2xl shadow-brand-500/10 premium-shine-container mb-8"
+            className="group relative overflow-hidden rounded-[2rem] lg:rounded-[3rem] p-[1px] premium-shine-container mb-10"
           >
-            {/* Animated Border */}
+            {/* Animated Outer Gradient Border */}
             <div className={cn(
-              "absolute inset-0 animate-gradient-x opacity-80",
-              hasAccessTo(`exam_bundle_${selectedExam}`) ? "bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600" : "bg-gradient-to-r from-brand-600 via-indigo-500 to-purple-600"
+              "absolute inset-0 animate-gradient-x opacity-90 transition-all duration-500",
+              hasAccessTo(`exam_bundle_${selectedExam}`) 
+                ? "bg-gradient-to-r from-emerald-500/60 via-teal-400/40 to-emerald-600/60" 
+                : "bg-gradient-to-r from-brand-500/60 via-amber-400/40 to-indigo-600/60"
             )} />
             
-            <div className="relative bg-[#0f0a28] rounded-[1.45rem] lg:rounded-[2.45rem] overflow-hidden">
+            <div className={cn(
+              "relative rounded-[1.95rem] lg:rounded-[2.95rem] overflow-hidden transition-all duration-500",
+              hasAccessTo(`exam_bundle_${selectedExam}`)
+                ? "bg-gradient-to-br from-[#02130c]/98 via-[#010906]/99 to-[#000503]/100 border border-emerald-500/10"
+                : "bg-gradient-to-br from-[#12040b]/98 via-[#08020a]/99 to-[#030005]/100 border border-brand-500/10"
+            )}>
               <VisualEffects />
-              <div className={cn(
-                "absolute inset-0 opacity-50",
-                hasAccessTo(`exam_bundle_${selectedExam}`) ? "bg-gradient-to-br from-emerald-900/40 to-transparent" : "bg-gradient-to-br from-brand-900/40 to-transparent"
-              )} />
               
-              {/* Animated Floating Orbs */}
-              <motion.div 
-                animate={{ 
-                  y: [0, -30, 0],
-                  scale: [1, 1.1, 1],
-                  opacity: [0.3, 0.5, 0.3]
-                }}
-                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                className={cn(
-                  "absolute -top-20 -right-20 w-80 h-80 rounded-full blur-[120px] pointer-events-none",
-                  hasAccessTo(`exam_bundle_${selectedExam}`) ? "bg-emerald-500/10" : "bg-brand-500/10"
-                )}
-              />
-              <motion.div 
-                animate={{ 
-                  y: [0, 30, 0],
-                  scale: [1.1, 1, 1.1],
-                  opacity: [0.2, 0.4, 0.2]
-                }}
-                transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-                className={cn(
-                  "absolute -bottom-20 -left-20 w-80 h-80 rounded-full blur-[120px] pointer-events-none",
-                  hasAccessTo(`exam_bundle_${selectedExam}`) ? "bg-teal-500/10" : "bg-indigo-500/10"
-                )}
-              />
+              {/* Dynamic Glowing Ambient Mesh / Orbs */}
+              {hasAccessTo(`exam_bundle_${selectedExam}`) ? (
+                <>
+                  <motion.div 
+                    animate={{ 
+                      x: [0, 20, 0],
+                      y: [0, -20, 0],
+                      scale: [1, 1.15, 1],
+                    }}
+                    transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-emerald-500/10 blur-[100px] pointer-events-none"
+                  />
+                  <motion.div 
+                    animate={{ 
+                      x: [0, -30, 0],
+                      y: [0, 30, 0],
+                      scale: [1.1, 0.9, 1.1],
+                    }}
+                    transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-teal-500/10 blur-[120px] pointer-events-none"
+                  />
+                  <div className="absolute top-1/2 left-2/3 -translate-y-1/2 w-80 h-80 rounded-full bg-emerald-500/[0.04] blur-[80px] pointer-events-none" />
+                </>
+              ) : (
+                <>
+                  <motion.div 
+                    animate={{ 
+                      x: [0, 20, 0],
+                      y: [0, -20, 0],
+                      scale: [1, 1.15, 1],
+                    }}
+                    transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-brand-500/10 blur-[100px] pointer-events-none"
+                  />
+                  <motion.div 
+                    animate={{ 
+                      x: [0, -30, 0],
+                      y: [0, 30, 0],
+                      scale: [1.1, 0.9, 1.1],
+                    }}
+                    transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none"
+                  />
+                  <div className="absolute top-1/2 left-2/3 -translate-y-1/2 w-80 h-80 rounded-full bg-amber-500/[0.03] blur-[80px] pointer-events-none" />
+                </>
+              )}
 
-              {/* Background Sparkles */}
+              {/* Sparkle Particles */}
               <div className="absolute inset-0 pointer-events-none">
-                {[...Array(6)].map((_, i) => (
+                {[...Array(8)].map((_, i) => (
                   <motion.div
                     key={i}
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{ 
-                      opacity: [0, 1, 0], 
-                      scale: [0, 1.5, 0],
-                      x: [Math.random() * 100 - 50, Math.random() * 100 - 50],
-                      y: [Math.random() * 100 - 50, Math.random() * 100 - 50]
+                      opacity: [0, 0.8, 0], 
+                      scale: [0, 1.3, 0],
+                      x: [Math.random() * 80 - 40, Math.random() * 80 - 40],
+                      y: [Math.random() * 80 - 40, Math.random() * 80 - 40]
                     }}
                     transition={{ 
-                      duration: 3 + Math.random() * 2, 
+                      duration: 4 + Math.random() * 3, 
                       repeat: Infinity, 
-                      delay: Math.random() * 5 
+                      delay: Math.random() * 6 
                     }}
-                    className="absolute w-1 h-1 bg-white rounded-full blur-[1px]"
+                    className={cn(
+                      "absolute w-1 h-1 rounded-full blur-[0.5px]",
+                      hasAccessTo(`exam_bundle_${selectedExam}`) ? "bg-emerald-300" : "bg-brand-300"
+                    )}
                     style={{ 
                       left: `${Math.random() * 100}%`, 
                       top: `${Math.random() * 100}%` 
@@ -5080,7 +5359,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 ))}
               </div>
 
-              <div className="relative z-10 px-6 py-8 sm:p-10 lg:p-12 flex flex-col lg:flex-row items-center justify-between gap-10">
+              <div className="relative z-10 px-6 py-8 sm:p-10 lg:p-14 flex flex-col lg:flex-row items-center justify-between gap-10">
                 <motion.div 
                   initial="hidden"
                   whileInView="show"
@@ -5090,74 +5369,102 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     show: {
                       opacity: 1,
                       transition: {
-                        staggerChildren: 0.1
+                        staggerChildren: 0.08
                       }
                     }
                   }}
-                  className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8 flex-1"
+                  className="flex flex-col sm:flex-row items-center gap-6 sm:gap-10 flex-1"
                 >
-                  {/* Icon with Ring Glow */}
+                  {/* Rotating Orbital Emblem */}
                   <motion.div 
                     variants={{
                       hidden: { scale: 0.8, opacity: 0 },
                       show: { scale: 1, opacity: 1 }
                     }}
-                    className="relative shrink-0"
+                    className="relative shrink-0 flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32"
                   >
-                    <div className="w-16 h-16 sm:w-20 lg:w-24 lg:h-24 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[1.25rem] sm:rounded-[2rem] flex items-center justify-center text-white shadow-inner transition-transform duration-700 group-hover:scale-105 group-hover:rotate-2">
+                    {/* Rotating Dashed Orbit 1 */}
+                    <div className={cn(
+                      "absolute inset-0 rounded-full border border-dashed animate-[spin_35s_linear_infinite] opacity-40",
+                      hasAccessTo(`exam_bundle_${selectedExam}`) ? "border-emerald-400" : "border-brand-400"
+                    )} />
+                    
+                    {/* Rotating Dashed Orbit 2 (Counter-rotated) */}
+                    <div className={cn(
+                      "absolute inset-2 rounded-full border border-dashed animate-[spin_20s_linear_infinite_reverse] opacity-20",
+                      hasAccessTo(`exam_bundle_${selectedExam}`) ? "border-teal-300" : "border-indigo-400"
+                    )} />
+
+                    {/* Ring Pulse Glow */}
+                    <div className={cn(
+                      "absolute inset-4 rounded-full border animate-[ping_4s_ease-in-out_infinite] opacity-15",
+                      hasAccessTo(`exam_bundle_${selectedExam}`) ? "border-emerald-400" : "border-brand-400"
+                    )} />
+
+                    {/* Core Glass Sphere */}
+                    <div className={cn(
+                      "absolute inset-4 backdrop-blur-xl rounded-full flex items-center justify-center shadow-2xl transition-transform duration-700 hover:scale-105",
+                      hasAccessTo(`exam_bundle_${selectedExam}`)
+                        ? "bg-emerald-950/45 border border-emerald-400/30 text-emerald-400 shadow-emerald-900/30"
+                        : "bg-brand-950/45 border border-brand-400/30 text-brand-300 shadow-brand-950/50"
+                    )}>
                        {hasAccessTo(`exam_bundle_${selectedExam}`) ? (
-                         <CheckCircle2 className="w-8 h-8 sm:w-10 lg:w-12 text-emerald-400" />
+                         <CheckCircle2 className="w-8 h-8 sm:w-10 sm:h-10 lg:w-11 lg:h-11 text-emerald-300 filter drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]" />
                        ) : (
-                         <Award className="w-8 h-8 sm:w-10 lg:w-12 text-brand-300" />
+                         <Award className="w-8 h-8 sm:w-10 sm:h-10 lg:w-11 lg:h-11 text-brand-200 filter drop-shadow-[0_0_8px_rgba(244,176,190,0.3)] animate-pulse" />
                        )}
                     </div>
-                    {/* Ring Pulse */}
-                    <div className={cn(
-                      "absolute inset-0 border-2 rounded-[1.25rem] sm:rounded-[2rem] animate-ping opacity-20",
-                      hasAccessTo(`exam_bundle_${selectedExam}`) ? "border-emerald-500/30" : "border-brand-500/30"
-                    )} />
                   </motion.div>
 
                   <div className="text-center sm:text-left space-y-4">
                     <motion.div 
                       variants={{
-                        hidden: { y: 10, opacity: 0 },
+                        hidden: { y: 8, opacity: 0 },
                         show: { y: 0, opacity: 1 }
                       }}
-                      className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3"
+                      className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5"
                     >
-                      <span className="px-3 py-1 bg-brand-500/20 border border-brand-400/20 rounded-full text-[10px] font-black text-brand-200 uppercase tracking-widest">
+                      <span className={cn(
+                        "px-3.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.18em] border backdrop-blur-sm",
+                        hasAccessTo(`exam_bundle_${selectedExam}`)
+                          ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-300"
+                          : "bg-brand-500/10 border-brand-500/25 text-brand-300"
+                      )}>
                         Selection Special
                       </span>
-                      <span className="hidden sm:inline-block w-1 h-1 bg-white/20 rounded-full" />
                       <span className={cn(
-                        "px-3 py-1 border rounded-full text-[10px] font-black uppercase tracking-widest",
-                        hasAccessTo(`exam_bundle_${selectedExam}`) ? "bg-emerald-500/20 border-emerald-400/30 text-emerald-300" : "bg-emerald-500/10 border-emerald-400/20 text-emerald-300"
+                        "px-3.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.18em] border backdrop-blur-sm",
+                        hasAccessTo(`exam_bundle_${selectedExam}`) 
+                          ? "bg-teal-500/10 border-teal-400/30 text-teal-300" 
+                          : "bg-indigo-500/10 border-indigo-400/25 text-indigo-300"
                       )}>
                         {hasAccessTo(`exam_bundle_${selectedExam}`) ? 'Premium Unlocked' : 'Unlimited Access'}
                       </span>
                     </motion.div>
 
-                    <div className="max-w-2xl">
+                    <div className="max-w-2xl space-y-2.5">
                       <motion.h2 
                         variants={{
-                          hidden: { y: 10, opacity: 0 },
+                          hidden: { y: 8, opacity: 0 },
                           show: { y: 0, opacity: 1 }
                         }}
-                        className="text-2xl sm:text-3xl lg:text-4xl font-black text-white leading-tight tracking-tight mb-2"
+                        className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight tracking-tight"
                       >
                         {hasAccessTo(`exam_bundle_${selectedExam}`) ? (
-                          <>You have <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-teal-300">Full Access</span> to {currentExam?.name}</>
+                          <>You have <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 drop-shadow-[0_2px_10px_rgba(52,211,153,0.15)]">Full Access</span> to {currentExam?.name}</>
                         ) : (
-                          <>Get Full Access to <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-300 to-indigo-300">{currentExam?.name}</span> Pack</>
+                          <>Get Full Access to <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-pink-200 to-indigo-300 drop-shadow-[0_2px_10px_rgba(244,176,190,0.15)]">{currentExam?.name}</span> Pack</>
                         )}
                       </motion.h2>
                       <motion.p 
                         variants={{
-                          hidden: { y: 10, opacity: 0 },
+                          hidden: { y: 8, opacity: 0 },
                           show: { y: 0, opacity: 1 }
                         }}
-                        className="text-slate-400 text-sm sm:text-base lg:text-lg font-medium leading-relaxed"
+                        className={cn(
+                          "text-sm sm:text-base lg:text-[1.05rem] leading-relaxed font-normal tracking-wide max-w-xl",
+                          hasAccessTo(`exam_bundle_${selectedExam}`) ? "text-emerald-100/70" : "text-brand-100/70"
+                        )}
                       >
                         {examDescription || (hasAccessTo(`exam_bundle_${selectedExam}`) 
                           ? 'You have unlocked lifetime access to all Question Banks, Practice Mode, Premium Mock Tests, and PDF notes. Best of luck with your preparation!'
@@ -5171,19 +5478,19 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 {/* Action Section - Compact on Laptop */}
                 {!hasAccessTo(`exam_bundle_${selectedExam}`) ? (
                   <motion.div 
-                    initial={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
-                    transition={{ delay: 0.3 }}
-                    className="flex flex-col items-center lg:items-end gap-6 shrink-0 lg:border-l lg:border-white/5 lg:pl-12 lg:min-w-[280px]"
+                    transition={{ delay: 0.2 }}
+                    className="flex flex-col items-center lg:items-center gap-5 shrink-0 lg:border-l lg:border-white/5 lg:pl-12 lg:min-w-[280px] w-full lg:w-auto"
                   >
-                    <div className="text-center lg:text-right">
-                      <div className="flex flex-col sm:flex-row lg:flex-col items-center lg:items-end gap-1">
+                    <div className="text-center lg:text-center">
+                      <div className="flex flex-col sm:flex-row lg:flex-col items-center lg:items-center gap-1.5">
                         <div className="flex items-center gap-3">
-                          <span className="text-slate-500 text-base lg:text-lg line-through font-bold">₹{bundleOriginalPrice}</span>
+                          <span className="text-brand-300/40 text-base lg:text-lg line-through font-bold">₹{bundleOriginalPrice}</span>
                           <span className="text-4xl lg:text-5xl font-black text-white font-mono tracking-tighter">₹{bundlePrice}</span>
                         </div>
-                        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 text-[10px] font-black rounded-lg border border-emerald-400/20 uppercase">
+                        <span className="px-3 py-1 bg-amber-500/10 text-amber-300 text-[10px] font-black rounded-lg border border-amber-500/20 uppercase tracking-widest">
                           Save {Math.round(((bundleOriginalPrice - bundlePrice) / bundleOriginalPrice) * 100)}% Instant
                         </span>
                       </div>
@@ -5209,7 +5516,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         setPaywallItemId(`exam_bundle_${selectedExam}`);
                         setShowPaywall(true);
                       }}
-                      className="w-full sm:w-auto h-14 lg:h-16 px-10 rounded-2xl bg-white text-brand-950 font-black text-base lg:text-lg shadow-xl shadow-brand-500/10 hover:shadow-brand-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 group/btn relative overflow-hidden"
+                      className="w-full sm:w-auto h-14 lg:h-16 px-10 rounded-2xl bg-gradient-to-r from-white via-slate-100 to-white hover:from-brand-100 hover:to-white text-brand-950 font-black text-base lg:text-lg shadow-xl shadow-brand-500/10 hover:shadow-brand-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 group/btn relative overflow-hidden"
                     >
                       {/* Button Shine Effect */}
                       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 z-10" />
@@ -5219,23 +5526,28 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     </Button>
                     
                     <div className="flex items-center gap-2 text-brand-300/60 font-bold text-[10px] uppercase tracking-widest">
-                      <Zap className="w-3 h-3 fill-brand-300/60" />
+                      <Zap className="w-3.5 h-3.5 fill-brand-300/60 animate-pulse" />
                       Instant Activation
                     </div>
                   </motion.div>
                 ) : (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
-                    transition={{ delay: 0.3 }}
-                    className="flex flex-col items-center lg:items-end gap-4 shrink-0 lg:border-l lg:border-white/5 lg:pl-12 lg:min-w-[280px]"
+                    transition={{ delay: 0.2 }}
+                    className="flex flex-col items-center lg:items-center gap-4 shrink-0 lg:border-l lg:border-emerald-500/10 lg:pl-12 lg:min-w-[280px] w-full lg:w-auto"
                   >
-                     <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center relative shadow-lg shadow-emerald-500/20">
-                       <CheckCircle2 className="w-8 h-8 text-emerald-400 relative z-10" />
-                       <div className="absolute inset-0 rounded-full border-2 border-emerald-400/30 animate-ping" />
+                     {/* Elegant Gold/Emerald Security Seal */}
+                     <div className="w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-400/20 flex items-center justify-center relative shadow-[0_0_30px_rgba(16,185,129,0.15)] group-hover:scale-105 transition-transform duration-500">
+                       <div className="absolute inset-2 rounded-full border border-dashed border-emerald-400/20 animate-[spin_40s_linear_infinite]" />
+                       <ShieldCheck className="w-10 h-10 text-emerald-400 filter drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]" />
+                       <div className="absolute inset-0 rounded-full border border-emerald-400/20 animate-ping opacity-30" style={{ animationDuration: '3s' }} />
                      </div>
-                     <span className="text-emerald-300 font-bold uppercase tracking-widest text-xs bg-emerald-500/10 px-4 py-2 rounded-xl border border-emerald-500/20">Bundle Active</span>
+                     <span className="text-emerald-300 font-bold uppercase tracking-[0.2em] text-[10px] bg-emerald-950/60 hover:bg-emerald-950/80 px-4.5 py-1.5 rounded-full border border-emerald-500/25 flex items-center gap-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all">
+                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-[pulse_1.5s_ease-in-out_infinite]" />
+                       Bundle Active
+                     </span>
                   </motion.div>
                 )}
               </div>
@@ -5902,6 +6214,62 @@ function AppContent() {
   });
   const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
 
+  // Reset Password recovery states
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [resetMessage, setResetMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setShowResetModal(true);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    setResetMessage(null);
+  }, [newPassword, confirmNewPassword]);
+
+  const handleResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetMessage(null);
+    if (newPassword !== confirmNewPassword) {
+      setResetMessage({
+        type: 'error',
+        text: 'Passwords do not match!'
+      });
+      return;
+    }
+    setIsResetting(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setResetMessage({
+        type: 'success',
+        text: 'Password updated successfully! Redirecting...'
+      });
+      setTimeout(() => {
+        setShowResetModal(false);
+        setNewPassword('');
+        setConfirmNewPassword('');
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        window.location.reload();
+      }, 2000);
+    } catch (error: any) {
+      setResetMessage({
+        type: 'error',
+        text: error.message || 'Failed to update password.'
+      });
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   useEffect(() => {
     if (location.pathname !== '/') return;
     const params = new URLSearchParams(window.location.search);
@@ -5976,31 +6344,49 @@ function AppContent() {
 
   // Clear dashboard cache on logout so a different account sees fresh data
   useEffect(() => {
-    if (!user) {
+    if (!loading && !user) {
       _dashboardCache.exams = [];
       _dashboardCache.testSeries = [];
       _dashboardCache.mockTests = [];
       _dashboardCache.dynamicQuestionBanks = {};
       _dashboardCache.loadedForUserId = null;
+      _dashboardCache.hasFetchedThisSession = false;
       sessionStorage.removeItem('oep_selectedExam');
       sessionStorage.removeItem('oep_selectedBankType');
       sessionStorage.removeItem('oep_practiceSettings');
       sessionStorage.removeItem('oep_selectedMockCategory');
       sessionStorage.removeItem('oep_auto_navigated_dismissed');
+      sessionStorage.removeItem('oep_cached_exams');
+      sessionStorage.removeItem('oep_cached_testSeries');
+      sessionStorage.removeItem('oep_cached_mockTests');
+      sessionStorage.removeItem('oep_cached_dynamicQuestionBanks');
+      sessionStorage.removeItem('oep_cached_loadedForUserId');
       setMainTab('home');
     }
-  }, [user]);
+  }, [user, loading]);
 
   const prevUserIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (user?.id !== prevUserIdRef.current) {
+    // Only clear session data if we transition between different user sessions
+    if (prevUserIdRef.current !== null && user?.id !== prevUserIdRef.current) {
       sessionStorage.removeItem('oep_selectedExam');
       sessionStorage.removeItem('oep_selectedBankType');
       sessionStorage.removeItem('oep_practiceSettings');
       sessionStorage.removeItem('oep_selectedMockCategory');
       sessionStorage.removeItem('oep_auto_navigated_dismissed');
-      prevUserIdRef.current = user?.id || null;
+      sessionStorage.removeItem('oep_cached_exams');
+      sessionStorage.removeItem('oep_cached_testSeries');
+      sessionStorage.removeItem('oep_cached_mockTests');
+      sessionStorage.removeItem('oep_cached_dynamicQuestionBanks');
+      sessionStorage.removeItem('oep_cached_loadedForUserId');
+      _dashboardCache.exams = [];
+      _dashboardCache.testSeries = [];
+      _dashboardCache.mockTests = [];
+      _dashboardCache.dynamicQuestionBanks = {};
+      _dashboardCache.loadedForUserId = null;
+      _dashboardCache.hasFetchedThisSession = false;
     }
+    prevUserIdRef.current = user?.id || null;
   }, [user?.id]);
 
   const refreshActivities = () => {
@@ -6018,12 +6404,36 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <motion.div 
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full"
-        />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAF8F5] relative overflow-hidden">
+        {/* Ambient background grid and glowing orb */}
+        <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-brand-500/5 rounded-full blur-[80px] pointer-events-none" />
+
+        <div className="relative flex flex-col items-center space-y-8 z-10">
+          {/* Concentric Portal Spinner */}
+          <div className="relative w-28 h-28 flex items-center justify-center">
+            {/* Outer Slow Orbit */}
+            <div className="absolute inset-0 rounded-full border border-dashed border-brand-500/30 animate-[spin_15s_linear_infinite]" />
+            
+            {/* Middle Counter-Orbit */}
+            <div className="absolute inset-2 rounded-full border border-brand-500/10 border-t-brand-500/40 animate-[spin_3s_linear_infinite_reverse]" />
+            
+            {/* Inner Glowing Core */}
+            <div className="w-16 h-16 rounded-full bg-white border border-brand-500/10 flex items-center justify-center shadow-lg shadow-brand-500/5">
+              <BookOpen className="w-7 h-7 text-brand-600 animate-pulse" />
+            </div>
+          </div>
+
+          {/* Typography Details */}
+          <div className="text-center space-y-1.5">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+              Odisha<span className="font-serif italic font-normal text-[#8A1C36]">ExamPrep</span>
+            </h1>
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
+              Loading Portal...
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -6154,6 +6564,99 @@ function AppContent() {
       </AnimatedRoutes>
       <WhatsAppButton />
       <StickyAICompanion isBottomNavVisible={isBottomNavVisible} />
+
+      <AnimatePresence>
+        {showResetModal && (
+          <div className="fixed inset-0 bg-slate-950/40 z-[999] flex items-end sm:items-center justify-center p-0 sm:p-6 backdrop-blur-md">
+            <motion.div {...slideUpPanel}
+              className="glass rounded-t-[2rem] sm:rounded-3xl w-full max-w-md p-6 sm:p-10 pb-10 sm:pb-10 space-y-6 sm:space-y-8 shadow-2xl border-x-0 border-b-0 sm:border border-white/40 max-h-[90vh] overflow-y-auto no-scrollbar"
+            >
+              <div className="flex justify-between items-center sticky top-0 bg-white/0 z-10">
+                <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
+                  Create New Password
+                </h3>
+                <button 
+                  onClick={() => setShowResetModal(false)} 
+                  className="p-2 -mr-2 bg-slate-100/50 hover:bg-slate-200/50 rounded-full transition-colors backdrop-blur-md cursor-pointer"
+                >
+                  <X className="w-6 h-6 text-slate-400" />
+                </button>
+              </div>
+
+              {resetMessage && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={cn(
+                    "p-4 border rounded-2xl flex items-start gap-3 text-xs font-semibold leading-relaxed shadow-sm",
+                    resetMessage.type === 'error' && "bg-rose-50 border-rose-100/80 text-rose-700",
+                    resetMessage.type === 'success' && "bg-emerald-50 border-emerald-100/80 text-emerald-700"
+                  )}
+                >
+                  {resetMessage.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />}
+                  {resetMessage.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />}
+                  <div className="flex-1">
+                    {resetMessage.text}
+                  </div>
+                </motion.div>
+              )}
+
+              <form onSubmit={handleResetSubmit} className="space-y-5">
+                <div className="space-y-4">
+                  {/* New Password field */}
+                  <div className="space-y-1.5 text-left">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider pl-1">
+                      New Password
+                    </label>
+                    <div className="relative">
+                      <input 
+                        type={showNewPassword ? "text" : "password"} 
+                        placeholder="••••••••" 
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                        className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base pr-12" 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors cursor-pointer"
+                      >
+                        {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Confirm New Password field */}
+                  <div className="space-y-1.5 text-left">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider pl-1">
+                      Confirm New Password
+                    </label>
+                    <div className="relative">
+                      <input 
+                        type={showNewPassword ? "text" : "password"} 
+                        placeholder="••••••••" 
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        required
+                        className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base pr-12" 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  disabled={isResetting}
+                  className="w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl text-base sm:text-lg"
+                >
+                  {isResetting ? 'Updating Password...' : 'Update Password'}
+                </Button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

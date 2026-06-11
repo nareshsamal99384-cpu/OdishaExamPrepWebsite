@@ -120,14 +120,6 @@ async function startServer() {
 
   // AI NIM Chat completions proxy route
   app.post("/api/chat/completions", async (req, res) => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout
-
-    // Listen for client disconnect and abort upstream request
-    req.on("close", () => {
-      controller.abort();
-    });
-
     try {
       let apiKey = process.env.VITE_DEEPSEEK_API_KEY || process.env.VITE_DENTA_RESPONSE_AI;
       let baseUrl = process.env.VITE_DEEPSEEK_BASE_URL || 'https://integrate.api.nvidia.com/v1';
@@ -137,7 +129,6 @@ async function startServer() {
 
       if (!apiKey) {
         console.error("NVIDIA NIM API key is missing in env");
-        clearTimeout(timeoutId);
         return res.status(500).json({ error: "NVIDIA NIM API key is not configured on server." });
       }
 
@@ -158,6 +149,9 @@ async function startServer() {
         requestBody.response_format = response_format;
       }
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout
+
       try {
         const response = await fetch(`${baseUrl}/chat/completions`, {
           method: "POST",
@@ -174,10 +168,7 @@ async function startServer() {
         if (!response.ok) {
           const errorText = await response.text();
           console.error("NIM API error status:", response.status, errorText);
-          if (!res.headersSent) {
-            return res.status(response.status).json({ error: errorText });
-          }
-          return;
+          return res.status(response.status).json({ error: errorText });
         }
 
         if (stream) {
@@ -191,51 +182,25 @@ async function startServer() {
             while (true) {
               const { value, done } = await reader.read();
               if (done) break;
-              
-              // If connection was closed or request aborted, stop reading
-              if (req.destroyed || res.writableEnded) {
-                break;
-              }
-              
               res.write(value);
             }
           }
-          if (!res.writableEnded) {
-            res.end();
-          }
+          res.end();
         } else {
           const data = await response.json();
-          if (!res.headersSent) {
-            res.json(data);
-          }
+          res.json(data);
         }
       } catch (error: any) {
         clearTimeout(timeoutId);
         if (error.name === 'AbortError') {
-          console.log("NIM API request was aborted (either timed out or client disconnected)");
-          if (!res.headersSent) {
-            return res.status(504).json({ error: "Upstream NIM API request timed out or was aborted." });
-          }
-        } else {
-          console.error("Error communicating with NIM API:", error);
-          if (!res.headersSent) {
-            return res.status(500).json({ error: error.message || "Failed to obtain completion from NIM API" });
-          }
+          console.error("NIM API request timed out (25s)");
+          return res.status(504).json({ error: "Upstream NIM API request timed out after 25 seconds." });
         }
-        if (!res.writableEnded) {
-          res.end();
-        }
+        throw error;
       }
     } catch (error: any) {
-      clearTimeout(timeoutId);
-      console.error("NIM proxy outer error:", error);
-      if (!res.headersSent) {
-        res.status(500).json({ error: error.message || "Failed to communicate with DeepSeek NIM" });
-      } else {
-        if (!res.writableEnded) {
-          res.end();
-        }
-      }
+      console.error("NIM proxy error:", error);
+      res.status(500).json({ error: error.message || "Failed to communicate with OdishaExamPrep AI" });
     }
   });
 

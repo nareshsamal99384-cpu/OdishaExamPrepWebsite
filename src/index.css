@@ -944,3 +944,27 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   filter: invert(85%) sepia(45%) saturate(1000%) hue-rotate(124deg) brightness(100%) contrast(100%); /* Brighter teal hover */
 }
 
+/* Responsive dynamic history delete button (only applies to hover-capable devices like laptops) */
+@media (hover: hover) {
+  .history-card {
+    transition: padding-right 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s, box-shadow 0.25s;
+  }
+  .history-card:hover {
+    padding-right: 4.5rem !important; /* 72px */
+  }
+  .history-card .delete-btn {
+    position: absolute !important;
+    right: 1.5rem; /* 24px */
+    top: 50%;
+    transform: translateY(-50%) scale(0.9);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .history-card:hover .delete-btn {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(-50%) scale(1);
+  }
+}
+

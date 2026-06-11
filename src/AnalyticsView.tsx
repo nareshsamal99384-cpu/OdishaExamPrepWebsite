@@ -11,7 +11,7 @@ import {
   Timer, History, LayoutDashboard, Rocket,
   ArrowRight, ChevronDown, Crosshair, Flame,
   Sparkles, Brain, Cpu, Send, Activity, 
-  Gauge, Lightbulb, Loader2, RefreshCw, Trash2
+  Gauge, Lightbulb, Loader2, RefreshCw, Trash2, X
 } from 'lucide-react';
 import { activityTracker } from './lib/activityTracker';
 import { cn } from './lib/utils';
@@ -1226,7 +1226,7 @@ Keep your answers short, structured, and focused on helping them improve their O
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="px-2.5 py-0.5 bg-[#8A1C36]/10 border border-[#8A1C36]/20 text-[#8A1C36] text-[9px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1 shadow-sm leading-none">
-                        <Cpu className="w-2.5 h-2.5" /> DeepSeek NIM
+                        <Cpu className="w-2.5 h-2.5" /> OdishaExamPrep AI
                       </span>
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider">Ready to diagnose</span>
@@ -1277,14 +1277,30 @@ Keep your answers short, structured, and focused on helping them improve their O
               <div className="space-y-6">
                 {/* AI Panel Header */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200/60 pb-5 gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center">
-                      <Cpu className="w-5.5 h-5.5 text-[#8A1C36]" />
+                  <div className="flex items-center justify-between w-full sm:w-auto">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center">
+                        <Cpu className="w-5.5 h-5.5 text-[#8A1C36]" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-sans font-black tracking-tight leading-none text-slate-900">AI Diagnostics Center</h3>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1.5">Synthesized via OdishaExamPrep AI Engine</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-lg font-sans font-black tracking-tight leading-none text-slate-900">AI Diagnostics Center</h3>
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1.5">Synthesized via DeepSeek Cognitive Engine</p>
-                    </div>
+                    {/* Mobile Close Button */}
+                    <button
+                      onClick={() => {
+                        const cacheKey = `oep_ai_insights_${user?.id}_${stats?.totalTests}_${stats?.avgScore}`;
+                        sessionStorage.removeItem(cacheKey);
+                        setScanningPhase(0);
+                        setAiInsight('');
+                        setActionItems([]);
+                      }}
+                      className="sm:hidden w-9 h-9 rounded-xl flex items-center justify-center bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200/60 transition-all cursor-pointer shrink-0"
+                      title="Return to main screen"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
 
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
@@ -1321,6 +1337,21 @@ Keep your answers short, structured, and focused on helping them improve their O
                       <span className="inline-block sm:hidden lg:inline text-[10px] sm:text-xs">
                         {loadingAi ? "Scanning..." : "Rescan Analytics"}
                       </span>
+                    </button>
+
+                    {/* Laptop Close Button */}
+                    <button
+                      onClick={() => {
+                        const cacheKey = `oep_ai_insights_${user?.id}_${stats?.totalTests}_${stats?.avgScore}`;
+                        sessionStorage.removeItem(cacheKey);
+                        setScanningPhase(0);
+                        setAiInsight('');
+                        setActionItems([]);
+                      }}
+                      className="hidden sm:flex items-center justify-center w-10 h-10 rounded-xl bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200/60 hover:border-rose-200/60 active:scale-95 transition-all shrink-0 cursor-pointer"
+                      title="Return to main screen"
+                    >
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

@@ -169,6 +169,33 @@ export const activityTracker = {
     }
   },
 
+  deleteActivity: async (userId: string, activityId: string) => {
+    if (!userId || !activityId) return;
+    try {
+      const localKey = `${STORAGE_KEY_PREFIX}${userId}`;
+      const existing: UserActivity[] = safeParse<UserActivity[]>(
+        localStorage.getItem(localKey),
+        []
+      );
+      const updated = existing.filter((a) => a.id !== activityId);
+      try {
+        localStorage.setItem(localKey, JSON.stringify(updated));
+      } catch { /* ignore */ }
+
+      // Sync LIGHTWEIGHT version to cloud (no questions, no large timeSpent maps)
+      const cloudPayload = updated.slice(0, CLOUD_MAX).map(toCloudSafe);
+      try {
+        await supabase.auth.updateUser({
+          data: { activities: cloudPayload },
+        });
+      } catch (cloudErr) {
+        console.warn('Cloud activity sync failed (non-fatal):', cloudErr);
+      }
+    } catch (e) {
+      console.error('Failed to delete activity:', e);
+    }
+  },
+
   clearActivities: async (userId: string) => {
     if (!userId) return;
     try {
