@@ -4,6 +4,7 @@ import { CheckCircle2, XCircle, Clock, Flag, AlertCircle, ChevronLeft, ChevronRi
 import { cn } from './lib/utils';
 import { Button } from './App';
 import { fadeSlideUpSm } from './lib/animations';
+import { MathTextRenderer, DiagramRenderer } from './components/MathTextRenderer';
 
 export default function TestResultsView({ results, onClose }: { results: any, onClose: () => void }) {
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -81,12 +82,12 @@ export default function TestResultsView({ results, onClose }: { results: any, on
 
   // Detect if current question text overflows its container
   React.useEffect(() => {
-    setQuestionExpanded(false);
+    setQuestionExpanded(!!currentQ?.diagram);
     const el = questionTextRef.current;
     if (el) {
-      setQuestionOverflows(el.scrollHeight > 280);
+      setQuestionOverflows(currentQ?.diagram ? false : el.scrollHeight > 280);
     }
-  }, [currentIdx]);
+  }, [currentIdx, currentQ]);
 
   // Calculate question metrics
   const correctCount = questions.reduce((acc, q, i) => {
@@ -372,8 +373,20 @@ export default function TestResultsView({ results, onClose }: { results: any, on
                     className="text-lg sm:text-2xl md:text-3xl lg:text-2xl xl:text-3xl font-semibold sm:font-extrabold text-slate-900 leading-relaxed sm:leading-[1.3] tracking-tight break-words overflow-wrap-anywhere space-y-4"
                   >
                     {currentQ.questionText.split('\n\n').map((para, i) => (
-                      <p key={i}>{para}</p>
+                      <p key={i}>
+                        <MathTextRenderer text={para} />
+                      </p>
                     ))}
+                    {(() => {
+                      const question = currentQ;
+                      console.log("QUESTION", question);
+                      console.log("DIAGRAM", question.diagram);
+                      console.log("TYPE", question.diagram?.type);
+                      return null;
+                    })()}
+                    {currentQ.diagram ? (
+                      <DiagramRenderer diagram={currentQ.diagram} data={currentQ.diagram} />
+                    ) : null}
                   </div>
 
                   {/* Gradient fade overlay when collapsed */}
@@ -416,7 +429,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
                   }
 
                   return (
-                    <div key={i} className={cn("p-4 sm:p-6 lg:p-5 rounded-2xl border-2 flex items-center gap-4 sm:gap-5 lg:gap-4 transition-all text-left w-full", ringClass)}>
+                    <div key={i} className={cn("mcq-option p-4 sm:p-6 lg:p-5 rounded-2xl border-2 flex items-center gap-4 sm:gap-5 lg:gap-4 transition-all text-left w-full", ringClass)}>
                        <div className={cn(
                           "w-8 h-8 sm:w-10 sm:h-10 lg:w-9 lg:h-9 rounded-lg sm:rounded-xl flex items-center justify-center font-extrabold text-sm sm:text-base lg:text-sm shrink-0",
                          isThisCorrect ? "bg-emerald-500 text-white" :
@@ -424,7 +437,9 @@ export default function TestResultsView({ results, onClose }: { results: any, on
                        )}>
                          {String.fromCharCode(65 + i)}
                        </div>
-                        <span className="text-base sm:text-xl lg:text-lg font-bold leading-tight">{opt}</span>
+                        <span className="text-base sm:text-xl lg:text-lg font-bold leading-tight">
+                          <MathTextRenderer text={opt} isOption />
+                        </span>
                        {icon}
                     </div>
                   )
@@ -432,12 +447,14 @@ export default function TestResultsView({ results, onClose }: { results: any, on
              </div>
 
              {currentQ.explanation && (
-                 <div className="bg-brand-50 p-5 sm:p-8 lg:p-6 rounded-2xl sm:rounded-3xl border border-brand-100 mb-8 sm:mb-10">
+                 <div className="math-explanation bg-brand-50 p-5 sm:p-8 lg:p-6 rounded-2xl sm:rounded-3xl border border-brand-100 mb-8 sm:mb-10">
                   <h4 className="font-extrabold text-brand-900 flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 text-base sm:text-lg">
                     <div className="bg-white p-1.5 sm:p-2 rounded-lg sm:rounded-xl shadow-sm"><AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-brand-600"/></div> 
                     Detailed Explanation
                   </h4>
-                  <p className="text-brand-800 font-medium leading-relaxed text-sm sm:text-lg">{currentQ.explanation}</p>
+                  <p className="text-brand-800 font-medium leading-relaxed text-sm sm:text-lg">
+                    <MathTextRenderer text={currentQ.explanation} />
+                  </p>
                 </div>
              )}
              

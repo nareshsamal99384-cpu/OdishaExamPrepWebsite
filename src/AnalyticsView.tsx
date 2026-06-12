@@ -16,59 +16,8 @@ import {
 import { activityTracker } from './lib/activityTracker';
 import { cn } from './lib/utils';
 import { stagger } from './lib/animations';
-import katex from 'katex';
-import 'katex/dist/katex.min.css';
+import { MathTextRenderer } from './components/MathTextRenderer';
 
-const MathTextRenderer = ({ text, isUser = false }: { text: string; isUser?: boolean }) => {
-  if (!text) return null;
-  const parts = text.split(/(\$\$.*?\$\$|\$.*?\$)/g);
-  return (
-    <span>
-      {parts.map((part, index) => {
-        if (part.startsWith('$$') && part.endsWith('$$')) {
-          const math = part.slice(2, -2);
-          try {
-            const html = katex.renderToString(math, {
-              throwOnError: false,
-              displayMode: true,
-            });
-            return (
-              <span
-                key={index}
-                className="block my-2 overflow-x-auto custom-scrollbar text-center"
-                dangerouslySetInnerHTML={{ __html: html }}
-              />
-            );
-          } catch (e) {
-            return <code key={index}>{part}</code>;
-          }
-        } else if (part.startsWith('$') && part.endsWith('$')) {
-          const math = part.slice(1, -1);
-          try {
-            const html = katex.renderToString(math, {
-              throwOnError: false,
-              displayMode: false,
-            });
-            return (
-              <span
-                key={index}
-                className={cn(
-                  "inline-block px-0.5 align-middle font-serif font-bold",
-                  isUser ? "text-amber-250" : "text-[#8A1C36]"
-                )}
-                dangerouslySetInnerHTML={{ __html: html }}
-              />
-            );
-          } catch (e) {
-            return <code key={index}>{part}</code>;
-          }
-        } else {
-          return <span key={index}>{part}</span>;
-        }
-      })}
-    </span>
-  );
-};
 
 const MarkdownMathRenderer = ({ text, isUser = false }: { text: string; isUser?: boolean }) => {
   if (!text) return null;

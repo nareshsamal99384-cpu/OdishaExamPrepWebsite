@@ -28,6 +28,8 @@ import { DEFAULT_ACHIEVERS_JOURNAL, AchieverStory } from './lib/defaultAchievers
 import { cn } from './lib/utils';
 import { supabase } from './lib/supabase';
 import { dropdown, modalContent, scaleIn } from './lib/animations';
+import { MathTextRenderer, DiagramRenderer } from './components/MathTextRenderer';
+import DiagramTemplateSelector from './components/DiagramTemplateSelector';
 
 // --- Custom Components ---
 const SearchableDropdown = ({ value, onChange, options, placeholder, required, disabled }: { value: string, onChange: (v: string) => void, options: {value: string, label: string}[], placeholder: string, required?: boolean, disabled?: boolean }) => {
@@ -55,19 +57,19 @@ const SearchableDropdown = ({ value, onChange, options, placeholder, required, d
       </div>
       <div 
         className={cn(
-          "w-full px-5 py-3 rounded-2xl border-2 outline-none transition-all font-bold bg-white cursor-pointer flex justify-between items-center group", 
-          isOpen ? "border-brand-500 ring-2 ring-brand-500/20" : "border-slate-100 hover:border-slate-200", 
+          "w-full px-5 py-3 rounded-2xl border outline-none font-semibold bg-slate-50/30 cursor-pointer flex justify-between items-center group transition-all duration-200 shadow-inner", 
+          isOpen ? "border-brand-500 bg-white ring-4 ring-brand-500/15 shadow-sm" : "border-slate-200 hover:border-slate-300", 
           disabled && "opacity-50 select-none pointer-events-none"
         )}
         onClick={() => !disabled && setIsOpen(!isOpen)}
       >
-        <span className={selectedLabel ? "text-slate-900 line-clamp-1 text-left" : "text-slate-500"}>{selectedLabel || placeholder}</span>
-        <ChevronDown className={cn("w-5 h-5 text-slate-400 group-hover:text-slate-600 transition-transform shrink-0", isOpen && "rotate-180")} />
+        <span className={selectedLabel ? "text-slate-900 line-clamp-1 text-left font-bold" : "text-slate-400 font-medium"}>{selectedLabel || placeholder}</span>
+        <ChevronDown className={cn("w-5 h-5 text-slate-400 group-hover:text-slate-500 transition-transform shrink-0", isOpen && "rotate-180")} />
       </div>
       <AnimatePresence>
         {isOpen && (
           <motion.div {...dropdown}
-            className="absolute z-[100] mt-2 left-0 right-0 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden"
+            className="absolute z-[100] mt-2 left-0 right-0 bg-white border border-slate-200/80 rounded-2xl shadow-xl overflow-hidden"
           >
             <div className="p-3 border-b border-slate-100 bg-slate-50/50">
               <div className="relative">
@@ -78,7 +80,7 @@ const SearchableDropdown = ({ value, onChange, options, placeholder, required, d
                   placeholder="Search items..." 
                   value={searchTerm} 
                   onChange={e => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 bg-white rounded-xl border border-slate-200 text-sm font-bold outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all text-slate-700"
+                  className="w-full pl-9 pr-4 py-2.5 bg-white rounded-xl border border-slate-200 text-sm font-semibold outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15 transition-all text-slate-700"
                 />
               </div>
             </div>
@@ -193,6 +195,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
     correctAnswerIndex: 0,
     explanation: '',
     targetExamId: '',
+    diagram: null,
     
     // SEO
     metaTitle: '',
@@ -203,6 +206,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
   const [formData, setFormData] = useState<any>(initialFormData);
   const [youtubeVideosInput, setYoutubeVideosInput] = useState('');
   const [newsUpdatesInput, setNewsUpdatesInput] = useState('');
+  const [diagramText, setDiagramText] = useState('');
 
   // Hero Card state
   const DEFAULT_HERO_CARD = {
@@ -282,7 +286,8 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
     story: '',
     avatar: '',
     stats: { score: '', accuracy: '', time: '' },
-    district: ''
+    district: '',
+    date: new Date().toISOString().split('T')[0]
   });
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [subscriberSearchQuery, setSubscriberSearchQuery] = useState('');
@@ -640,7 +645,8 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         questionText: item.questionText || '',
         options: item.options || ['', '', '', ''],
         correctAnswerIndex: item.correctAnswerIndex || 0,
-        explanation: item.explanation || ''
+        explanation: item.explanation || '',
+        diagram: item.diagram || null
       };
     } else if (activeTab === 'series') {
       newData = {
@@ -673,6 +679,9 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       };
     }
     
+    if (activeTab === 'questions') {
+      setDiagramText(item.diagram ? JSON.stringify(item.diagram, null, 2) : '');
+    }
     setFormData(newData);
     setShowAddModal(true);
   };
@@ -682,7 +691,16 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
     try {
       if (activeTab === 'questions') {
         if (!formData.examId) { alert("Please select an exam."); return; }
-        const payload = {
+        let parsedDiagram = null;
+        if (diagramText.trim()) {
+          try {
+            parsedDiagram = JSON.parse(diagramText);
+          } catch(e) {
+            alert("Invalid Diagram JSON. Please verify syntax.");
+            return;
+          }
+        }
+        const payload: any = {
           examId: formData.examId,
           topic: formData.topic,
           difficulty: formData.difficulty as 'easy' | 'medium' | 'hard',
@@ -691,6 +709,9 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
           correctAnswerIndex: Number(formData.correctAnswerIndex),
           explanation: formData.explanation
         };
+        if (parsedDiagram !== null && parsedDiagram !== undefined) {
+          payload.diagram = parsedDiagram;
+        }
         if (editingId) await examService.updateQuestion(editingId, payload);
         else await examService.addQuestion(payload);
       } else if (activeTab === 'series') {
@@ -759,6 +780,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       }
       setShowAddModal(false);
       setFormData(initialFormData);
+      setDiagramText('');
       await fetchData();
     } catch (error: any) {
       console.error(error);
@@ -813,9 +835,14 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         }
       }
       
-      if (!Array.isArray(parsed)) {
-        alert("The JSON must be an array of question objects.");
-        return;
+      let questionArray = parsed;
+      if (!Array.isArray(questionArray)) {
+        if (questionArray && typeof questionArray === 'object') {
+          questionArray = [questionArray];
+        } else {
+          alert("The JSON must be an array of question objects or a single question object.");
+          return;
+        }
       }
       
       const targetTest = mockTests.find(mt => mt.id === attachMockTestId);
@@ -826,8 +853,8 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         }
       } catch(e) {}
       
-      await examService.addQuestionsToMockTest(attachMockTestId, targetExamId, parsed);
-      alert(`Successfully added ${parsed.length} questions to Mock Test!`);
+      await examService.addQuestionsToMockTest(attachMockTestId, targetExamId, questionArray);
+      alert(`Successfully added ${questionArray.length} questions to Mock Test!`);
       setShowMockUploadModal(false);
       setBulkFileContent('');
       setAttachMockTestId(null);
@@ -860,20 +887,31 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         }
       }
       
-      if (!Array.isArray(parsed)) {
-        alert("The JSON must be an array of question objects.");
-        return;
+      let questionArray = parsed;
+      if (!Array.isArray(questionArray)) {
+        if (questionArray && typeof questionArray === 'object') {
+          questionArray = [questionArray];
+        } else {
+          alert("The JSON must be an array of question objects or a single question object.");
+          return;
+        }
       }
       
-      const formatted = parsed.map(q => ({
-        examId: bulkExamId,
-        topic: bulkTopic,
-        difficulty: q.difficulty || 'medium',
-        questionText: q.questionText || q.question || '',
-        options: Array.isArray(q.options) ? q.options : ['', '', '', ''],
-        correctAnswerIndex: Number(q.correctAnswerIndex) || 0,
-        explanation: q.explanation || ''
-      }));
+      const formatted = questionArray.map(q => {
+        const item: any = {
+          examId: bulkExamId,
+          topic: bulkTopic,
+          difficulty: q.difficulty || 'medium',
+          questionText: q.questionText || q.question || '',
+          options: Array.isArray(q.options) ? q.options : ['', '', '', ''],
+          correctAnswerIndex: Number(q.correctAnswerIndex) || 0,
+          explanation: q.explanation || ''
+        };
+        if (q.diagram !== undefined && q.diagram !== null) {
+          item.diagram = q.diagram;
+        }
+        return item;
+      });
       
       await examService.addQuestionsBulk(formatted);
       alert(`Successfully added ${formatted.length} questions!`);
@@ -896,71 +934,81 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
 
   // Render modal forms dynamically
   const renderFormFields = () => {
+    // Professional Form Style Constants
+    const labelClass = "text-xs font-bold text-slate-500 uppercase tracking-widest block mb-2";
+    const inputClass = "w-full px-5 py-3 rounded-2xl border border-slate-200 bg-slate-50/30 text-slate-800 placeholder-slate-400 font-semibold focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15 outline-none transition-all duration-200 shadow-inner";
+    const selectClass = "w-full px-5 py-3 rounded-2xl border border-slate-200 bg-slate-50/30 text-slate-800 font-semibold focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15 outline-none transition-all duration-200 appearance-none cursor-pointer pr-10 shadow-inner";
+    const selectWrapperClass = "relative w-full";
+    const textareaClass = "w-full px-5 py-3 rounded-2xl border border-slate-200 bg-slate-50/30 text-slate-800 placeholder-slate-400 font-semibold focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15 outline-none transition-all duration-200 shadow-inner";
+
     switch (activeTab) {
       case 'exams':
         return (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Exam Name *</label>
-                <input required type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" placeholder="e.g. OPSC Civil Services" />
+              <div className="space-y-2">
+                <label className={labelClass}>Exam Name *</label>
+                <input required type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className={inputClass} placeholder="e.g. OPSC Civil Services" />
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Category</label>
-                <select value={formData.examCategory} onChange={e => setFormData({ ...formData, examCategory: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold bg-white">
-                  <option value="popular">Popular</option>
-                  <option value="upcoming">Upcoming</option>
-                </select>
+              <div className="space-y-2">
+                <label className={labelClass}>Category</label>
+                <div className={selectWrapperClass}>
+                  <select value={formData.examCategory} onChange={e => setFormData({ ...formData, examCategory: e.target.value })} className={selectClass}>
+                    <option value="popular">Popular</option>
+                    <option value="upcoming">Upcoming</option>
+                  </select>
+                  <ChevronDown className="w-5 h-5 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Icon (Emoji or Image URL)</label>
-                <input required type="text" value={formData.icon} onChange={e => setFormData({ ...formData, icon: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" placeholder="🏛️ or https://..." />
+              <div className="space-y-2">
+                <label className={labelClass}>Icon (Emoji or Image URL)</label>
+                <input required type="text" value={formData.icon} onChange={e => setFormData({ ...formData, icon: e.target.value })} className={inputClass} placeholder="🏛️ or https://..." />
               </div>
               {formData.examCategory === 'upcoming' && (
-                <div className="space-y-3">
-                  <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Exam Date</label>
-                  <input type="date" value={formData.examDate} onChange={e => setFormData({ ...formData, examDate: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" />
+                <div className="space-y-2">
+                  <label className={labelClass}>Exam Date</label>
+                  <input type="date" value={formData.examDate} onChange={e => setFormData({ ...formData, examDate: e.target.value })} className={inputClass} />
                 </div>
               )}
             </div>
             
-            <div className="md:col-span-2 p-6 bg-brand-50 rounded-3xl border border-brand-100 space-y-4">
+            <div className="md:col-span-2 p-6 bg-brand-50/40 rounded-3xl border border-brand-100/50 space-y-4 mt-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center text-white">
-                    <Award className="w-6 h-6" />
+                  <div className="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center text-white shadow-md shadow-brand-500/10">
+                    <Award className="w-5 h-5" />
                   </div>
                   <div>
                     <label className="text-base font-black text-slate-900 leading-tight">Full Exam Access Bundle</label>
-                    <p className="text-xs font-bold text-slate-500 italic">Allow users to unlock ALL question banks and mock tests for this exam at once</p>
+                    <p className="text-xs font-bold text-slate-400 italic mt-0.5">Allow users to unlock ALL question banks and mock tests for this exam at once</p>
                   </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" checked={formData.isPremium} onChange={e => setFormData({ ...formData, isPremium: e.target.checked })} className="sr-only peer" />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+                  <div className="w-12 h-6.5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[22px] after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-sm peer-checked:bg-brand-500"></div>
                 </label>
               </div>
               {formData.isPremium && (
-                <div className="grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2">
+                <div className="grid grid-cols-2 gap-6 pt-4 border-t border-brand-100/30 animate-in fade-in slide-in-from-top-2">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Bundle Price (₹)</label>
-                    <input type="number" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold text-sm" placeholder="e.g. 499" />
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Bundle Price (₹)</label>
+                    <input type="number" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} className={inputClass} placeholder="e.g. 499" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Original Price (₹)</label>
-                    <input type="number" value={formData.originalPrice} onChange={e => setFormData({ ...formData, originalPrice: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold text-sm" placeholder="e.g. 999" />
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Original Price (₹)</label>
+                    <input type="number" value={formData.originalPrice} onChange={e => setFormData({ ...formData, originalPrice: e.target.value })} className={inputClass} placeholder="e.g. 999" />
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="space-y-3 md:col-span-2">
-              <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Exam Description / Detailed Content</label>
+            <div className="space-y-2 md:col-span-2 mt-6">
+              <label className={labelClass}>Exam Description / Detailed Content</label>
               <textarea 
                 rows={4} 
                 value={formData.description} 
                 onChange={e => setFormData({ ...formData, description: e.target.value })} 
-                className="w-full px-5 py-4 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-medium text-sm leading-relaxed" 
+                className={textareaClass} 
                 placeholder="Describe the exam and what's included in the bundle..."
               />
             </div>
@@ -970,55 +1018,55 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         return (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Blog Title *</label>
-                <input required type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" placeholder="e.g. How to Crack OPSC 2026" />
+              <div className="space-y-2">
+                <label className={labelClass}>Blog Title *</label>
+                <input required type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className={inputClass} placeholder="e.g. How to Crack OPSC 2026" />
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Cover Image URL *</label>
-                <input required type="url" value={formData.icon} onChange={e => setFormData({ ...formData, icon: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" placeholder="https://..." />
+              <div className="space-y-2">
+                <label className={labelClass}>Cover Image URL *</label>
+                <input required type="url" value={formData.icon} onChange={e => setFormData({ ...formData, icon: e.target.value })} className={inputClass} placeholder="https://..." />
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Publish Date *</label>
-                <input required type="date" value={formData.examDate} onChange={e => setFormData({ ...formData, examDate: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" />
+              <div className="space-y-2">
+                <label className={labelClass}>Publish Date *</label>
+                <input required type="date" value={formData.examDate} onChange={e => setFormData({ ...formData, examDate: e.target.value })} className={inputClass} />
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Related Exam (For Promotion)</label>
+              <div className="space-y-2">
+                <label className={labelClass}>Related Exam (For Promotion)</label>
                 <SearchableDropdown 
                   value={formData.targetExamId} 
                   onChange={v => setFormData({ ...formData, targetExamId: v })} 
                   options={actualExams.map(ex => ({ value: ex.id as string, label: ex.name }))}
                   placeholder="-- No Related Exam --"
                 />
-                <p className="text-[10px] font-bold text-slate-400">If selected, this blog will promote Question Banks & Mock Tests for this exam.</p>
+                <p className="text-[10px] font-bold text-slate-400 mt-1">If selected, this blog will promote Question Banks & Mock Tests for this exam.</p>
               </div>
             </div>
 
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 mt-8 space-y-6">
+            <div className="bg-slate-50/40 p-6 rounded-3xl border border-slate-200/60 mt-8 space-y-6">
               <div className="flex items-center gap-2 mb-2">
                 <Search className="w-5 h-5 text-brand-600" />
                 <h3 className="text-lg font-black text-slate-900 tracking-tight">SEO Options</h3>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Meta Title</label>
-                  <input type="text" value={formData.metaTitle} onChange={e => setFormData({ ...formData, metaTitle: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-200 outline-none focus:border-brand-500 transition-all font-bold bg-white" placeholder="SEO Title Tag" />
+                <div className="space-y-2">
+                  <label className={labelClass}>Meta Title</label>
+                  <input type="text" value={formData.metaTitle} onChange={e => setFormData({ ...formData, metaTitle: e.target.value })} className={inputClass} placeholder="SEO Title Tag" />
                 </div>
-                <div className="space-y-3">
-                  <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Meta Keywords</label>
-                  <input type="text" value={formData.keywords} onChange={e => setFormData({ ...formData, keywords: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-200 outline-none focus:border-brand-500 transition-all font-bold bg-white" placeholder="odisha, exams, prep..." />
+                <div className="space-y-2">
+                  <label className={labelClass}>Meta Keywords</label>
+                  <input type="text" value={formData.keywords} onChange={e => setFormData({ ...formData, keywords: e.target.value })} className={inputClass} placeholder="odisha, exams, prep..." />
                 </div>
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Meta Description</label>
-                <textarea value={formData.metaDescription} onChange={e => setFormData({ ...formData, metaDescription: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-200 outline-none focus:border-brand-500 transition-all font-bold min-h-[80px] bg-white" placeholder="Search result snippet..."></textarea>
+              <div className="space-y-2">
+                <label className={labelClass}>Meta Description</label>
+                <textarea value={formData.metaDescription} onChange={e => setFormData({ ...formData, metaDescription: e.target.value })} className={textareaClass} placeholder="Search result snippet..."></textarea>
               </div>
             </div>
-            <div className="space-y-3 mt-6">
-              <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">HTML/Code Content *</label>
-              <textarea required value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="w-full px-5 py-4 rounded-2xl border-2 border-slate-200 outline-none focus:border-brand-500 transition-all font-mono min-h-[350px] shadow-inner text-sm" placeholder="<h1>Main Strategy</h1><p>Here is how...</p>"></textarea>
-              <p className="text-xs font-semibold text-slate-500">Paste raw HTML here. The frontend will render it automatically.</p>
+            <div className="space-y-2 mt-6">
+              <label className={labelClass}>HTML/Code Content *</label>
+              <textarea required value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className={`${textareaClass} font-mono min-h-[350px]`} placeholder="<h1>Main Strategy</h1><p>Here is how...</p>"></textarea>
+              <p className="text-xs font-semibold text-slate-400 mt-1">Paste raw HTML here. The frontend will render it automatically.</p>
             </div>
           </>
         );
@@ -1026,8 +1074,8 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         return (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Select Exam *</label>
+              <div className="space-y-2">
+                <label className={labelClass}>Select Exam *</label>
                 <SearchableDropdown 
                   required 
                   value={formData.examId} 
@@ -1036,22 +1084,22 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   placeholder="-- Choose Exam --"
                 />
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Series Title *</label>
-                <input required type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" placeholder="e.g. Advanced Mock Series" />
+              <div className="space-y-2">
+                <label className={labelClass}>Series Title *</label>
+                <input required type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className={inputClass} placeholder="e.g. Advanced Mock Series" />
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Price (₹) *</label>
-                <input required type="number" min="0" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" />
+              <div className="space-y-2">
+                <label className={labelClass}>Price (₹) *</label>
+                <input required type="number" min="0" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} className={inputClass} />
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Duration (Days) *</label>
-                <input required type="number" min="1" value={formData.durationDays} onChange={e => setFormData({ ...formData, durationDays: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" />
+              <div className="space-y-2">
+                <label className={labelClass}>Duration (Days) *</label>
+                <input required type="number" min="1" value={formData.durationDays} onChange={e => setFormData({ ...formData, durationDays: e.target.value })} className={inputClass} />
               </div>
             </div>
-            <div className="space-y-3 mt-6">
-              <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Description *</label>
-              <textarea required value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold min-h-[100px]" placeholder="Series details..."></textarea>
+            <div className="space-y-2 mt-6">
+              <label className={labelClass}>Description *</label>
+              <textarea required value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className={textareaClass} placeholder="Series details..."></textarea>
             </div>
           </>
         );
@@ -1059,8 +1107,8 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         return (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Select Exam *</label>
+              <div className="space-y-2">
+                <label className={labelClass}>Select Exam *</label>
                 <SearchableDropdown 
                   required 
                   value={formData.examId} 
@@ -1069,42 +1117,48 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   placeholder="-- Choose Exam --"
                 />
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Select Category *</label>
-                <select required value={formData.mockCategory} onChange={e => setFormData({ ...formData, mockCategory: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold bg-white">
-                  <option value="full-length">Full-Length Mock Tests</option>
-                  <option value="sectional">Sectional Tests</option>
-                  <option value="pyq">PYQ Tests</option>
-                  <option value="daily">Daily / Weekly Tests</option>
-                </select>
+              <div className="space-y-2">
+                <label className={labelClass}>Select Category *</label>
+                <div className={selectWrapperClass}>
+                  <select required value={formData.mockCategory} onChange={e => setFormData({ ...formData, mockCategory: e.target.value })} className={selectClass}>
+                    <option value="full-length">Full-Length Mock Tests</option>
+                    <option value="sectional">Sectional Tests</option>
+                    <option value="pyq">PYQ Tests</option>
+                    <option value="daily">Daily / Weekly Tests</option>
+                  </select>
+                  <ChevronDown className="w-5 h-5 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
               
               {formData.mockCategory === 'sectional' && (
-                <div className="space-y-3">
-                  <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Select Subject *</label>
-                  <select required value={formData.mockSubject} onChange={e => setFormData({ ...formData, mockSubject: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold bg-white disabled:opacity-50" disabled={!formData.examId}>
-                    <option value="">-- Choose Subject --</option>
-                    {banks.filter((b: any) => b.examId === formData.examId).map((bank: any) => (
-                      <option key={bank.id} value={bank.title}>{bank.title}</option>
-                    ))}
-                  </select>
+                <div className="space-y-2">
+                  <label className={labelClass}>Select Subject *</label>
+                  <div className={selectWrapperClass}>
+                    <select required value={formData.mockSubject} onChange={e => setFormData({ ...formData, mockSubject: e.target.value })} className={selectClass} disabled={!formData.examId}>
+                      <option value="">-- Choose Subject --</option>
+                      {banks.filter((b: any) => b.examId === formData.examId).map((bank: any) => (
+                        <option key={bank.id} value={bank.title}>{bank.title}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-5 h-5 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
                 </div>
               )}
 
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Test Title *</label>
-                <input required type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" placeholder="e.g. Full Length Mock 1" />
+              <div className="space-y-2">
+                <label className={labelClass}>Test Title *</label>
+                <input required type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className={inputClass} placeholder="e.g. Full Length Mock 1" />
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Duration (Mins) *</label>
-                <input required type="number" min="1" value={formData.durationMinutes} onChange={e => setFormData({ ...formData, durationMinutes: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" />
+              <div className="space-y-2">
+                <label className={labelClass}>Duration (Mins) *</label>
+                <input required type="number" min="1" value={formData.durationMinutes} onChange={e => setFormData({ ...formData, durationMinutes: e.target.value })} className={inputClass} />
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Total Marks *</label>
-                <input required type="number" min="1" value={formData.totalMarks} onChange={e => setFormData({ ...formData, totalMarks: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" />
+              <div className="space-y-2">
+                <label className={labelClass}>Total Marks *</label>
+                <input required type="number" min="1" value={formData.totalMarks} onChange={e => setFormData({ ...formData, totalMarks: e.target.value })} className={inputClass} />
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Negative Marking Per Incorrect Answer *</label>
+              <div className="space-y-2">
+                <label className={labelClass}>Negative Marking Per Incorrect Answer *</label>
                 <input 
                   required 
                   type="number" 
@@ -1112,19 +1166,19 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   min="0" 
                   value={formData.negativeMarking} 
                   onChange={e => setFormData({ ...formData, negativeMarking: e.target.value })} 
-                  className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" 
+                  className={inputClass} 
                   placeholder="e.g. 0.25" 
                 />
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap mt-2">
                   {[0, 0.25, 0.33, 0.5, 1].map((val) => (
                     <button
                       key={val}
                       type="button"
                       onClick={() => setFormData({ ...formData, negativeMarking: val })}
                       className={cn(
-                        "px-3 py-1 rounded-lg text-xs font-bold transition-all border",
+                        "px-3 py-1.5 rounded-xl text-xs font-bold transition-all border",
                         Number(formData.negativeMarking) === val 
-                          ? "bg-brand-500 text-white border-brand-500" 
+                          ? "bg-brand-500 text-white border-brand-500 shadow-sm" 
                           : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
                       )}
                     >
@@ -1134,20 +1188,23 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                 </div>
               </div>
             </div>
-            <div className="mt-8 flex flex-col gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-100">
-              <div className="flex items-center gap-3">
-                <input type="checkbox" id="isPremiumTest" checked={formData.isPremium} onChange={e => setFormData({ ...formData, isPremium: e.target.checked })} className="w-5 h-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
-                <label htmlFor="isPremiumTest" className="text-sm font-extrabold text-slate-700 uppercase tracking-wider cursor-pointer">Is Premium / Locked Content?</label>
+            <div className="mt-8 flex flex-col gap-4 bg-slate-50/40 p-6 rounded-3xl border border-slate-200/60 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-black text-slate-800 uppercase tracking-wider">Is Premium / Locked Content?</span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked={formData.isPremium} onChange={e => setFormData({ ...formData, isPremium: e.target.checked })} className="sr-only peer" />
+                  <div className="w-12 h-6.5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[22px] after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-sm peer-checked:bg-brand-500"></div>
+                </label>
               </div>
               {formData.isPremium && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-200">
-                  <div className="space-y-3">
-                    <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Original Price (₹) *</label>
-                    <input required type="number" min="0" value={formData.originalPrice} onChange={e => setFormData({ ...formData, originalPrice: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-200 outline-none focus:border-slate-400 transition-all font-bold bg-slate-50" placeholder="e.g. 999" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4 pt-4 border-t border-slate-200/60 animate-in fade-in slide-in-from-top-2">
+                  <div className="space-y-2">
+                    <label className={labelClass}>Original Price (₹) *</label>
+                    <input required type="number" min="0" value={formData.originalPrice} onChange={e => setFormData({ ...formData, originalPrice: e.target.value })} className={inputClass} placeholder="e.g. 999" />
                   </div>
-                  <div className="space-y-3">
-                    <label className="text-sm font-extrabold text-brand-700 uppercase tracking-wider">Discounted Price (₹) *</label>
-                    <input required type="number" min="0" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-brand-100 outline-none focus:border-brand-500 transition-all font-bold bg-white" placeholder="e.g. 499" />
+                  <div className="space-y-2">
+                    <label className={labelClass}>Discounted Price (₹) *</label>
+                    <input required type="number" min="0" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} className={inputClass} placeholder="e.g. 499" />
                   </div>
                 </div>
               )}
@@ -1158,8 +1215,8 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         return (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Select Exam *</label>
+              <div className="space-y-2">
+                <label className={labelClass}>Select Exam *</label>
                 <SearchableDropdown 
                   required 
                   value={formData.examId} 
@@ -1168,38 +1225,41 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   placeholder="-- Choose Exam --"
                 />
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Bank Title *</label>
-                <input required type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" placeholder="e.g. Indian Polity" />
+              <div className="space-y-2">
+                <label className={labelClass}>Bank Title *</label>
+                <input required type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className={inputClass} placeholder="e.g. Indian Polity" />
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Bank Type *</label>
-                <select required value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold bg-white">
-                  <option value="topic-wise">Topic-wise</option>
-                  <option value="exam-focused">Exam-Focused</option>
-                  <option value="revision-sets">Revision Sets</option>
-                  <option value="pyq-collections">PYQ Collections</option>
-                </select>
+              <div className="space-y-2">
+                <label className={labelClass}>Bank Type *</label>
+                <div className={selectWrapperClass}>
+                  <select required value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className={selectClass}>
+                    <option value="topic-wise">Topic-wise</option>
+                    <option value="exam-focused">Exam-Focused</option>
+                    <option value="revision-sets">Revision Sets</option>
+                    <option value="pyq-collections">PYQ Collections</option>
+                  </select>
+                  <ChevronDown className="w-5 h-5 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Questions Count</label>
-                <input type="number" value={formData.questionCount} onChange={e => setFormData({ ...formData, questionCount: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" />
+              <div className="space-y-2">
+                <label className={labelClass}>Questions Count</label>
+                <input type="number" value={formData.questionCount} onChange={e => setFormData({ ...formData, questionCount: e.target.value })} className={inputClass} />
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Tagline</label>
-                <input type="text" value={formData.tagline} onChange={e => setFormData({ ...formData, tagline: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" placeholder="e.g. Concept-Focused Practice" />
+              <div className="space-y-2">
+                <label className={labelClass}>Tagline</label>
+                <input type="text" value={formData.tagline} onChange={e => setFormData({ ...formData, tagline: e.target.value })} className={inputClass} placeholder="e.g. Concept-Focused Practice" />
               </div>
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Image URL</label>
-                <input type="text" value={formData.image} onChange={e => setFormData({ ...formData, image: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" placeholder="https://..." />
+              <div className="space-y-2">
+                <label className={labelClass}>Image URL</label>
+                <input type="text" value={formData.image} onChange={e => setFormData({ ...formData, image: e.target.value })} className={inputClass} placeholder="https://..." />
               </div>
-              <div className="md:col-span-2 space-y-4">
+              <div className="md:col-span-2 space-y-4 mt-4">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">PDF Download Links</label>
                   <button 
                     type="button"
                     onClick={() => setFormData({ ...formData, pdfLinks: [...formData.pdfLinks, { title: '', url: '' }] })}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-brand-50 text-brand-600 rounded-xl text-xs font-black hover:bg-brand-100 transition-all"
+                    className="flex items-center gap-2 px-4 py-2 bg-brand-50 text-brand-600 rounded-xl text-xs font-black hover:bg-brand-100 transition-all border border-brand-100/30"
                   >
                     <Plus className="w-4 h-4" /> Add New Link
                   </button>
@@ -1207,13 +1267,13 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                 
                 <div className="space-y-3">
                   {formData.pdfLinks.length === 0 ? (
-                    <div className="py-8 border-2 border-dashed border-slate-100 rounded-2xl flex flex-col items-center justify-center text-slate-400">
+                    <div className="py-8 border-2 border-dashed border-slate-100 rounded-2xl flex flex-col items-center justify-center text-slate-400 bg-slate-50/20">
                       <FileText className="w-8 h-8 mb-2 opacity-20" />
                       <p className="text-xs font-bold uppercase tracking-widest">No PDF links added yet</p>
                     </div>
                   ) : (
                     formData.pdfLinks.map((link: any, idx: number) => (
-                      <div key={idx} className="flex gap-3 items-end bg-white p-4 rounded-2xl border-2 border-slate-50 shadow-sm relative group">
+                      <div key={idx} className="flex gap-4 items-end bg-slate-50/30 p-5 rounded-2xl border border-slate-200/60 shadow-sm relative group">
                         <div className="flex-1 space-y-2">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Link Title</label>
                           <input 
@@ -1225,7 +1285,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                               setFormData({ ...formData, pdfLinks: newLinks });
                             }} 
                             placeholder="e.g. Question Bank Vol. 1" 
-                            className="w-full px-4 py-2 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold text-sm" 
+                            className={inputClass} 
                           />
                         </div>
                         <div className="flex-[2] space-y-2">
@@ -1239,7 +1299,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                               setFormData({ ...formData, pdfLinks: newLinks });
                             }} 
                             placeholder="https://..." 
-                            className="w-full px-4 py-2 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold text-sm font-mono" 
+                            className={`${inputClass} font-mono`} 
                           />
                         </div>
                         <button 
@@ -1248,7 +1308,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                             const newLinks = formData.pdfLinks.filter((_: any, i: number) => i !== idx);
                             setFormData({ ...formData, pdfLinks: newLinks });
                           }}
-                          className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all mb-1"
+                          className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all mb-0.5 border border-transparent hover:border-red-100"
                         >
                           <Trash2 className="w-5 h-5" />
                         </button>
@@ -1259,26 +1319,35 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                 <p className="text-[10px] font-bold text-slate-400 italic">Adding multiple links allows students to download separate files for questions, answers, or different parts.</p>
               </div>
             </div>
-            <div className="mt-8 flex flex-col gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-100">
-              <div className="flex items-center gap-3">
-                <input type="checkbox" id="isPremium" checked={formData.isPremium} onChange={e => setFormData({ ...formData, isPremium: e.target.checked })} className="w-5 h-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
-                <label htmlFor="isPremium" className="text-sm font-extrabold text-slate-700 uppercase tracking-wider cursor-pointer">Is Premium / Locked Content?</label>
+            
+            <div className="mt-8 flex flex-col gap-5 bg-slate-50/40 p-6 rounded-3xl border border-slate-200/60 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-black text-slate-800 uppercase tracking-wider">Is Premium / Locked Content?</span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked={formData.isPremium} onChange={e => setFormData({ ...formData, isPremium: e.target.checked })} className="sr-only peer" />
+                  <div className="w-12 h-6.5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[22px] after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-sm peer-checked:bg-brand-500"></div>
+                </label>
               </div>
+              
               {formData.isPremium && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-200">
-                  <div className="space-y-3">
-                    <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Original Price (₹) *</label>
-                    <input required type="number" min="0" value={formData.originalPrice} onChange={e => setFormData({ ...formData, originalPrice: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-200 outline-none focus:border-slate-400 transition-all font-bold bg-slate-50" placeholder="e.g. 999" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-slate-200/60 animate-in fade-in slide-in-from-top-2">
+                  <div className="space-y-2">
+                    <label className={labelClass}>Original Price (₹) *</label>
+                    <input required type="number" min="0" value={formData.originalPrice} onChange={e => setFormData({ ...formData, originalPrice: e.target.value })} className={inputClass} placeholder="e.g. 999" />
                   </div>
-                  <div className="space-y-3">
-                    <label className="text-sm font-extrabold text-brand-700 uppercase tracking-wider">Discounted Price (₹) *</label>
-                    <input required type="number" min="0" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-brand-100 outline-none focus:border-brand-500 transition-all font-bold bg-white" placeholder="e.g. 499" />
+                  <div className="space-y-2">
+                    <label className={labelClass}>Discounted Price (₹) *</label>
+                    <input required type="number" min="0" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} className={inputClass} placeholder="e.g. 499" />
                   </div>
                 </div>
               )}
-              <div className="flex items-center gap-3 pt-4 border-t border-slate-200">
-                <input type="checkbox" id="hasPracticeMode" checked={formData.hasPracticeMode} onChange={e => setFormData({ ...formData, hasPracticeMode: e.target.checked })} className="w-5 h-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
-                <label htmlFor="hasPracticeMode" className="text-sm font-extrabold text-slate-700 uppercase tracking-wider cursor-pointer">Enable "Practice Now" Feature?</label>
+              
+              <div className="flex items-center justify-between pt-4 border-t border-slate-200/60">
+                <span className="text-sm font-black text-slate-800 uppercase tracking-wider">Enable "Practice Now" Feature?</span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="hasPracticeMode" checked={formData.hasPracticeMode} onChange={e => setFormData({ ...formData, hasPracticeMode: e.target.checked })} className="sr-only peer" />
+                  <div className="w-12 h-6.5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[22px] after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-sm peer-checked:bg-brand-500"></div>
+                </label>
               </div>
             </div>
           </>
@@ -1286,9 +1355,9 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       case 'questions':
         return (
           <div className="space-y-6">
-            <div className="grid grid-cols-3 gap-6">
-              <div className="space-y-3">
-                <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Select Exam *</label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <label className={labelClass}>Select Exam *</label>
                 <SearchableDropdown 
                   required 
                   value={formData.examId} 
@@ -1299,104 +1368,133 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
               </div>
               { ((formData.topic || '').toLowerCase().startsWith('mocktest__') || questionFilter === 'mock') ? (
                 <>
-                  <div className="space-y-3">
-                    <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Select Category *</label>
-                    <select 
-                      required 
-                      value={formData.mockCategory || 'full-length'} 
-                      onChange={e => setFormData({ ...formData, mockCategory: e.target.value })} 
-                      className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold bg-white"
-                    >
-                      <option value="full-length">Full-Length Mock Tests</option>
-                      <option value="sectional">Sectional Tests</option>
-                      <option value="pyq">PYQ Tests</option>
-                      <option value="daily">Daily / Weekly Tests</option>
-                    </select>
+                  <div className="space-y-2">
+                    <label className={labelClass}>Select Category *</label>
+                    <div className={selectWrapperClass}>
+                      <select 
+                        required 
+                        value={formData.mockCategory || 'full-length'} 
+                        onChange={e => setFormData({ ...formData, mockCategory: e.target.value })} 
+                        className={selectClass}
+                      >
+                        <option value="full-length">Full-Length Mock Tests</option>
+                        <option value="sectional">Sectional Tests</option>
+                        <option value="pyq">PYQ Tests</option>
+                        <option value="daily">Daily / Weekly Tests</option>
+                      </select>
+                      <ChevronDown className="w-5 h-5 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
                   </div>
-                  <div className="space-y-3">
-                    <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Test Title *</label>
-                    <select 
-                      required 
-                      value={formData.topic} 
-                      onChange={e => setFormData({ ...formData, topic: e.target.value })} 
-                      className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold bg-white disabled:opacity-50"
-                      disabled={!formData.examId}
-                    >
-                      <option value="">-- Choose Mock Test --</option>
-                      {mockTests
-                        .filter((mt: any) => {
-                           let cat = 'full-length';
-                           let mExam = '';
-                           try { 
-                             if (mt.seriesId) {
-                               const parsed = JSON.parse(mt.seriesId);
-                               cat = parsed.category || 'full-length';
-                               mExam = parsed.examId || '';
-                             }
-                           } catch(e){}
-                           return mExam === formData.examId && cat === (formData.mockCategory || 'full-length');
-                        })
-                        .map((mt: any) => (
-                        <option key={mt.id} value={`mockTest__${mt.id}`}>{mt.title}</option>
-                      ))}
-                    </select>
+                  <div className="space-y-2">
+                    <label className={labelClass}>Test Title *</label>
+                    <div className={selectWrapperClass}>
+                      <select 
+                        required 
+                        value={formData.topic} 
+                        onChange={e => setFormData({ ...formData, topic: e.target.value })} 
+                        className={selectClass}
+                        disabled={!formData.examId}
+                      >
+                        <option value="">-- Choose Mock Test --</option>
+                        {mockTests
+                          .filter((mt: any) => {
+                             let cat = 'full-length';
+                             let mExam = '';
+                             try { 
+                               if (mt.seriesId) {
+                                 const parsed = JSON.parse(mt.seriesId);
+                                 cat = parsed.category || 'full-length';
+                                 mExam = parsed.examId || '';
+                               }
+                             } catch(e){}
+                             return mExam === formData.examId && cat === (formData.mockCategory || 'full-length');
+                          })
+                          .map((mt: any) => (
+                          <option key={mt.id} value={`mockTest__${mt.id}`}>{mt.title}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-5 h-5 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="space-y-3">
-                    <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Topic *</label>
-                    <select 
-                      required 
-                      value={formData.topic} 
-                      onChange={e => setFormData({ ...formData, topic: e.target.value })} 
-                      className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold bg-white disabled:opacity-50"
-                      disabled={!formData.examId}
-                    >
-                      <option value="">-- Choose Topic --</option>
-                      {banks.filter((b: any) => b.examId === formData.examId).map((bank: any) => (
-                        <option key={bank.id} value={bank.title}>{bank.title}</option>
-                      ))}
-                    </select>
+                  <div className="space-y-2">
+                    <label className={labelClass}>Topic *</label>
+                    <div className={selectWrapperClass}>
+                      <select 
+                        required 
+                        value={formData.topic} 
+                        onChange={e => setFormData({ ...formData, topic: e.target.value })} 
+                        className={selectClass}
+                        disabled={!formData.examId}
+                      >
+                        <option value="">-- Choose Topic --</option>
+                        {banks.filter((b: any) => b.examId === formData.examId).map((bank: any) => (
+                          <option key={bank.id} value={bank.title}>{bank.title}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-5 h-5 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
                   </div>
-                  <div className="space-y-3">
-                    <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Difficulty *</label>
-                    <select required value={formData.difficulty} onChange={e => setFormData({ ...formData, difficulty: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold bg-white">
-                      <option value="easy">Easy</option>
-                      <option value="medium">Medium</option>
-                      <option value="hard">Hard</option>
-                    </select>
+                  <div className="space-y-2">
+                    <label className={labelClass}>Difficulty *</label>
+                    <div className={selectWrapperClass}>
+                      <select required value={formData.difficulty} onChange={e => setFormData({ ...formData, difficulty: e.target.value })} className={selectClass}>
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                      </select>
+                      <ChevronDown className="w-5 h-5 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
                   </div>
                 </>
               )}
             </div>
-            <div className="space-y-3">
-              <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Question Text *</label>
-              <textarea required value={formData.questionText} onChange={e => setFormData({ ...formData, questionText: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold min-h-[80px]" placeholder="Enter question..." />
+            <div className="space-y-2">
+              <label className={labelClass}>Question Text *</label>
+              <textarea required value={formData.questionText} onChange={e => setFormData({ ...formData, questionText: e.target.value })} className={textareaClass} placeholder="Enter question..." />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[0, 1, 2, 3].map(i => (
                 <div key={i} className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Option {i + 1}</label>
-                  <input required type="text" value={formData.options[i]} onChange={e => handleOptionChange(i, e.target.value)} className="w-full px-4 py-2 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold" />
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Option {i + 1}</label>
+                  <input required type="text" value={formData.options[i]} onChange={e => handleOptionChange(i, e.target.value)} className={inputClass} />
                 </div>
               ))}
             </div>
 
-            <div className="space-y-3">
-              <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Correct Answer *</label>
-              <select required value={formData.correctAnswerIndex} onChange={e => setFormData({ ...formData, correctAnswerIndex: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold bg-white">
-                <option value={0}>Option 1</option>
-                <option value={1}>Option 2</option>
-                <option value={2}>Option 3</option>
-                <option value={3}>Option 4</option>
-              </select>
+            <div className="space-y-2">
+              <label className={labelClass}>Correct Answer *</label>
+              <div className={selectWrapperClass}>
+                <select required value={formData.correctAnswerIndex} onChange={e => setFormData({ ...formData, correctAnswerIndex: e.target.value })} className={selectClass}>
+                  <option value={0}>Option 1</option>
+                  <option value={1}>Option 2</option>
+                  <option value={2}>Option 3</option>
+                  <option value={3}>Option 4</option>
+                </select>
+                <ChevronDown className="w-5 h-5 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
 
-            <div className="space-y-3">
-              <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Explanation *</label>
-              <textarea required value={formData.explanation} onChange={e => setFormData({ ...formData, explanation: e.target.value })} className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 outline-none focus:border-brand-500 transition-all font-bold min-h-[80px]" placeholder="Explain the answer..." />
+            <div className="space-y-2">
+              <label className={labelClass}>Explanation *</label>
+              <textarea required value={formData.explanation} onChange={e => setFormData({ ...formData, explanation: e.target.value })} className={textareaClass} placeholder="Explain the answer..." />
+            </div>
+
+            <div className="space-y-2">
+              <label className={labelClass}>Diagram JSON (Optional)</label>
+              <textarea 
+                value={diagramText} 
+                onChange={e => setDiagramText(e.target.value)} 
+                className={`${textareaClass} font-mono`} 
+                placeholder='e.g. { "type": "circle", "radius": 10, "centerLabel": "O" }' 
+                rows={4}
+              />
+              <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">
+                Use valid JSON formatting. Example circle: <code>{"{ \"type\": \"circle\", \"radius\": 10, \"centerLabel\": \"O\" }"}</code>. Example coordinate: <code>{"{ \"type\": \"coordinate\", \"points\": [{\"x\": 3, \"y\": 4, \"label\": \"A\"}] }"}</code>.
+              </p>
             </div>
           </div>
         );
@@ -1666,10 +1764,10 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
     <div className="fixed inset-0 bg-[#F8FAFC] z-50 flex flex-col font-sans">
       {/* Header */}
       <header className="h-16 glass border-b border-slate-200/50 flex items-center justify-between px-6 shrink-0 sticky top-0 z-10 shadow-sm">
-        <div className="flex items-center gap-6">
-          <h1 className="text-xl font-extrabold text-slate-950 tracking-tight">Admin <span className="premium-text-gradient">Control Center</span></h1>
-          <div className="h-6 w-px bg-slate-200" />
-          <nav className="flex gap-2 overflow-x-auto custom-scrollbar pb-1">
+        <div className="flex items-center gap-6 min-w-0 flex-1">
+          <h1 className="text-xl font-extrabold text-slate-950 tracking-tight shrink-0 whitespace-nowrap">Admin <span className="premium-text-gradient">Control Center</span></h1>
+          <div className="h-6 w-px bg-slate-200 shrink-0" />
+          <nav className="flex gap-2 overflow-x-auto custom-scrollbar pb-1 flex-1 min-w-0">
              {[
               { id: 'exams', label: 'Exams', icon: Award },
               { id: 'blogs', label: 'Blog Posts', icon: FileText },
@@ -1696,7 +1794,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
            <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-all border border-slate-200 shadow-sm">
             <X className="w-5 h-5 text-slate-600" />
           </button>
@@ -1865,6 +1963,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   onClick={() => {
                     setEditingId(null);
                     setFormData(initialFormData);
+                    setDiagramText('');
                     setShowAddModal(true);
                   }}
                   className="flex items-center gap-2 px-8 py-2.5 premium-gradient text-white rounded-xl text-sm font-extrabold hover:premium-glow shadow-lg shadow-brand-500/20 transition-all active:scale-95"
@@ -2127,7 +2226,20 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                       </div>
 
                       {/* Question */}
-                      <p className="text-xs font-bold text-slate-900 leading-relaxed mb-3 line-clamp-3">{heroCard.questionText || 'Question text will appear here...'}</p>
+                      <p className="text-xs font-bold text-slate-900 leading-relaxed mb-3 line-clamp-3">
+                        <MathTextRenderer text={heroCard.questionText || 'Question text will appear here...'} />
+                      </p>
+
+                      {(() => {
+                        const question = heroCard;
+                        console.log("QUESTION", question);
+                        console.log("DIAGRAM", question.diagram);
+                        console.log("TYPE", question.diagram?.type);
+                        return null;
+                      })()}
+                      {heroCard.diagram ? (
+                        <DiagramRenderer diagram={heroCard.diagram} data={heroCard.diagram} />
+                      ) : null}
 
                       {/* Options */}
                       <div className="space-y-1.5 mb-3">
@@ -2147,7 +2259,9 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                             )}>
                               {String.fromCharCode(65 + idx)}
                             </span>
-                            <span className="truncate">{opt || `Option ${String.fromCharCode(65 + idx)}`}</span>
+                             <span className="truncate">
+                               <MathTextRenderer text={opt || `Option ${String.fromCharCode(65 + idx)}`} isOption />
+                             </span>
                           </div>
                         ))}
                       </div>
@@ -2605,7 +2719,8 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                             story: '',
                             avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=New',
                             stats: { score: '', accuracy: '', time: '' },
-                            district: ''
+                            district: '',
+                            date: new Date().toISOString().split('T')[0]
                           });
                           setIsAddingAchiever(true);
                         }}
@@ -2689,7 +2804,10 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                                 type="button"
                                 onClick={() => {
                                   setEditingAchieverIndex(originalIdx);
-                                  setAchieverForm({ ...story });
+                                  setAchieverForm({
+                                    ...story,
+                                    date: story.date || new Date().toISOString().split('T')[0]
+                                  });
                                   setIsAddingAchiever(false);
                                 }}
                                 className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-brand-600 rounded-lg transition-colors"
@@ -2804,6 +2922,17 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                           />
                         </div>
 
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Post Date</label>
+                          <input
+                            type="date"
+                            required
+                            value={achieverForm.date || ''}
+                            onChange={e => setAchieverForm(f => ({ ...f, date: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border-2 border-slate-200 outline-none focus:border-brand-500 text-xs font-bold bg-white"
+                          />
+                        </div>
+
                         <div className="border-t border-slate-200 my-2 pt-2">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Metrics/Stats Cards</p>
                           <div className="grid grid-cols-3 gap-2">
@@ -2861,7 +2990,8 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                               const newAvatar = `https://api.dicebear.com/7.x/initials/svg?seed=${seed}`;
                               const preparedForm = {
                                 ...achieverForm,
-                                avatar: newAvatar
+                                avatar: newAvatar,
+                                date: achieverForm.date || new Date().toISOString().split('T')[0]
                               };
 
                               if (isAddingAchiever) {
@@ -3094,7 +3224,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                        <div className="flex flex-col items-center gap-4 text-slate-400">
                          <AlertCircle className="w-12 h-12 text-slate-300" />
                          <p className="font-extrabold text-xl text-slate-500">No items found in {activeTab}</p>
-                         <button onClick={() => { setEditingId(null); setFormData(initialFormData); setShowAddModal(true); }} className="text-brand-600 hover:text-brand-700 font-extrabold text-sm underline mt-2">Create the first record</button>
+                         <button onClick={() => { setEditingId(null); setFormData(initialFormData); setDiagramText(''); setShowAddModal(true); }} className="text-brand-600 hover:text-brand-700 font-extrabold text-sm underline mt-2">Create the first record</button>
                        </div>
                     </div>
                  ) : (
@@ -3298,7 +3428,10 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   </div>
 
                   <div className="space-y-3">
-                    <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Pasted JSON Content</label>
+                    <div className="flex justify-between items-center">
+                      <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Pasted JSON Content</label>
+                      <DiagramTemplateSelector onSelect={(jsonStr) => setBulkFileContent(jsonStr)} />
+                    </div>
                     <textarea 
                       value={bulkFileContent}
                       onChange={(e) => setBulkFileContent(e.target.value)}
@@ -3324,34 +3457,34 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       {/* Dynamic Add Modal */}
       <AnimatePresence>
         {showAddModal && (
-          <div className="fixed inset-0 bg-slate-950/40 z-[60] flex items-center justify-center p-6 backdrop-blur-sm overflow-y-auto pt-20">
+          <div className="fixed inset-0 bg-slate-950/60 z-[60] flex items-center justify-center p-4 sm:p-6 backdrop-blur-md overflow-y-auto">
             <motion.div {...modalContent}
               className={cn(
-                "glass rounded-[2rem] w-full overflow-hidden shadow-2xl border-white/60 bg-white my-auto",
+                "bg-white rounded-[2.5rem] w-full overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.25)] border border-slate-100 my-auto relative",
                 activeTab === 'questions' ? 'max-w-4xl' : 'max-w-3xl'
               )}
             >
-              <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div className="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 backdrop-blur-md">
                 <div className="flex items-center gap-3">
-                   <div className="p-2 bg-brand-100 text-brand-600 rounded-lg">
+                   <div className="w-10 h-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center border border-brand-100/50 shadow-sm shrink-0">
                       <Plus className="w-5 h-5" />
                    </div>
-                   <h3 className="font-extrabold text-2xl tracking-tight text-slate-900">
+                   <h3 className="font-black text-xl tracking-tight text-slate-900">
                      {editingId ? 'Edit ' : 'Add New '}
                      <span className="text-brand-600 capitalize">{activeTab}</span>
                    </h3>
                 </div>
-                <button type="button" onClick={() => setShowAddModal(false)} className="p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-800 rounded-xl transition-all">
-                  <X className="w-6 h-6" />
+                <button type="button" onClick={() => setShowAddModal(false)} className="p-2.5 text-slate-400 hover:bg-slate-50 hover:text-slate-700 rounded-xl transition-all border border-slate-200/50 shadow-sm bg-white shrink-0">
+                  <X className="w-4 h-4" />
                 </button>
               </div>
               <form onSubmit={handleAdd} className="p-8 sm:p-10">
                 
                 {renderFormFields()}
 
-                <div className="flex justify-end gap-4 mt-10 pt-6 border-t border-slate-100">
-                  <button type="button" onClick={() => setShowAddModal(false)} className="px-8 py-3 rounded-xl border-2 border-slate-200 font-extrabold text-slate-600 hover:bg-slate-100 hover:border-slate-300 transition-all">Cancel</button>
-                  <button type="submit" className="px-10 py-3 rounded-xl premium-gradient text-white font-extrabold hover:premium-glow shadow-lg shadow-brand-500/20 transition-all active:scale-95">Save {activeTab}</button>
+                <div className="flex justify-end gap-3.5 mt-8 pt-6 border-t border-slate-100">
+                  <button type="button" onClick={() => setShowAddModal(false)} className="px-6 py-3 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all text-sm shrink-0 bg-white shadow-sm">Cancel</button>
+                  <button type="submit" className="px-8 py-3 rounded-xl premium-gradient text-white font-black hover:premium-glow shadow-lg shadow-brand-500/20 transition-all active:scale-[0.98] text-sm shrink-0">Save {activeTab}</button>
                 </div>
               </form>
             </motion.div>
@@ -3394,9 +3527,10 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider flex justify-between">
-                    <span>Paste JSON Array</span>
-                  </label>
+                  <div className="flex justify-between items-center">
+                    <label className="text-sm font-extrabold text-slate-700 uppercase tracking-wider">Paste JSON Array</label>
+                    <DiagramTemplateSelector onSelect={(jsonStr) => setBulkFileContent(jsonStr)} />
+                  </div>
                   <textarea 
                     value={bulkFileContent} 
                     onChange={e => setBulkFileContent(e.target.value)}

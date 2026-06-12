@@ -1,5 +1,21 @@
 import { supabase, supabaseAdmin } from './supabase';
 
+let schemaHasDiagram: boolean | null = null;
+
+async function checkSchemaHasDiagram(): Promise<boolean> {
+  if (schemaHasDiagram !== null) return schemaHasDiagram;
+  try {
+    const { error } = await supabase
+      .from('questions')
+      .select('diagram')
+      .limit(1);
+    schemaHasDiagram = !error;
+  } catch (e) {
+    schemaHasDiagram = false;
+  }
+  return schemaHasDiagram;
+}
+
 // --- Types ---
 
 export interface Question {
@@ -11,6 +27,7 @@ export interface Question {
   options: string[];
   correctAnswerIndex: number;
   explanation: string;
+  diagram?: any;
   sortOrder?: number;
   createdAt?: string;
 }
@@ -74,9 +91,23 @@ export interface QuestionBank {
 export const examService = {
   // Questions
   async addQuestion(question: Question) {
+    const hasDiagramCol = await checkSchemaHasDiagram();
+    const payload: any = {
+      examId: question.examId,
+      topic: question.topic,
+      difficulty: question.difficulty,
+      questionText: question.questionText,
+      options: question.options,
+      correctAnswerIndex: question.correctAnswerIndex,
+      explanation: question.explanation
+    };
+    if (question.diagram && hasDiagramCol) {
+      payload.diagram = question.diagram;
+    }
+    console.log("Single Add Payload:", payload);
     const { data, error } = await supabaseAdmin
       .from('questions')
-      .insert([question])
+      .insert([payload])
       .select()
       .single();
     if (error) throw error;
@@ -84,9 +115,26 @@ export const examService = {
   },
 
   async addQuestionsBulk(questions: Question[]) {
+    const hasDiagramCol = await checkSchemaHasDiagram();
+    const payloads = questions.map(q => {
+      const payload: any = {
+        examId: q.examId,
+        topic: q.topic,
+        difficulty: q.difficulty || 'medium',
+        questionText: q.questionText,
+        options: q.options,
+        correctAnswerIndex: q.correctAnswerIndex,
+        explanation: q.explanation || ''
+      };
+      if (q.diagram && hasDiagramCol) {
+        payload.diagram = q.diagram;
+      }
+      console.log("Bulk Payload Item:", payload);
+      return payload;
+    });
     const { data, error } = await supabaseAdmin
       .from('questions')
-      .insert(questions)
+      .insert(payloads)
       .select();
     if (error) throw error;
     return data;
@@ -110,9 +158,29 @@ export const examService = {
   },
 
   async updateQuestion(id: string, updates: Partial<Question>) {
+    const hasDiagramCol = await checkSchemaHasDiagram();
+    const payload: any = {
+      examId: updates.examId,
+      topic: updates.topic,
+      difficulty: updates.difficulty,
+      questionText: updates.questionText,
+      options: updates.options,
+      correctAnswerIndex: updates.correctAnswerIndex,
+      explanation: updates.explanation
+    };
+    // Clean undefined keys
+    Object.keys(payload).forEach(key => {
+      if (payload[key] === undefined) {
+        delete payload[key];
+      }
+    });
+    if (updates.diagram && hasDiagramCol) {
+      payload.diagram = updates.diagram;
+    }
+    console.log("Update Payload:", payload);
     const { data, error } = await supabaseAdmin
       .from('questions')
-      .update(updates)
+      .update(payload)
       .eq('id', id)
       .select()
       .single();
@@ -253,6 +321,9 @@ export const examService = {
   },
 
   async deleteMockTest(id: string) {
+    // Delete associated questions first
+    await supabaseAdmin.from('questions').delete().eq('topic', `mockTest__${id}`);
+
     const { error } = await supabaseAdmin
       .from('mockTests')
       .delete()
@@ -282,15 +353,23 @@ export const examService = {
   },
 
   async addQuestionsToMockTest(mockTestId: string, examId: string, questions: Partial<Question>[]) {
-    const payload = questions.map(q => ({
-      examId: examId || 'generic',
-      topic: `mockTest__${mockTestId}`,
-      difficulty: q.difficulty || 'medium',
-      questionText: q.questionText,
-      options: q.options,
-      correctAnswerIndex: q.correctAnswerIndex,
-      explanation: q.explanation || ''
-    }));
+    const hasDiagramCol = await checkSchemaHasDiagram();
+    const payload = questions.map(q => {
+      const item: any = {
+        examId: examId || 'generic',
+        topic: `mockTest__${mockTestId}`,
+        difficulty: q.difficulty || 'medium',
+        questionText: q.questionText,
+        options: q.options,
+        correctAnswerIndex: q.correctAnswerIndex,
+        explanation: q.explanation || ''
+      };
+      if (q.diagram && hasDiagramCol) {
+        item.diagram = q.diagram;
+      }
+      console.log("Mock Test Question Payload Item:", item);
+      return item;
+    });
     const { data, error } = await supabaseAdmin
       .from('questions')
       .insert(payload);
@@ -319,23 +398,149 @@ export const examService = {
   },
 
   async deleteExam(id: string) {
-    // Delete associated questions first
+    // 1. Fetch the exam details to get the name
+    const { data: examData } = await supabaseAdmin
+      .from('exams')
+      .select('name')
+      .eq('id', id)
+      .single();
+    const examName = examData?.name;
+
+    // 2. Fetch associated question banks
+    const { data: banks } = await supabaseAdmin
+      .from('questionBanks')
+      .select('id')
+      .eq('examId', id);
+    const bankIds = (banks || []).map(b => b.id);
+
+    // 3. Fetch associated test series
+    const { data: series } = await supabaseAdmin
+      .from('testSeries')
+      .select('id')
+      .eq('examId', id);
+    const seriesIds = (series || []).map(s => s.id);
+
+    // 4. Fetch associated mock tests
+    const { data: allTests } = await supabaseAdmin
+      .from('mockTests')
+      .select('id, examId, seriesId');
+    
+    const relatedTestIds: string[] = [];
+    (allTests || []).forEach((t: any) => {
+      let isRelated = t.examId === id;
+      if (!isRelated && typeof t.seriesId === 'string' && t.seriesId.includes(id)) {
+        isRelated = true;
+      }
+      if (isRelated) {
+        relatedTestIds.push(t.id);
+      }
+    });
+
+    // 5. Gather all content IDs to revoke
+    const contentIdsToRevoke = new Set([
+      `exam_bundle_${id}`,
+      ...bankIds,
+      ...seriesIds,
+      ...relatedTestIds
+    ]);
+
+    // 6. Revoke access and clean activities for all users in Supabase Auth
+    try {
+      if (supabaseAdmin.auth.admin) {
+        let page = 1;
+        const perPage = 1000;
+        let hasMore = true;
+
+        while (hasMore) {
+          const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+            page,
+            perPage
+          });
+          if (listError) throw listError;
+          if (!users || users.length === 0) {
+            hasMore = false;
+            break;
+          }
+
+          for (const u of users) {
+            let needsUpdate = false;
+            const currentMetadata = u.user_metadata || {};
+
+            // A. Clean up purchasedSeries
+            let newPurchased = currentMetadata.purchasedSeries;
+            if (Array.isArray(newPurchased)) {
+              const filteredPurchased = newPurchased.filter(p => !contentIdsToRevoke.has(p));
+              if (filteredPurchased.length !== newPurchased.length) {
+                newPurchased = filteredPurchased;
+                needsUpdate = true;
+              }
+            }
+
+            // B. Clean up activities
+            let newActivities = currentMetadata.activities;
+            if (Array.isArray(newActivities)) {
+              const filteredActivities = newActivities.filter((act: any) => {
+                if (!act) return false;
+                
+                // Filter out by examName
+                if (examName && act.metadata?.examName === examName) return false;
+
+                // Filter out by bankId
+                if (act.metadata?.bankId && bankIds.includes(act.metadata.bankId)) return false;
+
+                // Filter out by mock test ID
+                const testId = act.metadata?.test?.id;
+                if (testId && relatedTestIds.includes(testId)) return false;
+
+                return true;
+              });
+
+              if (filteredActivities.length !== newActivities.length) {
+                needsUpdate = true;
+                newActivities = filteredActivities;
+              }
+            }
+
+            if (needsUpdate) {
+              await supabaseAdmin.auth.admin.updateUserById(u.id, {
+                user_metadata: {
+                  ...currentMetadata,
+                  purchasedSeries: newPurchased,
+                  activities: newActivities
+                }
+              });
+            }
+          }
+          page++;
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to clean up user metadata on cloud (likely service role key missing or unauthorized):", err);
+    }
+
+    // 7. Delete associated mock test questions (topic matches mockTest__<mockTestId>)
+    if (relatedTestIds.length > 0) {
+      const topicIds = relatedTestIds.map(mtId => `mockTest__${mtId}`);
+      await supabaseAdmin.from('questions').delete().in('topic', topicIds);
+    }
+
+    // 8. Delete associated direct questions
     const { error: questionsError } = await supabaseAdmin
       .from('questions')
       .delete()
       .eq('examId', id);
     if (questionsError) throw questionsError;
 
-    // Delete associated question banks
+    // 9. Delete associated question banks
     await supabaseAdmin.from('questionBanks').delete().eq('examId', id);
 
-    // Delete associated test series
+    // 10. Delete associated test series
     await supabaseAdmin.from('testSeries').delete().eq('examId', id);
 
-    // Delete associated mock tests (seriesId contains JSON with examId)
+    // 11. Delete associated mock tests
     await supabaseAdmin.from('mockTests').delete().like('seriesId', `%"examId":"${id}"%`);
 
-    // Delete the exam
+    // 12. Delete the exam
     const { error } = await supabaseAdmin
       .from('exams')
       .delete()

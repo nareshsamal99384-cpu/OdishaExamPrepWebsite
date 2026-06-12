@@ -49,7 +49,7 @@ import {
   Clock3,
   MessageSquare
 } from 'lucide-react';
-import { Toaster, toast } from 'react-hot-toast';
+import { Toaster, toast, useToasterStore } from 'react-hot-toast';
 import { useAuth } from './lib/AuthContext';
 import { supabase } from './lib/supabase';
 import { cn, getDirectImageUrl } from './lib/utils';
@@ -62,6 +62,7 @@ import { sectionReveal, sectionRevealSimple, sectionRevealScale, fadeSlideRight,
 import { ErrorBoundary } from './ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
 import { activityTracker } from './lib/activityTracker';
+import { MathTextRenderer, DiagramRenderer } from './components/MathTextRenderer';
 
 const AdminPanel = React.lazy(() => import('./AdminPanel'));
 const MockTestSystem = React.lazy(() => import('./MockTestSystem'));
@@ -83,12 +84,14 @@ const HistoryView = ({
   user, 
   onViewResults, 
   onResumeTest,
-  onActivityDeleted
+  onActivityDeleted,
+  onNavigate
 }: { 
   user: any, 
   onViewResults?: (results: any) => void, 
   onResumeTest?: (test: any, state: any) => void,
-  onActivityDeleted?: () => void
+  onActivityDeleted?: () => void,
+  onNavigate?: (tab: string) => void
 }) => {
   const [activities, setActivities] = useState<any[]>([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -123,12 +126,34 @@ const HistoryView = ({
 
   if (!activities || activities.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center space-y-4 bg-white rounded-[2.5rem] border border-slate-200/50 shadow-sm">
-        <div className="w-20 h-20 bg-slate-50 border border-slate-200/60 rounded-full flex items-center justify-center mb-4">
-          <History className="w-10 h-10 text-slate-400" />
+      <div className="flex flex-col items-center justify-center p-12 sm:p-16 text-center space-y-6 bg-gradient-to-b from-white to-slate-50/40 rounded-[2.5rem] border border-slate-200/40 shadow-[0_20px_50px_rgba(0,0,0,0.02),inset_0_1px_0_rgba(255,255,255,1)] relative overflow-hidden py-16">
+        <div className="absolute inset-0 grid-bg opacity-[0.01]" />
+        <div className="relative flex items-center justify-center w-24 h-24 rounded-full bg-brand-50/50 mb-2">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-100 to-brand-50 flex items-center justify-center shadow-inner">
+            <History className="w-8 h-8 text-brand-600 animate-float-sm" />
+          </div>
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">No History Yet</h2>
-        <p className="text-slate-500 font-medium text-base max-w-sm">Start taking mock tests and practice sessions to see your progress here.</p>
+        <div className="space-y-2 relative z-10 max-w-sm">
+          <h2 className="text-2xl font-serif font-extrabold bg-gradient-to-r from-brand-700 to-brand-500 bg-clip-text text-transparent">No History Yet</h2>
+          <p className="text-slate-500 font-semibold text-xs sm:text-sm leading-relaxed">
+            Start taking mock tests, practicing custom quizzes, or analyzing your stats to see your detailed progress logs here.
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            if (onNavigate) {
+              onNavigate('home');
+              setTimeout(() => {
+                scrollToElement('exams', { block: 'start' });
+              }, 100);
+            } else {
+              scrollToElement('exams', { block: 'start' });
+            }
+          }}
+          className="relative z-10 premium-gradient text-white flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-widest hover:premium-glow hover:scale-[1.02] active:scale-98 transition-all duration-300 shadow-md cursor-pointer border-none"
+        >
+          Explore Mock Tests
+        </button>
       </div>
     );
   }
@@ -793,9 +818,24 @@ const AchieversJournalSection = () => {
                           <p className="text-[10px] font-black uppercase text-[#8A1C36] tracking-widest mt-1.5">{item.rank}</p>
                         </div>
                       </div>
-                      <span className="text-[10px] font-mono font-black text-slate-500 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-md shrink-0 uppercase tracking-tight">
-                        📍 {item.district}
-                      </span>
+                      <div className="flex flex-col items-end gap-1 shrink-0 text-right">
+                        <span className="text-[10px] font-mono font-black text-slate-500 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-md uppercase tracking-tight">
+                          📍 {item.district}
+                        </span>
+                        <span className="text-[9px] font-extrabold text-slate-400 flex items-center gap-1 select-none">
+                          <Clock className="w-2.5 h-2.5 text-slate-400" />
+                          {(() => {
+                            try {
+                              if (!item.date) return 'Recent';
+                              const d = new Date(item.date);
+                              if (isNaN(d.getTime())) return item.date;
+                              return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                            } catch (e) {
+                              return item.date || 'Recent';
+                            }
+                          })()}
+                        </span>
+                      </div>
                     </div>
                     <p className="text-slate-600 font-serif text-sm leading-relaxed italic">
                       "{item.story}"
@@ -1601,8 +1641,18 @@ const InteractiveHeroPreview = () => {
 
       <div className="space-y-4 mb-6 relative z-10">
         <h3 className="text-base sm:text-lg font-serif font-extrabold text-slate-900 leading-relaxed">
-          {card.questionText}
+          <MathTextRenderer text={card.questionText} />
         </h3>
+        {(() => {
+          const question = card;
+          console.log("QUESTION", question);
+          console.log("DIAGRAM", question.diagram);
+          console.log("TYPE", question.diagram?.type);
+          return null;
+        })()}
+        {card.diagram ? (
+          <DiagramRenderer diagram={card.diagram} data={card.diagram} />
+        ) : null}
       </div>
 
       <div className="space-y-3 mb-6 relative z-10">
@@ -1643,7 +1693,7 @@ const InteractiveHeroPreview = () => {
               <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs transition-colors shrink-0", badgeStyle)}>
                 {String.fromCharCode(65 + idx)}
               </div>
-              <span className="flex-1 font-bold">{opt}</span>
+              <span className="flex-1 font-bold"><MathTextRenderer text={opt} isOption /></span>
               {showSuccess && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />}
               {showFailure && <X className="w-5 h-5 text-rose-600 shrink-0" />}
             </button>
@@ -1678,7 +1728,7 @@ const InteractiveHeroPreview = () => {
               </div>
               <p className="text-xs font-medium text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-100 font-serif">
                 <strong className="text-slate-800 font-extrabold block mb-1">Explanation:</strong>
-                {card.explanation}
+                <MathTextRenderer text={card.explanation} />
               </p>
             </div>
           </motion.div>
@@ -2241,6 +2291,41 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
   const { refreshProfile } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
+  // Self-healing cleanup of deleted items from user purchases
+  React.useEffect(() => {
+    if (!user || !profile || loadingExams || exams.length === 0) return;
+
+    const purchased = profile.purchasedSeries || [];
+    if (purchased.length === 0) return;
+
+    const validIds = new Set<string>();
+    exams.forEach((e: any) => {
+      validIds.add(e.id);
+      validIds.add(`exam_bundle_${e.id}`);
+    });
+    testSeries.forEach((s: any) => validIds.add(s.id));
+    mockTests.forEach((t: any) => validIds.add(t.id));
+    Object.values(dynamicQuestionBanks).flat().forEach((b: any) => validIds.add(b.id));
+
+    const filteredPurchased = purchased.filter((id: string) => {
+      if (id.startsWith('exam_bundle_')) {
+        const exId = id.replace('exam_bundle_', '');
+        return exams.some((e: any) => e.id === exId);
+      }
+      return validIds.has(id);
+    });
+
+    if (filteredPurchased.length !== purchased.length) {
+      supabase.auth.updateUser({
+        data: { purchasedSeries: filteredPurchased }
+      }).then(({ error }) => {
+        if (!error) {
+          refreshProfile();
+        }
+      });
+    }
+  }, [user, profile?.purchasedSeries, exams, testSeries, mockTests, dynamicQuestionBanks, loadingExams]);
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await refreshProfile();
@@ -2348,9 +2433,13 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
     }
   });
 
-  const sections = Object.values(examSections).filter(s =>
-    s.isBundle || s.mockTests.length > 0 || s.questionBanks.length > 0
-  );
+  const sections = Object.values(examSections).filter(s => {
+    const existsInExams = exams.some((e: any) => e.id === s.exam.id);
+    if (!existsInExams && s.exam.id !== '_misc') {
+      return false;
+    }
+    return s.isBundle || s.mockTests.length > 0 || s.questionBanks.length > 0;
+  });
 
   const isFullAccess = profile.hasFullAccess || profile.role === 'admin';
 
@@ -2358,14 +2447,6 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20 mt-4 md:mt-8">
       {/* Header */}
       <div className="flex flex-col space-y-4 text-center mb-8 relative">
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="absolute right-0 top-0 p-3 bg-white rounded-2xl border border-slate-200 text-slate-500 hover:text-brand-600 hover:border-brand-200 transition-all shadow-sm"
-          title="Refresh Library"
-        >
-          <RotateCw className={cn("w-5 h-5", refreshing && "animate-spin")} />
-        </button>
         <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-inner relative"
           style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}>
           <BookMarked className="w-10 h-10 text-white" />
@@ -2774,6 +2855,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   };
   const [showAdmin, setShowAdmin] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isDescExpanded, setIsDescExpanded] = useState(false);
+  const [isBannerDescExpanded, setIsBannerDescExpanded] = useState(false);
 
   // Refs and scroll handlers for horizontal lists
   const continuePracticeRef = useRef<HTMLDivElement>(null);
@@ -2829,6 +2912,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   useEffect(() => {
     if (selectedExam) sessionStorage.setItem('oep_selectedExam', selectedExam);
     else sessionStorage.removeItem('oep_selectedExam');
+    setIsDescExpanded(false);
+    setIsBannerDescExpanded(false);
   }, [selectedExam]);
 
   useEffect(() => {
@@ -2866,6 +2951,29 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     return () => document.body.removeAttribute('data-test-mode');
   }, [activeTest]);
   const [testResults, setTestResults] = useState<any | null>(null);
+
+  const handleViewResults = async (results: any) => {
+    if (!results) {
+      setTestResults(null);
+      return;
+    }
+    let finalResults = { ...results };
+    if (finalResults.test && finalResults.test.id && !finalResults.test.id.startsWith('practice-')) {
+      try {
+        const freshQs = await examService.getQuestionsForMockTest(finalResults.test.id);
+        if (freshQs && freshQs.length > 0) {
+          const freshMap = new Map(freshQs.map(q => [q.id, q]));
+          finalResults.test.questions = (finalResults.test.questions || []).map((q: any) => {
+            const fresh = freshMap.get(q.id);
+            return fresh ? { ...q, ...fresh } : q;
+          });
+        }
+      } catch (e) {
+        console.error("Failed to merge fresh questions for results review:", e);
+      }
+    }
+    setTestResults(finalResults);
+  };
 
   // Stats for comparisons
   // (Moving these inside the component so activities is in scope)
@@ -2939,8 +3047,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     </div>
                     
                     {/* Header title for mobile */}
-                    <div className="text-center md:hidden">
-                      <h2 className="text-2xl font-serif font-extrabold text-white leading-tight">{selectedBankItem.title}</h2>
+                    <div className="text-center md:hidden w-full px-2">
+                      <h2 
+                        className={cn(
+                          "font-serif font-extrabold text-white leading-tight line-clamp-2",
+                          selectedBankItem.title.length > 55 ? "text-lg" : "text-2xl"
+                        )}
+                        title={selectedBankItem.title}
+                      >
+                        {selectedBankItem.title}
+                      </h2>
                       <p className="text-[10px] font-black uppercase tracking-widest text-brand-400 mt-1">Question Bank Portal</p>
                     </div>
 
@@ -2961,7 +3077,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     </div>
                     <div className="p-3 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md shadow-sm">
                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Highlight</p>
-                      <p className="text-[10px] font-black text-brand-400 truncate" title={selectedBankItem.tagline}>
+                      <p className="text-[10px] font-black text-brand-400 line-clamp-2 leading-tight" title={selectedBankItem.tagline || "Comprehensive"}>
                         {selectedBankItem.tagline || "Comprehensive"}
                       </p>
                     </div>
@@ -2980,14 +3096,24 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         <span className="inline-flex items-center px-2 py-0.5 bg-brand-50 text-[#8A1C36] rounded text-[9px] font-black uppercase tracking-wider border border-brand-100">
                           Topic Focus
                         </span>
-                        <h2 className="text-2xl md:text-3xl font-serif font-extrabold text-slate-900 leading-tight">
+                        <h2 
+                          className={cn(
+                            "font-serif font-extrabold text-slate-900 leading-tight line-clamp-2 md:line-clamp-3",
+                            selectedBankItem.title.length > 55 ? "text-xl md:text-2xl" : "text-2xl md:text-3xl"
+                          )}
+                          title={selectedBankItem.title}
+                        >
                           {selectedBankItem.title}
                         </h2>
                       </div>
 
                       {/* Description */}
                       <p className="text-slate-500 text-sm font-medium leading-relaxed">
-                        Access official question banks, chapter notes, and exam practice materials customized for {selectedBankItem.title}.
+                        {selectedBankItem.description || (
+                          selectedBankItem.title.length > 50 
+                            ? 'Access official question banks, chapter notes, and exam practice materials customized for this topic.'
+                            : `Access official question banks, chapter notes, and exam practice materials customized for ${selectedBankItem.title}.`
+                        )}
                       </p>
                       
                       {/* Mobile Stats Cards (Rendered here on mobile viewports) */}
@@ -2998,7 +3124,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         </div>
                         <div className="p-3 bg-white border border-slate-200/60 rounded-2xl shadow-sm">
                           <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Highlight</p>
-                          <p className="text-[10px] font-black text-[#8A1C36] truncate" title={selectedBankItem.tagline}>
+                          <p className="text-[10px] font-black text-[#8A1C36] line-clamp-2 leading-tight" title={selectedBankItem.tagline || "Comprehensive"}>
                             {selectedBankItem.tagline || "Comprehensive"}
                           </p>
                         </div>
@@ -3080,7 +3206,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                   <Download className="w-4 h-4" />
                                 </div>
                                 <div className="text-left">
-                                  <p className="text-xs font-bold text-slate-800 group-hover:text-slate-950 truncate max-w-[160px] sm:max-w-[200px]">
+                                  <p className="text-xs font-bold text-slate-800 group-hover:text-slate-950 truncate max-w-[140px] sm:max-w-[220px] md:max-w-[280px] lg:max-w-[340px]">
                                     {link.title || 'Download PDF'}
                                   </p>
                                   <p className="text-[9px] font-bold text-slate-400">PDF Document</p>
@@ -3316,77 +3442,100 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         {/* Paywall Modal */}
         <AnimatePresence>
           {showPaywall && (
-            <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 backdrop-blur-md">
+            <div className="fixed inset-0 bg-slate-950/75 z-[250] flex items-center justify-center p-4 backdrop-blur-xl">
               <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                initial={{ opacity: 0, scale: 0.95, y: 15 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="bg-white rounded-[2rem] w-[90%] max-w-sm overflow-hidden shadow-2xl relative"
+                exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+                className="relative overflow-hidden rounded-[2.5rem] p-[1px] bg-gradient-to-b from-white/15 via-white/5 to-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] w-full max-w-md"
               >
-                <button 
-                  onClick={() => { setShowPaywall(false); setPaywallItemId(null); }}
-                  className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 transition-colors z-10"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                {/* Background ambient light */}
+                <div className="absolute top-0 left-1/4 w-[180px] h-[180px] bg-brand-500/10 rounded-full blur-[50px] pointer-events-none" />
+                <div className="absolute bottom-0 right-1/4 w-[180px] h-[180px] bg-indigo-500/10 rounded-full blur-[50px] pointer-events-none" />
 
-                <div className="p-6 text-center space-y-5">
-                  <motion.div 
-                    animate={{ y: [0, -5, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                    className="w-14 h-14 premium-gradient rounded-2xl flex items-center justify-center mx-auto premium-glow relative"
+                <div className="bg-[#0B0F19] rounded-[2.45rem] p-6 sm:p-8 relative overflow-hidden flex flex-col">
+                  {/* Close button with subtle outline */}
+                  <button 
+                    onClick={() => { setShowPaywall(false); setPaywallItemId(null); }}
+                    className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 hover:scale-105 active:scale-95 transition-all z-20"
                   >
-                    <Award className="text-white w-7 h-7" />
-                    <div className="absolute inset-0 border-2 border-brand-200 rounded-2xl animate-ping opacity-20" />
-                  </motion.div>
-                  
-                  <div className="space-y-1">
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-tight px-2">{paywallItemTitle.includes('Full Access') ? 'Unlock Full Access' : `Unlock ${paywallItemTitle}`}</h2>
-                    <p className="text-slate-500 text-sm font-medium leading-tight">
-                      {paywallItemTitle.includes('Full Access') ? 'Unlock full lifetime access to all Question Banks, Practice Mode, Premium Mock Tests, PDF notes, and any future content added to this exam.' : `Unlock full lifetime access to this specific premium content, including detailed solutions and any future updates.`}
-                    </p>
-                  </div>
+                    <X className="w-4 h-4" />
+                  </button>
 
-                  <motion.div 
-                    initial="hidden"
-                    animate="show"
-                    variants={{
-                      hidden: { opacity: 0 },
-                      show: {
-                        opacity: 1,
-                        transition: { staggerChildren: 0.08 }
-                      }
-                    }}
-                    className="space-y-2.5 text-left bg-slate-50/50 p-4 rounded-2xl border border-slate-100"
-                  >
-                    {paywallFeatures.map((benefit, i) => (
-                      <motion.div 
-                        key={i} 
-                        variants={{
-                          hidden: { opacity: 0, x: -10 },
-                          show: { opacity: 1, x: 0 }
-                        }}
-                        className="flex items-center gap-3 text-slate-700 font-bold"
-                      >
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                        <span className="text-xs">{benefit}</span>
-                      </motion.div>
-                    ))}
-                  </motion.div>
-
-                  <div className="space-y-4">
-                    <div className="flex flex-col items-center justify-center p-2">
-                      <div className="flex items-end justify-center gap-2 mb-1">
-                        <span className="text-xl font-bold text-slate-400 line-through mb-1">₹{paywallOriginalPrice}</span>
-                        <span className="text-4xl font-black text-slate-950">₹{paywallPrice}</span>
-                      </div>
-                      <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">
-                        {Math.round(((paywallOriginalPrice - paywallPrice) / paywallOriginalPrice) * 100)}% OFF • Lifetime Access
-                      </span>
+                  <div className="text-center space-y-6">
+                    {/* Pulsing visual badge */}
+                    <motion.div 
+                      animate={{ y: [0, -4, 0] }}
+                      transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+                      className="w-16 h-16 bg-gradient-to-tr from-brand-600 via-brand-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-[0_8px_25px_rgba(138,28,54,0.3)] border border-white/10 relative group"
+                    >
+                      <Award className="text-white w-8 h-8 filter drop-shadow-[0_2px_8px_rgba(255,255,255,0.25)]" />
+                      <div className="absolute inset-0 border border-brand-400/25 rounded-2xl animate-ping opacity-25 pointer-events-none" />
+                    </motion.div>
+                    
+                    <div className="space-y-2">
+                      <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight px-1 font-sans">
+                        {paywallItemTitle.includes('Full Access') ? (
+                          <>Unlock <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-pink-200 to-indigo-300">Full Access</span></>
+                        ) : (
+                          <>Unlock <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-pink-200 to-indigo-300">{paywallItemTitle}</span></>
+                        )}
+                      </h2>
+                      <p className="text-slate-400 text-xs sm:text-sm font-medium leading-relaxed max-w-sm mx-auto">
+                        {paywallItemTitle.includes('Full Access') 
+                          ? 'Unlock full lifetime access to all Question Banks, Practice Mode, Premium Mock Tests, PDF notes, and any future content added to this exam.' 
+                          : `Unlock full lifetime access to this specific premium content, including detailed solutions and any future updates.`
+                        }
+                      </p>
                     </div>
-                    <Button 
-                      className="w-full h-12 rounded-xl text-base font-black premium-gradient shadow-lg shadow-brand-500/20 group/btn relative overflow-hidden"
-                      onClick={async () => {
+
+                    {/* Features Panel */}
+                    <motion.div 
+                      initial="hidden"
+                      animate="show"
+                      variants={{
+                        hidden: { opacity: 0 },
+                        show: {
+                          opacity: 1,
+                          transition: { staggerChildren: 0.06 }
+                        }
+                      }}
+                      className="space-y-3.5 text-left bg-white/[0.02] border border-white/[0.06] p-5 rounded-[1.5rem] backdrop-blur-md"
+                    >
+                      {paywallFeatures.map((benefit, i) => (
+                        <motion.div 
+                          key={i} 
+                          variants={{
+                            hidden: { opacity: 0, x: -8 },
+                            show: { opacity: 1, x: 0 }
+                          }}
+                          className="flex items-center gap-3 text-slate-200 font-bold"
+                        >
+                          <div className="w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          </div>
+                          <span className="text-xs sm:text-sm tracking-wide">{benefit}</span>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+
+                    {/* Pricing Block */}
+                    <div className="space-y-4 pt-1">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="flex items-end justify-center gap-2.5 mb-1.5">
+                          <span className="text-lg sm:text-xl font-bold text-slate-500 line-through mb-1 font-mono">₹{paywallOriginalPrice}</span>
+                          <span className="text-4xl sm:text-5xl font-black text-white font-mono tracking-tighter">₹{paywallPrice}</span>
+                        </div>
+                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3.5 py-1.5 rounded-full border border-emerald-500/20">
+                          {Math.round(((paywallOriginalPrice - paywallPrice) / paywallOriginalPrice) * 100)}% OFF • Lifetime Access
+                        </span>
+                      </div>
+
+                      {/* CTA Button */}
+                      <Button 
+                        className="w-full h-13 rounded-2xl text-base font-black bg-gradient-to-r from-brand-600 via-brand-500 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white shadow-[0_8px_30px_rgba(138,28,54,0.3)] hover:shadow-[0_15px_45px_rgba(138,28,54,0.5)] group/btn relative overflow-hidden transition-all duration-300 active:scale-[0.98] border border-white/10"
+                        onClick={async () => {
                         try {
                           const res = await loadRazorpay();
                           if (!res) {
@@ -3493,20 +3642,26 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       }}
                     >
                       {/* Button Shine Effect */}
-                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 z-10" />
+                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 z-10" />
 
                       <span className="relative z-10 flex items-center justify-center gap-2">
                         Unlock Now
-                        <ChevronRight className="w-5 h-5" />
+                        <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
                       </span>
                     </Button>
-                    <p className="text-[10px] text-slate-400 font-medium">Secure payment via Razorpay • Instant Activation</p>
+
+                    {/* Secure Info Footer */}
+                    <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 font-semibold pt-1">
+                      <Lock className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Secure payment via Razorpay • Instant Activation</span>
+                    </div>
                   </div>
                 </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
         {/* Login Prompt Popup */}
         <AnimatePresence>
@@ -3772,6 +3927,91 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         setMockTests(fetchedTests || []);
         setDynamicQuestionBanks(groupedBanks);
 
+        // Clean up activities in localStorage and state that belong to deleted exams/tests/banks
+        if (user?.id && finalExams.length > 1) {
+          const activeExamNames = new Set(finalExams.map((e: any) => e.name));
+          const activeMockTestIds = new Set((fetchedTests || []).map((t: any) => t.id));
+          const activeBankIds = new Set((fetchedBanks || []).map((b: any) => b.id));
+
+          try {
+            const localKey = `oep_activities_${user.id}`;
+            const localActivitiesStr = localStorage.getItem(localKey);
+            if (localActivitiesStr) {
+              const localActivities = JSON.parse(localActivitiesStr);
+              if (Array.isArray(localActivities)) {
+                const filtered = localActivities.filter((act: any) => {
+                  if (!act) return false;
+
+                  // 1. Filter out by examName (if deleted)
+                  const actExamName = act.metadata?.examName;
+                  if (actExamName && actExamName !== 'General' && !activeExamNames.has(actExamName)) {
+                    return false;
+                  }
+
+                  // 2. Filter out by mockTestId (if deleted)
+                  const testId = act.metadata?.test?.id;
+                  if (testId && !testId.startsWith('practice-') && (act.type === 'mock_test_completed' || act.type === 'test_incomplete')) {
+                    if (!activeMockTestIds.has(testId)) {
+                      return false;
+                    }
+                  }
+
+                  // 3. Filter out by bankId (if deleted)
+                  const bankId = act.metadata?.bankId;
+                  if (bankId && act.type === 'question_bank_accessed') {
+                    if (!activeBankIds.has(bankId)) {
+                      return false;
+                    }
+                  }
+
+                  return true;
+                });
+
+                if (filtered.length !== localActivities.length) {
+                  localStorage.setItem(localKey, JSON.stringify(filtered));
+                  
+                  // Sync updated activities to user cloud metadata
+                  const cloudPayload = filtered.slice(0, 50).map((a: any) => {
+                    try {
+                      const m = a.metadata || {};
+                      const lightMeta: any = {
+                        examName: m.examName,
+                        testCategory: m.testCategory,
+                        bankType: m.bankType,
+                        bankId: m.bankId,
+                        resumeSessionId: m.resumeSessionId,
+                      };
+                      if (a.type === 'test_incomplete') {
+                        lightMeta.currentQuestionIndex = m.currentQuestionIndex;
+                        lightMeta.timeLeft = m.timeLeft;
+                        if (m.test && typeof m.test === 'object') {
+                          lightMeta.test = {
+                            id: m.test.id,
+                            title: m.test.title,
+                            durationMinutes: m.test.durationMinutes,
+                            _questionCount: m.test._questionCount || (Array.isArray(m.test.questions) ? m.test.questions.length : 0),
+                          };
+                        }
+                        lightMeta.totalQuestions = m.totalQuestions || lightMeta.test?._questionCount || 0;
+                      }
+                      return { ...a, metadata: lightMeta };
+                    } catch {
+                      return { id: a.id, userId: a.userId, type: a.type, title: a.title, timestamp: a.timestamp, score: a.score, accuracy: a.accuracy };
+                    }
+                  });
+                  await supabase.auth.updateUser({
+                    data: { activities: cloudPayload },
+                  });
+
+                  if (onActivityLogged) onActivityLogged();
+                }
+              }
+            }
+          } catch (e) {
+            console.error("Error cleaning up local activities:", e);
+          }
+        }
+
       } catch (error) {
         console.error("Error fetching data:", error);
         // Even on total failure, show fallback so the grid is never empty
@@ -3891,6 +4131,22 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             return;
           }
         }
+      } else {
+        // Questions are pre-loaded, let's merge fresh ones to get latest diagrams/edits
+        if (!finalTest.id.startsWith('practice-')) {
+          try {
+            const freshQs = await examService.getQuestionsForMockTest(finalTest.id);
+            if (freshQs && freshQs.length > 0) {
+              const freshMap = new Map(freshQs.map(q => [q.id, q]));
+              finalTest.questions = finalTest.questions.map((q: any) => {
+                const fresh = freshMap.get(q.id);
+                return fresh ? { ...q, ...fresh } : q;
+              });
+            }
+          } catch (e) {
+            console.error("Failed to merge fresh questions on start:", e);
+          }
+        }
       }
 
       if (isGuest) incrementGuestUsage('tests'); // This could be removed since we block guests entirely, but to avoid TS errors
@@ -3974,13 +4230,19 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         // handleStartTest does NOT show the paywall a second time for this session.
         isPremium: false,
         examId: topicBank?.examId || effectiveExamId,
-        questions: finalQuestions.map(q => ({
-          id: q.id,
-          questionText: q.questionText,
-          options: q.options,
-          correctAnswerIndex: q.correctAnswerIndex,
-          explanation: q.explanation || 'No explanation provided.'
-        }))
+        questions: finalQuestions.map(q => {
+          const item: any = {
+            id: q.id,
+            questionText: q.questionText,
+            options: q.options,
+            correctAnswerIndex: q.correctAnswerIndex,
+            explanation: q.explanation || 'No explanation provided.'
+          };
+          if (q.diagram !== undefined && q.diagram !== null) {
+            item.diagram = q.diagram;
+          }
+          return item;
+        })
       };
 
       setActiveTestState({ resumeSessionId: `session-${Date.now()}` });
@@ -4202,7 +4464,33 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   }
 
   if (mainTab === 'history') {
-    return <HistoryView user={user} onViewResults={setTestResults} onResumeTest={(test, state) => { setActiveTest(test); setActiveTestState(state); }} onActivityDeleted={onActivityLogged} />;
+    return (
+      <HistoryView 
+        user={user} 
+        onViewResults={handleViewResults} 
+        onResumeTest={async (test, state) => {
+          let finalTest = { ...test };
+          if (finalTest && finalTest.id && !finalTest.id.startsWith('practice-')) {
+            try {
+              const freshQs = await examService.getQuestionsForMockTest(finalTest.id);
+              if (freshQs && freshQs.length > 0) {
+                const freshMap = new Map(freshQs.map(q => [q.id, q]));
+                finalTest.questions = (finalTest.questions || []).map((q: any) => {
+                  const fresh = freshMap.get(q.id);
+                  return fresh ? { ...q, ...fresh } : q;
+                });
+              }
+            } catch (e) {
+              console.error("Failed to merge fresh questions on resume:", e);
+            }
+          }
+          setActiveTest(finalTest);
+          setActiveTestState(state);
+        }} 
+        onActivityDeleted={onActivityLogged} 
+        onNavigate={onNavigate} 
+      />
+    );
   }
 
   if (mainTab === 'library') {
@@ -4460,7 +4748,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       whileHover={whileHover.subtle}
                       whileTap={whileTap.press}
                       onClick={() => {
-                        if (isTestResult) setTestResults(a.metadata);
+                        if (isTestResult) handleViewResults(a.metadata);
                         else if (a.type === 'question_bank_accessed' && a.metadata?.pdfUrl) window.open(a.metadata.pdfUrl, '_blank');
                       }}
                       className="snap-start shrink-0 w-[72vw] sm:w-[300px] lg:w-[340px] bg-white rounded-2xl border border-slate-100 hover:border-brand-200/60 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 cursor-pointer group flex items-center gap-3 sm:gap-4 p-4 sm:p-5 premium-shine-container"
@@ -4655,12 +4943,32 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                             </div>
                             
                             <div className="flex-1 w-full flex flex-col justify-start">
-                              <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-serif font-black text-slate-900 group-hover/card:text-[#8A1C36] transition-all duration-300 line-clamp-2 leading-tight tracking-tight uppercase">
+                              <h3 
+                                className="text-sm sm:text-base md:text-lg lg:text-xl font-serif font-black text-slate-900 group-hover/card:text-[#8A1C36] transition-all duration-300 leading-tight tracking-tight uppercase"
+                                style={{
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis'
+                                }}
+                              >
                                 {exam.name}
                               </h3>
-                              <p className="hidden md:block text-slate-500 mt-2.5 text-xs font-bold line-clamp-2 leading-relaxed opacity-85 group-hover/card:opacity-100 transition-opacity">
-                                {displayDesc}
-                              </p>
+                              <div className="hidden md:block w-full mt-2.5">
+                                <p 
+                                  className="text-slate-500 text-xs font-bold leading-relaxed opacity-85 group-hover/card:opacity-100 transition-opacity"
+                                  style={{
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                  }}
+                                >
+                                  {displayDesc}
+                                </p>
+                              </div>
                             </div>
                           </div>
                         </motion.div>
@@ -4744,13 +5052,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           </div>
         ) : (
           <div className="relative">
-            <div 
-              className="-mx-4 px-4 sm:mx-0 sm:px-0 max-h-[460px] md:max-h-[600px] overflow-y-auto no-scrollbar scroll-smooth pb-12 pt-4"
-              style={{
-                maskImage: 'linear-gradient(to bottom, transparent, black 2rem, black calc(100% - 3rem), transparent)',
-                WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 2rem, black calc(100% - 3rem), transparent)'
-              }}
-            >
+            <div className="pb-12 pt-4">
             <motion.div 
               initial="hidden"
               animate="show"
@@ -4888,17 +5190,36 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       <div className="space-y-12">
         <div className="flex flex-col gap-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" onClick={() => { setSelectedExam(null); scrollToElement('exams', { block: 'start', delay: 100 }); }} className="p-3 rounded-2xl hover:bg-brand-50">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <Button 
+                variant="ghost" 
+                onClick={() => { setSelectedExam(null); scrollToElement('exams', { block: 'start', delay: 100 }); }} 
+                className="p-3 rounded-2xl hover:bg-brand-50 mt-1 shrink-0"
+              >
                 <ChevronRight className="w-6 h-6 rotate-180 text-brand-600" />
               </Button>
-              <div>
-                <h1 className="text-3xl font-black text-slate-950 tracking-tight">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight leading-tight mb-1">
                   {currentExam?.name}
                 </h1>
-                <p className="text-slate-500 font-medium">
-                  {!hasBundle && examDescription ? examDescription : 'Select your preparation path'}
-                </p>
+                <div className="max-w-3xl">
+                  <p 
+                    className={cn(
+                      "text-slate-500 font-medium text-sm sm:text-base leading-relaxed transition-all duration-300",
+                      !isDescExpanded && "line-clamp-2"
+                    )}
+                  >
+                    {!hasBundle && examDescription ? examDescription : 'Select your preparation path'}
+                  </p>
+                  {!hasBundle && examDescription && examDescription.length > 150 && (
+                    <button 
+                      onClick={() => setIsDescExpanded(!isDescExpanded)}
+                      className="text-xs font-black text-brand-600 hover:text-brand-700 transition-colors uppercase tracking-wider mt-1.5 focus:outline-none inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      {isDescExpanded ? 'Read Less' : 'Read More'}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -5127,8 +5448,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           show: { y: 0, opacity: 1 }
                         }}
                         className={cn(
-                          "text-sm sm:text-base lg:text-[1.05rem] leading-relaxed font-normal tracking-wide max-w-xl",
-                          hasAccessTo(`exam_bundle_${selectedExam}`) ? "text-emerald-100/70" : "text-brand-100/70"
+                          "text-sm sm:text-base lg:text-[1.05rem] leading-relaxed font-normal tracking-wide max-w-xl transition-all duration-300",
+                          hasAccessTo(`exam_bundle_${selectedExam}`) ? "text-emerald-100/70" : "text-brand-100/70",
+                          !isBannerDescExpanded && "line-clamp-2"
                         )}
                       >
                         {examDescription || (hasAccessTo(`exam_bundle_${selectedExam}`) 
@@ -5136,6 +5458,19 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           : 'Get full lifetime access to all Question Banks, Practice Mode, Premium Mock Tests, PDF notes, and any future content added to this exam. Complete your preparation with the ultimate bundle.'
                         )}
                       </motion.p>
+                      {examDescription && examDescription.length > 150 && (
+                        <button 
+                          onClick={() => setIsBannerDescExpanded(!isBannerDescExpanded)}
+                          className={cn(
+                            "text-xs font-black transition-colors uppercase tracking-wider focus:outline-none inline-flex items-center gap-1 cursor-pointer mt-1",
+                            hasAccessTo(`exam_bundle_${selectedExam}`)
+                              ? "text-emerald-300 hover:text-emerald-200"
+                              : "text-brand-300 hover:text-brand-200"
+                          )}
+                        >
+                          {isBannerDescExpanded ? 'Read Less' : 'Read More'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -5841,6 +6176,33 @@ const ScrollToTop = () => {
   return null;
 };
 
+function NotificationSoundListener() {
+  const { toasts } = useToasterStore();
+  const playedToastsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    toasts.forEach((t) => {
+      if (t.visible && !playedToastsRef.current.has(t.id)) {
+        playedToastsRef.current.add(t.id);
+        const audio = new Audio('/notification.mp3');
+        audio.volume = 0.55;
+        audio.play().catch((err) => {
+          console.warn('Notification sound autoplay failed:', err);
+        });
+      }
+    });
+
+    const activeIds = new Set(toasts.map((t) => t.id));
+    playedToastsRef.current.forEach((id) => {
+      if (!activeIds.has(id)) {
+        playedToastsRef.current.delete(id);
+      }
+    });
+  }, [toasts]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -5859,6 +6221,7 @@ export default function App() {
           },
         }}
       />
+      <NotificationSoundListener />
       <ScrollToTop />
       <AppContent />
     </BrowserRouter>
@@ -6227,8 +6590,12 @@ function AppContent() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </AnimatedRoutes>
-      <WhatsAppButton />
-      <StickyAICompanion isBottomNavVisible={isBottomNavVisible} />
+      {!(location.pathname.startsWith('/admin') || location.pathname.startsWith('/admin-login')) && (
+        <WhatsAppButton />
+      )}
+      {!(location.pathname.startsWith('/admin') || location.pathname.startsWith('/admin-login')) && (
+        <StickyAICompanion isBottomNavVisible={isBottomNavVisible} />
+      )}
 
       <AnimatePresence>
         {showResetModal && (

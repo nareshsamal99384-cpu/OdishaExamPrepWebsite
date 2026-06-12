@@ -669,6 +669,15 @@ body {
   animation: bounce-subtle 3s ease-in-out infinite;
 }
 
+@keyframes trophy-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); }
+}
+
+.animate-trophy-bounce {
+  animation: trophy-bounce 2.5s ease-in-out infinite;
+}
+
 /* Global Section Layouts */
 .section-divider {
   width: 60px;
@@ -767,8 +776,8 @@ body {
 }
 
 @keyframes pulse-soft {
-  0%, 100% { opacity: 0.4; scale: 1; }
-  50% { opacity: 0.8; scale: 1.1; }
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.9; }
 }
 
 .animate-pulse-soft {
@@ -926,22 +935,22 @@ body {
   transform: scale(0.98);
 }
 
-/* Custom teal webkit indicators for native dark inputs */
+/* Custom slate-indigo webkit indicators for native inputs */
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {
-  filter: invert(72%) sepia(35%) saturate(834%) hue-rotate(124deg) brightness(97%) contrast(89%);
+  filter: invert(55%) sepia(10%) saturate(600%) hue-rotate(185deg) brightness(95%) contrast(90%);
   cursor: pointer;
-  border-radius: 6px;
-  padding: 4px;
+  border-radius: 50%;
+  padding: 5px;
   margin-right: -2px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator:hover,
 input[type="time"]::-webkit-calendar-picker-indicator:hover {
-  background: rgba(45, 212, 191, 0.15); /* Subtle teal glow */
-  transform: scale(1.15); /* Responsive micro-scale */
-  filter: invert(85%) sepia(45%) saturate(1000%) hue-rotate(124deg) brightness(100%) contrast(100%); /* Brighter teal hover */
+  background: rgba(138, 28, 54, 0.12); /* Soft brand-crimson glow */
+  transform: scale(1.1); /* Responsive micro-scale */
+  filter: invert(26%) sepia(72%) saturate(522%) hue-rotate(295deg) brightness(90%) contrast(124%); /* Premium high-contrast brand crimson */
 }
 
 /* Responsive dynamic history delete button (only applies to hover-capable devices like laptops) */
@@ -965,6 +974,331 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
     opacity: 1;
     pointer-events: auto;
     transform: translateY(-50%) scale(1);
+  }
+}
+
+/* ============================================================
+   MATH EQUATION RENDERING — Premium KaTeX Styles
+   ============================================================ */
+
+/* ── Container wrapping any mix of text + math ── */
+.math-text-container {
+  line-height: 1.7;
+}
+
+/* ── Block equation card (display mode) ── */
+.math-equation-block {
+  display: block;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  margin: 1rem 0;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #fdf2f4 0%, #fff8f9 60%, #f8f9fc 100%);
+  border: 1px solid rgba(138, 28, 54, 0.12);
+  border-left: 3px solid rgba(138, 28, 54, 0.55);
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 12px rgba(138, 28, 54, 0.06), 0 1px 3px rgba(0,0,0,0.04);
+  text-align: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-padding: 1rem;
+}
+
+/* Hide scrollbar but keep functionality */
+.math-equation-block::-webkit-scrollbar { height: 4px; }
+.math-equation-block::-webkit-scrollbar-thumb {
+  background: rgba(138, 28, 54, 0.2);
+  border-radius: 4px;
+}
+
+/* Size variants */
+.math-equation-block--sm {
+  padding: 0.6rem 0.875rem;
+  margin: 0.5rem 0;
+  font-size: 0.9em;
+}
+.math-equation-block--lg {
+  padding: 1.25rem 1.75rem;
+  margin: 1.25rem 0;
+}
+
+/* KaTeX display equation inside the block card */
+.math-equation-block .katex-display {
+  margin: 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px; /* avoid descender clipping */
+}
+
+.math-equation-block .katex {
+  font-size: 1.2em;
+  color: #1b1b1b;
+}
+
+/* ── Inline math ── */
+.math-equation-inline {
+  display: inline-block;
+  vertical-align: middle;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.math-equation-inline--default .katex {
+  color: #1b1b1b;
+}
+
+.math-equation-inline--user .katex {
+  color: #fef3c7; /* amber-100 — readable on dark user bubble */
+}
+
+/* ── KaTeX global overrides — ensure crisp, readable rendering ── */
+.katex {
+  font-size: 1em; /* inherit from parent */
+  font-family: "KaTeX_Math", "KaTeX_Main", Georgia, serif;
+}
+
+.katex-display > .katex {
+  white-space: nowrap;
+}
+
+/* Prevent KaTeX from inheriting overly-bold font weights */
+.katex * {
+  font-weight: normal;
+}
+.katex .mathbf * {
+  font-weight: bold;
+}
+
+/* ── Question area specific overrides ── */
+
+/* Make block equations slightly smaller inside MCQ option buttons */
+.mcq-option .math-equation-block {
+  display: inline-block;
+  width: auto;
+  margin: 0;
+  padding: 0.15rem 0.5rem;
+  background: transparent;
+  border: none;
+  border-left: none;
+  box-shadow: none;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.mcq-option .math-equation-block .katex {
+  font-size: 1em;
+}
+
+/* Option inline math — same size as surrounding text */
+.mcq-option .math-equation-inline .katex {
+  font-size: 1em;
+}
+
+/* ── Explanation area overrides ── */
+.math-explanation .math-equation-block {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(138, 28, 54, 0.15);
+  border-left-color: rgba(138, 28, 54, 0.5);
+}
+
+/* ── Responsive: on mobile, use smaller font sizes ── */
+@media (max-width: 640px) {
+  .math-equation-block .katex {
+    font-size: 1em;
+  }
+  .math-equation-block {
+    padding: 0.7rem 0.875rem;
+    margin: 0.75rem 0;
+  }
+}
+
+/* ── Accessibility: respect reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .math-equation-block {
+    transition: none;
+  }
+}
+
+/* ── Fallback block (when KaTeX fails — shows naked LaTeX source) ── */
+.math-equation-block--fallback {
+  display: block;
+  width: 100%;
+  margin: 0.75rem 0;
+  padding: 0.75rem 1.25rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 3px solid #94a3b8;
+  border-radius: 0.75rem;
+  text-align: center;
+  overflow-x: auto;
+}
+
+/* ============================================================
+   DIAGRAM RENDERING — <pre><code> Block
+   ============================================================ */
+
+/**
+ * .question-diagram-pre
+ *
+ * Applied to the <pre> element wrapping ASCII diagrams inside the
+ * question panel. Rules:
+ *  - white-space: pre  → preserves every space, tab, and newline exactly
+ *  - font-family: monospace → fixed-width font so characters align correctly
+ *  - overflow-x: auto  → horizontal scroll for wide diagrams
+ *  - text-align: center → centers the diagram within the panel
+ *  - word-break / word-wrap: normal → characters NEVER wrap mid-diagram
+ */
+.question-diagram-pre {
+  font-family: 'Consolas', 'Cascadia Code', 'Monaco', 'Lucida Console', 'Courier New', monospace;
+  white-space: pre;          /* preserve spaces, tabs, newlines — never collapse */
+  overflow-x: auto;          /* horizontal scroll for wide diagrams */
+  overflow-y: visible;
+  text-align: center;
+  padding: 1rem 2rem;
+  margin: 0;                 /* parent div handles vertical spacing */
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: #1e293b;
+  letter-spacing: 0.06em;
+  word-break: normal;        /* never break a diagram character sequence */
+  word-wrap: normal;         /* same */
+  hyphens: none;             /* disable hyphenation inside diagrams */
+  display: block;
+  background: transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* The <code> inside <pre> inherits everything — no extra padding */
+.question-diagram-pre code {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  background: none;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  white-space: inherit;
+  display: block;            /* ensure it stretches to full pre width */
+}
+
+/* Thin scrollbar for diagram panel on Webkit browsers */
+.question-diagram-pre::-webkit-scrollbar {
+  height: 4px;
+}
+.question-diagram-pre::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.3);
+  border-radius: 4px;
+}
+
+/* Responsive: slightly smaller font on mobile */
+@media (max-width: 640px) {
+  .question-diagram-pre {
+    font-size: 0.78rem;
+    padding: 0.75rem 1rem;
+    letter-spacing: 0.04em;
+  }
+}/* ============================================================
+   EXACT TEXT-PRESERVING DIAGRAM STYLES
+   ============================================================ */
+
+.diagram-wrapper {
+  overflow-x: auto !important;
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+  width: 100% !important;
+  
+  /* Disable inheritance */
+  text-align: left !important;
+  white-space: normal !important;
+}
+
+.diagram {
+  display: inline-block !important;
+  white-space: pre !important;
+  font-family: "Courier New", "Consolas", monospace !important;
+  text-align: left !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  font-size: 22px !important;
+  overflow: auto !important;
+  padding: 32px !important;
+  margin: 0 !important;
+  width: max-content !important;
+  max-width: none !important;
+  transform: none !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+  
+  /* Disable inherited alignment / layouts */
+  align-self: flex-start !important;
+}
+
+  /* On mobile/smaller screens, scale font size so it fits or scrolls nicely */
+@media (max-width: 640px) {
+  .diagram {
+    font-size: 14px !important;
+    padding: 16px !important;
+  }
+}
+
+/* ============================================================
+   SVG PREMIUM DIAGRAM STYLES
+   ============================================================ */
+
+.svg-diagram-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.svg-diagram-card:hover {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  border-color: rgba(138, 28, 54, 0.2);
+}
+
+/* Adjust colors in dark mode automatically */
+.dark .svg-diagram-card {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.diagram-container {
+  min-height: 180px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem !important;
+}
+
+@media (min-width: 640px) {
+  .diagram-container {
+    padding: 1.5rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .diagram-container {
+    min-height: 380px;
+  }
+}
+
+.svg-diagram-card svg {
+  height: auto !important;
+  max-height: 280px;
+}
+
+@media (min-width: 768px) {
+  .svg-diagram-card svg {
+    max-height: 400px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .svg-diagram-card svg {
+    max-height: 500px;
   }
 }
 

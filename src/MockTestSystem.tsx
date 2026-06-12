@@ -23,7 +23,79 @@ import {
 import { cn } from './lib/utils';
 import { Button } from './App';
 import { useAuth } from './lib/AuthContext';
+import { MathTextRenderer, DiagramRenderer } from './components/MathTextRenderer';
 import { fadeSlideUp, modalContent } from './lib/animations';
+
+// ─────────────────────────────────────────────────────────────
+// Layout Detection Helpers
+// ─────────────────────────────────────────────────────────────
+
+/** Count math [bracket] blocks in a question string */
+const countMathBlocks = (text: string): number => {
+  const matches = text.match(/\[[^\[\]\n]{2,120}\]/g) || [];
+  return matches.filter(m => /[=^_\\+\-*/]/.test(m) && /[a-zA-Z0-9]/.test(m)).length;
+};
+
+/** 
+ * Comprehensive ASCII diagram detector.
+ * Handles all common diagram types stored in question databases:
+ * - Asterisk shapes: * (circles, triangles, borders)
+ * - Dot shapes: . (dot diagrams, ellipses)
+ * - Line art: /, \, |, -, + (geometric line art, trees, graphs)
+ * - Hybrid: O, o, #, %, @, ~ mixed with above
+ * - Multi-line blocks: paragraphs with \n that contain diagram lines
+ */
+const isAsciiDiagram = (para: string): boolean => {
+  // Helper: checks a single line for diagram character density
+  const lineIsDiagram = (line: string): boolean => {
+    if (line.trim().length < 3) return false;
+    const trimmed = line.trim();
+
+    // Asterisk patterns (circles, shapes drawn with *)
+    const asterisks = (trimmed.match(/\*/g) || []).length;
+    if (asterisks >= 3) return true;
+
+    // Dot-heavy patterns (dotted shapes, ellipses)
+    const dots = (trimmed.match(/\./g) || []).length;
+    if (dots >= 4 && dots / trimmed.length > 0.20) return true;
+
+    // Hash/block patterns (#)
+    const hashes = (trimmed.match(/#/g) || []).length;
+    if (hashes >= 4) return true;
+
+    // Standard line-art characters (/, \, |, -, +, _, ~, <, >)
+    const lineArt = (trimmed.match(/[\/\\|\-+_~<>]/g) || []).length;
+    if (lineArt >= 3 && lineArt / trimmed.length > 0.18) return true;
+
+    // Mixed: line with geometry letters + symbols (like "A /|\ B---D")
+    const mixedGeo = (trimmed.match(/[\/\\|\-+*\.O]/g) || []).length;
+    const letters = (trimmed.match(/[A-Za-z]/g) || []).length;
+    if (mixedGeo >= 3 && letters <= 6 && mixedGeo > letters) return true;
+
+    return false;
+  };
+
+  if (!para || para.trim().length < 3) return false;
+
+  // Multi-line paragraph: check if ANY line within it is a diagram
+  if (para.includes('\n')) {
+    const lines = para.split('\n');
+    const diagramLineCount = lines.filter(lineIsDiagram).length;
+    // If more than 40% of lines look like diagram lines → it's a diagram block
+    return diagramLineCount >= 1 && diagramLineCount / lines.length >= 0.40;
+  }
+
+  // Single-line check
+  return lineIsDiagram(para);
+};
+
+/** True when a question needs the full-width stacked layout */
+const isMathHeavyQuestion = (text: string): boolean => {
+  const blocks = countMathBlocks(text);
+  // Also trigger stacked layout if question contains a diagram
+  const hasDiagram = text.split('\n\n').some(p => isAsciiDiagram(p));
+  return blocks >= 2 || text.length > 320 || hasDiagram;
+};
 
 interface Question {
   id: string;
@@ -31,6 +103,7 @@ interface Question {
   options: string[];
   correctAnswerIndex: number;
   explanation: string;
+  diagram?: any;
 }
 
 interface MockTestProps {
@@ -791,119 +864,183 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
             </div>
           </div>
 
-          <main className="flex-1 overflow-hidden p-3 sm:p-5 lg:p-6 relative bg-[#FBF9F6] flex flex-col">
-            <div className="max-w-4xl lg:max-w-6xl mx-auto w-full h-full flex flex-col overflow-hidden space-y-2.5 sm:space-y-3 lg:space-y-4">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentQuestionIndex}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -12 }}
-                  transition={{ duration: 0.15 }}
-                  className="flex-1 flex flex-col lg:grid lg:grid-cols-2 lg:grid-rows-1 lg:gap-8 lg:space-y-0 lg:h-full min-h-0 space-y-3 lg:space-y-0"
-                >
-                  {/* Question Header & Title */}
-                  <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 p-3 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col flex-shrink-0 lg:flex-1 lg:h-full lg:max-h-none max-h-[30vh] overflow-hidden space-y-2.5 sm:space-y-3">
-                    <div className="flex items-center justify-between flex-shrink-0">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-[#8A1C36] bg-[#8A1C36]/5 rounded-lg border border-[#8A1C36]/15">
-                        <FileText className="w-4 h-4 animate-pulse-soft" />
-                        Question {currentQuestionIndex + 1} of {test.questions.length}
-                      </span>
-                    </div>
+          {/* ── Adaptive Main Content Area ──
+               Detects complex/math-heavy questions and switches layout automatically.
+               - Normal questions: side-by-side grid (question left, options right)
+               - Math-heavy questions: stacked full-width (question top, options below)
+          */}
+          {(() => {
+            const mathHeavy = isMathHeavyQuestion(currentQuestion.questionText) || !!currentQuestion.diagram;
+            const mathBlockCount = countMathBlocks(currentQuestion.questionText);
+            const useCompactBlocks = mathBlockCount >= 2;
+            const paragraphs = currentQuestion.questionText.split('\n\n').filter(Boolean);
 
-                    <div 
-                      ref={questionTextRef}
-                      className="flex-1 overflow-y-auto pr-2 custom-scrollbar text-base sm:text-lg lg:text-xl font-serif font-extrabold text-slate-900 leading-relaxed break-words overflow-wrap-anywhere"
+            return (
+              <main className={cn(
+                "flex-1 p-3 sm:p-5 lg:p-6 relative bg-[#FBF9F6] flex flex-col",
+                mathHeavy ? "overflow-y-auto" : "overflow-hidden"
+              )}>
+                <div className={cn(
+                  "max-w-4xl lg:max-w-6xl mx-auto w-full flex flex-col space-y-2.5 sm:space-y-3 lg:space-y-4",
+                  !mathHeavy && "h-full overflow-hidden"
+                )}>
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={currentQuestionIndex}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -12 }}
+                      transition={{ duration: 0.15 }}
+                      className={cn(
+                        "flex flex-col gap-3 sm:gap-4",
+                        !mathHeavy && "lg:grid lg:grid-cols-2 lg:grid-rows-1 lg:gap-8 lg:h-full min-h-0 flex-1"
+                      )}
                     >
-                      {currentQuestion.questionText.split('\n\n').map((para, i) => (
-                        <p key={i} className="mb-3 last:mb-0">{para}</p>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Options & Explanation Scrollable Container */}
-                  <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0 space-y-3 lg:space-y-4 py-1 lg:h-full flex flex-col justify-start">
-                    <div className="grid gap-2 lg:gap-2.5 max-w-3xl">
-                      {currentQuestion.options.map((option, idx) => {
-                        const isSelected = answers[currentQuestionIndex] === idx;
-                        const isCorrect = idx === currentQuestion.correctAnswerIndex;
-                        const showResult = currentMode === 'practice' && answers[currentQuestionIndex] !== undefined;
-
-                        return (
-                          <button
-                            key={`q${currentQuestionIndex}-o${idx}`}
-                            onClick={() => handleAnswer(idx)}
-                            className={cn(
-                              "group w-full text-left py-2 px-3.5 sm:py-2.5 sm:px-4 rounded-xl border transition-all duration-300 relative cursor-pointer select-none flex items-center gap-3 sm:gap-4 shadow-sm",
-                              showResult
-                                ? isCorrect 
-                                  ? "border-emerald-500 bg-emerald-50 text-emerald-900 shadow-sm" 
-                                  : isSelected ? "border-rose-500 bg-rose-50 text-rose-900 shadow-sm" : "border-slate-200 bg-white"
-                                : isSelected 
-                                  ? "border-[#8A1C36] bg-gradient-to-r from-[#8A1C36]/5 to-white text-slate-900 shadow-md ring-1 ring-[#8A1C36]" 
-                                  : "border-slate-200 bg-white hover:border-slate-400 hover:bg-slate-50/50 hover:shadow-md"
-                            )}
-                          >
-                            <div className={cn(
-                              "w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center font-black text-xs shrink-0 transition-all duration-300",
-                              showResult
-                                ? isCorrect 
-                                  ? "bg-emerald-600 text-white" 
-                                  : isSelected ? "bg-rose-600 text-white" : "bg-slate-100 text-slate-400"
-                                : isSelected 
-                                  ? "bg-[#8A1C36] text-white" 
-                                  : "bg-slate-100 text-slate-500 group-hover:bg-slate-200/70"
-                            )}>
-                              {String.fromCharCode(65 + idx)}
-                            </div>
-                            
-                            <span className={cn(
-                              "flex-1 text-slate-800 text-sm sm:text-base transition-all",
-                              isSelected ? "font-bold text-slate-900" : "font-medium text-slate-600 group-hover:text-slate-900"
-                            )}>{option}</span>
-                            
-                            {showResult && isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />}
-                            {showResult && isSelected && !isCorrect && <X className="w-5 h-5 text-rose-600 shrink-0" />}
-                            
-                            {!showResult && (
-                              <span className={cn(
-                                "text-[10px] font-mono font-black border px-2 py-0.5 rounded-md hidden sm:inline ml-auto select-none transition-all duration-300",
-                                isSelected 
-                                  ? "border-[#8A1C36]/30 bg-[#8A1C36]/5 text-[#8A1C36]" 
-                                  : "border-slate-200 bg-slate-50 text-slate-400 opacity-0 group-hover:opacity-100"
-                              )}>
-                                Press {idx + 1}
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {showExplanation && (
-                      <motion.div {...fadeSlideUp}
-                        className="rounded-2xl border border-slate-200/60 bg-white p-5 sm:p-6 space-y-3 relative overflow-hidden shadow-sm"
-                      >
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#8A1C36]/3 rounded-full blur-2xl pointer-events-none" />
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                            <AlertCircle className="w-5 h-5 text-amber-600" />
-                          </div>
-                          <div>
-                            <h4 className="font-serif font-black text-slate-900 text-base leading-none">Expert Explanation</h4>
-                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1 block">Solution Breakdown</span>
-                          </div>
+                      {/* ── Question Panel ── */}
+                      <div className={cn(
+                        "bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md transition-shadow flex flex-col space-y-2.5 sm:space-y-3",
+                        mathHeavy
+                          ? "p-4 sm:p-6"
+                          : "p-3 sm:p-5 flex-shrink-0 lg:flex-1 lg:h-full lg:max-h-none overflow-hidden"
+                      )}>
+                        {/* Question label + Math badge */}
+                        <div className="flex items-center justify-between flex-shrink-0">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-[#8A1C36] bg-[#8A1C36]/5 rounded-lg border border-[#8A1C36]/15">
+                            <FileText className="w-4 h-4 animate-pulse-soft" />
+                            Question {currentQuestionIndex + 1} of {test.questions.length}
+                          </span>
+                          {mathHeavy && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg">
+                              <span className="text-sm leading-none select-none">∑</span> Math
+                            </span>
+                          )}
                         </div>
-                        <p className="text-slate-700 text-sm sm:text-base leading-relaxed font-serif font-medium border-l-4 border-[#8A1C36] pl-4 py-1">
-                          {currentQuestion.explanation}
-                        </p>
-                      </motion.div>
-                    )}
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </main>
+
+                        {/* Question text with smart paragraph rendering */}
+                        <div
+                          ref={questionTextRef}
+                          className={cn(
+                            "text-base sm:text-lg lg:text-xl font-serif font-extrabold text-slate-900 leading-relaxed break-words overflow-wrap-anywhere",
+                            !mathHeavy && "flex-1 overflow-y-auto pr-2 custom-scrollbar"
+                          )}
+                        >
+                          {paragraphs.map((para, i) => (
+                            <p key={i} className="mb-3 last:mb-0">
+                              <MathTextRenderer
+                                text={para}
+                                blockSize={useCompactBlocks ? 'sm' : 'md'}
+                              />
+                            </p>
+                          ))}
+                          {(() => {
+                            const question = currentQuestion;
+                            console.log("QUESTION", question);
+                            console.log("DIAGRAM", question.diagram);
+                            console.log("TYPE", question.diagram?.type);
+                            return null;
+                          })()}
+                          {currentQuestion.diagram ? (
+                            <DiagramRenderer
+                              diagram={currentQuestion.diagram}
+                              data={currentQuestion.diagram}
+                            />
+                          ) : null}
+                        </div>
+                      </div>
+
+                      {/* ── Options & Explanation ── */}
+                      <div className={cn(
+                        "space-y-3 lg:space-y-4",
+                        !mathHeavy && "flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0 py-1 lg:h-full flex flex-col justify-start",
+                        mathHeavy && "py-1"
+                      )}>
+                        <div className={cn(
+                          "grid gap-2 lg:gap-2.5",
+                          mathHeavy ? "sm:grid-cols-2" : "max-w-3xl"
+                        )}>
+                          {currentQuestion.options.map((option, idx) => {
+                            const isSelected = answers[currentQuestionIndex] === idx;
+                            const isCorrect = idx === currentQuestion.correctAnswerIndex;
+                            const showResult = currentMode === 'practice' && answers[currentQuestionIndex] !== undefined;
+
+                            return (
+                              <button
+                                key={`q${currentQuestionIndex}-o${idx}`}
+                                onClick={() => handleAnswer(idx)}
+                                className={cn(
+                                  "mcq-option group w-full text-left py-2 px-3.5 sm:py-2.5 sm:px-4 rounded-xl border transition-all duration-300 relative cursor-pointer select-none flex items-center gap-3 sm:gap-4 shadow-sm",
+                                  showResult
+                                    ? isCorrect 
+                                      ? "border-emerald-500 bg-emerald-50 text-emerald-900 shadow-sm" 
+                                      : isSelected ? "border-rose-500 bg-rose-50 text-rose-900 shadow-sm" : "border-slate-200 bg-white"
+                                    : isSelected 
+                                      ? "border-[#8A1C36] bg-gradient-to-r from-[#8A1C36]/5 to-white text-slate-900 shadow-md ring-1 ring-[#8A1C36]" 
+                                      : "border-slate-200 bg-white hover:border-slate-400 hover:bg-slate-50/50 hover:shadow-md"
+                                )}
+                              >
+                                <div className={cn(
+                                  "w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center font-black text-xs shrink-0 transition-all duration-300",
+                                  showResult
+                                    ? isCorrect 
+                                      ? "bg-emerald-600 text-white" 
+                                      : isSelected ? "bg-rose-600 text-white" : "bg-slate-100 text-slate-400"
+                                    : isSelected 
+                                      ? "bg-[#8A1C36] text-white" 
+                                      : "bg-slate-100 text-slate-500 group-hover:bg-slate-200/70"
+                                )}>
+                                  {String.fromCharCode(65 + idx)}
+                                </div>
+                                
+                                <span className={cn(
+                                  "flex-1 text-slate-800 text-sm sm:text-base transition-all",
+                                  isSelected ? "font-bold text-slate-900" : "font-medium text-slate-600 group-hover:text-slate-900"
+                                )}><MathTextRenderer text={option} isOption /></span>
+                                
+                                {showResult && isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />}
+                                {showResult && isSelected && !isCorrect && <X className="w-5 h-5 text-rose-600 shrink-0" />}
+                                
+                                {!showResult && (
+                                  <span className={cn(
+                                    "text-[10px] font-mono font-black border px-2 py-0.5 rounded-md hidden sm:inline ml-auto select-none transition-all duration-300",
+                                    isSelected 
+                                      ? "border-[#8A1C36]/30 bg-[#8A1C36]/5 text-[#8A1C36]" 
+                                      : "border-slate-200 bg-slate-50 text-slate-400 opacity-0 group-hover:opacity-100"
+                                  )}>
+                                    Press {idx + 1}
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {showExplanation && (
+                          <motion.div {...fadeSlideUp}
+                            className="math-explanation rounded-2xl border border-slate-200/60 bg-white p-5 sm:p-6 space-y-3 relative overflow-hidden shadow-sm"
+                          >
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-[#8A1C36]/3 rounded-full blur-2xl pointer-events-none" />
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                                <AlertCircle className="w-5 h-5 text-amber-600" />
+                              </div>
+                              <div>
+                                <h4 className="font-serif font-black text-slate-900 text-base leading-none">Expert Explanation</h4>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1 block">Solution Breakdown</span>
+                              </div>
+                            </div>
+                            <p className="text-slate-700 text-sm sm:text-base leading-relaxed font-serif font-medium border-l-4 border-[#8A1C36] pl-4 py-1">
+                              <MathTextRenderer text={currentQuestion.explanation} />
+                            </p>
+                          </motion.div>
+                        )}
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </main>
+            );
+          })()}
+
 
           {/* Bottom Official Exam Navigation Footer */}
           <div className="shrink-0 bg-white border-t border-slate-200/80 py-2 px-4 sm:py-3 sm:px-8 shadow-sm">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, 
@@ -33,6 +34,8 @@ import {
   X
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import TimePicker from '../components/TimePicker';
+import { MathTextRenderer, DiagramRenderer } from '../components/MathTextRenderer';
 import { toast } from 'react-hot-toast';
 import { scrollToElement } from '../lib/scrollManager';
 import { activityTracker } from '../lib/activityTracker';
@@ -108,28 +111,69 @@ const generateStudyPlan = (
   const totalMinutes = endMins - startMins;
   if (totalMinutes <= 0) return [];
   
-  let focusDuration = 45;
-  let breakDuration = 10;
-  let longBreakDuration = 15;
+  let baseFocus = 45;
+  let baseBreak = 10;
+  let baseLongBreak = 15;
   
   if (energy === 'Low') {
-    focusDuration = 25;
-    breakDuration = 5;
-    longBreakDuration = 10;
+    baseFocus = 25;
+    baseBreak = 5;
+    baseLongBreak = 10;
   } else if (energy === 'High') {
-    focusDuration = 50;
-    breakDuration = 10;
-    longBreakDuration = 20;
+    baseFocus = 50;
+    baseBreak = 10;
+    baseLongBreak = 20;
   }
   
   if (goal === 'Revision') {
-    focusDuration = Math.max(20, focusDuration - 5);
+    baseFocus = Math.max(20, baseFocus - 5);
   } else if (goal === 'Deep Study') {
-    focusDuration = Math.min(60, focusDuration + 10);
+    baseFocus = Math.min(60, baseFocus + 10);
   } else if (goal === 'Mock Test') {
-    focusDuration = 60;
-    breakDuration = 10;
+    baseFocus = 60;
+    baseBreak = 10;
   }
+
+  // Dynamic premium naming arrays based on study goal to make layout look custom & realistic
+  const revisionNames = [
+    "Warm-up Active Recall", 
+    "Core Concepts Revision", 
+    "Key Formulas & Rules", 
+    "Topic Review Drill", 
+    "Summary & Connections", 
+    "Active Recall Recap"
+  ];
+  const deepStudyNames = [
+    "Foundational Concept Dive", 
+    "Advanced Principles Study", 
+    "Applied Analysis & Notes", 
+    "High-Value Topic Study", 
+    "Synthesis & Integration", 
+    "Core Concept Deep-Dive"
+  ];
+  const practiceNames = [
+    "Topic Practice Warm-up", 
+    "High-Yield Qs Session", 
+    "Timed Accuracy Drill", 
+    "Concept Application Practice", 
+    "Active Q-Bank Sprint", 
+    "Mistakes Analysis Drill"
+  ];
+  const mockTestNames = [
+    "Mock Test Warm-up", 
+    "Sectional Mock Practice", 
+    "Full Mock Simulation", 
+    "Accuracy & Strategy Focus", 
+    "Mock Test Review Session"
+  ];
+  const defaultNames = [
+    "Active Recall Warm-up", 
+    "Deep Focus Study", 
+    "Practice & Application", 
+    "Revision & Recall Sprint", 
+    "Mind-mapping & Synthesis", 
+    "Focus Session Wrap-up"
+  ];
   
   const blocks: any[] = [];
   let currentOffset = 0;
@@ -153,16 +197,34 @@ const generateStudyPlan = (
       break;
     }
     
-    const currentStudyDuration = Math.min(focusDuration, remainingMins);
+    // Progressive focus block duration (Warm-up -> Core Focus -> Peak Focus -> Sinusoidal fluctuations)
+    let currentStudyDuration = baseFocus;
+    if (blockCounter === 1) {
+      currentStudyDuration = Math.max(20, Math.round(baseFocus * 0.8)); // Warm up
+    } else if (blockCounter === 3) {
+      currentStudyDuration = Math.min(60, Math.round(baseFocus * 1.1)); // Peak focus
+    } else if (blockCounter > 3) {
+      currentStudyDuration = baseFocus + (blockCounter % 2 === 0 ? 5 : -5); // Fluctuate
+    }
     
-    let blockName = `Focus Session ${blockCounter}`;
+    currentStudyDuration = Math.min(currentStudyDuration, remainingMins);
+    
+    let blockName = "";
     let blockType = 'focus';
-    if (goal === 'Practice Questions') {
-      blockName = `Practice Questions ${blockCounter}`;
+    const nameIdx = (blockCounter - 1) % 6;
+    
+    if (goal === 'Revision') {
+      blockName = revisionNames[nameIdx];
+    } else if (goal === 'Deep Study') {
+      blockName = deepStudyNames[nameIdx];
+    } else if (goal === 'Practice Questions') {
+      blockName = practiceNames[nameIdx];
       blockType = 'practice';
     } else if (goal === 'Mock Test') {
-      blockName = `Mock Test Block ${blockCounter}`;
+      blockName = mockTestNames[nameIdx % mockTestNames.length];
       blockType = 'practice';
+    } else {
+      blockName = defaultNames[nameIdx];
     }
     
     blocks.push({
@@ -180,8 +242,17 @@ const generateStudyPlan = (
     
     if (currentOffset < totalMinutes) {
       const isLongBreak = blockCounter % 3 === 0;
+      
+      // Calculate break time relative to preceding study block duration with dynamic jitter
+      let targetBreakDuration = baseBreak;
+      if (isLongBreak) {
+        targetBreakDuration = Math.max(12, Math.min(25, Math.round(currentStudyDuration * 0.35 + (blockCounter % 2 === 0 ? 2 : -2))));
+      } else {
+        targetBreakDuration = Math.max(5, Math.min(10, Math.round(currentStudyDuration * 0.15 + (blockCounter % 2 === 0 ? 1 : -1))));
+      }
+      
       const currentBreakDuration = Math.min(
-        isLongBreak ? longBreakDuration : breakDuration,
+        targetBreakDuration,
         totalMinutes - currentOffset
       );
       
@@ -357,59 +428,7 @@ const robustParseJSON = (rawText: string) => {
   }
 };
 
-const MathTextRenderer = ({ text, isUser = false }: { text: string; isUser?: boolean }) => {
-  if (!text) return null;
 
-  // Split by $$...$$ and $...$
-  const parts = text.split(/(\$\$.*?\$\$|\$.*?\$)/g);
-
-  return (
-    <span>
-      {parts.map((part, index) => {
-        if (part.startsWith('$$') && part.endsWith('$$')) {
-          const math = part.slice(2, -2);
-          try {
-            const html = katex.renderToString(math, {
-              throwOnError: false,
-              displayMode: true,
-            });
-            return (
-              <span
-                key={index}
-                className="block my-2 overflow-x-auto custom-scrollbar text-center"
-                dangerouslySetInnerHTML={{ __html: html }}
-              />
-            );
-          } catch (e) {
-            return <code key={index}>{part}</code>;
-          }
-        } else if (part.startsWith('$') && part.endsWith('$')) {
-          const math = part.slice(1, -1);
-          try {
-            const html = katex.renderToString(math, {
-              throwOnError: false,
-              displayMode: false,
-            });
-            return (
-              <span
-                key={index}
-                className={cn(
-                  "inline-block px-0.5 align-middle font-serif font-bold",
-                  isUser ? "text-amber-200" : "text-[#8A1C36]"
-                )}
-                dangerouslySetInnerHTML={{ __html: html }}
-              />
-            );
-          } catch (e) {
-            return <code key={index}>{part}</code>;
-          }
-        } else {
-          return <span key={index}>{part}</span>;
-        }
-      })}
-    </span>
-  );
-};
 
 const ODISHA_STUDY_TIPS = [
   {
@@ -443,6 +462,35 @@ const ODISHA_STUDY_TIPS = [
     icon: HelpCircle
   }
 ];
+
+const AI_COACH_INSIGHTS = [
+  {
+    category: "Energy Management",
+    tip: "Alternating high-intensity focus with micro-breaks prevents mental fatigue and keeps retention rates high.",
+    icon: Sparkles
+  },
+  {
+    category: "Cognitive Capacity",
+    tip: "Tackling difficult concepts early in your plan aligns with high energy periods, leaving easier reviews for the end.",
+    icon: Target
+  },
+  {
+    category: "Active Recall",
+    tip: "Self-testing on key definitions or formulas is 150% more effective for long-term memory than passive re-reading.",
+    icon: HelpCircle
+  },
+  {
+    category: "Spaced Repetition",
+    tip: "Reviewing your newly structured planner topics after 24 hours reinforces neural pathways and halts memory decay.",
+    icon: RotateCcw
+  },
+  {
+    category: "Deep Focus Flow",
+    tip: "Muting notifications and practicing single-tasking allows your brain to reach the flow state in 15–20 minutes.",
+    icon: BookOpen
+  }
+];
+
 
 const GENERATING_STEPS = [
   "Securing connection to OEP AI Model...",
@@ -570,6 +618,8 @@ export default function AiMentor({ user }: { user: any }) {
 
   // Interactive Study Suite States
   const [quizSubject, setQuizSubject] = useState(() => {
+    const metaVal = user?.user_metadata?.study_coach_practice?.quizSubject;
+    if (metaVal) return metaVal;
     return localStorage.getItem('study_coach_quiz_subject') || 'Odisha GK & History';
   });
 
@@ -595,6 +645,8 @@ export default function AiMentor({ user }: { user: any }) {
   const [newQuizTabName, setNewQuizTabName] = useState('');
 
   const [quizTargetExam, setQuizTargetExam] = useState(() => {
+    const metaVal = user?.user_metadata?.study_coach_practice?.quizTargetExam;
+    if (metaVal !== undefined) return metaVal;
     return localStorage.getItem('study_coach_quiz_target_exam') || '';
   });
 
@@ -658,25 +710,37 @@ export default function AiMentor({ user }: { user: any }) {
   }, [activeRightTab]);
 
   const [quizDifficulty, setQuizDifficulty] = useState(() => {
+    const metaVal = user?.user_metadata?.study_coach_practice?.quizDifficulty;
+    if (metaVal) return metaVal;
     return localStorage.getItem('study_coach_quiz_difficulty') || 'Medium';
   });
   const [quizSize, setQuizSize] = useState<number>(() => {
+    const metaVal = user?.user_metadata?.study_coach_practice?.quizSize;
+    if (metaVal !== undefined && metaVal !== null) return Number(metaVal);
     const saved = localStorage.getItem('study_coach_quiz_size');
     return saved ? Number(saved) : 3;
   });
   const [quizMode, setQuizMode] = useState<'quick' | 'best'>(() => {
+    const metaVal = user?.user_metadata?.study_coach_practice?.quizMode;
+    if (metaVal) return metaVal;
     const saved = localStorage.getItem('study_coach_quiz_mode');
     return (saved === 'quick' || saved === 'best') ? saved : 'quick';
   });
   const [activeQuiz, setActiveQuiz] = useState<any[]>(() => {
+    const metaVal = user?.user_metadata?.study_coach_practice?.activeQuiz;
+    if (metaVal) return metaVal;
     const saved = localStorage.getItem('study_coach_active_quiz');
     return saved ? JSON.parse(saved) : [];
   });
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>(() => {
+    const metaVal = user?.user_metadata?.study_coach_practice?.selectedAnswers;
+    if (metaVal) return metaVal;
     const saved = localStorage.getItem('study_coach_selected_answers');
     return saved ? JSON.parse(saved) : {};
   });
   const [quizSubmitted, setQuizSubmitted] = useState<boolean>(() => {
+    const metaVal = user?.user_metadata?.study_coach_practice?.quizSubmitted;
+    if (metaVal !== undefined && metaVal !== null) return metaVal === true || metaVal === 'true';
     return localStorage.getItem('study_coach_quiz_submitted') === 'true';
   });
   const [quizLoading, setQuizLoading] = useState(false);
@@ -721,6 +785,8 @@ export default function AiMentor({ user }: { user: any }) {
     total: number;
     difficulty: string;
   }[]>(() => {
+    const metaVal = user?.user_metadata?.study_coach_practice?.quizHistory;
+    if (metaVal) return metaVal;
     const saved = localStorage.getItem('study_coach_quiz_history');
     return saved ? JSON.parse(saved) : [];
   });
@@ -816,6 +882,8 @@ export default function AiMentor({ user }: { user: any }) {
 
   // Bookmarks
   const [bookmarkedQuestions, setBookmarkedQuestions] = useState<any[]>(() => {
+    const metaVal = user?.user_metadata?.study_coach_practice?.bookmarkedQuestions;
+    if (metaVal) return metaVal;
     const saved = localStorage.getItem('study_coach_bookmarks');
     return saved ? JSON.parse(saved) : [];
   });
@@ -823,10 +891,14 @@ export default function AiMentor({ user }: { user: any }) {
 
   // Syllabus Workspace States
   const [collections, setCollections] = useState<SyllabusCollection[]>(() => {
+    const metaVal = user?.user_metadata?.study_coach_syllabus?.collections;
+    if (metaVal) return metaVal;
     const saved = localStorage.getItem(`study_coach_collections_${user?.id || 'guest'}`);
     return saved ? JSON.parse(saved) : [];
   });
   const [activeCollectionId, setActiveCollectionId] = useState<string | null>(() => {
+    const metaVal = user?.user_metadata?.study_coach_syllabus?.activeCollectionId;
+    if (metaVal !== undefined) return metaVal;
     const saved = localStorage.getItem(`study_coach_active_collection_id_${user?.id || 'guest'}`);
     return saved || null;
   });
@@ -863,10 +935,14 @@ export default function AiMentor({ user }: { user: any }) {
     name: string;
     cards: { id: string; title: string; formula: string; shortcut: string; example: string }[];
   }[]>(() => {
+    const metaVal = user?.user_metadata?.study_coach_formulas?.formulaCategories;
+    if (metaVal) return metaVal;
     const saved = localStorage.getItem('study_coach_formula_categories');
     return saved ? JSON.parse(saved) : [];
   });
   const [activeFormulaCatId, setActiveFormulaCatId] = useState<string | null>(() => {
+    const metaVal = user?.user_metadata?.study_coach_formulas?.activeFormulaCatId;
+    if (metaVal !== undefined) return metaVal;
     const saved = localStorage.getItem('study_coach_active_formula_cat_id');
     return saved || null;
   });
@@ -926,43 +1002,86 @@ export default function AiMentor({ user }: { user: any }) {
 
   // AI Coach / Planner States
   const [coachMode, setCoachMode] = useState<'manual' | 'ai'>(() => {
+    const metaVal = user?.user_metadata?.study_coach_planner?.coachMode;
+    if (metaVal) return metaVal;
     return (localStorage.getItem('study_coach_timer_type') as 'manual' | 'ai') || 'manual';
   });
   const [plannerStart, setPlannerStart] = useState(() => {
+    const metaVal = user?.user_metadata?.study_coach_planner?.plannerStart;
+    if (metaVal) return metaVal;
     return localStorage.getItem('study_coach_planner_start') || getCurrentTimeStr();
   });
   const [plannerEnd, setPlannerEnd] = useState(() => {
+    const metaVal = user?.user_metadata?.study_coach_planner?.plannerEnd;
+    if (metaVal) return metaVal;
     return localStorage.getItem('study_coach_planner_end') || getFutureTimeStr(3);
   });
   const [plannerGoal, setPlannerGoal] = useState(() => {
+    const metaVal = user?.user_metadata?.study_coach_planner?.plannerGoal;
+    if (metaVal) return metaVal;
     return localStorage.getItem('study_coach_planner_goal') || 'Deep Study';
   });
   const [plannerEnergy, setPlannerEnergy] = useState(() => {
+    const metaVal = user?.user_metadata?.study_coach_planner?.plannerEnergy;
+    if (metaVal) return metaVal;
     return localStorage.getItem('study_coach_planner_energy') || 'Normal';
   });
   const [plannerChapters, setPlannerChapters] = useState(() => {
+    const metaVal = user?.user_metadata?.study_coach_planner?.plannerChapters;
+    if (metaVal !== undefined) return metaVal;
     return localStorage.getItem('study_coach_planner_chapters') || '';
   });
   const [plannerQuestions, setPlannerQuestions] = useState(() => {
+    const metaVal = user?.user_metadata?.study_coach_planner?.plannerQuestions;
+    if (metaVal !== undefined) return metaVal;
     return localStorage.getItem('study_coach_planner_questions') || '';
   });
   const [plannerHours, setPlannerHours] = useState(() => {
+    const metaVal = user?.user_metadata?.study_coach_planner?.plannerHours;
+    if (metaVal !== undefined) return metaVal;
     return localStorage.getItem('study_coach_planner_hours') || '';
   });
   const [plannerBlocks, setPlannerBlocks] = useState<any[]>(() => {
+    const metaVal = user?.user_metadata?.study_coach_planner?.plannerBlocks;
+    if (metaVal) return metaVal;
     const saved = localStorage.getItem('study_coach_planner_blocks');
     return saved ? JSON.parse(saved) : [];
   });
   const [activeBlockIndex, setActiveBlockIndex] = useState<number>(() => {
+    const metaVal = user?.user_metadata?.study_coach_planner?.activeBlockIndex;
+    if (metaVal !== undefined && metaVal !== null) return Number(metaVal);
     const saved = localStorage.getItem('study_coach_active_block_index');
     return saved ? Number(saved) : -1;
   });
   const [coachStrategy, setCoachStrategy] = useState(() => {
+    const metaVal = user?.user_metadata?.study_coach_planner?.coachStrategy;
+    if (metaVal !== undefined) return metaVal;
     return localStorage.getItem('study_coach_strategy') || '';
   });
   const [pausedSeconds, setPausedSeconds] = useState(0);
   const [coachLoading, setCoachLoading] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const roadmapContainerRef = useRef<HTMLDivElement>(null);
+  const [hasPlanStarted, setHasPlanStarted] = useState(() => {
+    return localStorage.getItem('study_coach_has_plan_started') === 'true';
+  });
+
+  // Auto-scroll active block into center view in the roadmap box
+  useEffect(() => {
+    if (activeBlockIndex !== -1 && plannerBlocks.length > 0 && roadmapContainerRef.current) {
+      setTimeout(() => {
+        if (roadmapContainerRef.current) {
+          const activeEl = roadmapContainerRef.current.querySelector('[data-active="true"]');
+          if (activeEl) {
+            roadmapContainerRef.current.scrollTop = 
+              (activeEl as HTMLElement).offsetTop - 
+              roadmapContainerRef.current.clientHeight / 2 + 
+              (activeEl as HTMLElement).clientHeight / 2;
+          }
+        }
+      }, 100);
+    }
+  }, [activeBlockIndex, plannerBlocks]);
 
   // Pomodoro Study Timer Initial State Calculation
   const initialTimer = React.useMemo(() => {
@@ -1009,6 +1128,9 @@ export default function AiMentor({ user }: { user: any }) {
                 currentRemainingElapsed -= initSeconds;
                 
                 savedBlocks[activeIdx].status = 'completed';
+                if (savedBlocks[activeIdx].type !== 'break') {
+                  savedBlocks[activeIdx].actuallyStudiedSeconds = savedBlocks[activeIdx].duration;
+                }
                 activeIdx++;
                 
                 let skippedCount = 1;
@@ -1017,6 +1139,9 @@ export default function AiMentor({ user }: { user: any }) {
                   if (currentRemainingElapsed >= blockDuration) {
                     currentRemainingElapsed -= blockDuration;
                     savedBlocks[activeIdx].status = 'completed';
+                    if (savedBlocks[activeIdx].type !== 'break') {
+                      savedBlocks[activeIdx].actuallyStudiedSeconds = blockDuration;
+                    }
                     activeIdx++;
                     skippedCount++;
                   } else {
@@ -1045,7 +1170,11 @@ export default function AiMentor({ user }: { user: any }) {
                   offlineFinished: true,
                   finishedMode: 'study',
                   skippedBlocksCount: skippedCount,
-                  updatedBlocks: savedBlocks.map((b: any) => ({ ...b, status: 'completed' })),
+                  updatedBlocks: savedBlocks.map((b: any) => ({ 
+                    ...b, 
+                    status: 'completed',
+                    actuallyStudiedSeconds: b.actuallyStudiedSeconds !== undefined ? b.actuallyStudiedSeconds : (b.type !== 'break' ? b.duration : 0)
+                  })),
                   updatedActiveIdx: -1
                 };
               }
@@ -1084,13 +1213,35 @@ export default function AiMentor({ user }: { user: any }) {
   const [timerActive, setTimerActive] = useState<boolean>(initialTimer.active);
   const [timerMode, setTimerMode] = useState<'study' | 'break'>(initialTimer.mode);
   const [timerMaxSeconds, setTimerMaxSeconds] = useState<number>(initialTimer.maxSeconds);
+  const [breakMaxSeconds, setBreakMaxSeconds] = useState<number>(() => {
+    const metaVal = user?.user_metadata?.study_coach_planner?.breakMaxSeconds;
+    if (metaVal !== undefined && metaVal !== null) return Number(metaVal);
+    const saved = localStorage.getItem('study_coach_break_max_seconds');
+    return saved ? Number(saved) : 300;
+  });
   const [timerGoal, setTimerGoal] = useState(() => {
+    const metaVal = user?.user_metadata?.study_coach_planner?.timerGoal;
+    if (metaVal !== undefined) return metaVal;
     return localStorage.getItem('study_coach_timer_goal') || '';
   });
   const [completedSessionsCount, setCompletedSessionsCount] = useState<number>(() => {
+    const metaVal = user?.user_metadata?.study_coach_planner?.completedSessionsCount;
+    if (metaVal !== undefined && metaVal !== null) return Number(metaVal);
     const saved = localStorage.getItem('study_coach_completed_sessions');
     return saved ? Number(saved) : 0;
   });
+  const [completedStudyMinutes, setCompletedStudyMinutes] = useState<number>(() => {
+    const metaVal = user?.user_metadata?.study_coach_planner?.completedStudyMinutes;
+    if (metaVal !== undefined && metaVal !== null) return Number(metaVal);
+    const saved = localStorage.getItem('study_coach_completed_study_minutes');
+    if (saved) return Number(saved);
+    const savedSessions = localStorage.getItem('study_coach_completed_sessions');
+    const sessions = savedSessions ? Number(savedSessions) : 0;
+    const metaSessionsVal = user?.user_metadata?.study_coach_planner?.completedSessionsCount;
+    const finalSessions = metaSessionsVal !== undefined && metaSessionsVal !== null ? Number(metaSessionsVal) : sessions;
+    return finalSessions * 25;
+  });
+  const [studySecondsAccumulator, setStudySecondsAccumulator] = useState(0);
 
   // Calculate remaining minutes in active study plan
   const remainingPlanMinutes = React.useMemo(() => {
@@ -1151,12 +1302,13 @@ export default function AiMentor({ user }: { user: any }) {
     localStorage.setItem('study_coach_timer_seconds', String(timerSeconds));
     localStorage.setItem('study_coach_timer_mode', timerMode);
     localStorage.setItem('study_coach_timer_max_seconds', String(timerMaxSeconds));
+    localStorage.setItem('study_coach_break_max_seconds', String(breakMaxSeconds));
     localStorage.setItem('study_coach_timer_active', String(timerActive));
     localStorage.setItem('study_coach_timer_goal', timerGoal);
     if (timerActive) {
       localStorage.setItem('study_coach_timer_last_timestamp', String(Date.now()));
     }
-  }, [timerSeconds, timerMode, timerMaxSeconds, timerActive, timerGoal]);
+  }, [timerSeconds, timerMode, timerMaxSeconds, breakMaxSeconds, timerActive, timerGoal]);
 
   // Save AI Session Planner states
   useEffect(() => {
@@ -1201,6 +1353,99 @@ export default function AiMentor({ user }: { user: any }) {
     }
   }, [activeCollectionId, user?.id]);
 
+  // Unified Debounced Supabase Sync Engine
+  useEffect(() => {
+    if (!user || user.id === 'guest') return;
+
+    const handler = setTimeout(async () => {
+      try {
+        const { error } = await supabase.auth.updateUser({
+          data: {
+            study_coach_planner: {
+              coachMode,
+              plannerStart,
+              plannerEnd,
+              plannerGoal,
+              plannerEnergy,
+              plannerChapters,
+              plannerQuestions,
+              plannerHours,
+              plannerBlocks,
+              activeBlockIndex,
+              coachStrategy,
+              completedSessionsCount,
+              completedStudyMinutes,
+              timerGoal,
+              breakMaxSeconds
+            },
+            study_coach_practice: {
+              quizSubject,
+              quizDifficulty,
+              quizSize,
+              quizMode,
+              quizTargetExam,
+              activeQuiz,
+              selectedAnswers,
+              quizSubmitted,
+              quizHistory,
+              bookmarkedQuestions
+            },
+            study_coach_syllabus: {
+              collections,
+              activeCollectionId
+            },
+            study_coach_formulas: {
+              formulaCategories,
+              activeFormulaCatId
+            }
+          }
+        });
+        if (error) {
+          console.error("Supabase study suite sync error:", error);
+        }
+      } catch (err) {
+        console.error("Supabase study suite sync failed:", err);
+      }
+    }, 2000); // 2-second debounce to batch rapid updates
+
+    return () => clearTimeout(handler);
+  }, [
+    user,
+    // Planner section states
+    coachMode,
+    plannerStart,
+    plannerEnd,
+    plannerGoal,
+    plannerEnergy,
+    plannerChapters,
+    plannerQuestions,
+    plannerHours,
+    plannerBlocks,
+    activeBlockIndex,
+    coachStrategy,
+    completedSessionsCount,
+    completedStudyMinutes,
+    timerGoal,
+    breakMaxSeconds,
+    // Practice section states
+    quizSubject,
+    quizDifficulty,
+    quizSize,
+    quizMode,
+    quizTargetExam,
+    activeQuiz,
+    selectedAnswers,
+    quizSubmitted,
+    quizHistory,
+    bookmarkedQuestions,
+    // Syllabus section states
+    collections,
+    activeCollectionId,
+    // Formulas section states
+    formulaCategories,
+    activeFormulaCatId
+  ]);
+
   // Guard: prevent StrictMode double-mount from firing these one-time toasts twice
   const mountToastFiredRef = useRef(false);
   useEffect(() => {
@@ -1210,6 +1455,29 @@ export default function AiMentor({ user }: { user: any }) {
     if (initialTimer.offlineFinished) {
       const isAi = localStorage.getItem('study_coach_timer_type') === 'ai';
       if (isAi && initialTimer.updatedBlocks) {
+        const oldBlocksStr = localStorage.getItem('study_coach_planner_blocks');
+        let addedMins = 0;
+        if (oldBlocksStr) {
+          try {
+            const oldBlocks = JSON.parse(oldBlocksStr);
+            if (Array.isArray(oldBlocks)) {
+              initialTimer.updatedBlocks.forEach((newB: any, idx: number) => {
+                const oldB = oldBlocks[idx];
+                if (oldB && oldB.status !== 'completed' && newB.status === 'completed' && newB.type !== 'break') {
+                  addedMins += Math.round(newB.duration / 60);
+                }
+              });
+            }
+          } catch (e) {}
+        }
+        if (addedMins > 0) {
+          setCompletedStudyMinutes(m => {
+            const updated = m + addedMins;
+            localStorage.setItem('study_coach_completed_study_minutes', String(updated));
+            return updated;
+          });
+        }
+
         setPlannerBlocks(initialTimer.updatedBlocks);
         setActiveBlockIndex(initialTimer.updatedActiveIdx);
         if (initialTimer.updatedActiveIdx === -1) {
@@ -1224,24 +1492,19 @@ export default function AiMentor({ user }: { user: any }) {
             localStorage.setItem('study_coach_completed_sessions', String(updated));
             return updated;
           });
+          setCompletedStudyMinutes(m => {
+            const addedMins = Math.round(initialTimer.maxSeconds / 60);
+            const updated = m + addedMins;
+            localStorage.setItem('study_coach_completed_study_minutes', String(updated));
+            return updated;
+          });
           toast(`⏰ Study session completed while you were away! Take a break.`, { icon: '🔔', duration: 8000, id: 'offline-study-done' });
         } else {
           toast(`⏰ Break completed while you were away! Ready to study?`, { icon: '🔔', duration: 8000, id: 'offline-break-done' });
         }
       }
 
-      try {
-        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-        gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.35);
-      } catch (e) {}
+      // Old synthetic audio beep removed to prevent playing dual sounds
     } else if (initialTimer.active) {
       toast(`⏱️ Welcome back! Resuming your focus timer.`, { icon: '⏱️', id: 'welcome-back' });
     }
@@ -1466,24 +1729,28 @@ EXAM-ORIENTED DIRECTIVES:
 
   // Pomodoro Timer Block Finish Handler
   const handleBlockFinish = () => {
-    // Play audio beep
-    try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
-      gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
-      oscillator.start();
-      oscillator.stop(audioCtx.currentTime + 0.35);
-    } catch (e) {}
+    // Old synthetic audio beep removed to prevent playing dual sounds
 
     if (coachMode === 'ai' && activeBlockIndex >= 0 && activeBlockIndex < plannerBlocks.length) {
-      // Mark current block completed
+      setHasPlanStarted(true);
+      localStorage.setItem('study_coach_has_plan_started', 'true');
+      const finishedBlock = plannerBlocks[activeBlockIndex];
+      const elapsedSeconds = timerMaxSeconds - timerSeconds;
+
+      if (finishedBlock && finishedBlock.type !== 'break') {
+        setCompletedStudyMinutes(m => {
+          const addedMins = Math.floor(elapsedSeconds / 60);
+          const updated = m + addedMins;
+          localStorage.setItem('study_coach_completed_study_minutes', String(updated));
+          return updated;
+        });
+      }
+
+      // Mark current block completed and save actual study seconds
       const updated = plannerBlocks.map((b, idx) => 
-        idx === activeBlockIndex ? { ...b, status: 'completed' } : b
+        idx === activeBlockIndex 
+          ? { ...b, status: 'completed', actuallyStudiedSeconds: b.type !== 'break' ? elapsedSeconds : 0 } 
+          : b
       );
       
       const nextIndex = activeBlockIndex + 1;
@@ -1538,7 +1805,7 @@ EXAM-ORIENTED DIRECTIVES:
         { icon: '🔔', duration: 6000 }
       );
 
-      const nextMax = nextMode === 'study' ? timerMaxSeconds : 300;
+      const nextMax = nextMode === 'study' ? timerMaxSeconds : breakMaxSeconds;
       setTimerSeconds(nextMax);
     }
   };
@@ -1549,13 +1816,13 @@ EXAM-ORIENTED DIRECTIVES:
   useEffect(() => {
     if (timerActive) {
       timerIntervalRef.current = setInterval(() => {
-        setTimerSeconds(prev => {
-          if (prev <= 1) {
-            setTimeout(() => handleBlockFinish(), 0);
-            return 0;
-          }
-          return prev - 1;
-        });
+        // 1. Decrement remaining timer seconds
+        setTimerSeconds(prev => (prev > 0 ? prev - 1 : 0));
+        
+        // 2. Accumulate study seconds if currently in study mode
+        if (timerMode === 'study') {
+          setStudySecondsAccumulator(prev => prev + 1);
+        }
       }, 1000);
     } else {
       if (timerIntervalRef.current) {
@@ -1567,12 +1834,31 @@ EXAM-ORIENTED DIRECTIVES:
         clearInterval(timerIntervalRef.current);
       }
     };
-  }, [timerActive, timerMode, timerMaxSeconds, activeBlockIndex, plannerBlocks, coachMode]);
+  }, [timerActive, timerMode]);
+
+  // Handle studySecondsAccumulator rollover
+  useEffect(() => {
+    if (studySecondsAccumulator >= 60) {
+      setCompletedStudyMinutes(m => {
+        const nextMins = m + Math.floor(studySecondsAccumulator / 60);
+        localStorage.setItem('study_coach_completed_study_minutes', String(nextMins));
+        return nextMins;
+      });
+      setStudySecondsAccumulator(prev => prev % 60);
+    }
+  }, [studySecondsAccumulator]);
+
+  // Handle block finish when timer reaches 0
+  useEffect(() => {
+    if (timerActive && timerSeconds === 0) {
+      handleBlockFinish();
+    }
+  }, [timerSeconds, timerActive]);
 
   // Pause detection timer for AI Session Planner
   useEffect(() => {
     let pauseInterval: NodeJS.Timeout | null = null;
-    if (coachMode === 'ai' && activeBlockIndex >= 0 && !timerActive) {
+    if (coachMode === 'ai' && activeBlockIndex >= 0 && !timerActive && hasPlanStarted) {
       pauseInterval = setInterval(() => {
         setPausedSeconds(prev => prev + 1);
       }, 1000);
@@ -1582,10 +1868,15 @@ EXAM-ORIENTED DIRECTIVES:
     return () => {
       if (pauseInterval) clearInterval(pauseInterval);
     };
-  }, [timerActive, coachMode, activeBlockIndex]);
+  }, [timerActive, coachMode, activeBlockIndex, hasPlanStarted]);
 
   const toggleTimer = () => {
-    setTimerActive(!timerActive);
+    const nextState = !timerActive;
+    setTimerActive(nextState);
+    if (nextState) {
+      setHasPlanStarted(true);
+      localStorage.setItem('study_coach_has_plan_started', 'true');
+    }
   };
 
   const resetTimer = () => {
@@ -1593,7 +1884,7 @@ EXAM-ORIENTED DIRECTIVES:
     if (coachMode === 'ai' && activeBlockIndex >= 0 && activeBlockIndex < plannerBlocks.length) {
       setTimerSeconds(plannerBlocks[activeBlockIndex].duration);
     } else {
-      setTimerSeconds(timerMode === 'study' ? timerMaxSeconds : 300);
+      setTimerSeconds(timerMode === 'study' ? timerMaxSeconds : breakMaxSeconds);
     }
   };
 
@@ -1622,16 +1913,33 @@ EXAM-ORIENTED DIRECTIVES:
     setTimerMaxSeconds(prev => Math.max(60, prev + secondsChange));
     
     if (activeBlockIndex >= 0 && activeBlockIndex < plannerBlocks.length) {
-      setPlannerBlocks(prev => prev.map((b, idx) => {
-        if (idx === activeBlockIndex) {
-          const newDuration = Math.max(60, b.duration + secondsChange);
-          return {
-            ...b,
-            duration: newDuration
-          };
+      setPlannerBlocks(prev => {
+        // Step 1: Update the duration of the active block
+        const updated = prev.map((b, idx) => {
+          if (idx === activeBlockIndex) {
+            const newDuration = Math.max(60, b.duration + secondsChange);
+            return {
+              ...b,
+              duration: newDuration
+            };
+          }
+          return b;
+        });
+
+        // Step 2: Shift start/end times of the active block and all subsequent blocks
+        for (let i = activeBlockIndex; i < updated.length; i++) {
+          if (i === activeBlockIndex) {
+            updated[i].endMins = updated[i].startMins + (updated[i].duration / 60);
+          } else {
+            updated[i].startMins = updated[i - 1].endMins;
+            updated[i].endMins = updated[i].startMins + (updated[i].duration / 60);
+          }
+          updated[i].startTimeStr = minutesToTimeString(updated[i].startMins);
+          updated[i].endTimeStr = minutesToTimeString(updated[i].endMins);
         }
-        return b;
-      }));
+
+        return updated;
+      });
     }
     
     toast.success(mins > 0 ? `Break extended by ${mins} minutes` : `Break shortened by ${Math.abs(mins)} minutes`);
@@ -1677,6 +1985,10 @@ EXAM-ORIENTED DIRECTIVES:
     
     blocks[0].status = 'active';
     
+    setCompletedStudyMinutes(0);
+    setStudySecondsAccumulator(0);
+    localStorage.setItem('study_coach_completed_study_minutes', '0');
+    
     setPlannerBlocks(blocks);
     setActiveBlockIndex(0);
     setTimerMode(blocks[0].type === 'break' ? 'break' : 'study');
@@ -1684,6 +1996,8 @@ EXAM-ORIENTED DIRECTIVES:
     setTimerMaxSeconds(blocks[0].duration);
     setTimerActive(false);
     setPausedSeconds(0);
+    setHasPlanStarted(false);
+    localStorage.setItem('study_coach_has_plan_started', 'false');
     
     try {
       const extraDetails = [];
@@ -1692,9 +2006,9 @@ EXAM-ORIENTED DIRECTIVES:
       if (plannerHours.trim()) extraDetails.push(`target hours: "${plannerHours.trim()}"`);
       const extraDetailsStr = extraDetails.length > 0 ? `, targeting ${extraDetails.join(' and ')}` : '';
 
-      const prompt = `Student is starting an AI-planned study session from ${plannerStart} to ${plannerEnd} for the goal "${plannerGoal}" with a "${plannerEnergy}" energy level${extraDetailsStr}, targeting the "${targetExam}" exam. 
+      const prompt = `Student is starting an AI-planned study session from ${plannerStart} to ${plannerEnd} for the goal "${plannerGoal}" with a "${plannerEnergy}" energy level${extraDetailsStr}. 
 The plan has ${blocks.filter(b => b.type !== 'break').length} study blocks and ${blocks.filter(b => b.type === 'break').length} breaks.
-As their expert AI Study Coach, write a personalized, highly encouraging, and brief 2-sentence coaching roadmap/strategy to stay motivated and avoid burnout, optimized for "${targetExam}". Keep it under 240 characters. Avoid pleasantries.`;
+As their expert AI Study Coach, write a personalized, highly encouraging, and brief 2-sentence coaching roadmap/strategy to stay motivated and avoid burnout. Focus purely on the study strategy, timing, motivation, and energy management. Do NOT mention the name of any exam (such as "${targetExam}" or similar) anywhere in your response. Keep it under 240 characters. Avoid pleasantries.`;
 
       const response = await fetch('/api/chat/completions', {
         method: 'POST',
@@ -1702,7 +2016,7 @@ As their expert AI Study Coach, write a personalized, highly encouraging, and br
         body: JSON.stringify({
           model: 'meta/llama-3.1-8b-instruct',
           messages: [
-            { role: 'system', content: `You are the expert Website Study Coach for Odisha competitive exams, optimized for the "${targetExam}" exam. Be direct, coaching-focused, and write under 240 characters.` },
+            { role: 'system', content: `You are the expert Website Study Coach. Be direct, coaching-focused, and write under 240 characters. Focus purely on study strategy and do NOT mention the name of any exam under any circumstances.` },
             { role: 'user', content: prompt }
           ],
           temperature: 0.4,
@@ -2408,7 +2722,7 @@ JSON structure:
 
   const renderDailyFocusBoard = () => {
     const dailyTargetMins = 120;
-    const currentMins = completedSessionsCount * 25;
+    const currentMins = completedStudyMinutes;
     const progressPercent = Math.min(100, Math.round((currentMins / dailyTargetMins) * 100));
     
     let statusMessage = "Start your first Pomodoro to kickstart your daily streak!";
@@ -2424,7 +2738,7 @@ JSON structure:
     const TipIcon = currentTip.icon;
 
     return (
-      <div className="bg-slate-50   border border-slate-200/50 rounded-2xl p-4 mt-4 text-left space-y-4 relative overflow-hidden">
+      <div className="bg-gradient-to-b from-slate-50 to-white/70 border border-slate-200/50 rounded-2xl p-4 mt-2.5 text-left space-y-3.5 flex-1 flex flex-col justify-between relative overflow-hidden shadow-xs hover:shadow-sm transition-all duration-300 animate-scale-in">
         <div className="absolute top-0 right-0 w-16 h-16 bg-rose-500/5 rounded-full blur-xl pointer-events-none" />
         
         <div className="space-y-2">
@@ -2437,7 +2751,7 @@ JSON structure:
             </span>
           </div>
 
-          <div className="w-full bg-slate-50 rounded-full h-2.5 overflow-hidden border border-slate-200/50 p-0.5">
+          <div className="w-full bg-slate-50 rounded-full h-2 overflow-hidden border border-slate-200/50 p-0.5">
             <motion.div 
               className="bg-gradient-to-r from-rose-500 via-purple-500 to-indigo-500 h-full rounded-full"
               initial={{ width: 0 }}
@@ -2446,15 +2760,15 @@ JSON structure:
             />
           </div>
           
-          <p className="text-[10px] text-slate-500 italic pl-0.5 leading-tight font-medium">
+          <p className="text-[9.5px] text-slate-500 italic pl-0.5 leading-tight font-medium">
             {statusMessage}
           </p>
         </div>
 
-        <div className="border-t border-slate-200/50 w-full my-1" />
+        <div className="border-t border-slate-200/50 w-full my-0.5" />
 
-        <div className="space-y-2 text-left relative">
-          <div className="flex justify-between items-center">
+        <div className="space-y-2 text-left relative flex-1 flex flex-col justify-between">
+          <div className="flex justify-between items-center shrink-0">
             <span className="inline-flex px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-indigo-500/15 border border-indigo-500/20 text-indigo-650">
               {currentTip.category}
             </span>
@@ -2463,19 +2777,160 @@ JSON structure:
               onClick={() => {
                 setCurrentTipIdx((prev) => (prev + 1) % ODISHA_STUDY_TIPS.length);
               }}
-              className="p-1 border border-slate-200/50 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-white rounded-lg transition-all cursor-pointer flex items-center justify-center"
+              className="p-1 border border-slate-200/50 bg-slate-50 hover:bg-slate-900 text-slate-500 hover:text-white rounded-lg transition-all duration-300 cursor-pointer flex items-center justify-center shadow-xs"
               title="Next Strategy"
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
           
-          <div className="flex gap-3 bg-slate-50 border border-slate-200/50 p-3 rounded-xl min-h-[72px] items-center">
-            <div className="p-2 bg-indigo-500/10 border border-indigo-500/15 rounded-lg text-indigo-650 shrink-0">
-              <TipIcon className="w-4 h-4" />
+          <div className="flex gap-3 bg-white border border-slate-200/40 p-3 rounded-xl flex-1 items-center shadow-2xs hover:shadow-xs transition-all duration-300">
+            <div className="p-2 bg-indigo-500/10 border border-indigo-500/15 rounded-xl text-indigo-650 shrink-0">
+              <TipIcon className="w-5 h-5" />
             </div>
-            <p className="text-[11px] text-slate-700 leading-relaxed font-semibold">
+            <p className="text-[11px] sm:text-xs text-slate-700 leading-relaxed font-semibold">
               {currentTip.tip}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderAiFocusProgressBoard = () => {
+    const isPlanActive = plannerBlocks.length > 0;
+    
+    let currentMins = completedStudyMinutes;
+    let targetMins = 120;
+    let progressPercent = 0;
+    let titleText = "AI Focus Target Progress";
+    let statusMessage = "";
+
+    if (isPlanActive) {
+      const completedBlocksCount = plannerBlocks.filter(b => b.status === 'completed' && b.type !== 'break').length;
+      const totalBlocksCount = plannerBlocks.filter(b => b.type !== 'break').length;
+
+      const completedStudySecs = plannerBlocks
+        .filter(b => b.status === 'completed' && b.type !== 'break')
+        .reduce((acc, b) => acc + (b.actuallyStudiedSeconds || 0), 0);
+
+      const activeBlock = plannerBlocks[activeBlockIndex];
+      const activeStudySecs = (activeBlock && activeBlock.status === 'active' && activeBlock.type !== 'break')
+        ? (activeBlock.duration - timerSeconds)
+        : 0;
+
+      const totalStudySecs = plannerBlocks
+        .filter(b => b.type !== 'break')
+        .reduce((acc, b) => acc + b.duration, 0);
+
+      const actualStudyMins = Math.floor((completedStudySecs + activeStudySecs) / 60);
+      const totalStudyMins = Math.round(totalStudySecs / 60);
+
+      currentMins = actualStudyMins;
+      targetMins = totalStudyMins;
+      progressPercent = targetMins > 0 ? Math.min(100, Math.round((currentMins / targetMins) * 100)) : 0;
+      titleText = "AI Plan Progress";
+
+      if (progressPercent === 0) {
+        statusMessage = "Ready to start your AI study plan. Click Start Focus below!";
+      } else if (progressPercent > 0 && progressPercent < 100) {
+        statusMessage = `AI Plan execution underway. ${completedBlocksCount} of ${totalBlocksCount} study sessions done.`;
+      } else if (progressPercent >= 100) {
+        statusMessage = "Outstanding! You have completed 100% of your AI Study Plan today.";
+      }
+    } else {
+      let dailyTargetMins = 120;
+      if (plannerStart && plannerEnd) {
+        const previewBlocks = generateStudyPlan(
+          plannerStart,
+          plannerEnd,
+          plannerGoal,
+          plannerEnergy,
+          {
+            chapters: plannerChapters,
+            questions: plannerQuestions,
+            targetHours: plannerHours
+          }
+        );
+        const totalStudySecs = previewBlocks
+          .filter(b => b.type !== 'break')
+          .reduce((acc, b) => acc + b.duration, 0);
+        if (totalStudySecs > 0) {
+          dailyTargetMins = Math.round(totalStudySecs / 60);
+        }
+      }
+      
+      currentMins = completedStudyMinutes;
+      targetMins = dailyTargetMins;
+      progressPercent = targetMins > 0 ? Math.min(100, Math.round((currentMins / dailyTargetMins) * 100)) : 0;
+      
+      if (progressPercent === 0) {
+        statusMessage = "Set your start/end times above and click Generate AI Study Plan!";
+      } else if (progressPercent > 0 && progressPercent < 50) {
+        statusMessage = "Good start! Keep going with your AI schedule to build focus discipline.";
+      } else if (progressPercent >= 50 && progressPercent < 100) {
+        statusMessage = "Excellent momentum! You are over halfway to your daily focus target.";
+      } else if (progressPercent >= 100) {
+        statusMessage = "Target reached! Outstanding dedication to your AI Study Coach sessions today.";
+      }
+    }
+
+    const currentInsight = AI_COACH_INSIGHTS[currentTipIdx % AI_COACH_INSIGHTS.length];
+    const InsightIcon = currentInsight.icon;
+
+    return (
+      <div className="bg-gradient-to-b from-indigo-50/50 to-white/70 border border-indigo-100/40 rounded-2xl p-4 mt-2.5 text-left space-y-3.5 flex-1 flex flex-col justify-between relative overflow-hidden shadow-xs hover:shadow-sm transition-all duration-300 animate-scale-in">
+        <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-500/5 rounded-full blur-xl pointer-events-none" />
+        
+        <div className="space-y-2">
+          <div className="flex justify-between items-center text-[10px] font-bold text-slate-500">
+            <span className="flex items-center gap-1.5 uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-650 animate-pulse" /> {titleText}
+            </span>
+            <span className="font-mono text-indigo-650 text-[11px] bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-lg font-bold">
+              {currentMins} / {targetMins} min
+            </span>
+          </div>
+
+          <div className="w-full bg-slate-50 rounded-full h-2 overflow-hidden border border-slate-200/50 p-0.5">
+            <motion.div 
+              className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 h-full rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPercent}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            />
+          </div>
+          
+          <p className="text-[9.5px] text-slate-500 italic pl-0.5 leading-tight font-medium">
+            {statusMessage}
+          </p>
+        </div>
+
+        <div className="border-t border-slate-200/50 w-full my-0.5" />
+
+        <div className="space-y-2 text-left relative flex-1 flex flex-col justify-between">
+          <div className="flex justify-between items-center shrink-0">
+            <span className="inline-flex px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-indigo-500/15 border border-indigo-500/20 text-indigo-650">
+              {currentInsight.category}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setCurrentTipIdx((prev) => (prev + 1) % AI_COACH_INSIGHTS.length);
+              }}
+              className="p-1 border border-slate-200/50 bg-slate-50 hover:bg-slate-900 text-slate-500 hover:text-white rounded-lg transition-all duration-300 cursor-pointer flex items-center justify-center shadow-xs"
+              title="Next Strategy"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          
+          <div className="flex gap-3 bg-white border border-indigo-500/10 p-3 rounded-xl flex-1 items-center shadow-2xs hover:shadow-xs transition-all duration-300">
+            <div className="p-2 bg-indigo-500/10 border border-indigo-500/15 rounded-xl text-indigo-650 shrink-0">
+              <InsightIcon className="w-5 h-5" />
+            </div>
+            <p className="text-[11px] sm:text-xs text-slate-700 leading-relaxed font-semibold">
+              {currentInsight.tip}
             </p>
           </div>
         </div>
@@ -2573,7 +3028,7 @@ JSON structure:
                 <button
                   type="button"
                   onClick={() => setConfirmDialog(null)}
-                  className="px-4 py-2 border border-slate-200/60 hover:bg-slate-100 text-slate-700 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer active:translate-y-0.5"
+                  className="px-4 py-2 border border-slate-200/60 hover:border-slate-800/85 bg-white hover:bg-slate-900 text-slate-700 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 cursor-pointer active:translate-y-0.5 shadow-xs hover:shadow-sm"
                 >
                   {confirmDialog.cancelText || 'Cancel'}
                 </button>
@@ -2919,7 +3374,12 @@ JSON structure:
         <div className="lg:col-span-5 bg-white text-slate-600 border border-slate-200/60 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col h-auto lg:h-[720px] relative ">
           
           {/* Ambient Glows */}
-          <div className="absolute -top-10 -right-10 w-24 h-24 bg-rose-500/5 rounded-full blur-xl pointer-events-none" />
+          <div className={cn(
+            "absolute -top-10 -right-10 w-24 h-24 rounded-full blur-xl pointer-events-none transition-all duration-500",
+            activeRightTab === 'planner'
+              ? (coachMode === 'ai' ? "bg-indigo-500/10" : "bg-rose-500/5")
+              : "bg-rose-500/5"
+          )} />
           <div className="absolute -bottom-10 -left-10 w-20 h-20 bg-teal-500/5 rounded-full blur-xl pointer-events-none" />
 
           {/* Glassmorphic Tab Bar */}
@@ -2971,7 +3431,7 @@ JSON structure:
           </div>
 
           {/* Scrollable content pane */}
-          <div className="flex-1 overflow-y-auto p-5 custom-scrollbar relative z-10">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3.5 pb-8 custom-scrollbar relative z-10 flex flex-col">
             <AnimatePresence mode="wait">
               {activeRightTab === 'planner' && (
                 <motion.div
@@ -2980,9 +3440,12 @@ JSON structure:
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.15 }}
-                  className="space-y-4 text-left"
+                  className="space-y-3 text-left flex-1 flex flex-col min-h-full"
                 >
-            <div className="absolute -top-10 -right-10 w-24 h-24 bg-rose-500/10 rounded-full blur-xl pointer-events-none" />
+            <div className={cn(
+              "absolute -top-10 -right-10 w-24 h-24 rounded-full blur-xl pointer-events-none transition-all duration-500",
+              coachMode === 'ai' ? "bg-indigo-500/15" : "bg-rose-500/10"
+            )} />
             
             {/* Header Selector */}
             <div className="flex justify-between items-center border-b border-slate-200/50 pb-3">
@@ -3014,13 +3477,13 @@ JSON structure:
                   }}
                   className={cn(
                     "px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded-md transition-all cursor-pointer relative",
-                    coachMode === 'manual' ? "text-slate-950" : "text-slate-500 hover:text-slate-800"
+                    coachMode === 'manual' ? "text-white" : "text-slate-500 hover:text-slate-800"
                   )}
                 >
                   {coachMode === 'manual' && (
                     <motion.div
                       layoutId="activeCoachModeBg"
-                      className="absolute inset-0 bg-rose-500 rounded-md z-0 shadow-sm"
+                      className="absolute inset-0 bg-gradient-to-r from-[#8a1c36] to-[#b83a55] rounded-md z-0 shadow-sm"
                       transition={{ type: "spring", stiffness: 350, damping: 28 }}
                     />
                   )}
@@ -3057,40 +3520,55 @@ JSON structure:
 
             {coachMode === 'manual' ? (
               /* MANUAL POMODORO MODE */
-              <div className="space-y-4">
+              <div className="space-y-3 animate-scale-in flex-1 flex flex-col">
                 {/* Completed session counter */}
-                <div className="flex justify-between items-center bg-slate-50 border border-slate-200/50 px-3.5 py-2 rounded-xl">
+                <div className="flex justify-between items-center bg-white/60 backdrop-blur-md border border-slate-200/50 px-3 py-1.5 rounded-xl premium-shadow">
                   <span className="text-[10px] font-bold text-slate-500">Completed Focus Sessions</span>
-                  <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-amber-650 bg-amber-400/5 border border-amber-400/10 px-2.5 py-0.5 rounded-lg">
-                    <Trophy className="w-3.5 h-3.5 text-amber-650" />
+                  <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-amber-700 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full shadow-2xs">
+                    <Trophy className="w-3.5 h-3.5 text-amber-600 animate-trophy-bounce shrink-0" />
                     <span>Done: {completedSessionsCount}</span>
                     {completedSessionsCount > 0 && (
                       <button
                         type="button"
                         onClick={() => {
                           setCompletedSessionsCount(0);
+                          setCompletedStudyMinutes(0);
                           localStorage.removeItem('study_coach_completed_sessions');
+                          localStorage.removeItem('study_coach_completed_study_minutes');
                           toast.success("Sessions reset");
                         }}
-                        className="ml-1 text-slate-500 hover:text-white transition-colors cursor-pointer text-[8px]"
+                        className="ml-1 text-amber-700 hover:text-amber-950 transition-colors cursor-pointer flex items-center justify-center shrink-0"
                         title="Reset completed count"
                       >
-                        ×
+                        <X className="w-2.5 h-2.5 stroke-[3.5px]" />
                       </button>
                     )}
                   </div>
                 </div>
 
                 {/* Circular Timer & Controls */}
-                <div className="flex flex-col sm:flex-row items-center gap-6 bg-slate-50 border border-slate-200/50 p-5 rounded-2xl">
-                  <div className="relative flex items-center justify-center w-24 h-24 shrink-0 mx-auto sm:mx-0">
-                    <svg className="w-full h-full transform -rotate-90">
+                <div className="flex flex-col sm:flex-row items-center gap-4 bg-white/60 backdrop-blur-md border border-slate-200/50 p-3.5 rounded-2xl premium-shadow relative overflow-hidden">
+                  {/* Subtle decorative background pattern */}
+                  <div className="absolute inset-0 grid-bg-fine opacity-20 pointer-events-none" />
+                  
+                  <div className="relative flex items-center justify-center w-24 h-24 shrink-0 mx-auto sm:mx-0 bg-white/80 rounded-full border border-slate-200/40 p-1.5 shadow-inner relative z-10">
+                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 96 96">
+                      <defs>
+                        <linearGradient id="studyTimerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#8a1c36" />
+                          <stop offset="100%" stopColor="#b83a55" />
+                        </linearGradient>
+                        <linearGradient id="breakTimerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#059669" />
+                          <stop offset="100%" stopColor="#10b981" />
+                        </linearGradient>
+                      </defs>
                       <circle
                         cx="48"
                         cy="48"
                         r="40"
-                        className="text-slate-800"
-                        strokeWidth="5"
+                        className="text-slate-100"
+                        strokeWidth="5.5"
                         stroke="currentColor"
                         fill="transparent"
                       />
@@ -3098,38 +3576,43 @@ JSON structure:
                         cx="48"
                         cy="48"
                         r="40"
-                        className={cn(
-                          "transition-all duration-300",
-                          timerMode === 'study' ? "text-rose-500" : "text-brand-600"
-                        )}
-                        strokeWidth="5"
+                        strokeWidth="5.5"
                         strokeDasharray="251.32"
-                        strokeDashoffset={251.32 * (1 - (timerSeconds / (timerMode === 'study' ? timerMaxSeconds : 300)))}
+                        strokeDashoffset={251.32 * (1 - (timerSeconds / (timerMode === 'study' ? timerMaxSeconds : breakMaxSeconds)))}
                         strokeLinecap="round"
-                        stroke="currentColor"
+                        stroke={timerMode === 'study' ? "url(#studyTimerGrad)" : "url(#breakTimerGrad)"}
                         fill="transparent"
+                        className={cn("transition-all duration-300", timerActive && "animate-pulse-soft")}
                       />
                     </svg>
-                    <div className="absolute flex flex-col items-center justify-center">
-                      <span className="text-xl font-mono font-black text-slate-800 tracking-wider">
+                    <div className="absolute flex flex-col items-center justify-center w-full px-2 text-center">
+                      <span className={cn(
+                        "font-mono font-black text-slate-800 transition-all duration-200",
+                        formatTime(timerSeconds).length > 5 
+                          ? (formatTime(timerSeconds).length > 6 ? "text-[12px] tracking-tighter" : "text-[14px] tracking-tight")
+                          : "text-xl tracking-wider"
+                      )}>
                         {formatTime(timerSeconds)}
                       </span>
-                      <span className="text-[7px] font-black uppercase tracking-wider text-slate-500">
+                      <span className={cn(
+                        "text-[8px] font-black uppercase tracking-widest mt-0.5",
+                        timerMode === 'study' ? "text-[#8a1c36]" : "text-emerald-600"
+                      )}>
                         {timerMode === 'study' ? 'focus' : 'break'}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex-1 w-full space-y-3">
+                  <div className="flex-1 w-full space-y-2 relative z-10">
                     <div className="flex items-center gap-2 w-full">
                       <button
                         type="button"
                         onClick={toggleTimer}
                         className={cn(
-                          "flex-1 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer active:scale-95 text-center",
+                          "flex-1 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 cursor-pointer active:scale-95 text-center text-white shadow-md premium-btn-transition",
                           timerActive 
-                            ? "bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-600/10" 
-                            : "bg-rose-500 hover:bg-rose-400 text-slate-950 shadow-md shadow-rose-500/10"
+                            ? "bg-gradient-to-r from-amber-600 to-amber-500 shadow-amber-600/20" 
+                            : "bg-gradient-to-r from-[#8a1c36] to-[#b83a55] shadow-[#8a1c36]/20"
                         )}
                       >
                         {timerActive ? 'Pause' : 'Start'}
@@ -3137,7 +3620,7 @@ JSON structure:
                       <button
                         type="button"
                         onClick={resetTimer}
-                        className="p-2.5 border border-slate-200/60 hover:bg-slate-100 text-slate-700 rounded-xl transition-all cursor-pointer"
+                        className="p-2 border border-slate-200/80 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 rounded-xl transition-all duration-300 cursor-pointer shadow-2xs hover:shadow-xs active:scale-95"
                         title="Reset Timer"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
@@ -3150,9 +3633,9 @@ JSON structure:
                         const newMode = timerMode === 'study' ? 'break' : 'study';
                         setTimerMode(newMode);
                         setTimerActive(false);
-                        setTimerSeconds(newMode === 'study' ? timerMaxSeconds : 300);
+                        setTimerSeconds(newMode === 'study' ? timerMaxSeconds : breakMaxSeconds);
                       }}
-                      className="w-full py-1.5 border border-slate-200/60 hover:bg-slate-100 text-[9px] font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center"
+                      className="w-full py-1.5 border border-slate-200 bg-white/50 hover:bg-slate-100/80 text-[9px] font-black uppercase tracking-wider rounded-xl transition-all duration-300 cursor-pointer text-center text-slate-600 hover:text-slate-900 hover:shadow-2xs active:scale-98"
                     >
                       Switch to {timerMode === 'study' ? 'Break' : 'Study'}
                     </button>
@@ -3160,36 +3643,175 @@ JSON structure:
                 </div>
 
                 {/* Presets and Focus Target */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-left">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">Study Presets</label>
-                    <div className="grid grid-cols-3 gap-1 p-1 bg-slate-50 rounded-xl border border-slate-200/50 text-center">
-                      {[25, 45, 60].map((mins) => {
-                        const secs = mins * 60;
-                        const isSelected = timerMaxSeconds === secs && timerMode === 'study';
-                        return (
-                          <button
-                            type="button"
-                            key={mins}
-                            disabled={timerActive}
-                            onClick={() => changePreset(mins)}
-                            className={cn(
-                              "py-1 rounded text-[9px] font-black uppercase transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed",
-                              isSelected ? "bg-rose-500 text-slate-950 font-black shadow-sm" : "text-slate-500 hover:text-slate-800"
-                            )}
-                          >
-                            {mins}m
-                          </button>
-                        );
-                      })}
+                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">
+                      {timerMode === 'study' ? 'Study Presets' : 'Break Presets'}
+                    </label>
+                    <div className="grid grid-cols-4 gap-1 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 text-center relative overflow-hidden">
+                      {timerMode === 'study' ? (
+                        <>
+                          {[25, 45, 60].map((mins) => {
+                            const secs = mins * 60;
+                            const isSelected = timerMaxSeconds === secs;
+                            return (
+                              <button
+                                type="button"
+                                key={mins}
+                                disabled={timerActive}
+                                onClick={() => {
+                                  if (!timerActive) {
+                                    setTimerMaxSeconds(secs);
+                                    setTimerSeconds(secs);
+                                    toast.success(`Study duration set to ${mins} minutes`);
+                                  }
+                                }}
+                                className={cn(
+                                  "py-1 rounded-lg text-[9px] font-black uppercase transition-all duration-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed relative",
+                                  isSelected 
+                                    ? "text-[#8a1c36] font-black" 
+                                    : "text-slate-500 hover:text-slate-800"
+                                )}
+                              >
+                                {isSelected && (
+                                  <motion.div
+                                    layoutId="activePresetBg"
+                                    className="absolute inset-0 bg-white shadow-2xs border border-slate-200/40 rounded-lg z-0"
+                                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                                  />
+                                )}
+                                <span className="relative z-10">{mins}m</span>
+                              </button>
+                            );
+                          })}
+                          
+                          {![1500, 2700, 3600].includes(timerMaxSeconds) ? (
+                            <div className="relative rounded-lg z-10 flex items-center justify-center h-full">
+                              <motion.div
+                                layoutId="activePresetBg"
+                                className="absolute inset-0 bg-white shadow-2xs border border-slate-200/40 rounded-lg z-0"
+                                transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                              />
+                              <input
+                                type="number"
+                                disabled={timerActive}
+                                value={timerMaxSeconds / 60}
+                                onChange={(e) => {
+                                  const val = Math.min(999, Math.max(1, parseInt(e.target.value) || 1));
+                                  if (!timerActive) {
+                                    setTimerMaxSeconds(val * 60);
+                                    setTimerSeconds(val * 60);
+                                  }
+                                }}
+                                className="w-full text-center bg-transparent text-[#8a1c36] font-black text-[9px] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none relative z-10 p-0"
+                                placeholder="Min"
+                                min="1"
+                                max="999"
+                              />
+                              <span className="text-[7px] text-[#8a1c36]/60 font-bold pr-1 relative z-10 select-none">m</span>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={timerActive}
+                              onClick={() => {
+                                if (!timerActive) {
+                                  setTimerMaxSeconds(1800);
+                                  setTimerSeconds(1800);
+                                }
+                              }}
+                              className="py-1 rounded-lg text-[9px] font-black uppercase transition-all duration-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-slate-500 hover:text-slate-800"
+                            >
+                              Custom
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {[5, 10, 15].map((mins) => {
+                            const secs = mins * 60;
+                            const isSelected = breakMaxSeconds === secs;
+                            return (
+                              <button
+                                type="button"
+                                key={mins}
+                                disabled={timerActive}
+                                onClick={() => {
+                                  if (!timerActive) {
+                                    setBreakMaxSeconds(secs);
+                                    setTimerSeconds(secs);
+                                    toast.success(`Break duration set to ${mins} minutes`);
+                                  }
+                                }}
+                                className={cn(
+                                  "py-1 rounded-lg text-[9px] font-black uppercase transition-all duration-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed relative",
+                                  isSelected 
+                                    ? "text-emerald-700 font-black" 
+                                    : "text-slate-500 hover:text-slate-800"
+                                )}
+                              >
+                                {isSelected && (
+                                  <motion.div
+                                    layoutId="activePresetBg"
+                                    className="absolute inset-0 bg-white shadow-2xs border border-slate-200/40 rounded-lg z-0"
+                                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                                  />
+                                )}
+                                <span className="relative z-10">{mins}m</span>
+                              </button>
+                            );
+                          })}
+                          
+                          {![300, 600, 900].includes(breakMaxSeconds) ? (
+                            <div className="relative rounded-lg z-10 flex items-center justify-center h-full">
+                              <motion.div
+                                layoutId="activePresetBg"
+                                className="absolute inset-0 bg-white shadow-2xs border border-slate-200/40 rounded-lg z-0"
+                                transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                              />
+                              <input
+                                type="number"
+                                disabled={timerActive}
+                                value={breakMaxSeconds / 60}
+                                onChange={(e) => {
+                                  const val = Math.min(999, Math.max(1, parseInt(e.target.value) || 1));
+                                  if (!timerActive) {
+                                    setBreakMaxSeconds(val * 60);
+                                    setTimerSeconds(val * 60);
+                                  }
+                                }}
+                                className="w-full text-center bg-transparent text-emerald-700 font-black text-[9px] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none relative z-10 p-0"
+                                placeholder="Min"
+                                min="1"
+                                max="999"
+                              />
+                              <span className="text-[7px] text-emerald-700/60 font-bold pr-1 relative z-10 select-none">m</span>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={timerActive}
+                              onClick={() => {
+                                if (!timerActive) {
+                                  setBreakMaxSeconds(720);
+                                  setTimerSeconds(720);
+                                }
+                              }}
+                              className="py-1 rounded-lg text-[9px] font-black uppercase transition-all duration-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-slate-500 hover:text-slate-800"
+                            >
+                              Custom
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">Session Target</label>
                     {timerActive ? (
-                      <div className="bg-slate-50 border border-slate-200/50 px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-slate-700 flex items-center gap-1.5 truncate">
-                        <span className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse shrink-0" />
+                      <div className="bg-brand-50/30 border border-brand-100/50 px-2.5 py-1.5 rounded-xl text-[10px] font-extrabold text-[#8a1c36] flex items-center gap-2 truncate shadow-2xs">
+                        <span className="w-1.5 h-1.5 bg-[#8a1c36] rounded-full animate-ping shrink-0" />
                         <span className="truncate">{timerGoal.trim() || "Deep Study Block"}</span>
                       </div>
                     ) : (
@@ -3198,7 +3820,7 @@ JSON structure:
                         value={timerGoal}
                         onChange={(e) => setTimerGoal(e.target.value)}
                         placeholder="Focus Target (e.g. History)"
-                        className="w-full bg-slate-50 border border-slate-200/60 rounded-xl px-2.5 py-1 text-[10px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-rose-500/40 focus:border-rose-500/50 transition-all font-semibold"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-[10px] text-slate-850 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#8a1c36]/10 focus:border-[#8a1c36] transition-all duration-300 font-semibold shadow-2xs"
                       />
                     )}
                   </div>
@@ -3207,9 +3829,9 @@ JSON structure:
                 <button
                   type="button"
                   onClick={handleNotifyCoachTimer}
-                  className="w-full py-2 bg-slate-100 hover:bg-slate-200/80 text-slate-700 hover:text-white border border-slate-200/50 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  className="w-full py-2 bg-white hover:bg-slate-950 hover:text-white border border-slate-200 hover:border-slate-950 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md active:scale-98 group"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-[#8A1C36] animate-pulse" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#8a1c36] group-hover:text-brand-300 transition-colors animate-pulse" />
                   Notify Study Coach & Request Motivation
                 </button>
 
@@ -3218,28 +3840,24 @@ JSON structure:
               </div>
             ) : (
               /* AI STUDY COACH & PLANNED TIMER MODE */
-              <div className="space-y-4">
+              <div className="space-y-4 flex-1 flex flex-col">
                 {activeBlockIndex === -1 ? (
                   /* AI PLAN GENERATOR FORM */
-                  <div className="space-y-4 text-left animate-fade-up">
+                  <div className="space-y-4 text-left animate-fade-up flex-1 flex flex-col">
                     {/* Times */}
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">Study Start Time</label>
-                        <input
-                          type="time"
+                        <TimePicker
                           value={plannerStart}
-                          onChange={(e) => setPlannerStart(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-200/60 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/50 transition-all font-semibold"
+                          onChange={setPlannerStart}
                         />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">Study End Time</label>
-                        <input
-                          type="time"
+                        <TimePicker
                           value={plannerEnd}
-                          onChange={(e) => setPlannerEnd(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-200/60 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 focus:border-indigo-500/50 transition-all font-semibold"
+                          onChange={setPlannerEnd}
                         />
                       </div>
                     </div>
@@ -3368,7 +3986,7 @@ JSON structure:
                     </button>
 
                     {/* Daily Focus Motivation & Coaching Board */}
-                    {renderDailyFocusBoard()}
+                    {renderAiFocusProgressBoard()}
                   </div>
                 ) : (
                   /* AI PLAN ACTIVE DASHBOARD */
@@ -3440,8 +4058,13 @@ JSON structure:
                           />
                         </svg>
                         
-                        <div className="absolute flex flex-col items-center justify-center text-center">
-                          <span className="text-2xl font-mono font-black text-slate-800 tracking-wider">
+                        <div className="absolute flex flex-col items-center justify-center text-center w-full px-2">
+                          <span className={cn(
+                            "font-mono font-black text-slate-800 transition-all duration-200",
+                            formatTime(timerSeconds).length > 5
+                              ? (formatTime(timerSeconds).length > 6 ? "text-[14px] tracking-tighter" : "text-base tracking-tight")
+                              : "text-2xl tracking-wider"
+                          )}>
                             {formatTime(timerSeconds)}
                           </span>
                           <span className={cn(
@@ -3455,7 +4078,7 @@ JSON structure:
 
                       {/* Session Details & Action Buttons */}
                       <div className="flex-1 w-full text-left space-y-3.5">
-                        <div>
+                        <div className="pl-[3px]">
                           <span className="text-[8px] font-black uppercase tracking-widest text-slate-500 block mb-0.5">Active Session</span>
                           <h5 className="text-sm font-extrabold text-slate-900 truncate">
                             {plannerBlocks[activeBlockIndex]?.name || "Focus Session"}
@@ -3532,14 +4155,17 @@ JSON structure:
                     {/* Timeline RoadMap View */}
                     <div className="space-y-2 text-left">
                       <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">Study Roadmap & Timeline</span>
-                      <div className="bg-slate-50 border border-slate-200/50 rounded-2xl p-4 space-y-4">
-                        <div className="relative border-l border-slate-200/60 ml-2.5 pl-4 space-y-4">
+                      <div 
+                        ref={roadmapContainerRef}
+                        className="bg-slate-50 border border-slate-200/50 rounded-2xl p-4 max-h-[320px] overflow-y-auto no-scrollbar scroll-smooth relative"
+                      >
+                        <div className="relative border-l border-slate-200/60 ml-2.5 pl-4 space-y-4 pr-1">
                           {plannerBlocks.map((b, idx) => {
                             const isCompleted = b.status === 'completed';
                             const isActive = idx === activeBlockIndex;
                             
                             return (
-                              <div key={b.id} className="relative flex items-start justify-between text-xs">
+                              <div key={b.id} data-active={isActive} className="relative flex items-start justify-between text-xs">
                                 <div className={cn(
                                   "absolute -left-[22.5px] w-4.5 h-4.5 rounded-full flex items-center justify-center border text-[9px] font-black transition-all",
                                   isCompleted 
@@ -3580,6 +4206,9 @@ JSON structure:
                       </div>
                     </div>
 
+                    {/* AI Focus Target Progress */}
+                    {renderAiFocusProgressBoard()}
+
                     {/* Discard plan button */}
                     <button
                       type="button"
@@ -3598,11 +4227,13 @@ JSON structure:
                             setTimerMode('study');
                             setPausedSeconds(0);
                             setCoachStrategy('');
+                            setHasPlanStarted(false);
+                            localStorage.setItem('study_coach_has_plan_started', 'false');
                             toast.success("AI Study Plan discarded.");
                           }
                         });
                       }}
-                      className="w-full py-2 bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/20 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                      className="w-full py-2 bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/20 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-1.5 mb-4"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       Discard AI Plan & Reset
@@ -3709,6 +4340,16 @@ JSON structure:
                         <h5 className="text-xs font-bold text-slate-800 pr-8 leading-relaxed">
                           Q. <MathTextRenderer text={bq.question} />
                         </h5>
+                        {(() => {
+                          const question = bq;
+                          console.log("QUESTION", question);
+                          console.log("DIAGRAM", question.diagram);
+                          console.log("TYPE", question.diagram?.type);
+                          return null;
+                        })()}
+                        {bq.diagram ? (
+                          <DiagramRenderer diagram={bq.diagram} data={bq.diagram} />
+                        ) : null}
                         <div className="space-y-1.5">
                           {bq.options.map((opt: string, oIdx: number) => (
                             <div 
@@ -3720,7 +4361,7 @@ JSON structure:
                                   : "bg-slate-50 border-slate-200/50 text-slate-500"
                               )}
                             >
-                              <span><MathTextRenderer text={opt} /></span>
+                              <span><MathTextRenderer text={opt} isOption /></span>
                               {bq.correctOption === oIdx && <CheckCircle2 className="w-3 h-3 text-emerald-650 shrink-0" />}
                             </div>
                           ))}
@@ -3932,8 +4573,9 @@ JSON structure:
 
                     <button
                       onClick={() => triggerCustomQuiz(quizSubject, quizDifficulty, quizSize)}
-                      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-teal-500 text-slate-900 text-xs font-black uppercase tracking-widest hover:bg-teal-400 transition-all cursor-pointer shadow-lg shadow-teal-500/20 active:translate-y-0.5"
+                      className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl premium-gradient text-white text-xs font-black uppercase tracking-widest hover:premium-glow transition-all duration-300 cursor-pointer shadow-lg shadow-brand-500/15 active:scale-98 hover:scale-[1.01]"
                     >
+                      <Sparkles className="w-4 h-4 text-white animate-pulse" />
                       Generate AI Practice Quiz
                       <Play className="w-3.5 h-3.5 fill-white text-white" />
                     </button>
@@ -4016,6 +4658,16 @@ JSON structure:
                               )} />
                             </button>
                           </div>
+                          {(() => {
+                            const question = q;
+                            console.log("QUESTION", question);
+                            console.log("DIAGRAM", question.diagram);
+                            console.log("TYPE", question.diagram?.type);
+                            return null;
+                          })()}
+                          {q.diagram ? (
+                            <DiagramRenderer diagram={q.diagram} data={q.diagram} />
+                          ) : null}
                           <div className="grid grid-cols-1 gap-2">
                             {q.options.map((opt: string, optIdx: number) => {
                               const isSelected = selectedAnswers[qIdx] === optIdx;
@@ -4044,7 +4696,7 @@ JSON structure:
                                     optionStyle
                                   )}
                                 >
-                                  <span><MathTextRenderer text={opt} /></span>
+                                  <span><MathTextRenderer text={opt} isOption /></span>
                                   {quizSubmitted && isCorrect && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-650 shrink-0" />}
                                 </button>
                               );
@@ -4618,7 +5270,7 @@ JSON structure:
                   </button>
                   <button
                     onClick={() => setShowAddCollection(true)}
-                    className="flex-1 py-3 border border-slate-200/60 hover:bg-slate-100 text-slate-700 hover:text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer active:translate-y-0.5"
+                    className="flex-1 py-3 border border-slate-200/60 hover:border-slate-800/80 bg-white hover:bg-slate-900 text-slate-700 hover:text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all duration-300 cursor-pointer active:translate-y-0.5 shadow-sm hover:shadow-md hover:shadow-slate-900/5"
                   >
                     Create Manually
                   </button>
