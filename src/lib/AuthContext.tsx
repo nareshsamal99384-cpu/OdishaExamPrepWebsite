@@ -16,8 +16,8 @@ interface AuthContextType {
   hasFullAccess: boolean;
   loginAsAdmin: (adminData: any) => void;
   logout: () => Promise<void>;
-  grantFullAccess: () => Promise<void>;
-  unlockItem: (itemId: string) => Promise<void>;
+  grantFullAccess: (paymentDetails?: { pricePaid: number; orderId: string; paymentId: string }) => Promise<void>;
+  unlockItem: (itemId: string, paymentDetails?: { pricePaid: number; orderId: string; paymentId: string }) => Promise<void>;
   hasAccessTo: (itemId: string, examId?: string) => boolean;
   guestUsage: { questions: number; tests: number };
   incrementGuestUsage: (type: 'questions' | 'tests') => void;
@@ -174,10 +174,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const isAdmin = profile?.role === 'admin' || manualAdmin?.role === 'admin';
   const hasFullAccess = isAdmin || profile?.hasFullAccess === true;
 
-  const grantFullAccess = async () => {
+  const grantFullAccess = async (paymentDetails?: { pricePaid: number; orderId: string; paymentId: string }) => {
     if (!user) return;
-    const updatedProfile = { ...profile, hasFullAccess: true };
-    const { error } = await supabase.auth.updateUser({ data: { hasFullAccess: true } });
+    const currentRecords = profile?.purchaseRecords || [];
+    let newRecords = [...currentRecords];
+
+    if (paymentDetails) {
+      const exists = newRecords.some(r => r.paymentId === paymentDetails.paymentId || r.orderId === paymentDetails.orderId);
+      if (!exists) {
+        newRecords.push({
+          purchaseId: `pay_${paymentDetails.paymentId}`,
+          itemId: 'site_wide_full_access',
+          itemType: 'exam_bundle' as const,
+          purchasedAt: new Date().toISOString(),
+          pricePaid: paymentDetails.pricePaid,
+          paymentId: paymentDetails.paymentId,
+          orderId: paymentDetails.orderId,
+          grantedEntitlements: ['site_wide_full_access']
+        });
+      }
+    }
+
+    const updatedProfile = { 
+      ...profile, 
+      hasFullAccess: true, 
+      purchaseRecords: newRecords 
+    };
+    const { error } = await supabase.auth.updateUser({ 
+      data: { 
+        hasFullAccess: true,
+        purchaseRecords: newRecords
+      } 
+    });
     
     if (error) {
       console.error("Metadata update failed:", error);
@@ -187,21 +215,54 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const unlockItem = async (itemId: string) => {
+  const unlockItem = async (
+    itemId: string, 
+    paymentDetails?: { pricePaid: number; orderId: string; paymentId: string }
+  ) => {
     if (!user || !profile) return;
     const currentPurchased = profile.purchasedSeries || [];
-    if (!currentPurchased.includes(itemId)) {
-      const newPurchased = [...currentPurchased, itemId];
-      const updatedProfile = { ...profile, purchasedSeries: newPurchased };
-      
-      const { error } = await supabase.auth.updateUser({ data: { purchasedSeries: newPurchased } });
-      
-      if (error) {
-        console.error("Metadata update failed:", error);
-        alert("Payment successful, but we couldn't update your profile automatically. Please contact support.");
-      } else {
-        setProfile(updatedProfile);
+    const currentRecords = profile.purchaseRecords || [];
+
+    let newPurchased = [...currentPurchased];
+    if (!newPurchased.includes(itemId)) {
+      newPurchased.push(itemId);
+    }
+
+    let newRecords = [...currentRecords];
+    if (paymentDetails) {
+      const exists = newRecords.some(r => r.paymentId === paymentDetails.paymentId || r.orderId === paymentDetails.orderId);
+      if (!exists) {
+        newRecords.push({
+          purchaseId: `pay_${paymentDetails.paymentId}`,
+          itemId,
+          itemType: itemId.startsWith('exam_bundle_') ? 'exam_bundle' as const : 'mock_test' as const,
+          purchasedAt: new Date().toISOString(),
+          pricePaid: paymentDetails.pricePaid,
+          paymentId: paymentDetails.paymentId,
+          orderId: paymentDetails.orderId,
+          grantedEntitlements: [itemId]
+        });
       }
+    }
+
+    const updatedProfile = { 
+      ...profile, 
+      purchasedSeries: newPurchased,
+      purchaseRecords: newRecords
+    };
+    
+    const { error } = await supabase.auth.updateUser({ 
+      data: { 
+        purchasedSeries: newPurchased,
+        purchaseRecords: newRecords
+      } 
+    });
+    
+    if (error) {
+      console.error("Metadata update failed:", error);
+      alert("Payment successful, but we couldn't update your profile automatically. Please contact support.");
+    } else {
+      setProfile(updatedProfile);
     }
   };
 

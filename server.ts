@@ -4,11 +4,16 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import crypto from "crypto";
+import { createClient } from "@supabase/supabase-js";
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
+const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || "";
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function startServer() {
   const app = express();
@@ -37,11 +42,114 @@ async function startServer() {
   });
 
   // Razorpay Create Order API
+  // Secure Price Resolution Helper
+  async function getItemPriceSecurely(itemId: string): Promise<number> {
+    if (itemId === 'site_wide_full_access') {
+      return 999;
+    }
+
+    // 1. Exam Bundle
+    if (itemId.startsWith('exam_bundle_')) {
+      const examId = itemId.replace('exam_bundle_', '');
+      const { data: exam, error } = await supabase
+        .from('exams')
+        .select('description')
+        .eq('id', examId)
+        .single();
+
+      if (error || !exam) {
+        throw new Error(`Exam bundle not found: ${examId}`);
+      }
+
+      const desc = exam.description || '';
+      if (desc.startsWith('JSON_METADATA_')) {
+        try {
+          const meta = JSON.parse(desc.replace('JSON_METADATA_', ''));
+          if (meta.price !== undefined) {
+            return Number(meta.price);
+          }
+        } catch (e) {}
+      }
+      return 499;
+    }
+
+    // 2. Question Bank
+    const { data: bank } = await supabase
+      .from('questionBanks')
+      .select('tagline')
+      .eq('id', itemId)
+      .single();
+
+    if (bank) {
+      const tagline = bank.tagline || '';
+      if (tagline.includes('{"text"')) {
+        try {
+          const parsed = JSON.parse(tagline);
+          if (parsed.price !== undefined) {
+            return Number(parsed.price);
+          }
+        } catch (e) {}
+      }
+      return 499;
+    }
+
+    // 3. Test Series
+    const { data: series } = await supabase
+      .from('testSeries')
+      .select('price')
+      .eq('id', itemId)
+      .single();
+
+    if (series) {
+      return Number(series.price || 499);
+    }
+
+    // 4. Mock Test
+    const { data: test } = await supabase
+      .from('mockTests')
+      .select('seriesId')
+      .eq('id', itemId)
+      .single();
+
+    if (test) {
+      const seriesData = test.seriesId;
+      if (typeof seriesData === 'string' && seriesData.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(seriesData);
+          if (parsed.price !== undefined) {
+            return Number(parsed.price);
+          }
+        } catch (e) {}
+      }
+      if (seriesData && typeof seriesData === 'string' && !seriesData.startsWith('{')) {
+        const { data: parentSeries } = await supabase
+          .from('testSeries')
+          .select('price')
+          .eq('id', seriesData)
+          .single();
+        if (parentSeries) {
+          return Number(parentSeries.price || 499);
+        }
+      }
+      return 499;
+    }
+
+    throw new Error(`Catalog item not found: ${itemId}`);
+  }
+
+  // Razorpay Create Order API
   app.post("/api/payment/order", async (req, res) => {
     try {
-      const { amount, currency = "INR" } = req.body;
-      if (!amount) {
-        return res.status(400).json({ success: false, message: "Amount is required" });
+      const { itemId, amount: clientAmount, currency = "INR" } = req.body;
+      
+      let price: number;
+      if (itemId) {
+        price = await getItemPriceSecurely(itemId);
+      } else if (clientAmount) {
+        console.warn("WARNING: Insecure payment order creation: client specified amount directly.");
+        price = clientAmount / 100;
+      } else {
+        return res.status(400).json({ success: false, message: "itemId or amount is required" });
       }
 
       const keyId = process.env.RAZORPAY_KEY_ID;
@@ -61,7 +169,7 @@ async function startServer() {
           Authorization: `Basic ${auth}`,
         },
         body: JSON.stringify({
-          amount: Math.round(amount), // in paise (e.g. 49900)
+          amount: Math.round(price * 100), // in paise (e.g. 49900)
           currency,
           receipt: `rcpt_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
         }),

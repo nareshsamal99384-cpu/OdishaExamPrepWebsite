@@ -9,6 +9,8 @@ export interface PurchaseRecord {
   originalSeriesId?: string;
   grantedEntitlements: string[]; // List of IDs granted at purchase time
   revoked?: boolean; // True if administratively refunded/revoked
+  paymentId?: string; // Razorpay payment ID
+  orderId?: string; // Razorpay order ID
 }
 
 export interface Catalog {
@@ -70,7 +72,29 @@ export function resolveUserEntitlements(
 
   // A record is considered revoked if its itemId is no longer present in restoredSeries or explicitly revoked.
   const purchasedSet = new Set(restoredSeries);
-  const filteredRecords = activeRecords.filter(rec => purchasedSet.has(rec.itemId) && !rec.revoked);
+  const activeAndNotRevoked = activeRecords.filter(rec => purchasedSet.has(rec.itemId) && !rec.revoked);
+
+  // De-duplicate purchase records by paymentId and orderId to prevent duplicate transaction entries
+  const seenPayments = new Set<string>();
+  const seenOrders = new Set<string>();
+  const filteredRecords: PurchaseRecord[] = [];
+
+  activeAndNotRevoked.forEach(rec => {
+    if (rec.paymentId) {
+      if (seenPayments.has(rec.paymentId)) {
+        return; // skip duplicate payment ID
+      }
+      seenPayments.add(rec.paymentId);
+    }
+    if (rec.orderId) {
+      if (seenOrders.has(rec.orderId)) {
+        return; // skip duplicate order ID
+      }
+      seenOrders.add(rec.orderId);
+    }
+    filteredRecords.push(rec);
+  });
+
   let needsUpdate = filteredRecords.length !== activeRecords.length || seriesUpdated;
 
   const recordsMap = new Map<string, PurchaseRecord>();

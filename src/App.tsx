@@ -3738,7 +3738,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                               'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                              amount: paywallPrice * 100, // in paise
+                              itemId: paywallItemId || 'site_wide_full_access',
                               currency: 'INR'
                             })
                           });
@@ -3794,10 +3794,15 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                   throw new Error(verifyData.message || 'Payment verification failed.');
                                 }
                                 if (verifyData.success) {
+                                  const paymentDetails = {
+                                    pricePaid: paywallPrice,
+                                    orderId: response.razorpay_order_id,
+                                    paymentId: response.razorpay_payment_id
+                                  };
                                   if (paywallItemId) {
-                                    await unlockItem(paywallItemId);
+                                    await unlockItem(paywallItemId, paymentDetails);
                                   } else {
-                                    await grantFullAccess();
+                                    await grantFullAccess(paymentDetails);
                                   }
                                   setShowPaywall(false);
                                   setPaywallItemId(null);
@@ -4258,7 +4263,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          amount: price * 100, // in paise
+          itemId: test.id,
           currency: 'INR'
         })
       });
@@ -4312,7 +4317,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               throw new Error(verifyData.message || 'Payment verification failed.');
             }
             if (verifyData.success) {
-              await unlockItem(test.id);
+              const paymentDetails = {
+                pricePaid: price,
+                orderId: response.razorpay_order_id,
+                paymentId: response.razorpay_payment_id
+              };
+              await unlockItem(test.id, paymentDetails);
               alert('Payment Successful and Verified! Course unlocked.');
             } else {
               alert('Payment verification failed. Please contact support.');
