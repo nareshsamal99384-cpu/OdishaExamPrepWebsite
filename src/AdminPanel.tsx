@@ -571,6 +571,47 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       }
     }
 
+    // Proactive Change-Impact Warning Framework
+    const warnings: string[] = [];
+    if (isEdit) {
+      if (type === 'test') {
+        const original = mockTests.find(t => t.id === targetId);
+        if (original) {
+          const wasPremium = original.isPremium ?? false;
+          const isNowPremium = payload.isPremium ?? wasPremium;
+          if (!wasPremium && isNowPremium) {
+            warnings.push("• Pricing Model Transition (Free → Premium): Changing this mock test to Premium will restrict guest access. Legacy bundle/series owners will inherit access.");
+          }
+          const oldExam = original.examId || '';
+          const newExam = payload.examId || '';
+          if (oldExam && newExam && oldExam !== newExam) {
+            warnings.push(`• Catalog Reorganization (Orphan Risk): Moving test from Exam '${oldExam}' to '${newExam}'. Bundle owners may lose access unless registered in HISTORICAL_BUNDLE_COMPOSITIONS.`);
+          }
+        }
+      } else if (type === 'bank') {
+        const original = banks.find(b => b.id === targetId);
+        if (original) {
+          const wasPremium = original.isPremium ?? false;
+          const isNowPremium = payload.isPremium ?? wasPremium;
+          if (!wasPremium && isNowPremium) {
+            warnings.push("• Pricing Model Transition (Free → Premium): Changing this question bank to Premium will restrict guest access. Exam bundle owners will inherit access.");
+          }
+          const oldExam = original.examId || '';
+          const newExam = payload.examId || '';
+          if (oldExam && newExam && oldExam !== newExam) {
+            warnings.push(`• Catalog Reorganization (Orphan Risk): Moving question bank from Exam '${oldExam}' to '${newExam}'.`);
+          }
+        }
+      }
+    }
+
+    if (warnings.length > 0) {
+      const msg = `PROACTIVE CHANGE-IMPACT WARNING:\n\n${warnings.join('\n')}\n\nDo you want to proceed and publish these modifications?`;
+      if (!confirm(msg)) {
+        return false;
+      }
+    }
+
     const validation = validateCatalogEntitlements({
       exams: nextExams,
       mockTests: nextMockTests,

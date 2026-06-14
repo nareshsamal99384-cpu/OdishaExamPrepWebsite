@@ -4463,9 +4463,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               const freshQs = await examService.getQuestionsForMockTest(finalTest.id);
               if (freshQs && freshQs.length > 0) {
                 finalTest.questions = freshQs;
+              } else if (!finalTest.questions || finalTest.questions.length === 0) {
+                toast.error("This mock test is no longer available or contains no questions.");
+                return;
               }
             } catch (e) {
               console.error("Failed to fetch fresh questions on resume:", e);
+              if (!finalTest.questions || finalTest.questions.length === 0) {
+                toast.error("Failed to load questions. Please check your network connection.");
+                return;
+              }
             }
           }
           setActiveTest(finalTest);

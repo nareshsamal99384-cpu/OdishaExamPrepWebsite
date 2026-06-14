@@ -244,7 +244,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!profile) return;
     const purchased = profile.purchasedSeries || [];
     const records = profile.purchaseRecords || [];
-    const { resolvedIds, updatedRecords, needsUpdate } = resolveUserEntitlements(
+    const { resolvedIds, updatedRecords, updatedSeries, needsUpdate } = resolveUserEntitlements(
       purchased,
       records,
       catalog
@@ -255,11 +255,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (needsUpdate) {
       const { error } = await supabase.auth.updateUser({
         data: {
-          purchaseRecords: updatedRecords
+          purchaseRecords: updatedRecords,
+          purchasedSeries: updatedSeries
         }
       });
       if (!error) {
-        setProfile(prev => prev ? { ...prev, purchaseRecords: updatedRecords } : null);
+        setProfile(prev => prev ? { ...prev, purchaseRecords: updatedRecords, purchasedSeries: updatedSeries } : null);
       } else {
         console.error("Failed to persist synced purchase records:", error);
       }

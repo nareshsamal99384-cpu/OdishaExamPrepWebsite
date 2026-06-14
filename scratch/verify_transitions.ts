@@ -132,5 +132,58 @@ if (
   console.error("❌ Failed: Historical composition resolution failed.");
   process.exit(1);
 }
+console.log("");
+
+// Test Case 5: Entitlement Auditor Self-Healing
+console.log("Test Case 5: Verifying Entitlement Auditor self-healing logic...");
+// User has purchase record for test_cs_2 but purchasedSeries is empty due to a sync glitch.
+const glitchRecords = [
+  {
+    purchaseId: 'p_2',
+    itemId: 'test_cs_2',
+    itemType: 'mock_test' as const,
+    purchasedAt: new Date().toISOString(),
+    pricePaid: 99,
+    grantedEntitlements: ['test_cs_2']
+  }
+];
+const healedResult = resolveUserEntitlements([], glitchRecords, catalog);
+
+console.log("Needs Update:", healedResult.needsUpdate);
+console.log("Healed purchasedSeries contains 'test_cs_2':", healedResult.updatedSeries.includes('test_cs_2'));
+console.log("User has access to test_cs_2:", healedResult.resolvedIds.has('test_cs_2'));
+
+if (healedResult.needsUpdate && healedResult.updatedSeries.includes('test_cs_2') && healedResult.resolvedIds.has('test_cs_2')) {
+  console.log("✅ Passed: Entitlement Auditor successfully restored the glitched purchase into active purchasedSeries!");
+} else {
+  console.error("❌ Failed: Entitlement Auditor self-healing failed.");
+  process.exit(1);
+}
+console.log("");
+
+// Test Case 6: Revoked Purchase Record
+console.log("Test Case 6: Verifying revoked purchase records do not grant access or self-heal...");
+const revokedRecords = [
+  {
+    purchaseId: 'p_3',
+    itemId: 'test_cs_2',
+    itemType: 'mock_test' as const,
+    purchasedAt: new Date().toISOString(),
+    pricePaid: 99,
+    grantedEntitlements: ['test_cs_2'],
+    revoked: true // explicitly marked revoked
+  }
+];
+const revokedResult = resolveUserEntitlements([], revokedRecords, catalog);
+
+console.log("Healed purchasedSeries contains 'test_cs_2' (should be false):", revokedResult.updatedSeries.includes('test_cs_2'));
+console.log("User has access to test_cs_2 (should be false):", revokedResult.resolvedIds.has('test_cs_2'));
+
+if (!revokedResult.updatedSeries.includes('test_cs_2') && !revokedResult.resolvedIds.has('test_cs_2')) {
+  console.log("✅ Passed: Revoked purchase record correctly bypassed and blocked.");
+} else {
+  console.error("❌ Failed: Revoked purchase safety check failed.");
+  process.exit(1);
+}
 
 console.log("\n=== All Entitlement Transition & Consistency Tests Passed! ===");

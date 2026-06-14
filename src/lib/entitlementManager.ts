@@ -8,6 +8,7 @@ export interface PurchaseRecord {
   originalExamId?: string;
   originalSeriesId?: string;
   grantedEntitlements: string[]; // List of IDs granted at purchase time
+  revoked?: boolean; // True if administratively refunded/revoked
 }
 
 export interface Catalog {
@@ -19,6 +20,13 @@ export interface Catalog {
 
 export const HISTORICAL_BUNDLE_COMPOSITIONS: Record<string, string[]> = {};
 
+export interface EntitlementResolutionResult {
+  resolvedIds: Set<string>;
+  updatedRecords: PurchaseRecord[];
+  updatedSeries: string[];
+  needsUpdate: boolean;
+}
+
 /**
  * Resolves user entitlements, handles auto-backfilling of purchase records,
  * and synchronizes user metadata.
@@ -27,11 +35,7 @@ export function resolveUserEntitlements(
   purchasedSeries: string[] | undefined,
   purchaseRecords: PurchaseRecord[] | undefined,
   catalog: Catalog
-): {
-  resolvedIds: Set<string>;
-  updatedRecords: PurchaseRecord[];
-  needsUpdate: boolean;
-} {
+): EntitlementResolutionResult {
   const activePurchased = purchasedSeries || [];
   const activeRecords = purchaseRecords || [];
   const resolvedIds = new Set<string>();
@@ -51,20 +55,32 @@ export function resolveUserEntitlements(
     return null;
   };
 
-  // 1. Determine if any purchase records were revoked administratively.
-  // A record is considered revoked if its itemId is no longer present in purchasedSeries.
-  const purchasedSet = new Set(activePurchased);
-  const filteredRecords = activeRecords.filter(rec => purchasedSet.has(rec.itemId));
-  let needsUpdate = filteredRecords.length !== activeRecords.length;
+  // 1. Entitlement Auditor: Self-Heal from missing array references.
+  // If the user has a valid purchase record (not revoked), but it is missing
+  // from purchasedSeries, we auto-restore it to protect ownership.
+  const restoredSeries = [...activePurchased];
+  let seriesUpdated = false;
+
+  activeRecords.forEach(rec => {
+    if (!rec.revoked && !restoredSeries.includes(rec.itemId)) {
+      restoredSeries.push(rec.itemId);
+      seriesUpdated = true;
+    }
+  });
+
+  // A record is considered revoked if its itemId is no longer present in restoredSeries or explicitly revoked.
+  const purchasedSet = new Set(restoredSeries);
+  const filteredRecords = activeRecords.filter(rec => purchasedSet.has(rec.itemId) && !rec.revoked);
+  let needsUpdate = filteredRecords.length !== activeRecords.length || seriesUpdated;
 
   const recordsMap = new Map<string, PurchaseRecord>();
   filteredRecords.forEach(rec => recordsMap.set(rec.itemId, rec));
 
   const finalRecords = [...filteredRecords];
 
-  // 2. Identify which items in purchasedSeries are missing structured purchase records.
+  // 2. Identify which items in restoredSeries are missing structured purchase records.
   // We will auto-backfill them using the current catalog.
-  activePurchased.forEach(itemId => {
+  restoredSeries.forEach(itemId => {
     if (!recordsMap.has(itemId)) {
       // Create a synthetic purchase record
       let itemType: 'exam_bundle' | 'test_series' | 'mock_test' | 'question_bank' = 'mock_test';
@@ -149,7 +165,7 @@ export function resolveUserEntitlements(
 
   // 3. Resolve active entitlements (both current and historical).
   // Rule A: Directly owned IDs
-  activePurchased.forEach(id => resolvedIds.add(id));
+  restoredSeries.forEach(id => resolvedIds.add(id));
 
   // Rule B: Entitlements granted by purchase records (historical preservation)
   finalRecords.forEach(rec => {
@@ -217,6 +233,7 @@ export function resolveUserEntitlements(
   return {
     resolvedIds,
     updatedRecords: finalRecords,
+    updatedSeries: restoredSeries,
     needsUpdate
   };
 }
