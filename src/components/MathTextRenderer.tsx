@@ -1377,7 +1377,7 @@ export const DiagramRenderer: React.FC<DiagramRendererProps> = ({
           </span>
           <button
             type="button"
-            onClick={() => setZoom(prev => Math.min(2.0, prev + 0.1))}
+            onClick={() => setZoom(prev => Math.min(3.0, prev + 0.1))}
             className="w-6 h-6 rounded-md bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-600 cursor-pointer select-none active:scale-95 transition-all"
           >
             +

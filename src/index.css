@@ -1302,3 +1302,9 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   }
 }
 
+/* Hide global navigation elements during test review */
+body[data-review-mode="true"] header.z-\[60\],
+body[data-review-mode="true"] nav.fixed.bottom-0 {
+  display: none !important;
+}
+

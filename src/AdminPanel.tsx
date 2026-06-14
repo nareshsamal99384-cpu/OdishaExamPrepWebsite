@@ -30,6 +30,7 @@ import { supabase } from './lib/supabase';
 import { dropdown, modalContent, scaleIn } from './lib/animations';
 import { MathTextRenderer, DiagramRenderer } from './components/MathTextRenderer';
 import DiagramTemplateSelector from './components/DiagramTemplateSelector';
+import { validateCatalogEntitlements } from './lib/entitlementManager';
 
 // --- Custom Components ---
 const SearchableDropdown = ({ value, onChange, options, placeholder, required, disabled }: { value: string, onChange: (v: string) => void, options: {value: string, label: string}[], placeholder: string, required?: boolean, disabled?: boolean }) => {
@@ -118,7 +119,13 @@ const SearchableDropdown = ({ value, onChange, options, placeholder, required, d
 // --- Admin Components ---
 
 const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () => void }) => {
-  const [activeTab, setActiveTab] = useState<'questions' | 'series' | 'tests' | 'exams' | 'banks' | 'users' | 'updates' | 'settings' | 'subscribers'>('exams');
+  const [activeTab, setActiveTab] = useState<'questions' | 'series' | 'tests' | 'exams' | 'banks' | 'users' | 'updates' | 'settings' | 'subscribers'>(() => {
+    const saved = sessionStorage.getItem('oep_adminActiveTab');
+    if (saved === 'questions' || saved === 'series' || saved === 'tests' || saved === 'exams' || saved === 'banks' || saved === 'users' || saved === 'updates' || saved === 'settings' || saved === 'subscribers') {
+      return saved as any;
+    }
+    return 'exams';
+  });
   const [questionFilter, setQuestionFilter] = useState<'all' | 'practice' | 'mock'>('all');
   const [examFilter, setExamFilter] = useState<'all' | 'popular' | 'upcoming'>('all');
   const [testFilter, setTestFilter] = useState<'all' | 'full-length' | 'sectional' | 'pyq' | 'daily'>('all');
@@ -400,6 +407,10 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
   }, []);
 
   useEffect(() => {
+    sessionStorage.setItem('oep_adminActiveTab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
     let list: any[] = [];
     if (activeTab === 'questions') {
       let filtered = questions;
@@ -525,6 +536,54 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
   const actualExams = React.useMemo(() => {
     return exams.filter(e => e.category !== 'blog' && e.category !== 'system' && !(e.name || '').startsWith('SYSTEM_SETTINGS_'));
   }, [exams]);
+
+  const validateChangeBeforePublish = (type: 'exam' | 'series' | 'test' | 'bank', payload: any, isEdit: boolean) => {
+    let nextExams = [...exams];
+    let nextSeries = [...series];
+    let nextMockTests = [...mockTests];
+    let nextBanks = [...banks];
+
+    const targetId = editingId || 'new_item_temp_id';
+
+    if (type === 'exam') {
+      if (isEdit) {
+        nextExams = exams.map(e => e.id === targetId ? { ...e, ...payload } : e);
+      } else {
+        nextExams.push({ id: targetId, ...payload });
+      }
+    } else if (type === 'series') {
+      if (isEdit) {
+        nextSeries = series.map(s => s.id === targetId ? { ...s, ...payload } : s);
+      } else {
+        nextSeries.push({ id: targetId, ...payload });
+      }
+    } else if (type === 'test') {
+      if (isEdit) {
+        nextMockTests = mockTests.map(t => t.id === targetId ? { ...t, ...payload } : t);
+      } else {
+        nextMockTests.push({ id: targetId, ...payload });
+      }
+    } else if (type === 'bank') {
+      if (isEdit) {
+        nextBanks = banks.map(b => b.id === targetId ? { ...b, ...payload } : b);
+      } else {
+        nextBanks.push({ id: targetId, ...payload });
+      }
+    }
+
+    const validation = validateCatalogEntitlements({
+      exams: nextExams,
+      mockTests: nextMockTests,
+      testSeries: nextSeries,
+      questionBanks: nextBanks,
+    });
+
+    if (!validation.isValid) {
+      const msg = `Conflict or Mismatch Warning:\n\n${validation.errors.join('\n')}\n\nDo you want to proceed and publish these changes anyway?`;
+      return confirm(msg);
+    }
+    return true;
+  };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -724,6 +783,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
           durationDays: Number(formData.durationDays),
           testIds: []
         };
+        if (!validateChangeBeforePublish('series', payload, !!editingId)) return;
         if (editingId) await examService.updateTestSeries(editingId, payload);
         else await examService.createTestSeries(payload);
       } else if (activeTab === 'tests') {
@@ -744,6 +804,14 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
           totalMarks: Number(formData.totalMarks),
           negativeMarking: Number(formData.negativeMarking) || 0
         };
+
+        const virtualMockTest = {
+          ...payload,
+          examId: formData.examId,
+          isPremium: formData.isPremium
+        };
+
+        if (!validateChangeBeforePublish('test', virtualMockTest, !!editingId)) return;
         if (editingId) await examService.updateMockTest(editingId, payload);
         else await examService.createMockTest(payload);
       } else if (activeTab === 'exams' || activeTab === 'blogs') {
@@ -760,6 +828,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
           keywords: formData.keywords,
           targetExamId: formData.targetExamId
         };
+        if (!validateChangeBeforePublish('exam', payload, !!editingId)) return;
         if (editingId) await examService.updateExam(editingId, payload);
         else await examService.addExam(payload);
       } else if (activeTab === 'banks') {
@@ -775,6 +844,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
           pdfUrl: JSON.stringify(formData.pdfLinks),
           hasPracticeMode: formData.hasPracticeMode
         };
+        if (!validateChangeBeforePublish('bank', payload, !!editingId)) return;
         if (editingId) await examService.updateQuestionBank(editingId, payload);
         else await examService.createQuestionBank(payload);
       }

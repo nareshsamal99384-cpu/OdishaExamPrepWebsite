@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { useAuth } from '../lib/AuthContext';
 import { examService } from '../lib/examService';
+import { activityTracker } from '../lib/activityTracker';
 import {
   X,
   Send,
@@ -30,9 +31,62 @@ interface ChatMessage {
 }
 
 interface LiveSiteData {
-  exams: { name: string; description: string; category: string }[];
-  mockTests: { title: string; durationMinutes: number; totalMarks: number; isPremium?: boolean; price?: number }[];
-  questionBanks: { title: string; type: string; questionCount: number; isPremium: boolean; price?: number }[];
+  exams: { id: string; name: string; description: string; category: string; price?: number }[];
+  mockTests: { id: string; title: string; durationMinutes: number; totalMarks: number; isPremium?: boolean; price?: number }[];
+  questionBanks: { id: string; title: string; type: string; questionCount: number; isPremium: boolean; price?: number }[];
+  testSeries?: { id: string; examId: string; title: string }[];
+  isFullAccess?: boolean;
+  history?: { 
+    type: string; 
+    title: string; 
+    timestamp: string; 
+    score?: number; 
+    totalMarks?: number; 
+    accuracy?: number; 
+    timeSpent?: number;
+    examName?: string;
+    testCategory?: string;
+    metadata?: any;
+  }[];
+  selectedExamId?: string | null;
+  selectedExamName?: string | null;
+  unlockedExams?: string[];
+  unlockedMockTests?: string[];
+  unlockedQuestionBanks?: string[];
+  analytics?: {
+    totalTests: number;
+    avgScore: number;
+    avgAccuracy: number;
+    avgTimePerQuestion: number;
+    totalCorrect: number;
+    totalWrong: number;
+    totalQuestions: number;
+    chartData?: { name: string; score: number; accuracy: number; time: number; testName: string }[];
+    precision?: number;
+    speed?: number;
+    endurance?: number;
+    momentum?: number;
+    examAnalysis?: any[];
+    diagnosticReport?: string;
+    actionItems?: any[];
+    checkedActions?: Record<number, boolean>;
+  } | null;
+  aiMentorState?: {
+    targetExam: string;
+    completedSessions: number;
+    completedStudyMinutes: number;
+    quizHistoryCount: number;
+    bookmarksCount: number;
+    plannerBlocks?: any[];
+    activeBlockIndex?: number;
+    plannerGoal?: string;
+    plannerEnergy?: string;
+    quizHistory?: any[];
+    bookmarkedQuestions?: any[];
+    collections?: any[];
+    formulaCategories?: any[];
+  } | null;
+  catalogLoaded?: boolean;
   loadedAt: number;
 }
 
@@ -48,13 +102,53 @@ const QUICK_PROMPTS = [
   '📞 How do I contact support?',
 ];
 
+const cleanDescription = (d: string) => {
+  if (!d) return '';
+  if (typeof d === 'string' && d.startsWith('JSON_METADATA_')) {
+    try {
+      const meta = JSON.parse(d.replace('JSON_METADATA_', ''));
+      return meta.description || '';
+    } catch (e) {
+      return d;
+    }
+  }
+  return d;
+};
+
+const parseExamPrice = (d: string): number | undefined => {
+  if (!d) return undefined;
+  if (typeof d === 'string' && d.startsWith('JSON_METADATA_')) {
+    try {
+      const meta = JSON.parse(d.replace('JSON_METADATA_', ''));
+      return typeof meta.price === 'number' ? meta.price : undefined;
+    } catch (e) {
+      return undefined;
+    }
+  }
+  return undefined;
+};
+
+const parseQuestionBankPrice = (tagline: string): number | undefined => {
+  if (!tagline) return undefined;
+  if (typeof tagline === 'string' && tagline.trim().startsWith('{')) {
+    try {
+      const meta = JSON.parse(tagline);
+      return typeof meta.price === 'number' ? meta.price : undefined;
+    } catch (e) {
+      return undefined;
+    }
+  }
+  return undefined;
+};
+
 /* ─────────────────────────────────────────────
    Build a grounded system prompt from live data
 ───────────────────────────────────────────── */
-function buildSystemPrompt(data: LiveSiteData | null, userName: string): string {
-  const popularExams = data?.exams.filter(e => e.category === 'popular') ?? [];
-  const upcomingExams = data?.exams.filter(e => e.category === 'upcoming') ?? [];
-  const allExamNames = data?.exams.map(e => e.name) ?? [];
+function buildSystemPrompt(data: LiveSiteData | null, userName: string, activeTab?: string): string {
+  const filteredExams = data?.exams.filter(e => e.category !== 'blog' && e.category !== 'system' && !e.name.startsWith('SYSTEM_')) ?? [];
+  const popularExams = filteredExams.filter(e => e.category === 'popular');
+  const upcomingExams = filteredExams.filter(e => e.category === 'upcoming');
+  const allExamNames = filteredExams.map(e => e.name);
 
   const freeTests = data?.mockTests.filter(t => !t.isPremium) ?? [];
   const paidTests = data?.mockTests.filter(t => t.isPremium) ?? [];
@@ -75,11 +169,11 @@ function buildSystemPrompt(data: LiveSiteData | null, userName: string): string 
     : 'Exams data currently unavailable';
 
   const popularStr = popularExams.length
-    ? popularExams.map(e => `• ${e.name}${e.description ? ` — ${e.description}` : ''}`).join('\n')
+    ? popularExams.map(e => `• ${e.name}${e.price !== undefined ? ` (Price: ₹${e.price})` : ''}${e.description ? ` — ${e.description}` : ''}`).join('\n')
     : 'Not loaded';
 
   const upcomingStr = upcomingExams.length
-    ? upcomingExams.map(e => `• ${e.name}${e.description ? ` — ${e.description}` : ''}`).join('\n')
+    ? upcomingExams.map(e => `• ${e.name}${e.price !== undefined ? ` (Price: ₹${e.price})` : ''}${e.description ? ` — ${e.description}` : ''}`).join('\n')
     : 'None listed';
 
   const mockTestStr = data?.mockTests.length
@@ -96,6 +190,28 @@ function buildSystemPrompt(data: LiveSiteData | null, userName: string): string 
         .join('\n')
     : 'No question banks found';
 
+  const historyStr = data?.history && data.history.length
+    ? data.history
+        .map(h => {
+          const scoreStr = h.score !== undefined ? `, Score: ${h.score}${h.totalMarks !== undefined ? `/${h.totalMarks}` : ''}` : '';
+          const accStr = h.accuracy !== undefined ? `, Accuracy: ${h.accuracy}%` : '';
+          const examStr = h.examName ? `, Exam: "${h.examName}"` : '';
+          const catStr = h.testCategory ? `, Category: "${h.testCategory}"` : '';
+          const durationStr = h.timeSpent !== undefined ? `, Time Spent: ${Math.floor(h.timeSpent / 60)}m ${h.timeSpent % 60}s` : '';
+          const totalQ = h.metadata?.totalQuestions || h.metadata?.test?.questions?.length;
+          const totalQStr = totalQ ? ` out of ${totalQ}` : '';
+          const progressStr = h.type === 'test_incomplete' && h.metadata?.answers 
+            ? `, Progress: ${Object.keys(h.metadata.answers).length}${totalQStr} questions answered` 
+            : '';
+          const dateObj = h.timestamp ? new Date(h.timestamp) : null;
+          const isValidDate = dateObj && !isNaN(dateObj.getTime());
+          const dateStr = isValidDate ? dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown Date';
+          const timeStr = isValidDate ? dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Unknown Time';
+          return `• Test Title: "${h.title}" | Date Completed/Attempted: ${dateStr} | Time Completed/Attempted: ${timeStr} | Type: ${h.type.replace(/_/g, ' ')}${examStr}${catStr}${scoreStr}${accStr}${durationStr}${progressStr}`;
+        })
+        .join('\n')
+    : 'No test or practice history found in student\'s profile.';
+
   const pricingStr = (() => {
     const parts: string[] = [];
     if (freeTests.length) parts.push(`- ${freeTests.length} free mock test(s) available without purchase`);
@@ -106,19 +222,228 @@ function buildSystemPrompt(data: LiveSiteData | null, userName: string): string 
     if (paidQBanks.length && minBankPrice !== null) {
       parts.push(`- Paid question banks: ₹${minBankPrice}${maxBankPrice !== minBankPrice ? ` to ₹${maxBankPrice}` : ''} per bank`);
     }
+
+    const paidExams = filteredExams.filter(e => e.price !== undefined);
+    if (paidExams.length) {
+      parts.push('- Individual Exam Preparation Packages pricing:');
+      paidExams.forEach(e => {
+        parts.push(`  * ${e.name}: ₹${e.price}`);
+      });
+    }
+
     parts.push('- Payment via Razorpay (UPI, cards, netbanking) — instant access after payment');
     parts.push('- Refund window: 7 days if the platform doesn\'t work for you');
     return parts.join('\n') || '- Contact support for latest pricing info';
   })();
 
+  // Multi-tab states formatted for injection
+  const selectedExamStr = data?.selectedExamName
+    ? `• Current Active Selected Exam: ${data.selectedExamName} (ID: ${data.selectedExamId})`
+    : '• No exam currently selected on the dashboard (student is in general browsing mode).';
+
+  const incompleteTests = data?.history?.filter(h => h.type === 'test_incomplete') || [];
+  const incompleteStr = incompleteTests.length
+    ? incompleteTests.map(h => {
+        const totalQ = h.metadata?.totalQuestions || h.metadata?.test?.questions?.length;
+        const totalQStr = totalQ ? ` out of ${totalQ}` : '';
+        const progressPct = totalQ && h.metadata?.answers 
+          ? ` (${Math.round((Object.keys(h.metadata.answers).length / totalQ) * 100)}% progress)` 
+          : '';
+        return `• "${h.title}" | Last Attempted: ${h.timestamp ? new Date(h.timestamp).toLocaleString() : 'Unknown'} | Progress: ${h.metadata?.answers ? Object.keys(h.metadata.answers).length : 0}${totalQStr} questions answered${progressPct}`;
+      }).join('\n')
+    : 'No in-progress tests found (Continue Practice slider is empty).';
+
+  const recentCompleted = data?.history?.filter(h => h.type === 'mock_test_completed' || h.type === 'practice_test_completed').slice(0, 5) || [];
+  const recentCompletedStr = recentCompleted.length
+    ? recentCompleted.map(h => {
+        const scoreStr = h.score !== undefined ? ` | Score: ${h.score}${h.totalMarks !== undefined ? `/${h.totalMarks}` : ''}` : '';
+        const accStr = h.accuracy !== undefined ? ` | Accuracy: ${h.accuracy}%` : '';
+        return `• "${h.title}" completed on ${h.timestamp ? new Date(h.timestamp).toLocaleDateString() : 'Unknown'}${scoreStr}${accStr}`;
+      }).join('\n')
+    : 'No recently completed tests found (Recent Activity slider is empty).';
+
+  const isFullAccess = !!data?.isFullAccess;
+
+  const unlockedExamsStr = isFullAccess
+    ? '• All Available Exams (Unlimited Full Access)'
+    : (data?.unlockedExams && data.unlockedExams.length
+        ? data.unlockedExams.map(name => `• ${name}`).join('\n')
+        : 'None (no exam preparation packages unlocked yet).');
+
+  const unlockedMockTestsStr = isFullAccess
+    ? '• All Premium Mock Tests (Unlimited Full Access)'
+    : (data?.unlockedMockTests && data.unlockedMockTests.length
+        ? data.unlockedMockTests.map(title => `• ${title}`).join('\n')
+        : 'None (no premium mock tests unlocked yet).');
+
+  const unlockedQuestionBanksStr = isFullAccess
+    ? '• All Premium Question Banks (Unlimited Full Access)'
+    : (data?.unlockedQuestionBanks && data.unlockedQuestionBanks.length
+        ? data.unlockedQuestionBanks.map(title => `• ${title}`).join('\n')
+        : 'None (no premium question banks unlocked yet).');
+
+  const trendStr = data?.analytics?.chartData && data.analytics.chartData.length
+    ? data.analytics.chartData.map(d => `  * ${d.name} (${d.testName}): Score: ${d.score}%, Accuracy: ${d.accuracy}%, Time/Q: ${d.time}s`).join('\n')
+    : '  * No trend data available yet.';
+
+  const analyticsStr = data?.analytics
+    ? `• Total Mock Tests Completed: ${data.analytics.totalTests}
+• Average Test Score: ${data.analytics.avgScore}%
+• Average Accuracy: ${data.analytics.avgAccuracy}%
+• Average Speed (Time per question): ${data.analytics.avgTimePerQuestion} seconds
+• Total Correct Answers: ${data.analytics.totalCorrect}
+• Total Wrong Answers: ${data.analytics.totalWrong}
+• Total Attempted Questions: ${data.analytics.totalQuestions}
+• Overall Skill Profile radar chart scores (calculated on mock test history):
+  * Accuracy Dimension: ${data.analytics.avgAccuracy}% (correctness rate on attempts)
+  * Precision Dimension: ${data.analytics.precision ?? 0}% (consistency/focus, correct answers divided by attempted questions excluding skips)
+  * Speed Dimension: ${data.analytics.speed ?? 0}% (scaled pacing score relative to 30s-120s limit)
+  * Endurance Dimension: ${data.analytics.endurance ?? 0}% (practice volume scaled based on total questions completed)
+  * Momentum Dimension: ${data.analytics.momentum ?? 50}% (recent test-to-test improvement rate)
+• Performance Trend score progression (last 15 completed tests):
+${trendStr}`
+    : 'No test performance stats found (student hasn\'t finished any mock tests yet).';
+
+  const examAnalysisStr = data?.analytics?.examAnalysis && data.analytics.examAnalysis.length
+    ? data.analytics.examAnalysis.map(exam => {
+        const combined = [...(exam.mockTests || []), ...(exam.practiceTests || [])];
+        const subDetails = combined.map((s: any) => `  * Subject: "${s.name}" | Accuracy: ${s.avgScore}% | Status: ${s.status} (Correct: ${s.correct}/${s.attempted})`).join('\n');
+        return `• Exam: "${exam.examName}" (Attempts: ${exam.totalAttempts}, Last Attempt: ${exam.lastAttemptDate})\n${subDetails}`;
+      }).join('\n')
+    : '• No subject-by-subject performance breakdown compiled yet.';
+
+  const diagnosticReportStr = data?.analytics?.diagnosticReport
+    ? `${data.analytics.diagnosticReport}`
+    : '• No diagnostic report available yet. Recommend the student to initialize the AI Scan on their Analytics tab to generate one.';
+
+  const actionItemsStr = data?.analytics?.actionItems && data.analytics.actionItems.length
+    ? data.analytics.actionItems.map((item: any, idx: number) => {
+        const isCompleted = !!data.analytics.checkedActions?.[idx];
+        return `  ${idx + 1}. Task: "${item.task}" | Status: ${isCompleted ? 'COMPLETED (checked)' : 'PENDING (unchecked)'} | Boost: ${item.boost || '+5%'} | Timeframe: ${item.timeframe || '3 days'}`;
+      }).join('\n')
+    : '  * No study checklist items available yet. Recommend the student to run the AI Scan on their Analytics tab.';
+
+  const aiMentorStateStr = (() => {
+    if (!data?.aiMentorState) return 'No AI Mentor study coach progress recorded yet.';
+
+    const state = data.aiMentorState;
+    const parts: string[] = [];
+
+    parts.push(`• Study Coach Target Exam: ${state.targetExam}`);
+    parts.push(`• Completed Study Coach Planner Sessions: ${state.completedSessions} sessions (${state.completedStudyMinutes || (state.completedSessions * 25)} mins total study time)`);
+    parts.push(`• AI Dynamic Quiz History Count: ${state.quizHistoryCount} quizzes completed`);
+    parts.push(`• Bookmarked Study Questions Count: ${state.bookmarksCount}`);
+
+    if (state.plannerGoal) {
+      parts.push(`• Study Planner Active Settings: Goal: "${state.plannerGoal}" | Energy: "${state.plannerEnergy || 'Normal'}"`);
+    }
+
+    if (state.plannerBlocks && state.plannerBlocks.length > 0) {
+      parts.push('• Active Study Planner Schedule Blocks:');
+      state.plannerBlocks.forEach((b: any, idx: number) => {
+        const isActiveMarker = idx === state.activeBlockIndex ? ' [ACTIVE BLOCK]' : '';
+        parts.push(`  * Block ${idx + 1}: "${b.name}" (${b.startTimeStr} - ${b.endTimeStr}) | Type: ${b.type} | Duration: ${Math.round(b.duration / 60)} mins | Status: ${b.status}${isActiveMarker}`);
+      });
+    } else {
+      parts.push('• Active Study Planner Schedule Blocks: No active schedule blocks configured currently.');
+    }
+
+    if (state.collections && state.collections.length > 0) {
+      parts.push('• Tracked Syllabus Collections & Completion Progress:');
+      state.collections.forEach((c: any) => {
+        parts.push(`  * Collection: "${c.name}"`);
+        if (c.topics && c.topics.length > 0) {
+          c.topics.forEach((t: any) => {
+            parts.push(`    - Topic: "${t.name}" | Status: ${t.status.replace(/_/g, ' ')}${t.desc ? ` (${t.desc})` : ''}`);
+          });
+        } else {
+          parts.push('    - (No topics added yet)');
+        }
+      });
+    }
+
+    if (state.formulaCategories && state.formulaCategories.length > 0) {
+      parts.push('• Saved Formulas & Cheat Sheets (LaTeX Mapped):');
+      state.formulaCategories.forEach((cat: any) => {
+        parts.push(`  * Sheet: "${cat.name}"`);
+        if (cat.cards && cat.cards.length > 0) {
+          cat.cards.forEach((card: any) => {
+            parts.push(`    - Card: "${card.title}" | Formula: ${card.formula}${card.shortcut ? ` | Tip/Shortcut: ${card.shortcut}` : ''}${card.example ? ` | Example: ${card.example}` : ''}`);
+          });
+        } else {
+          parts.push('    - (No cards added yet)');
+        }
+      });
+    }
+
+    if (state.bookmarkedQuestions && state.bookmarkedQuestions.length > 0) {
+      parts.push('• Last 5 Bookmarked Questions (saved for review):');
+      state.bookmarkedQuestions.slice(-5).forEach((q: any, idx: number) => {
+        parts.push(`  * Bookmark ${idx + 1}: Question: "${q.question}" | Subject: ${q.subject || 'General'} | Difficulty: ${q.difficulty || 'Medium'}`);
+        if (Array.isArray(q.options)) {
+          parts.push(`    Options: ${q.options.map((o: string, oIdx: number) => `${oIdx + 1}. ${o}`).join(', ')}`);
+        }
+        parts.push(`    Correct Answer: "${q.options?.[q.correctAnswerIndex] || q.correctAnswer || 'Not specified'}"`);
+        if (q.explanation) {
+          parts.push(`    Explanation: "${q.explanation}"`);
+        }
+      });
+    }
+
+    if (state.quizHistory && state.quizHistory.length > 0) {
+      parts.push('• Last 5 Dynamic Practice Quizzes Completed:');
+      state.quizHistory.slice(0, 5).forEach((rec: any) => {
+        parts.push(`  * Quiz Date: ${rec.date} | Subject: "${rec.subject}" | Score: ${rec.score}/${rec.total} (${rec.total > 0 ? Math.round((rec.score / rec.total) * 100) : 0}% Accuracy) | Difficulty: ${rec.difficulty}`);
+      });
+    }
+
+    return parts.join('\n');
+  })();
+
+  const currentTabName = (() => {
+    switch (activeTab) {
+      case 'home': return 'Home / Dashboard';
+      case 'courses': return 'Courses';
+      case 'analytics': return 'Analytics (AI Performance Lab)';
+      case 'history': return 'History (Activity Logs)';
+      case 'library': return 'Library (My Purchases)';
+      case 'ai_mentor': return 'AI Mentor (Study Coach & Tutor)';
+      default: return activeTab ? (activeTab.charAt(0).toUpperCase() + activeTab.slice(1)) : 'Home / Dashboard';
+    }
+  })();
+
   return `You are "OEP Buddy", the official AI companion for OdishaExamPrep — a premium exam preparation platform for Odisha government exam aspirants. The current student's name is "${userName}".
+
+## 📍 CURRENT PAGE/SECTION CONTEXT
+The student is currently viewing the **${currentTabName}** tab/page of the platform.
+If the student asks a question like "how is my score", "what should I do next", "why is my momentum low", "what did I purchase", "explain this section", "what is on this page", or uses vague pronouns ("this", "here", "it"), you MUST assume they are referring to the content, metrics, charts, or plans visible on the **${currentTabName}** tab first, unless their query explicitly mentions another tab/section.
+However, you can still answer questions about other tabs/sections if they ask about them.
 
 ## ⚠️ CRITICAL RULES — READ CAREFULLY
 1. **Only answer based on the REAL DATA below.** Do NOT invent exam names, prices, test counts, or features that are not explicitly listed in this prompt.
-2. If specific data is not available (e.g., student asks about a specific test not in the list), say: "I don't have that specific information right now. Please check the Courses tab or contact us on WhatsApp at +91 7377431715."
-3. Never guess or hallucinate. If uncertain, redirect to support.
+2. If the student asks about a specific exam package, test name, discount, or personal data that is not in the real data lists below, say exactly: "I don't have that specific data right now. Please check the platform directly or WhatsApp us at +91 7377431715 for accurate information." Do not guess or hallucinate.
+3. If the student asks about general platform features, sections, or UI elements (such as "what is the Performance Trend graph", "how does Syllabus Manager work", "what are the key metrics", etc.), you MUST explain them accurately and precisely using the details in the "## 🤖 PLATFORM FEATURES" section below. Do NOT trigger the missing data fallback response for general platform feature queries.
 4. Be warm, concise (2-4 sentences), and use bullet points for lists.
 5. Do NOT mention ChatGPT, Claude, or any external AI. You are "OEP Buddy" only.
+6. **Exams Categorization**: You MUST group and classify the exams EXACTLY as they are listed under the "### Popular Exams" and "### Upcoming Exams" sections below. Do NOT reclassify any exam based on your own knowledge.
+7. **STRICT ENFORCEMENT**: Under no circumstances should you swap, move, rename, or re-categorize any exam. If an exam is listed under 'Popular Exams' in the data below, it must be referred to as a Popular Exam. If it is listed under 'Upcoming Exams' in the data below, it must be referred to as an Upcoming Exam. Do not use external knowledge to categorize them. Do not change their categories or group them otherwise.
+8. **Student's Test/Practice History & Performance**: If the student asks about their past test activity, completed tests count, scores, accuracy, weak/strong subjects, AI diagnostics, action plans/study checklists, or performance statistics, read from the "## 📊 STUDENT'S PERFORMANCE ANALYTICS", "## 📊 STUDENT'S SUBJECT BREAKDOWN", "## 📊 STUDENT'S DIAGNOSTIC REPORT & STUDY CHECKLIST", and "## 📜 STUDENT'S ACTIVITY & TEST HISTORY" sections below. You must list these stats and details accurately and precisely. Do NOT tell them to check the Analytics tab or the History tab, nor state that you do not have this information, because the data is provided right below. Answer based ONLY on these sections.
+9. **Active Selected Exam (Home Tab)**: If the student asks what exam they are preparing for or what's selected, use the "## 🏠 STUDENT'S ACTIVE SELECTED EXAM" section.
+10. **Library Purchases**: If the student asks about what packages, exams, or mock tests they have purchased/unlocked, use the "## 📚 STUDENT'S UNLOCKED LIBRARY & PURCHASES" section.
+11. **AI Mentor & Planner**: If the student asks about their Study Planner target exam, goal, energy, active schedule/Pomodoro blocks, completed study sessions/minutes, tracked syllabus collections/topics and their completion status, saved formulas/cheat sheets, quiz history, or bookmarked questions, read and use the details in the "## 🤖 AI MENTOR & COACHING PROGRESS" section below. You must answer about saved formulas, bookmarks, and planner schedules exactly as they are listed.
+12. **Courses Tab & Video Lectures**: Premium video courses are "coming soon". If asked about video courses, state that top-tier premium video courses are coming very soon, and they can study using other resources on the platform in the meantime. Do NOT tell them to check the Courses tab for active videos.
+13. **Most Recent & Sorting Rules**: When sorting, listing, or identifying tests (e.g., finding the most recent test, highest/lowest scoring test, etc.), you MUST consider ALL tests listed in the "## 📜 STUDENT'S ACTIVITY & TEST HISTORY" section, even if they have negative scores, 0% accuracy, or low scores. A test with a negative score or 0% accuracy is still a completed test taken by the user. Do not filter out or omit any test from these queries.
+
+---
+
+## 🏠 STUDENT'S ACTIVE SELECTED EXAM (Home Tab)
+${selectedExamStr}
+
+## 🏠 STUDENT'S IN-PROGRESS TESTS (Continue Practice Slider on Home Tab)
+${incompleteStr}
+
+## 🏠 STUDENT'S RECENTLY COMPLETED TESTS (Recent Activity Slider on Home Tab)
+${recentCompletedStr}
 
 ---
 
@@ -132,6 +457,47 @@ ${upcomingStr}
 
 ### All Available Exams (${allExamNames.length} total):
 ${examListStr}
+
+---
+
+## 📹 PREMIUM VIDEO COURSES
+Premium video courses are coming very soon (no active video courses are available on the platform yet).
+
+---
+
+## 📊 STUDENT'S PERFORMANCE ANALYTICS (Analytics Tab)
+${analyticsStr}
+
+---
+
+## 📊 STUDENT'S SUBJECT BREAKDOWN
+${examAnalysisStr}
+
+---
+
+## 📊 STUDENT'S DIAGNOSTIC REPORT & STUDY CHECKLIST
+### AI Diagnostic Insights:
+${diagnosticReportStr}
+
+### Action Plan Study Checklist:
+${actionItemsStr}
+
+---
+
+## 📚 STUDENT'S UNLOCKED LIBRARY & PURCHASES (Library Tab)
+### Unlocked Exams/Packages:
+${unlockedExamsStr}
+
+### Unlocked Mock Tests:
+${unlockedMockTestsStr}
+
+### Unlocked Question Banks:
+${unlockedQuestionBanksStr}
+
+---
+
+## 🤖 AI MENTOR & COACHING PROGRESS (AI Mentor Tab)
+${aiMentorStateStr}
 
 ---
 
@@ -151,6 +517,13 @@ ${qBankStr}
 
 ---
 
+## 📜 STUDENT'S ACTIVITY & TEST HISTORY (live from dashboard/local storage, listed from newest/most recent to oldest):
+${historyStr}
+
+**Total activities recorded: ${data?.history?.length ?? 0}**
+
+---
+
 ## 💰 REAL PRICING (live from database):
 ${pricingStr}
 
@@ -158,37 +531,147 @@ ${pricingStr}
 
 ## 🤖 PLATFORM FEATURES (verified, do NOT hallucinate beyond these):
 
-### AI Mentor Tab:
-- Full-page AI tutor (Quick mode: fast answers, Best mode: deep analysis)
-- Ask any academic question: Odisha history, polity, maths, English, Odia grammar, GK, reasoning
-- Syllabus Manager: maintain topics, get AI quiz or summary on any topic
-- Dynamic MCQ Quizzer: AI-generates MCQs on any subject
-- Study Planner, Formula Library, Bookmarked Questions
-- Chat history saved per session
-
 ### Analytics Tab (AI Performance Lab):
-- See average score, accuracy, speed (seconds per question), improvement %
-- AI Insights: strengths & weaknesses analysis
-- Action Plan: personalized 5-day or 7-day study roadmap
-- AI Performance Coach: chat interface for performance questions
-- Study Assistant: smart prompt chips based on actual test data
-- "Rescan Analytics" button refreshes insights from latest tests
+- **Key Metrics (Top Cards)**:
+  * *Average Score (%)*: Overall calculated score percentage across all mock and practice tests.
+  * *Accuracy (%)*: Rate of correct answers relative to attempted questions. Shows a trend percentage badge (e.g. +5% Improvement/Drop) compared to the previous test attempt.
+  * *Time per Question*: Average pacing duration in seconds.
+  * *Total Attempts*: Total count of completed mock and practice tests.
+  * Each card includes a visual Sparkline line graph displaying the score progression over time.
+- **Performance Trend Graph**: A visual Area Chart (using Recharts) representing the student's mock exam score progression history over their last 15 mock tests (X-axis shows test index like T1, T2, T3... and Y-axis shows score from 0% to 100%). It tracks score improvements and drops over time.
+- **Accuracy Breakdown**: A visual Pie Chart dividing total attempted questions into:
+  * *Correct* (Green cell, #10b981)
+  * *Wrong* (Red/rose cell, #f43f5e)
+  * *Skipped* (Slate/gray cell, #94a3b8)
+  * Displays the exact question count and percentage for each slice.
+- **Overall Skill Profile (Radar Chart)**: A Radar Chart mapping five core test-taking dimensions (scaled 0 to 100):
+  * *Accuracy*: Purity of correctness rate on attempts.
+  * *Precision*: Consistency and focus in answers (correct answers divided by attempted questions excluding skips).
+  * *Speed*: Pace of answering questions relative to a 30s-120s limit.
+  * *Endurance*: Volume of questions practiced relative to a 300 questions baseline target.
+  * *Momentum*: Recent test-to-test improvement rate (scaled based on score improvement).
+- **Performance Breakdown**: Grouped list by exam name (e.g., OPSC OAS) showing detailed subject-by-subject status.
+  * Labeled as 'Strong' (if subject accuracy >= 70%) or 'Weak' (if subject accuracy < 70%).
+  * Clicking a subject row expands it to show detailed metrics: Attempted, Correct, and Incorrect questions with accuracy percentages.
+- **AI Diagnostics Center (AI Performance Lab Panel)**:
+  * **Initialize AI Scan Flow (Step-by-Step Instructions)**:
+    1. Click the "Initialize AI Scan" button.
+    2. Wait for the 4 scanning phases to load (Ingesting mock test history, Correlating accuracy & speed data, Analyzing subject-wise strengths, Synthesizing customized action plan).
+    3. View the three tabs:
+       - *Diagnostic Report*: Executive summary analysis of cognitive strengths, speed/accuracy trade-offs, and critical focus areas.
+       - *Action Plan*: 3 checklist tasks with estimated score boosts (e.g. +5%) and timeframes. Students can click checkboxes to check off items and save progress.
+       - *AI Performance Coach*: Embedded chat interface to query the AI coach directly about metrics or advice.
+  * **Rescan/Refresh Flow**: Click "Rescan" to recalculate all metrics and rebuild the insights/checklist.
 
+### AI Mentor Tab (Study Coach & Tutor):
+- **Full-Page AI Tutor (Left Panel Chat)**:
+  * An interactive academic chat window for asking preparation queries about Odisha history/GK, Indian Polity, Odia grammar, etc.
+  * Supports "Quick Mode" (meta/llama-3.1-8b-instruct for fast replies) and "Best Mode" (meta/llama-3.3-70b-instruct for deep academic analysis).
+  * Has preset clickable quick prompt chips (e.g. Paika Rebellion, President's Rule, Odisha GK Quiz, Time & Work Trick).
+  * Clicking the trash icon next to the mode selector clears chat history logs (except the initial welcome greeting).
+- **Interactive Study Suite (Right Panel Sub-Tabs)**:
+  1. **Planner (AI Study Planner & Pomodoro Coach)**:
+     * *Manual Mode*: Displays a customizable Pomodoro timer set to 25 minutes (1500 seconds) by default. Includes Play, Pause, Reset, and Skip controls.
+     * *AI Mode*: Generates a structured study roadmap based on: start/end times, energy levels (Low, Normal, High), and goals (Revision, Deep Study, Practice Questions, Mock Test, General Practice). Advanced options allow inputting Chapters, Questions, and Target Hours.
+     * *Roadmap Blocks*: Generates study focus blocks and break blocks. Automatically auto-scrolls the active study block card into the center.
+     * *Offline Pacing support*: When the user is away from the tab, the system computes how many blocks were completed offline and rewards them completed study sessions/minutes upon return.
+  2. **Quiz (MCQ Quizzer)**:
+     * Generates custom multiple-choice quizzes on selected subjects (e.g. Odisha GK & History, Indian Polity & Constitution, Aptitude, Odia Grammar, etc., plus custom user-defined tabs).
+     * Parameters: Select subject, Difficulty (Easy, Medium, Hard), Question Count (3, 5, 10), and Target Exam.
+     * Clicking "Generate AI Quiz" shows a 4-stage loading screen. Renders interactive MCQ sliders.
+     * Renders scorecard, correct answers, and a "Detailed AI Tutor Explanation" (with KaTeX rendering for math) for each question.
+     * Includes a "Bookmark" button to save questions for revision, and a "Quiz History" log showing date, subject, score/total, and difficulty.
+  3. **Syllabus (Syllabus Manager)**:
+     * Allows creating custom Syllabus Collections (e.g. History, Polity) manually or via AI (generates complete topic blueprints in the background).
+     * Inside each collection, users track Syllabus Topics (Title, Description) with progress badges: "Not Started" (gray), "In Progress" (blue), and "Completed" (green).
+     * User Flows: Click a topic to edit it, click "Generate Summary" (sends a revision study guide to the AI Tutor Chat), or click "Generate Topic Quiz" (opens a custom MCQ quiz for that topic).
+  4. **Formulas (LaTeX Cheat Sheets)**:
+     * Stores and views formulas, shortcuts, and examples sorted into custom category sheets (e.g., Arithmetic, Geometry, Grammar rules).
+     * Supports rendering math expressions via KaTeX.
+     * Clicking "Generate Formula with AI" opens a modal where entering a topic automatically builds a complete card (Title, Formula, Tip, Example).
+     * *Flashcard Mode*: Toggles cards into interactive gamified study cards (hides formula/details; user clicks "Reveal" to check answers).
+     * Includes a "Search Bar" to instantly filter formulas by keywords.
+### Home / Dashboard Tab:
+The Home tab consists of two distinct views based on whether the student has selected a specific exam for prep:
+
+1. General View (No Exam Selected):
+   - **Continue Practice Slider**: A horizontal slider showing up to 6 incomplete/in-progress tests with progress percentage bars and time elapsed since last activity. Clicking a card lets the student resume the test immediately (can only resume if full question data is available locally; otherwise states "Open app to resume").
+   - **Recent Activity Slider**: A horizontal list of up to 6 recently completed tests or activities with score badges (e.g., score out of total marks) and completion dates. Clicking a card opens the detailed test result breakdown page.
+   - **Curated YouTube Carousel**: Displays curated preparation video lectures.
+   - **Exam Selection Controls**: Users can switch between "Popular Exams" (already active) and "Upcoming Exams" (coming soon) tabs. A Search input filters exams. Clicking any exam card selects it, transitioning the Home tab to that exam's detailed dashboard page.
+
+2. Selected Exam Dashboard View (An Exam is Selected):
+   - **Back Button**: A left-facing arrow button next to the exam title that deselects the exam and returns the user to the general exam listing view.
+   - **Exam Title & Description**: Displays the exam name and detailed description with a "Read More / Read Less" expander.
+   - **Quick Navigation Pills**: Smooth scrolling buttons to scroll directly to the "Question Bank", "Practice Mode", or "Mock Tests" sections on the page.
+   - **Full Exam Access Banner (Premium Unlock Bundle)**:
+     * Locked State: Shows original and discounted prices, and an "Unlock All Access" button that triggers a premium checkout overlay (integrated with Razorpay) detailing lifetime features (unlocking all premium mock tests, question banks, practice sessions, advanced analytics, PDF downloads, and lifetime updates).
+     * Unlocked State: Shows a green "Bundle Active" shield check seal indicating complete lifetime access.
+   - **Download Question Bank Section**: Includes 4 categories ("Topic-wise Question Bank", "Exam-Focused Bank", "Revision Sets", and "PYQ Collections"). Clicking any card filters and displays the corresponding downloadable PDF files/resources.
+   - **Practice Mode (Custom Practice Session)**: Allows starting custom practice sessions.
+     * **Step-by-step instructions to configure and start a practice session**:
+       1. Click the "Start Practice" card to open the "Configure Practice" modal.
+       2. **Step 1: Select Exam**: Select target exam (defaults to current exam).
+       3. **Step 2: Select Category**: Select category from "Topic-wise Question Bank", "Exam-Focused Bank", "Revision Sets", or "PYQ Collections". (Disabled until Step 1 is done).
+       4. **Step 3: Select Topic / Unit**: Choose a topic from the filtered list. Locked premium topics show a "(Premium)" label. (Disabled until Step 2 is done).
+       5. **Configure Parameters**:
+          - *Number of Questions*: Adjust using a slider or input box (from 1 to the maximum questions available).
+          - *Time Limit*: Adjust using a slider or input box (from 1 to 180 minutes).
+       6. Click "Start Practice Session" (disabled if no topic is selected, if loading, or if the topic has 0 questions).
+   - **Mock Test Series**:
+     * Displays 4 categories of mock tests: "Full-Length Mock Tests", "Sectional Tests", "PYQ Tests", and "Daily / Weekly Tests".
+     * Clicking a category displays its list of tests.
+     * **Sectional Tests** are automatically grouped and separated under subject headings (e.g. History, Polity, General Knowledge).
+     * Each test card shows title, duration (minutes), marks, and question count. Premium tests show a Lock icon if locked, or a Check icon if unlocked.
+     * Clicking an unlocked/free mock test card launches the Mock Test System (a full-screen timed exam interface with navigation panel, auto-evaluation, detailed explanations after submission, and review logs stored in History).
 ### Mock Test System:
 - Timed tests, auto-evaluated with score + accuracy
 - Each question shows correct answer + detailed explanation after submission
 - Difficulty: Easy, Medium, Hard
 - Students can resume interrupted tests
 - Test history and scores tracked in History tab
+### Courses Tab:
+- **Premium Courses Placeholder**: Displays a BookOpen icon with the heading "Premium Courses" and a message: "Top-tier video courses are coming very soon. Stay tuned!".
+- **Purpose**: A planned feature to host premium video preparation lectures.
+- **Current Behavior & Limitations**: There are no active video lectures, courses, playlists, or downloadable files available directly on this tab currently.
+- **Guidance & Next Steps**: Inform the student that video lectures are coming soon. Encourage them to prepare using active resources on the platform, such as **Mock Tests** and **Question Banks** (PDF study materials) available under the Home and Library tabs.
 
-### Courses / Library Tab:
-- Curated study material per exam: PDFs, notes, PYQs
-- Locked content unlocked after purchase
-- Library tab shows only unlocked purchased content
+### Library Tab (My Purchases):
+- **Overview**: Shows all premium, purchased, and unlocked resources for the student in one location.
+- **Unlimited Access (Full Access / Admin Mode)**:
+  * If the student is an administrator or has full platform access, they see a black gradient banner reading "All Content Unlocked" with a green ShieldCheck icon. This unlocks access to all packages without individual purchase.
+- **Empty Library View**:
+  * Displays "Your Library is Empty" with a Lock icon if no premium packages have been unlocked.
+  * Includes an "Explore Exams" button that redirects the student to the Home tab and scrolls down to the exam selection cards.
+- **Exam Sections**:
+  * Unlocked resources are grouped under their respective exam headers (e.g. OPSC OAS).
+  * Each header displays a green "Premium Unlocked" badge, and if the user unlocked the whole exam package, an "Exam Bundle" badge.
+  * Includes an "Open" button on the header that navigates the user back to the Home page with that specific exam's detailed dashboard selected.
+- **Content Cards Grid**:
+  * *Mock Test Cards*: Displays an indigo Timer icon, duration, question count, and a "Start Test" button that launches the timed exam.
+  * *Question Bank Cards*: Displays a green BookOpen icon, question count, and a "Practice Now" button that starts practice or launches resource downloads.
+- **Self-Healing Purchases**: The tab automatically runs background validation to check and clean up any deleted catalog items from the student's purchase history in Supabase, keeping their profile database records consistent.
+
 
 ### History Tab:
-- All past mock tests and practice sessions with scores, date, duration
-- Can review completed tests and result breakdowns
+- **Overview**: Displays a chronological list of all the student's mock tests, custom practice sessions, and question bank PDF downloads.
+- **Features & User Actions**:
+  * **Activity Cards**: Each history entry displays:
+    - *Badges*: Test Category (Mock Test, Practice Test), Exam Name (e.g. OPSC OAS), and "Incomplete" status if the test is in-progress.
+    - *Header*: Title of the activity and formatted date/time.
+    - *Outcome/Progress*: Completed tests show scores (e.g., "12.5/20") and accuracy percentage (e.g., "63% Accuracy"). Incomplete tests show "In Progress" with a clock icon and answered question count. Question banks show a blue download button.
+    - *Action Buttons*: Clicking a completed test opens its result breakdown overlay. Clicking an incomplete test resumes the test session. Clicking a downloaded question bank opens its PDF file in a new tab.
+  * **Single Delete Flow**:
+    1. Click the trash icon next to the card.
+    2. Confirm on the overlay popup ("Delete this activity from your history? Delete / Cancel").
+    3. Confirming deletes that specific card and shows a toast message: "Activity deleted from history".
+  * **Clear All Flow**:
+    1. Click the "Clear All" button at the top right (visible only if there is activity history).
+    2. Confirm on the inline prompt ("Clear all? Confirm / Cancel").
+    3. Confirming removes all activities and shows a toast message: "Activity history cleared".
+  * **Empty History View**:
+    - If no activity is recorded, displays "No History Yet" and an "Explore Mock Tests" button.
+    - Clicking the button redirects the user to the Home page and scrolls down to the exam selection cards.
 
 ### Account:
 - Login via Google or Email/Password
@@ -273,10 +756,20 @@ function inlineFormat(text: string): string {
 ───────────────────────────────────────────── */
 interface StickyAICompanionProps {
   isBottomNavVisible?: boolean;
+  exams?: any[];
+  mockTests?: any[];
+  questionBanks?: any[] | Record<string, any[]>;
+  activeTab?: string;
 }
 
-const StickyAICompanion: React.FC<StickyAICompanionProps> = ({ isBottomNavVisible = true }) => {
-  const { user, profile } = useAuth();
+const StickyAICompanion: React.FC<StickyAICompanionProps> = ({ 
+  isBottomNavVisible = true,
+  exams: examsProp,
+  mockTests: mockTestsProp,
+  questionBanks: questionBanksProp,
+  activeTab
+}) => {
+  const { user, profile, hasAccessTo } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -287,17 +780,471 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({ isBottomNavVisibl
   const [dataLoading, setDataLoading] = useState(false);
   const [dataError, setDataError] = useState(false);
   const [isTestMode, setIsTestMode] = useState(false);
+  const [isReviewMode, setIsReviewMode] = useState(false);
+  const [isReviewBottomNav, setIsReviewBottomNav] = useState(false);
   const [hasModalActive, setHasModalActive] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  
+  const effectiveBottomNavVisible = (isBottomNavVisible && !isReviewMode) || isReviewBottomNav;
 
-  /* ── Hide during active mock/practice tests ── */
+  const getFreshUserDynamicData = useCallback((currentData: LiveSiteData | null): LiveSiteData | null => {
+    const baseData = currentData || {
+      exams: [],
+      mockTests: [],
+      questionBanks: [],
+      catalogLoaded: false,
+      loadedAt: Date.now()
+    };
+
+    const userActivities = user?.id ? activityTracker.getActivities(user.id, user.user_metadata) : [];
+    const history = userActivities.map((h: any) => {
+      const score = h.score !== undefined ? h.score : h.metadata?.score;
+      const totalMarks = h.totalMarks !== undefined ? h.totalMarks : (h.metadata?.totalMarks || h.metadata?.total);
+      const accuracy = h.accuracy !== undefined ? h.accuracy : h.metadata?.accuracy;
+      const timeSpent = h.timeSpent !== undefined ? h.timeSpent : h.metadata?.timeTaken;
+      const examName = h.metadata?.examName || h.metadata?.test?.exam;
+      const testCategory = h.metadata?.testCategory || h.metadata?.test?.category;
+      return {
+        type: h.type,
+        title: h.title,
+        timestamp: h.timestamp,
+        score,
+        totalMarks,
+        accuracy,
+        timeSpent,
+        examName,
+        testCategory,
+        metadata: h.metadata,
+      };
+    });
+
+    const selectedExamId = sessionStorage.getItem('oep_selectedExam');
+
+    const completions = userActivities.filter((a: any) => a.type === 'mock_test_completed' || a.type === 'practice_test_completed')
+      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+    let totalCorrect = 0;
+    let totalWrong = 0;
+    let totalAttempted = 0;
+    let totalQuestions = 0;
+    let totalTimeTaken = 0;
+    let totalCalculatedScore = 0;
+
+    const chartDataList: { name: string; score: number; accuracy: number; time: number; testName: string }[] = [];
+
+    completions.forEach((a: any, i: number) => {
+      const rawAnswers = a?.metadata?.answers || {};
+      const questions = a?.metadata?.test?.questions || [];
+      const hasRawData = questions.length > 0 && Object.keys(rawAnswers).length > 0;
+
+      let actCorrect = 0;
+      let actWrong = 0;
+      let actAttempted = 0;
+      let actTotalQ = 0;
+      let negativeMarking = a?.metadata?.test?.negativeMarking ?? 0;
+
+      if (hasRawData) {
+        actTotalQ = questions.length;
+        actAttempted = Object.keys(rawAnswers).length;
+        
+        Object.entries(rawAnswers).forEach(([qIdxStr, ansIdx]) => {
+          const qIdx = parseInt(qIdxStr);
+          const q = questions[qIdx];
+          if (q && q.correctAnswerIndex === ansIdx) {
+            actCorrect++;
+          } else {
+            actWrong++;
+          }
+        });
+      } else {
+        actCorrect = typeof a?.correct === 'number' ? a.correct : (typeof a?.score === 'number' && a.score > 0 ? a.score : 0);
+        actWrong = typeof a?.incorrect === 'number' ? a?.incorrect : 0;
+        actAttempted = a?.metadata?.attempted || (actCorrect + actWrong);
+        actTotalQ = a?.totalMarks || a?.total || actAttempted;
+      }
+
+      const actScore = typeof a?.score === 'number' ? a.score : (actCorrect - (actWrong * negativeMarking));
+      const timeTaken = a?.metadata?.timeTaken || a?.timeSpent || 0;
+
+      totalCorrect += actCorrect;
+      totalWrong += actWrong;
+      totalAttempted += actAttempted;
+      totalQuestions += actTotalQ;
+      totalTimeTaken += timeTaken;
+      totalCalculatedScore += actScore;
+
+      const completionScorePct = actTotalQ > 0 ? Math.round((actScore / actTotalQ) * 100) : 0;
+      const completionAccuracy = actAttempted > 0 ? Math.round((actCorrect / actAttempted) * 100) : 0;
+      const completionTime = actAttempted > 0 ? Math.round(timeTaken / actAttempted) : 0;
+
+      chartDataList.push({
+        name: `T${i + 1}`,
+        score: completionScorePct,
+        accuracy: completionAccuracy,
+        time: completionTime,
+        testName: a?.title || `Mock Test ${i + 1}`
+      });
+    });
+
+    const totalTests = completions.length;
+    const avgAccuracy = totalAttempted > 0 ? Math.round((totalCorrect / totalAttempted) * 100) : 0;
+    const avgScore = totalQuestions > 0 ? Math.round((totalCalculatedScore / totalQuestions) * 100) : 0;
+    const avgTimePerQuestion = totalAttempted > 0 ? Math.round(totalTimeTaken / totalAttempted) : 0;
+
+    const attemptedWithoutSkips = totalCorrect + totalWrong;
+    const precision = attemptedWithoutSkips > 0 ? Math.round((totalCorrect / attemptedWithoutSkips) * 100) : 0;
+    const speed = Math.max(0, Math.min(100, Math.round(100 - ((avgTimePerQuestion - 30) / (120 - 30)) * 100)));
+    const endurance = Math.min(100, Math.round((totalQuestions / 300) * 100));
+
+    let impScore = 0;
+    if (totalTests >= 2) {
+      const lastPoint = chartDataList[chartDataList.length - 1];
+      const prevPoint = chartDataList[chartDataList.length - 2];
+      if (lastPoint && prevPoint) {
+        impScore = lastPoint.score - prevPoint.score;
+      }
+    }
+    const momentum = Math.max(0, Math.min(100, Math.round(50 + (impScore * 2))));
+
+    // Subject Breakdown (examAnalysis) calculation matching AnalyticsView.tsx exactly
+    const examGroups = new Map<string, {
+      lastAttemptDate: string,
+      totalAttempts: number,
+      practiceMap: Map<string, { correct: number, attempted: number }>,
+      mockMap: Map<string, { correct: number, attempted: number }>
+    }>();
+
+    const cleanSubjectName = (name: string) => {
+      if (!name) return "Mixed Questions";
+      let cleaned = name;
+      if (cleaned.match(/[0-9a-f]{8}-[0-9a-f]{4}/) || cleaned.match(/[0-9a-f]{8}/) || cleaned.includes('mockTest')) {
+         cleaned = cleaned.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/ig, '')
+                          .replace(/[0-9a-f]{8}/ig, '')
+                          .replace(/mockTest/ig, '')
+                          .replace(/-/g, ' ')
+                          .replace(/\s+/g, ' ')
+                          .trim();
+      }
+      if (!cleaned || cleaned.length === 0 || cleaned === '•') {
+         if (name.includes('•')) {
+            const parts = name.split('•');
+            cleaned = parts[0].trim();
+         } else {
+            cleaned = "Mixed Questions";
+         }
+      }
+      if (cleaned.toLowerCase() === "general") {
+         return "General Practice";
+      }
+      return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+    };
+
+    const extractSubjectFromTitle = (title: string, examName: string) => {
+      let t = title.replace(new RegExp(examName, 'i'), '')
+                   .replace(/practice/i, '')
+                   .replace(/test/i, '')
+                   .replace(/mock/i, '')
+                   .replace(/session/i, '')
+                   .replace(/pyq/i, '')
+                   .replace(/daily/i, '')
+                   .replace(/-/g, '')
+                   .trim();
+      return t.length > 0 ? t : "Full Subject";
+    };
+
+    completions.forEach((a: any) => {
+      let rawTitle = a.title || "";
+      if (rawTitle.includes('mockTest') || rawTitle.match(/[0-9a-f]{8}/)) {
+        rawTitle = rawTitle.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/ig, '')
+                           .replace(/[0-9a-f]{8}/ig, '')
+                           .replace(/mockTest/ig, '')
+                           .replace(/_/g, ' ')
+                           .trim();
+        if (!rawTitle) {
+          rawTitle = "Practice Session";
+        }
+      }
+
+      let examName = a.metadata?.examName || a.metadata?.test?.exam;
+      if (!examName || examName.match(/[0-9a-f]{8}/)) {
+         if (rawTitle.includes('-')) {
+            examName = rawTitle.split('-')[0].trim();
+         } else {
+            examName = "General";
+         }
+      }
+
+      const isMockTest = a.metadata?.testCategory 
+         ? a.metadata.testCategory !== 'Practice Test'
+         : (a.type === 'mock_test' || a.metadata?.test?.type === 'mock_test' || rawTitle.toLowerCase().includes('mock'));
+         
+      const dateStr = new Date(a.timestamp || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+      if (!examGroups.has(examName)) {
+        examGroups.set(examName, { lastAttemptDate: dateStr, totalAttempts: 0, practiceMap: new Map(), mockMap: new Map() });
+      }
+      const group = examGroups.get(examName)!;
+      group.totalAttempts++;
+
+      const rawAnswers = a.metadata?.answers || {};
+      const questions = a.metadata?.test?.questions || [];
+      const catMeta = a.metadata?.testCategory || a.metadata?.test?.category;
+      const mapToUse = isMockTest ? group.mockMap : group.practiceMap;
+
+      let actCorrect = 0;
+      let actWrong = 0;
+      let actAttempted = 0;
+      let negativeMarking = a.metadata?.test?.negativeMarking ?? 0;
+
+      if (questions.length > 0 && Object.keys(rawAnswers).length > 0) {
+        Object.entries(rawAnswers).forEach(([qIdxStr, ansIdx]) => {
+          const qIdx = parseInt(qIdxStr);
+          const q = questions[qIdx];
+          if (q) {
+            let rawSub = q.subject || q.topic;
+            if (!rawSub || rawSub.toLowerCase() === 'general' || rawSub.match(/[0-9a-f]{8}/)) {
+               rawSub = extractSubjectFromTitle(rawTitle, examName);
+            }
+            if (isMockTest && catMeta && !catMeta.match(/[0-9a-f]{8}/)) {
+               rawSub = rawSub.toLowerCase() === "full subject" || rawSub.toLowerCase() === "general" 
+                  ? catMeta 
+                  : `${catMeta} • ${rawSub}`;
+            }
+            const subject = cleanSubjectName(rawSub);
+            const existing = mapToUse.get(subject) || { correct: 0, attempted: 0 };
+            const isCorrect = q.correctAnswerIndex === ansIdx;
+            
+            mapToUse.set(subject, {
+              correct: existing.correct + (isCorrect ? 1 : 0),
+              attempted: existing.attempted + 1
+            });
+          }
+        });
+      } else {
+         actCorrect = typeof a.correct === 'number' ? a.correct : (typeof a.score === 'number' && a.score > 0 ? a.score : 0);
+         actWrong = typeof a.incorrect === 'number' ? a.incorrect : 0;
+         actAttempted = a.metadata?.attempted || (actCorrect + actWrong);
+         let rawSub = extractSubjectFromTitle(rawTitle, examName);
+         if (isMockTest && catMeta && !catMeta.match(/[0-9a-f]{8}/)) {
+            rawSub = rawSub.toLowerCase() === "full subject" || rawSub.toLowerCase() === "general" 
+               ? catMeta 
+               : `${catMeta} • ${rawSub}`;
+         }
+         const subject = cleanSubjectName(rawSub);
+         const existing = mapToUse.get(subject) || { correct: 0, attempted: 0 };
+         mapToUse.set(subject, {
+            correct: existing.correct + actCorrect,
+            attempted: existing.attempted + actAttempted
+         });
+      }
+    });
+    
+    const examAnalysis = Array.from(examGroups.entries()).map(([name, data]) => {
+      const formatMap = (m: Map<string, any>) => {
+        return Array.from(m.entries()).map(([subName, sData]) => {
+          const acc = sData.attempted > 0 ? (sData.correct / sData.attempted) * 100 : 0;
+          return { 
+             name: subName, 
+             avgScore: Math.round(acc), 
+             status: acc >= 70 ? 'Strong' : 'Weak',
+             correct: sData.correct,
+             attempted: sData.attempted
+          };
+        }).sort((a, b) => b.avgScore - a.avgScore);
+      };
+
+      return {
+        examName: name,
+        lastAttemptDate: data.lastAttemptDate,
+        totalAttempts: data.totalAttempts,
+        practiceTests: formatMap(data.practiceMap),
+        mockTests: formatMap(data.mockMap)
+      };
+    });
+
+    // Load serialized AI insights/checklists and checked actions from localStorage
+    const diagnosticReport = user?.id ? (localStorage.getItem(`oep_analytics_diagnostic_report_${user.id}`) || '') : '';
+    const actionItemsStr = user?.id ? (localStorage.getItem(`oep_analytics_action_items_${user.id}`) || '') : '';
+    let actionItems: any[] = [];
+    if (actionItemsStr) {
+      try {
+        actionItems = JSON.parse(actionItemsStr);
+      } catch (e) {}
+    }
+    const checkedActions = user?.id ? (() => {
+      try {
+        return JSON.parse(localStorage.getItem(`oep_analytics_checked_actions_${user.id}`) || '{}');
+      } catch {
+        return {};
+      }
+    })() : {};
+
+    const analytics = totalTests > 0 ? {
+      totalTests,
+      avgScore,
+      avgAccuracy,
+      avgTimePerQuestion,
+      totalCorrect,
+      totalWrong,
+      totalQuestions,
+      chartData: chartDataList.slice(-15),
+      precision,
+      speed,
+      endurance,
+      momentum,
+      examAnalysis,
+      diagnosticReport,
+      actionItems,
+      checkedActions
+    } : null;
+
+    const purchased = profile?.purchasedSeries || [];
+    const isFullAccess = !!(profile?.hasFullAccess || profile?.role === 'admin');
+
+    // Build seriesId → examId map from testSeries (matching App.tsx resolution logic)
+    const seriesExamMap: Record<string, string> = {};
+    if (baseData.testSeries) {
+      baseData.testSeries.forEach((s: any) => {
+        if (s.id && s.examId) {
+          seriesExamMap[s.id] = s.examId;
+        }
+      });
+    }
+
+    const resolveUnlocked = (
+      mappedExams: any[],
+      mappedMockTests: any[],
+      mappedQuestionBanks: any[]
+    ) => {
+      const uExams: string[] = [];
+      const uMockTests: string[] = [];
+      const uQuestionBanks: string[] = [];
+
+      mappedExams.forEach((e: any) => {
+        if (hasAccessTo(`exam_bundle_${e.id}`)) {
+          uExams.push(e.name);
+        }
+      });
+
+      mappedMockTests.forEach((t: any) => {
+        const resolvedExamId = t.examId || t._resolvedExamId || (t.seriesId && seriesExamMap[t.seriesId]);
+        if (!t.isPremium) return;
+        if (hasAccessTo(t.id, resolvedExamId)) {
+          uMockTests.push(t.title);
+        }
+      });
+
+      mappedQuestionBanks.forEach((b: any) => {
+        if (!b.isPremium) return;
+        if (hasAccessTo(b.id, b.examId)) {
+          uQuestionBanks.push(b.title);
+        }
+      });
+
+      return { uExams, uMockTests, uQuestionBanks };
+    };
+
+    const { uExams, uMockTests, uQuestionBanks } = resolveUnlocked(baseData.exams, baseData.mockTests, baseData.questionBanks);
+
+    const metadata = user?.user_metadata || {};
+    const plannerMeta = metadata.study_coach_planner || {};
+    const practiceMeta = metadata.study_coach_practice || {};
+    const syllabusMeta = metadata.study_coach_syllabus || {};
+    const formulasMeta = metadata.study_coach_formulas || {};
+
+    const targetExam = plannerMeta.targetExam || localStorage.getItem('study_coach_target_exam') || 'OPSC OAS';
+    
+    const completedSessions = plannerMeta.completedSessionsCount !== undefined 
+      ? Number(plannerMeta.completedSessionsCount) 
+      : parseInt(localStorage.getItem('study_coach_completed_sessions') || '0', 10);
+      
+    const completedStudyMinutes = plannerMeta.completedStudyMinutes !== undefined 
+      ? Number(plannerMeta.completedStudyMinutes) 
+      : parseInt(localStorage.getItem('study_coach_completed_study_minutes') || '0', 10);
+
+    const plannerBlocks = plannerMeta.plannerBlocks || (() => {
+      try { return JSON.parse(localStorage.getItem('study_coach_planner_blocks') || '[]'); } catch { return []; }
+    })();
+
+    const activeBlockIndex = plannerMeta.activeBlockIndex !== undefined 
+      ? Number(plannerMeta.activeBlockIndex) 
+      : (() => {
+          const val = localStorage.getItem('study_coach_active_block_index');
+          return val !== null ? Number(val) : -1;
+        })();
+
+    const plannerGoal = plannerMeta.plannerGoal || localStorage.getItem('study_coach_planner_goal') || '';
+    const plannerEnergy = plannerMeta.plannerEnergy || localStorage.getItem('study_coach_planner_energy') || '';
+
+    const quizHistory = practiceMeta.quizHistory || (() => {
+      try { return JSON.parse(localStorage.getItem('study_coach_quiz_history') || '[]'); } catch { return []; }
+    })();
+
+    const bookmarkedQuestions = practiceMeta.bookmarkedQuestions || (() => {
+      try { return JSON.parse(localStorage.getItem('study_coach_bookmarks') || '[]'); } catch { return []; }
+    })();
+
+    const collections = syllabusMeta.collections || (() => {
+      try { return JSON.parse(localStorage.getItem(`study_coach_collections_${user?.id || 'guest'}`) || '[]'); } catch { return []; }
+    })();
+
+    const formulaCategories = formulasMeta.formulaCategories || (() => {
+      try { return JSON.parse(localStorage.getItem('study_coach_formula_categories') || '[]'); } catch { return []; }
+    })();
+
+    const aiMentorState = {
+      targetExam,
+      completedSessions,
+      completedStudyMinutes,
+      quizHistoryCount: quizHistory.length,
+      bookmarksCount: bookmarkedQuestions.length,
+      plannerBlocks,
+      activeBlockIndex,
+      plannerGoal,
+      plannerEnergy,
+      quizHistory,
+      bookmarkedQuestions,
+      collections,
+      formulaCategories,
+    };
+
+    return {
+      ...baseData,
+      history,
+      selectedExamId,
+      selectedExamName: baseData.exams.find((e: any) => e.id === selectedExamId)?.name || selectedExamId,
+      unlockedExams: uExams,
+      unlockedMockTests: uMockTests,
+      unlockedQuestionBanks: uQuestionBanks,
+      analytics,
+      aiMentorState,
+      isFullAccess,
+    };
+  }, [user, profile]);
+
   useEffect(() => {
-    const check = () => setIsTestMode(document.body.hasAttribute('data-test-mode'));
+    // Load local storage activities immediately on mount
+    setSiteData(prev => getFreshUserDynamicData(prev));
+
+    const handleActivityChange = () => {
+      setSiteData(prev => getFreshUserDynamicData(prev));
+    };
+    window.addEventListener('oep-activity-changed', handleActivityChange);
+    return () => window.removeEventListener('oep-activity-changed', handleActivityChange);
+  }, [getFreshUserDynamicData]);
+
+  /* ── Hide/adjust during active mock/practice tests & review modes ── */
+  useEffect(() => {
+    const check = () => {
+      setIsTestMode(document.body.hasAttribute('data-test-mode'));
+      setIsReviewMode(document.body.hasAttribute('data-review-mode'));
+      setIsReviewBottomNav(document.body.hasAttribute('data-review-bottom-nav'));
+    };
     check();
     const observer = new MutationObserver(check);
-    observer.observe(document.body, { attributes: true, attributeFilter: ['data-test-mode'] });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-test-mode', 'data-review-mode', 'data-review-bottom-nav'] });
     return () => observer.disconnect();
   }, []);
 
@@ -329,19 +1276,93 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({ isBottomNavVisibl
   }, []);
   /* ── Load live site data from Supabase when widget opens ── */
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const loadSiteData = async () => {
-    // Cache for 5 minutes
-    if (siteData && Date.now() - siteData.loadedAt < 5 * 60 * 1000) return;
+  const loadSiteData = async (force = false) => {
+    // If props are passed, use them directly and update state
+    if (examsProp && mockTestsProp && questionBanksProp) {
+      let flatQBanks: any[] = [];
+      if (Array.isArray(questionBanksProp)) {
+        flatQBanks = questionBanksProp;
+      } else if (typeof questionBanksProp === 'object') {
+        flatQBanks = Object.values(questionBanksProp).flat();
+      }
+
+      const mappedExams = examsProp
+        .filter((e: any) => e.category !== 'blog' && e.category !== 'system' && !e.name.startsWith('SYSTEM_'))
+        .map((e: any) => ({
+          id: e.id || e.name,
+          name: e.name,
+          description: cleanDescription(e.description),
+          category: e.category,
+          price: parseExamPrice(e.description),
+        }));
+
+      const mappedMockTests = mockTestsProp.map((t: any) => {
+        let price: number | undefined = t.price;
+        let isPremium = t.isPremium ?? false;
+        return {
+          id: t.id,
+          title: t.title,
+          durationMinutes: t.durationMinutes,
+          totalMarks: t.totalMarks,
+          isPremium,
+          price,
+          examId: t.examId,
+        };
+      });
+
+      const mappedQuestionBanks = flatQBanks.map((b: any) => ({
+        id: b.id,
+        title: b.title,
+        type: b.type,
+        questionCount: b.questionCount,
+        isPremium: b.isPremium,
+        price: parseQuestionBankPrice(b.tagline) ?? b.price,
+        examId: b.examId,
+      }));
+
+      const staticData: LiveSiteData = {
+        exams: mappedExams,
+        mockTests: mappedMockTests,
+        questionBanks: mappedQuestionBanks,
+        catalogLoaded: true,
+        loadedAt: Date.now()
+      };
+      setSiteData(getFreshUserDynamicData(staticData));
+      setDataLoading(false);
+      setDataError(false);
+      return;
+    }
+
+    // Cache for 30 seconds fallback - refresh dynamic activities anyway
+    if (!force && siteData && Date.now() - siteData.loadedAt < 30 * 1000) {
+      setSiteData(prev => getFreshUserDynamicData(prev));
+      return;
+    }
+
+    if (force) {
+      setSiteData(null);
+    }
     setDataLoading(true);
     setDataError(false);
     try {
-      const [exams, mockTestsRaw, questionBanks] = await Promise.all([
+      const [exams, mockTestsRaw, questionBanks, testSeries] = await Promise.all([
         examService.getAllExams(),
         examService.getAllMockTestsLite(),
         examService.getAllQuestionBanks(),
+        examService.getAllTestSeries(),
       ]);
 
-      const mockTests = mockTestsRaw.map((t: any) => {
+      const mappedExams = exams
+        .filter((e: any) => e.category !== 'blog' && e.category !== 'system' && !e.name.startsWith('SYSTEM_'))
+        .map((e: any) => ({
+          id: e.id,
+          name: e.name,
+          description: cleanDescription(e.description),
+          category: e.category,
+          price: parseExamPrice(e.description),
+        }));
+
+      const mappedMockTests = mockTestsRaw.map((t: any) => {
         let price: number | undefined;
         let isPremium = t.isPremium ?? false;
         // Extract price from seriesId JSON if present
@@ -356,26 +1377,42 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({ isBottomNavVisibl
           isPremium = t.seriesId.isPremium ?? isPremium;
         }
         return {
+          id: t.id,
           title: t.title,
           durationMinutes: t.durationMinutes,
           totalMarks: t.totalMarks,
           isPremium,
           price,
+          examId: t.examId,
+          seriesId: typeof t.seriesId === 'string' && !t.seriesId.startsWith('{') ? t.seriesId : undefined,
         };
       });
 
-      setSiteData({
-        exams: exams.map(e => ({ name: e.name, description: e.description, category: e.category })),
-        mockTests,
-        questionBanks: questionBanks.map(b => ({
-          title: b.title,
-          type: b.type,
-          questionCount: b.questionCount,
-          isPremium: b.isPremium,
-          price: undefined, // QuestionBank type doesn't have price field directly
-        })),
-        loadedAt: Date.now(),
-      });
+      const mappedQuestionBanks = questionBanks.map(b => ({
+        id: b.id,
+        title: b.title,
+        type: b.type,
+        questionCount: b.questionCount,
+        isPremium: b.isPremium,
+        price: parseQuestionBankPrice(b.tagline) ?? (b as any).price,
+        examId: b.examId,
+      }));
+
+      const mappedTestSeries = (testSeries || []).map((s: any) => ({
+        id: s.id,
+        examId: s.examId,
+        title: s.title,
+      }));
+
+      const staticData: LiveSiteData = {
+        exams: mappedExams,
+        mockTests: mappedMockTests,
+        questionBanks: mappedQuestionBanks,
+        testSeries: mappedTestSeries,
+        catalogLoaded: true,
+        loadedAt: Date.now()
+      };
+      setSiteData(getFreshUserDynamicData(staticData));
     } catch (err) {
       console.error('OEP Buddy: failed to load site data', err);
       setDataError(true);
@@ -388,7 +1425,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({ isBottomNavVisibl
   useEffect(() => {
     if (isOpen) loadSiteData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, examsProp, mockTestsProp, questionBanksProp]);
 
   // Auto-scroll
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -429,7 +1466,11 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({ isBottomNavVisibl
 
     try {
       const history = messages.slice(-6).map(m => ({ role: m.role, content: m.content }));
-      const systemPrompt = buildSystemPrompt(siteData, firstName);
+      const latestSiteData = getFreshUserDynamicData(siteData);
+      if (latestSiteData) {
+        setSiteData(latestSiteData);
+      }
+      const systemPrompt = buildSystemPrompt(latestSiteData, firstName, activeTab);
 
       const response = await fetch('/api/chat/completions', {
         method: 'POST',
@@ -528,7 +1569,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({ isBottomNavVisibl
             onClick={handleOpen}
             className={cn(
               "fixed right-4 sm:right-6 z-[80] group focus:outline-none transition-all duration-300",
-              isBottomNavVisible ? "bottom-24 sm:bottom-28" : "bottom-8 sm:bottom-8"
+              effectiveBottomNavVisible ? "bottom-24 sm:bottom-28" : "bottom-8 sm:bottom-8"
             )}
             style={{ pointerEvents: hasModalActive ? 'none' : 'auto' }}
             title="Ask OEP Buddy"
@@ -571,8 +1612,8 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({ isBottomNavVisibl
             className={cn(
               'fixed left-3 right-3 sm:left-auto sm:right-6 z-[80] w-auto sm:w-[390px] bg-white rounded-3xl shadow-[0_24px_70px_rgba(0,0,0,0.12),0_8px_24px_rgba(138,28,54,0.04)] border border-slate-200/50 overflow-hidden flex flex-col max-h-[85vh] sm:max-h-none transition-all duration-300',
               isMinimized 
-                ? (isBottomNavVisible ? 'h-auto bottom-24 sm:bottom-28' : 'h-auto bottom-8 sm:bottom-8') 
-                : (isBottomNavVisible ? 'bottom-24 sm:bottom-28 h-[500px] sm:h-[540px]' : 'bottom-8 sm:bottom-8 h-[540px] sm:h-[570px]')
+                ? (effectiveBottomNavVisible ? 'h-auto bottom-24 sm:bottom-28' : 'h-auto bottom-8 sm:bottom-8') 
+                : (effectiveBottomNavVisible ? 'bottom-24 sm:bottom-28 h-[500px] sm:h-[540px]' : 'bottom-8 sm:bottom-8 h-[540px] sm:h-[570px]')
             )}
             style={{ pointerEvents: hasModalActive ? 'none' : 'auto' }}
           >
@@ -606,7 +1647,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({ isBottomNavVisibl
               <div className="flex items-center gap-1 relative z-10">
                 {siteData && (
                   <button
-                    onClick={() => { setSiteData(null); loadSiteData(); }}
+                    onClick={() => loadSiteData(true)}
                     className="w-7 h-7 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/15 hover:scale-105 active:scale-95 transition-all"
                     title="Refresh website data"
                   >
@@ -685,7 +1726,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({ isBottomNavVisibl
                       </div>
 
                       {/* Live Platform Status Panel */}
-                      {siteData ? (
+                      {siteData && siteData.catalogLoaded ? (
                         <div className="grid grid-cols-3 gap-2">
                           <div className="bg-slate-50/70 border border-slate-200/40 rounded-2xl p-2.5 flex flex-col items-center justify-center text-center shadow-xs transition-all duration-300 hover:border-brand-200/60 hover:-translate-y-0.5 group">
                             <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform duration-300">

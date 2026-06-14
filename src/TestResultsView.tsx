@@ -14,6 +14,13 @@ export default function TestResultsView({ results, onClose }: { results: any, on
   const [questionExpanded, setQuestionExpanded] = useState(false);
   const [questionOverflows, setQuestionOverflows] = useState(false);
   const questionTextRef = useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    document.body.setAttribute('data-review-mode', 'true');
+    return () => {
+      document.body.removeAttribute('data-review-mode');
+    };
+  }, []);
   
   const { test, answers, score: rawScore, total, timeTaken, timeSpent = {}, markedForReview = [] } = results;
   const questions = test?.questions || [];
@@ -28,6 +35,37 @@ export default function TestResultsView({ results, onClose }: { results: any, on
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
   }, [results]);
+
+  React.useEffect(() => {
+    const handleScrollToTop = () => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+    handleScrollToTop();
+    const frameId = requestAnimationFrame(handleScrollToTop);
+    const timeoutId = setTimeout(handleScrollToTop, 50);
+    return () => {
+      cancelAnimationFrame(frameId);
+      clearTimeout(timeoutId);
+    };
+  }, [results]);
+
+  React.useEffect(() => {
+    const checkAndSetAttribute = () => {
+      if (showQuestionNav && window.innerWidth < 1024) {
+        document.body.setAttribute('data-review-bottom-nav', 'true');
+      } else {
+        document.body.removeAttribute('data-review-bottom-nav');
+      }
+    };
+    checkAndSetAttribute();
+    window.addEventListener('resize', checkAndSetAttribute);
+    return () => {
+      document.body.removeAttribute('data-review-bottom-nav');
+      window.removeEventListener('resize', checkAndSetAttribute);
+    };
+  }, [showQuestionNav]);
 
   React.useEffect(() => {
     if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
@@ -72,9 +110,9 @@ export default function TestResultsView({ results, onClose }: { results: any, on
       isFirstRender.current = false;
       return;
     }
-    if (questionCardRef.current && window.innerWidth < 1024) {
+    if (questionCardRef.current) {
       const rect = questionCardRef.current.getBoundingClientRect();
-      const offset = 80;
+      const offset = window.innerWidth < 1024 ? 80 : 100;
       const targetY = rect.top + window.scrollY - offset;
       window.scrollTo({ top: targetY, behavior: 'smooth' });
     }
@@ -127,7 +165,10 @@ export default function TestResultsView({ results, onClose }: { results: any, on
   };
 
   return (
-    <div className="relative w-full min-h-screen bg-[#F8FAFC] pb-28 sm:pb-20 font-sans overflow-hidden">
+    <div className={cn(
+      "relative w-full min-h-screen bg-[#F8FAFC] font-sans overflow-hidden transition-all duration-300",
+      showQuestionNav ? "pb-18 sm:pb-20" : "pb-12"
+    )}>
       {/* Background gradients for ambient atmosphere */}
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] bg-gradient-to-br from-brand-100/20 via-purple-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" />
       <div className="fixed bottom-0 right-0 w-[800px] h-[600px] bg-gradient-to-tl from-indigo-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" />
@@ -290,7 +331,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
         <div className="lg:col-span-1">
           <div className="glass p-6 sm:p-8 rounded-[2rem] border border-slate-200 premium-shadow bg-white/60 lg:sticky lg:top-24">
              <h3 className="font-extrabold text-slate-900 mb-6 text-lg sm:text-xl tracking-tight">Question Navigator</h3>
-             <div className="max-h-[300px] lg:max-h-[450px] overflow-y-auto pr-1.5 custom-scrollbar">
+              <div className="max-h-[300px] lg:max-h-[450px] overflow-y-auto p-1.5 custom-scrollbar">
                <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-7 gap-2 sm:gap-3 py-1">
                  {questions.map((q: any, i: number) => {
                    const uAns = answers[i];
@@ -300,7 +341,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
                    return (
                      <button 
                        key={i}
-                       onClick={() => { setCurrentIdx(i); setTimeout(() => { if (questionCardRef.current) { const rect = questionCardRef.current.getBoundingClientRect(); const offset = window.innerWidth < 1024 ? 80 : 100; const targetY = rect.top + window.scrollY - offset; window.scrollTo({ top: targetY, behavior: 'smooth' }); } }, 50); }}
+                       onClick={() => setCurrentIdx(i)}
                        className={cn(
                          "aspect-square rounded-xl font-bold flex items-center justify-center text-xs sm:text-sm transition-all relative overflow-hidden",
                          currentIdx === i ? "ring-2 sm:ring-4 ring-slate-200 scale-105 z-10 shadow-lg" : "hover:scale-105 shadow-sm",
@@ -327,7 +368,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
 
         {/* Right Col: Detailed Question Card */}
         <div className="lg:col-span-2 space-y-6">
-          <div ref={questionCardRef} className="glass p-5 sm:p-10 lg:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-200 premium-shadow bg-white">
+          <div ref={questionCardRef} className="glass p-4 sm:p-10 lg:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-200 premium-shadow bg-white">
             <motion.div 
                key={currentIdx}
                {...fadeSlideUpSm}
@@ -447,7 +488,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
              </div>
 
              {currentQ.explanation && (
-                 <div className="math-explanation bg-brand-50 p-5 sm:p-8 lg:p-6 rounded-2xl sm:rounded-3xl border border-brand-100 mb-8 sm:mb-10">
+                 <div className="math-explanation bg-brand-50 p-5 sm:p-8 lg:p-6 rounded-2xl sm:rounded-3xl border border-brand-100 mb-2 lg:mb-10">
                   <h4 className="font-extrabold text-brand-900 flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 text-base sm:text-lg">
                     <div className="bg-white p-1.5 sm:p-2 rounded-lg sm:rounded-xl shadow-sm"><AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-brand-600"/></div> 
                     Detailed Explanation

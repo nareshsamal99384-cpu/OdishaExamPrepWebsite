@@ -71,6 +71,7 @@ function toCloudSafe(activity: UserActivity): UserActivity {
       title: activity.title,
       timestamp: activity.timestamp,
       score: activity.score,
+      totalMarks: activity.totalMarks,
       accuracy: activity.accuracy,
     };
   }
@@ -144,11 +145,13 @@ export const activityTracker = {
       const updated = [newActivity, ...existing].slice(0, LOCAL_MAX);
       try {
         localStorage.setItem(localKey, JSON.stringify(updated));
+        window.dispatchEvent(new CustomEvent('oep-activity-changed'));
       } catch (storageErr) {
         // If storage is full, try trimming older entries
         try {
           const trimmed = [newActivity, ...existing].slice(0, 100);
           localStorage.setItem(localKey, JSON.stringify(trimmed));
+          window.dispatchEvent(new CustomEvent('oep-activity-changed'));
         } catch { /* give up on local storage */ }
       }
 
@@ -180,6 +183,7 @@ export const activityTracker = {
       const updated = existing.filter((a) => a.id !== activityId);
       try {
         localStorage.setItem(localKey, JSON.stringify(updated));
+        window.dispatchEvent(new CustomEvent('oep-activity-changed'));
       } catch { /* ignore */ }
 
       // Sync LIGHTWEIGHT version to cloud (no questions, no large timeSpent maps)
@@ -200,6 +204,7 @@ export const activityTracker = {
     if (!userId) return;
     try {
       localStorage.removeItem(`${STORAGE_KEY_PREFIX}${userId}`);
+      window.dispatchEvent(new CustomEvent('oep-activity-changed'));
     } catch { /* ignore */ }
     try {
       await supabase.auth.updateUser({ data: { activities: [] } });

@@ -430,7 +430,7 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
     const rawData = (propActivities && propActivities.length > 0)
       ? propActivities
       : (user?.id ? activityTracker.getActivities(user.id) : []);
-    return rawData.filter(a => a.type === 'mock_test_completed')
+    return rawData.filter(a => a.type === 'mock_test_completed' || a.type === 'practice_test_completed')
       .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   });
   const [loading, setLoading] = useState(() => !user?.id);
@@ -469,21 +469,46 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
     });
   };
 
-  // Sync chat history when user ID changes (e.g. login/logout)
+  const [checkedActions, setCheckedActions] = useState<Record<number, boolean>>(() => {
+    try {
+      const storageKey = `oep_analytics_checked_actions_${user?.id || 'guest'}`;
+      const saved = localStorage.getItem(storageKey);
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+
+  // Sync chat history and checked actions when user ID changes (e.g. login/logout)
   useEffect(() => {
     try {
-      const storageKey = `oep_analytics_coach_messages_${user?.id || 'guest'}`;
-      const saved = localStorage.getItem(storageKey);
-      setRawChatHistory(saved ? JSON.parse(saved) : []);
+      const chatKey = `oep_analytics_coach_messages_${user?.id || 'guest'}`;
+      const savedChat = localStorage.getItem(chatKey);
+      setRawChatHistory(savedChat ? JSON.parse(savedChat) : []);
     } catch (e) {
       setRawChatHistory([]);
     }
+    try {
+      const actionsKey = `oep_analytics_checked_actions_${user?.id || 'guest'}`;
+      const savedActions = localStorage.getItem(actionsKey);
+      setCheckedActions(savedActions ? JSON.parse(savedActions) : {});
+    } catch (e) {
+      setCheckedActions({});
+    }
   }, [user?.id]);
+
   const [chatLoading, setChatLoading] = useState<boolean>(false);
-  const [checkedActions, setCheckedActions] = useState<Record<number, boolean>>({});
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll chat container to bottom locally
+  // Auto-scroll chat container and persist dashboard items
+  useEffect(() => {
+    if (!user?.id) return;
+    localStorage.setItem(`oep_analytics_diagnostic_report_${user.id}`, aiInsight || '');
+    localStorage.setItem(`oep_analytics_action_items_${user.id}`, JSON.stringify(actionItems || []));
+    localStorage.setItem(`oep_analytics_checked_actions_${user.id}`, JSON.stringify(checkedActions || {}));
+    window.dispatchEvent(new CustomEvent('oep-activity-changed'));
+  }, [user?.id, aiInsight, actionItems, checkedActions]);
+
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTo({
@@ -494,13 +519,20 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
   }, [chatHistory, chatLoading]);
 
   useEffect(() => {
-    const rawData = (propActivities && propActivities.length > 0)
-      ? propActivities
-      : (user?.id ? activityTracker.getActivities(user.id) : []);
-    const completions = rawData.filter(a => a.type === 'mock_test_completed')
-      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-    setActivities(completions);
-    setLoading(false);
+    const load = () => {
+      const rawData = (propActivities && propActivities.length > 0)
+        ? propActivities
+        : (user?.id ? activityTracker.getActivities(user.id) : []);
+      const completions = rawData.filter(a => a.type === 'mock_test_completed' || a.type === 'practice_test_completed')
+        .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      setActivities(completions);
+      setLoading(false);
+    };
+
+    load();
+
+    window.addEventListener('oep-activity-changed', load);
+    return () => window.removeEventListener('oep-activity-changed', load);
   }, [user?.id, propActivities]);
 
   const stats = useMemo(() => {
@@ -538,13 +570,13 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
           }
         });
       } else {
-        actCorrect = a.correct || a.score || 0;
-        actWrong = a.incorrect || 0;
+        actCorrect = typeof a.correct === 'number' ? a.correct : (typeof a.score === 'number' && a.score > 0 ? a.score : 0);
+        actWrong = typeof a.incorrect === 'number' ? a.incorrect : 0;
         actAttempted = a.metadata?.attempted || (actCorrect + actWrong);
-        actTotalQ = a.total || actAttempted;
+        actTotalQ = a.totalMarks || a.total || actAttempted;
       }
 
-      const actScore = Math.max(0, actCorrect - (actWrong * negativeMarking));
+      const actScore = typeof a.score === 'number' ? a.score : (actCorrect - (actWrong * negativeMarking));
       const actAccuracy = actAttempted > 0 ? (actCorrect / actAttempted) * 100 : 0;
       const timeTaken = a.metadata?.timeTaken || a.timeSpent || 0;
 
@@ -759,6 +791,21 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
        { name: "Momentum", value: Math.round(momentumScore || 50) }
     ];
 
+    const lightAttempts = recalculatedActivities.map(a => ({
+      title: a.title,
+      type: a.type,
+      timestamp: a.timestamp,
+      score: a.recal_score,
+      totalQ: a.recal_totalQ,
+      accuracy: a.recal_accuracy,
+      correct: a.recal_correct,
+      wrong: a.recal_wrong,
+      attempted: a.recal_attempted,
+      time: a.recal_time,
+      examName: a.metadata?.examName || a.metadata?.test?.exam,
+      testCategory: a.metadata?.testCategory || a.metadata?.test?.category
+    }));
+
     return {
       totalTests,
       avgScore: Math.round(totalQuestions > 0 ? (totalCalculatedScore / totalQuestions) * 100 : 0),
@@ -773,7 +820,8 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
       impScore: Math.round(impScore),
       impAcc: Math.round(impAcc),
       skillProfile,
-      examAnalysis: parsedExamAnalysis
+      examAnalysis: parsedExamAnalysis,
+      attempts: lightAttempts
     };
   }, [activities]);
 
@@ -999,15 +1047,57 @@ Your output must be a JSON object with:
     setChatLoading(true);
 
     try {
-      const systemPrompt = `You are the OdishaExamPrep AI Coach, an elite personal tutor. You help students understand their performance metrics.
-Use this student context in your replies:
-- Average Score: ${stats.avgScore}%
-- Accuracy: ${stats.avgAccuracy}%
-- Speed: ${stats.avgTimePerQuestion.toFixed(1)}s per question
-- Total Tests: ${stats.totalTests}
-- Strengths/Weaknesses: ${stats.examAnalysis.map(e => `${e.examName}: ${[...(e.mockTests || []), ...(e.practiceTests || [])].map(s => `${s.name} (${s.avgScore}%)`).join(', ')}`).join('; ')}
+      const historyStr = stats?.attempts && stats.attempts.length
+        ? stats.attempts
+            .map(h => {
+              const scoreStr = h.score !== undefined ? `, Score: ${h.score}${h.totalQ !== undefined ? `/${h.totalQ}` : ''}` : '';
+              const accStr = h.accuracy !== undefined ? `, Accuracy: ${Math.round(h.accuracy)}%` : '';
+              const examStr = h.examName ? `, Exam: "${h.examName}"` : '';
+              const catStr = h.testCategory ? `, Category: "${h.testCategory}"` : '';
+              const durationStr = h.time !== undefined ? `, Time Spent: ${Math.floor(h.time / 60)}m ${h.time % 60}s` : '';
+              const dateObj = h.timestamp ? new Date(h.timestamp) : null;
+              const isValidDate = dateObj && !isNaN(dateObj.getTime());
+              const dateStr = isValidDate ? dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown Date';
+              const timeStr = isValidDate ? dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Unknown Time';
+              return `• Title: "${h.title}" | Date: ${dateStr} | Time: ${timeStr} | Type: ${h.type.replace(/_/g, ' ')}${examStr}${catStr}${scoreStr}${accStr}${durationStr}`;
+            })
+            .join('\n')
+        : 'No mock or practice test attempts recorded yet.';
 
-Keep your answers short, structured, and focused on helping them improve their Odisha exam scores. Do not mention external AI brands.`;
+      const skillProfileStr = stats?.skillProfile
+        ? stats.skillProfile.map(s => `  * ${s.name}: ${s.value}%`).join('\n')
+        : '  * Skill profile not calculated yet.';
+
+      const actionItemsStr = actionItems && actionItems.length
+        ? actionItems.map((item: any, idx: number) => {
+            const isCompleted = !!checkedActions[idx];
+            return `  ${idx + 1}. Task: "${item.task}" | Status: ${isCompleted ? 'COMPLETED (checked)' : 'PENDING (unchecked)'} | Boost: ${item.boost} | Timeframe: ${item.timeframe}`;
+          }).join('\n')
+        : '  * No study checklist items generated yet.';
+
+      const systemPrompt = `You are the "OdishaExamPrep AI Performance Coach", an elite academic analyst and tutor. You help students understand and improve their performance metrics based on real database records.
+
+Use this complete student context in your replies:
+- Student Name: ${user?.user_metadata?.full_name || 'Student'}
+- Active target exam: ${sessionStorage.getItem('oep_selectedExamName') || sessionStorage.getItem('oep_selectedExam') || 'None selected'}
+- Average Score: ${stats?.avgScore ?? 0}%
+- Average Accuracy: ${stats?.avgAccuracy ?? 0}%
+- Average Speed: ${(stats?.avgTimePerQuestion ?? 0).toFixed(1)}s per question
+- Total Test Attempts: ${stats?.totalTests ?? 0}
+- Calculated Skill Profile Radar Dimensions:
+${skillProfileStr}
+- Latest AI Scan Diagnostic Insight: "${aiInsight || 'No scan insights generated yet.'}"
+- Custom Action Plan checklist (Completed/Pending status based on user clicks):
+${actionItemsStr}
+- Detailed Test Attempts (from oldest to newest):
+${historyStr}
+- Subject-by-Subject Breakdown:
+${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (Attempts: ${e.totalAttempts})\n` + [...(e.mockTests || []), ...(e.practiceTests || [])].map(s => `    - Subject: "${s.name}" | Status: ${s.status} (Accuracy: ${s.avgScore}%, Correct: ${s.correct}/${s.attempted})`).join('\n')).join('\n') : '  * No breakdown compiled yet.'}
+
+## ⚠️ CRITICAL RULES — READ CAREFULLY
+1. **Answer ONLY based on the REAL DATA above.** Do NOT hallucinate other scores, mock tests, topics, or checklist items.
+2. If the student asks about a specific mock/practice test score, speed dimension, weak topic, or checklist action item that is not in the real data list above, state that you do not have that specific data.
+3. Keep your answers warm, encouraging, short, structured (2-4 sentences), and focused on helping them improve their scores in Odisha exams. Do not mention external AI brands.`;
 
       const apiMessages = [
         { role: 'system', content: systemPrompt },

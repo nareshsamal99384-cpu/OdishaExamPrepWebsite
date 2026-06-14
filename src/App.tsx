@@ -54,6 +54,7 @@ import { useAuth } from './lib/AuthContext';
 import { supabase } from './lib/supabase';
 import { cn, getDirectImageUrl } from './lib/utils';
 import { examService } from './lib/examService';
+import { startSyncEngine } from './lib/syncEngine';
 import { DEFAULT_ACHIEVERS_JOURNAL } from './lib/defaultAchievers';
 import { useScrollSpy } from './hooks/useScrollSpy';
 import { scrollToElement, scrollToTop } from './lib/scrollManager';
@@ -104,6 +105,8 @@ const HistoryView = ({
 
   useEffect(() => {
     loadActivities();
+    window.addEventListener('oep-activity-changed', loadActivities);
+    return () => window.removeEventListener('oep-activity-changed', loadActivities);
   }, [loadActivities]);
 
   const handleDeleteActivity = async (activityId: string) => {
@@ -2288,42 +2291,28 @@ const LandingPage = () => {
 };
 
 const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQuestionBanks, hasAccessTo, onLaunchMockTest, onLaunchBank, onViewExam, loadingExams }: any) => {
-  const { refreshProfile } = useAuth();
+  const { refreshProfile, syncEntitlements } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
-  // Self-healing cleanup of deleted items from user purchases
+  // Sync profile when the library is opened/mounted
+  React.useEffect(() => {
+    refreshProfile().catch((err) => console.error("Error refreshing profile on mount:", err));
+  }, []);
+
+  // Synchronize entitlements automatically when the catalog is loaded or user metadata changes
   React.useEffect(() => {
     if (!user || !profile || loadingExams || exams.length === 0) return;
 
-    const purchased = profile.purchasedSeries || [];
-    if (purchased.length === 0) return;
+    const catalog = {
+      exams,
+      mockTests,
+      testSeries,
+      questionBanks: Object.values(dynamicQuestionBanks).flat()
+    };
 
-    const validIds = new Set<string>();
-    exams.forEach((e: any) => {
-      validIds.add(e.id);
-      validIds.add(`exam_bundle_${e.id}`);
+    syncEntitlements(catalog).catch((err: any) => {
+      console.error("Error synchronizing entitlements:", err);
     });
-    testSeries.forEach((s: any) => validIds.add(s.id));
-    mockTests.forEach((t: any) => validIds.add(t.id));
-    Object.values(dynamicQuestionBanks).flat().forEach((b: any) => validIds.add(b.id));
-
-    const filteredPurchased = purchased.filter((id: string) => {
-      if (id.startsWith('exam_bundle_')) {
-        const exId = id.replace('exam_bundle_', '');
-        return exams.some((e: any) => e.id === exId);
-      }
-      return validIds.has(id);
-    });
-
-    if (filteredPurchased.length !== purchased.length) {
-      supabase.auth.updateUser({
-        data: { purchasedSeries: filteredPurchased }
-      }).then(({ error }) => {
-        if (!error) {
-          refreshProfile();
-        }
-      });
-    }
   }, [user, profile?.purchasedSeries, exams, testSeries, mockTests, dynamicQuestionBanks, loadingExams]);
 
   const handleRefresh = async () => {
@@ -2457,6 +2446,16 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
           My <span className="premium-text-gradient">Library</span>
         </h2>
         <p className="text-slate-500 font-medium text-lg">All your unlocked premium content in one place.</p>
+        <div className="flex justify-center mt-2">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 font-bold rounded-xl text-xs transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed select-none"
+          >
+            <RotateCw className={cn("w-3.5 h-3.5 text-brand-600", refreshing && "animate-spin")} />
+            {refreshing ? 'Syncing Library...' : 'Sync Library'}
+          </button>
+        </div>
       </div>
 
       {loadingExams ? (
@@ -2839,8 +2838,14 @@ const OnboardingModal = ({
 };
 
 const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activities = [], onNavigate, onActivityLogged, selectedExam: propsSelectedExam, setSelectedExam: propsSetSelectedExam }: { isGuest?: boolean, onSignIn?: () => void, mainTab?: string, user?: any, activities?: any[], onNavigate?: (tab: any) => void, onActivityLogged?: () => void, selectedExam?: string | null, setSelectedExam?: (val: string | null) => void }) => {
-  const { profile, isAdmin, hasFullAccess, grantFullAccess, hasAccessTo, unlockItem, guestUsage, incrementGuestUsage } = useAuth();
+  const { profile, isAdmin, hasFullAccess, grantFullAccess, hasAccessTo, unlockItem, guestUsage, incrementGuestUsage, syncEntitlements } = useAuth();
   const navigate = useNavigate();
+  const [dynamicQuestionBanks, setDynamicQuestionBanks] = useState<Record<string, any[]>>(() => _dashboardCache.dynamicQuestionBanks);
+  const [exams, setExams] = useState<any[]>(() => _dashboardCache.exams);
+  const [testSeries, setTestSeries] = useState<any[]>(() => _dashboardCache.testSeries);
+  const [mockTests, setMockTests] = useState<any[]>(() => _dashboardCache.mockTests);
+  const [loadingExams, setLoadingExams] = useState(() => _dashboardCache.exams.length === 0);
+  const [selectedMockCategory, setSelectedMockCategory] = useState<string | null>(() => sessionStorage.getItem('oep_selectedMockCategory') || null);
   const [internalSelectedExam, setInternalSelectedExam] = useState<string | null>(() => sessionStorage.getItem('oep_selectedExam') || null);
   const selectedExam = propsSelectedExam !== undefined ? propsSelectedExam : internalSelectedExam;
   const setSelectedExam = (val: string | null) => {
@@ -2910,11 +2915,18 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   };
 
   useEffect(() => {
-    if (selectedExam) sessionStorage.setItem('oep_selectedExam', selectedExam);
-    else sessionStorage.removeItem('oep_selectedExam');
+    if (selectedExam) {
+      sessionStorage.setItem('oep_selectedExam', selectedExam);
+      const name = exams.find((e: any) => e.id === selectedExam)?.name || selectedExam;
+      sessionStorage.setItem('oep_selectedExamName', name);
+    } else {
+      sessionStorage.removeItem('oep_selectedExam');
+      sessionStorage.removeItem('oep_selectedExamName');
+    }
     setIsDescExpanded(false);
     setIsBannerDescExpanded(false);
-  }, [selectedExam]);
+    window.dispatchEvent(new CustomEvent('oep-activity-changed'));
+  }, [selectedExam, exams]);
 
   useEffect(() => {
     if (selectedExam) {
@@ -2934,6 +2946,22 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       }
     }
   }, [user]);
+
+  // Synchronize entitlements automatically when the catalog is loaded or user metadata changes
+  useEffect(() => {
+    if (!user || !profile || loadingExams || exams.length === 0) return;
+
+    const catalog = {
+      exams,
+      mockTests,
+      testSeries,
+      questionBanks: Object.values(dynamicQuestionBanks).flat()
+    };
+
+    syncEntitlements(catalog).catch((err: any) => {
+      console.error("Error synchronizing entitlements on dashboard mount:", err);
+    });
+  }, [user, profile?.purchasedSeries, exams, testSeries, mockTests, dynamicQuestionBanks, loadingExams]);
 
 
 
@@ -3306,7 +3334,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 backdrop-blur-md bg-slate-900/60 pointer-events-auto"
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 backdrop-blur-xl bg-slate-950/40 pointer-events-auto"
             >
               <div className="absolute inset-0" onClick={() => setShowPracticeConfig(false)} />
               <motion.div
@@ -3314,123 +3342,283 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ type: "spring", bounce: 0.3, duration: 0.5 }}
-                className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden"
+                className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-slate-200/50 overflow-hidden"
               >
-                <div className="p-4 sm:p-6 md:p-8 overflow-y-auto no-scrollbar md:custom-scrollbar">
-                  <div className="flex justify-between items-start mb-4 md:mb-6">
-                    <div>
-                      <h3 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900">Configure Practice</h3>
-                      <p className="text-[11px] sm:text-xs md:text-sm text-slate-500 font-medium mt-0.5">Set your preferences for this session</p>
+                {/* Background glowing effects */}
+                <div className="absolute -top-40 -left-40 w-96 h-96 bg-brand-500/10 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
+
+                <div className="p-5 sm:p-7 md:p-9 overflow-y-auto no-scrollbar md:custom-scrollbar relative z-10 flex flex-col">
+                  <div className="flex justify-between items-start mb-6 md:mb-8 border-b border-slate-100 pb-5">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 premium-gradient rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-brand-500/10">
+                        <Dumbbell className="w-6 h-6 text-white animate-[pulse_3s_infinite]" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl sm:text-2xl font-black premium-text-gradient tracking-tight">Configure Practice</h3>
+                        <p className="text-xs sm:text-sm text-slate-500 font-semibold mt-0.5">Set your preferences for this session</p>
+                      </div>
                     </div>
-                    <Button variant="ghost" onClick={() => setShowPracticeConfig(false)} className="p-1.5 hover:bg-slate-100 rounded-lg -mr-1">
-                      <X className="w-5 h-5 text-slate-400" />
-                    </Button>
+                    <button 
+                      onClick={() => setShowPracticeConfig(false)} 
+                      className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full transition-colors cursor-pointer border border-slate-200/40"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 mb-4 md:mb-6">
-                    <div className="space-y-1.5 md:space-y-3">
-                      <label className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Select Exam</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-7 mb-6 md:mb-8">
+                    {/* Select Exam Card */}
+                    <div className="bg-slate-50/50 border border-slate-200/50 rounded-2xl p-4.5 space-y-3 flex flex-col justify-between hover:border-brand-200 hover:shadow-md hover:shadow-brand-500/2 transition-all duration-300 relative group">
+                      <div className="absolute top-0 right-0 w-16 h-16 bg-brand-500/5 rounded-full blur-lg pointer-events-none" />
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />
+                          Select Exam
+                        </label>
+                        <span className="text-[9px] font-extrabold text-brand-600 bg-brand-50/80 px-2 py-0.5 rounded-full uppercase tracking-wider">Step 1</span>
+                      </div>
                       <SearchableSelect
                         value={practiceSettings.examId || ''}
                         onChange={(val) => setPracticeSettings({...practiceSettings, examId: val, category: '', topic: ''})}
                         options={actualExams.map(ex => ({ value: ex.id, label: ex.name }))}
                         placeholder="Choose an exam..."
                         searchPlaceholder="Search exams..."
-                        className="px-3 md:px-4 h-[44px] md:h-[50px] rounded-lg md:rounded-xl text-sm md:text-base"
+                        className="px-4 h-[48px] rounded-xl text-sm border-slate-200 bg-white hover:border-slate-300 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/5 transition-all font-bold text-slate-700 shadow-sm"
                       />
                     </div>
-                    <div className="space-y-1.5 md:space-y-3">
-                      <label className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Select Category</label>
-                      <SearchableSelect
-                        value={practiceSettings.category}
-                        onChange={(val) => setPracticeSettings({...practiceSettings, category: val, topic: ''})}
-                        disabled={!practiceSettings.examId}
-                        options={[
-                          { value: "topic-wise", label: "Topic-wise Question Bank" },
-                          { value: "exam-focused", label: "Exam-Focused Bank" },
-                          { value: "revision-sets", label: "Revision Sets" },
-                          { value: "pyq-collections", label: "PYQ Collections" },
-                        ]}
-                        placeholder={practiceSettings.examId ? 'Choose a category...' : 'Select an exam first'}
-                        searchPlaceholder="Search categories..."
-                        className="px-3 md:px-4 h-[44px] md:h-[50px] rounded-lg md:rounded-xl text-sm md:text-base"
-                      />
+
+                    {/* Select Category Card */}
+                    <div className={cn(
+                      "border rounded-2xl p-4.5 space-y-3 flex flex-col justify-between transition-all duration-300 relative group",
+                      practiceSettings.examId 
+                        ? "bg-slate-50/50 border-slate-200/50 hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-500/2" 
+                        : "bg-slate-100/20 border-slate-200/30 opacity-75"
+                    )}>
+                      {practiceSettings.examId && <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-500/5 rounded-full blur-lg pointer-events-none" />}
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <span className={cn("w-1.5 h-1.5 rounded-full", practiceSettings.examId ? "bg-indigo-500 animate-pulse" : "bg-slate-300")} />
+                          Select Category
+                        </label>
+                        <span className={cn("text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider",
+                          practiceSettings.examId ? "text-indigo-600 bg-indigo-50/80" : "text-slate-400 bg-slate-100"
+                        )}>Step 2</span>
+                      </div>
+                      {!practiceSettings.examId ? (
+                        <div className="h-[48px] rounded-xl border border-dashed border-slate-200 bg-slate-50/50 flex items-center justify-between px-4 text-slate-400 text-xs font-semibold select-none">
+                          <span className="flex items-center gap-2">
+                            <Lock className="w-3.5 h-3.5 text-slate-300" />
+                            <span>Select an exam first</span>
+                          </span>
+                        </div>
+                      ) : (
+                        <SearchableSelect
+                          value={practiceSettings.category}
+                          onChange={(val) => setPracticeSettings({...practiceSettings, category: val, topic: ''})}
+                          disabled={!practiceSettings.examId}
+                          options={[
+                            { value: "topic-wise", label: "Topic-wise Question Bank" },
+                            { value: "exam-focused", label: "Exam-Focused Bank" },
+                            { value: "revision-sets", label: "Revision Sets" },
+                            { value: "pyq-collections", label: "PYQ Collections" },
+                          ]}
+                          placeholder="Choose a category..."
+                          searchPlaceholder="Search categories..."
+                          className="px-4 h-[48px] rounded-xl text-sm border-slate-200 bg-white hover:border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all font-bold text-slate-700 shadow-sm"
+                        />
+                      )}
                     </div>
-                    <div className="space-y-1.5 md:space-y-3 sm:col-span-2 lg:col-span-1">
-                      <label className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Select Topic / Unit</label>
-                      <SearchableSelect
-                        value={practiceSettings.topic}
-                        onChange={(val) => setPracticeSettings({...practiceSettings, topic: val})}
-                        disabled={!practiceSettings.category}
-                        options={(dynamicQuestionBanks[practiceSettings.category] || [])
-                          .filter((item: any) => item.examId === practiceSettings.examId)
-                          .map((item: any) => ({
-                            value: item.id,
-                            label: `${item.title} ${item.isPremium && !hasAccessTo(item.id, item.examId) ? '(Premium)' : ''}`
-                          }))}
-                        placeholder={practiceSettings.category ? 'Choose a topic...' : 'Select a category first'}
-                        searchPlaceholder="Search topics..."
-                        className="px-3 md:px-4 h-[44px] md:h-[50px] rounded-lg md:rounded-xl text-sm md:text-base"
-                      />
+
+                    {/* Select Topic / Unit Card */}
+                    <div className={cn(
+                      "border rounded-2xl p-4.5 space-y-3 flex flex-col justify-between transition-all duration-300 relative group sm:col-span-2 lg:col-span-1",
+                      practiceSettings.category 
+                        ? "bg-slate-50/50 border-slate-200/50 hover:border-purple-200 hover:shadow-md hover:shadow-purple-500/2" 
+                        : "bg-slate-100/20 border-slate-200/30 opacity-75"
+                    )}>
+                      {practiceSettings.category && <div className="absolute top-0 right-0 w-16 h-16 bg-purple-500/5 rounded-full blur-lg pointer-events-none" />}
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <span className={cn("w-1.5 h-1.5 rounded-full", practiceSettings.category ? "bg-purple-500 animate-pulse" : "bg-slate-300")} />
+                          Select Topic / Unit
+                        </label>
+                        <span className={cn("text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider",
+                          practiceSettings.category ? "text-purple-600 bg-purple-50/80" : "text-slate-400 bg-slate-100"
+                        )}>Step 3</span>
+                      </div>
+                      {!practiceSettings.category ? (
+                        <div className="h-[48px] rounded-xl border border-dashed border-slate-200 bg-slate-50/50 flex items-center justify-between px-4 text-slate-400 text-xs font-semibold select-none">
+                          <span className="flex items-center gap-2">
+                            <Lock className="w-3.5 h-3.5 text-slate-300" />
+                            <span>Select a category first</span>
+                          </span>
+                        </div>
+                      ) : (
+                        <SearchableSelect
+                          value={practiceSettings.topic}
+                          onChange={(val) => setPracticeSettings({...practiceSettings, topic: val})}
+                          disabled={!practiceSettings.category}
+                          options={(dynamicQuestionBanks[practiceSettings.category] || [])
+                            .filter((item: any) => item.examId === practiceSettings.examId)
+                            .map((item: any) => ({
+                              value: item.id,
+                              label: `${item.title} ${item.isPremium && !hasAccessTo(item.id, item.examId) ? '(Premium)' : ''}`
+                            }))}
+                          placeholder="Choose a topic..."
+                          searchPlaceholder="Search topics..."
+                          className="px-4 h-[48px] rounded-xl text-sm border-slate-200 bg-white hover:border-slate-300 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/5 transition-all font-bold text-slate-700 shadow-sm"
+                        />
+                      )}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-6">
-                    <div className="space-y-2 md:space-y-3">
-                      <div className="flex justify-between items-end">
-                        <label className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Number of Questions</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-7">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-end mb-1">
+                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                          Number of Questions
+                        </label>
                         {practiceSettings.topic && (
-                          <span className="text-[10px] md:text-xs font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded">
+                          <span className="text-[10px] font-bold text-indigo-650 bg-indigo-50 border border-indigo-100/50 px-2 py-0.5 rounded-full">
                             {topicMaxQuestions} Available
                           </span>
                         )}
                       </div>
                       {!practiceSettings.topic ? (
-                        <div className="w-full p-2.5 md:p-3 rounded-lg md:rounded-xl border border-slate-200 bg-slate-50 text-slate-400 font-bold text-center text-xs md:text-sm">Select a topic first</div>
+                        <div className="w-full py-9 rounded-2xl border border-dashed border-slate-250 bg-slate-50/30 text-slate-400 font-bold text-center text-xs md:text-sm flex flex-col items-center justify-center gap-2 shadow-sm transition-all duration-300">
+                          <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
+                            <Lock className="w-4 h-4 text-slate-400" />
+                          </div>
+                          <div className="text-slate-400 font-extrabold text-[11px] uppercase tracking-wider">Select a topic first</div>
+                        </div>
                       ) : topicMaxQuestions === 0 ? (
-                        <div className="w-full p-2.5 md:p-3 rounded-lg md:rounded-xl border border-rose-100 bg-rose-50 text-rose-500 font-bold text-center text-xs md:text-sm">No questions available yet</div>
+                        <div className="w-full py-9 rounded-2xl border border-dashed border-rose-200 bg-rose-50/20 text-rose-500 font-bold text-center text-xs md:text-sm flex flex-col items-center justify-center gap-2 shadow-sm transition-all duration-300">
+                          <div className="w-9 h-9 bg-rose-50 rounded-full flex items-center justify-center text-rose-450">
+                            <AlertCircle className="w-4 h-4 text-rose-500" />
+                          </div>
+                          <div className="text-rose-500 font-extrabold text-[11px] uppercase tracking-wider">No questions available yet</div>
+                        </div>
                       ) : (
-                        <div className="flex items-center gap-3">
-                          <input type="range" min="1" max={topicMaxQuestions} value={practiceSettings.questions}
-                            onChange={(e) => setPracticeSettings({...practiceSettings, questions: e.target.value})}
-                            className="flex-1 accent-indigo-600 h-1.5 md:h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
-                          <div className="relative w-16 md:w-20 shrink-0">
-                            <input type="number" min="1" max={topicMaxQuestions} value={practiceSettings.questions}
-                              onChange={(e) => { let val = parseInt(e.target.value); if (isNaN(val)) val = 1; if (val > topicMaxQuestions) val = topicMaxQuestions; if (val < 1) val = 1; setPracticeSettings({...practiceSettings, questions: val.toString()}); }}
-                              className="w-full p-2 md:p-2.5 rounded-lg md:rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-black text-slate-800 text-center text-xs md:text-sm" />
+                        <div className="bg-slate-50/50 border border-slate-200/60 rounded-2xl p-5 relative overflow-hidden transition-all duration-300 shadow-sm hover:border-slate-300/80">
+                          <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-xl pointer-events-none" />
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="text-2xl font-black text-indigo-950 tracking-tight flex items-baseline gap-1">
+                              {practiceSettings.questions}
+                              <span className="text-xs font-semibold text-slate-400">questions</span>
+                            </span>
+                            <span className="text-[10px] font-extrabold text-indigo-650 bg-indigo-50/80 border border-indigo-100/50 px-2 py-0.5 rounded-full">
+                              Range: 1 - {topicMaxQuestions}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <input 
+                              type="range" 
+                              min="1" 
+                              max={topicMaxQuestions} 
+                              value={practiceSettings.questions}
+                              onChange={(e) => setPracticeSettings({...practiceSettings, questions: e.target.value})}
+                              className="flex-1 accent-indigo-600 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" 
+                            />
+                            <div className="relative w-16 shrink-0">
+                              <input 
+                                type="number" 
+                                min="1" 
+                                max={topicMaxQuestions} 
+                                value={practiceSettings.questions}
+                                onChange={(e) => { 
+                                  let val = parseInt(e.target.value); 
+                                  if (isNaN(val)) val = 1; 
+                                  if (val > topicMaxQuestions) val = topicMaxQuestions; 
+                                  if (val < 1) val = 1; 
+                                  setPracticeSettings({...practiceSettings, questions: val.toString()}); 
+                                }}
+                                className="w-full py-1.5 px-2 rounded-xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black text-slate-800 text-center text-xs md:text-sm shadow-sm" 
+                              />
+                            </div>
                           </div>
                         </div>
                       )}
                     </div>
-                    <div className="space-y-2 md:space-y-3">
-                      <label className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Time Limit (Minutes)</label>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-end mb-1">
+                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                          Time Limit
+                        </label>
+                      </div>
                       {!practiceSettings.topic ? (
-                        <div className="w-full p-2.5 md:p-3 rounded-lg md:rounded-xl border border-slate-200 bg-slate-50 text-slate-400 font-bold text-center text-xs md:text-sm">Select a topic first</div>
+                        <div className="w-full py-9 rounded-2xl border border-dashed border-slate-250 bg-slate-50/30 text-slate-400 font-bold text-center text-xs md:text-sm flex flex-col items-center justify-center gap-2 shadow-sm transition-all duration-300">
+                          <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
+                            <Lock className="w-4 h-4 text-slate-400" />
+                          </div>
+                          <div className="text-slate-400 font-extrabold text-[11px] uppercase tracking-wider">Select a topic first</div>
+                        </div>
                       ) : topicMaxQuestions === 0 ? (
-                        <div className="w-full p-2.5 md:p-3 rounded-lg md:rounded-xl border border-rose-100 bg-rose-50 text-rose-500 font-bold text-center text-xs md:text-sm">-</div>
+                        <div className="w-full py-9 rounded-2xl border border-dashed border-slate-200 bg-slate-50/30 text-slate-400 font-bold text-center text-xs md:text-sm flex flex-col items-center justify-center gap-2 shadow-sm transition-all duration-300">
+                          <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
+                            <Lock className="w-4 h-4 text-slate-400" />
+                          </div>
+                          <div className="text-slate-400 font-extrabold text-[11px] uppercase tracking-wider">-</div>
+                        </div>
                       ) : (
-                        <div className="flex items-center gap-3">
-                          <input type="range" min="1" max="180" value={practiceSettings.timeLimit}
-                            onChange={(e) => setPracticeSettings({...practiceSettings, timeLimit: e.target.value})}
-                            className="flex-1 accent-indigo-600 h-1.5 md:h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
-                          <div className="relative w-16 md:w-20 shrink-0 flex items-center bg-white rounded-lg md:rounded-xl border border-slate-200 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all overflow-hidden pr-1.5 md:pr-2">
-                            <input type="number" min="1" max="180" value={practiceSettings.timeLimit}
-                              onChange={(e) => { let val = parseInt(e.target.value); if (isNaN(val)) val = 1; if (val > 180) val = 180; if (val < 1) val = 1; setPracticeSettings({...practiceSettings, timeLimit: val.toString()}); }}
-                              className="w-full p-2 md:p-2.5 pr-0.5 md:pr-1 outline-none font-black text-slate-800 text-center bg-transparent appearance-none text-xs md:text-sm" />
-                            <span className="text-[10px] md:text-xs font-bold text-slate-400">m</span>
+                        <div className="bg-slate-50/50 border border-slate-200/60 rounded-2xl p-5 relative overflow-hidden transition-all duration-300 shadow-sm hover:border-slate-300/80">
+                          <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-xl pointer-events-none" />
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="text-2xl font-black text-indigo-950 tracking-tight flex items-baseline gap-1">
+                              {practiceSettings.timeLimit}
+                              <span className="text-xs font-semibold text-slate-450">minutes</span>
+                            </span>
+                            <span className="text-[10px] font-extrabold text-indigo-650 bg-indigo-50/80 border border-indigo-100/50 px-2 py-0.5 rounded-full">
+                              Range: 1 - 180 min
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <input 
+                              type="range" 
+                              min="1" 
+                              max="180" 
+                              value={practiceSettings.timeLimit}
+                              onChange={(e) => setPracticeSettings({...practiceSettings, timeLimit: e.target.value})}
+                              className="flex-1 accent-indigo-600 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" 
+                            />
+                            <div className="relative w-16 shrink-0">
+                              <input 
+                                type="number" 
+                                min="1" 
+                                max="180" 
+                                value={practiceSettings.timeLimit}
+                                onChange={(e) => { 
+                                  let val = parseInt(e.target.value); 
+                                  if (isNaN(val)) val = 1; 
+                                  if (val > 180) val = 180; 
+                                  if (val < 1) val = 1; 
+                                  setPracticeSettings({...practiceSettings, timeLimit: val.toString()}); 
+                                }}
+                                className="w-full py-1.5 px-2 rounded-xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black text-slate-800 text-center text-xs md:text-sm shadow-sm" 
+                              />
+                            </div>
                           </div>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="mt-5 md:mt-8 flex justify-center w-full">
+                  <div className="mt-8 md:mt-10 flex justify-center w-full">
                     <Button
                       disabled={!practiceSettings.topic || loadingPractice || topicMaxQuestions === 0}
-                      className="w-full sm:w-auto px-6 sm:px-12 py-3 md:py-3.5 rounded-xl md:rounded-2xl text-sm sm:text-base font-black bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:shadow-none sm:min-w-[280px]"
+                      className={cn(
+                        "w-full sm:w-auto px-10 sm:px-16 py-4 rounded-2xl text-sm sm:text-base font-black transition-all sm:min-w-[280px] flex items-center justify-center gap-2 cursor-pointer shadow-lg group/btn",
+                        (!practiceSettings.topic || loadingPractice || topicMaxQuestions === 0)
+                          ? "bg-slate-100 text-slate-400 border border-slate-200/60 shadow-none pointer-events-none cursor-not-allowed"
+                          : "premium-gradient text-white hover:premium-glow hover:scale-[1.02] shadow-brand-500/20"
+                      )}
                       onClick={handleStartDynamicPractice}
                     >
-                      {loadingPractice ? 'Compiling...' : 'Start Practice Session'}
+                      {loadingPractice ? 'Compiling Practice...' : 'Start Practice Session'}
+                      <ChevronRight className="w-5 h-5 ml-1 transition-transform group-hover/btn:translate-x-1" />
                     </Button>
                   </div>
                 </div>
@@ -3731,13 +3919,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     };
   });
 
-  const [dynamicQuestionBanks, setDynamicQuestionBanks] = useState<Record<string, any[]>>(() => _dashboardCache.dynamicQuestionBanks);
-  const [exams, setExams] = useState<any[]>(() => _dashboardCache.exams);
-  const [testSeries, setTestSeries] = useState<any[]>(() => _dashboardCache.testSeries);
-  const [mockTests, setMockTests] = useState<any[]>(() => _dashboardCache.mockTests);
-  // Only show loading spinner if cache is empty (first load); otherwise show cached data instantly
-  const [loadingExams, setLoadingExams] = useState(() => _dashboardCache.exams.length === 0);
-  const [selectedMockCategory, setSelectedMockCategory] = useState<string | null>(() => sessionStorage.getItem('oep_selectedMockCategory') || null);
+
 
 
   const handleSaveOnboarding = async (exam: string, timeline: string, prepLevel: string) => {
@@ -3817,215 +3999,21 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     fetchMaxQuestions();
   }, [practiceSettings.topic, practiceSettings.examId, selectedExam, dynamicQuestionBanks]);
 
+  // Start the Content Sync and Self-Recovery Engine
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      // Skip re-fetch if we already fetched database updates in this session (e.g., from tab switching)
-      if (_dashboardCache.hasFetchedThisSession && _dashboardCache.loadedForUserId === (user?.id || 'guest') && _dashboardCache.exams.length > 0) {
-        // Data is already in state (from cache initializer) — just ensure loading is off
-        setLoadingExams(false);
-        return;
-      }
+    const engine = startSyncEngine({
+      setExams,
+      setMockTests,
+      setTestSeries,
+      setDynamicQuestionBanks,
+      setLoadingExams,
+      user
+    });
 
-      try {
-        // Use allSettled so one failing table doesn't block everything else.
-        // Use getAllMockTestsLite — metadata only, no question payloads.
-        // This prevents large question responses from timing out and breaking the dashboard.
-        const [examsResult, banksResult, seriesResult, testsResult] = await Promise.allSettled([
-          examService.getAllExams(),
-          examService.getAllQuestionBanks(),
-          examService.getAllTestSeries(),
-          examService.getAllMockTestsLite()
-        ]);
-
-        let fetchedExams   = examsResult.status   === 'fulfilled' ? examsResult.value   : [];
-        const fetchedBanks   = banksResult.status   === 'fulfilled' ? banksResult.value   : [];
-        const fetchedSeries  = seriesResult.status  === 'fulfilled' ? seriesResult.value  : [];
-        const fetchedTests   = testsResult.status   === 'fulfilled' ? testsResult.value   : [];
-
-        // Log any individual failures for debugging
-        [examsResult, banksResult, seriesResult, testsResult].forEach((r, i) => {
-          if (r.status === 'rejected') {
-            console.error(`fetchDashboardData[${i}] failed:`, r.reason);
-          }
-        });
-
-        // If exams returned empty, the JWT may be too large/stale.
-        // Force a session refresh to get a fresh JWT, then retry.
-        if (fetchedExams.length === 0) {
-          try {
-            const { supabase: sb } = await import('./lib/supabase');
-            await sb.auth.refreshSession();
-            await new Promise(r => setTimeout(r, 400)); // wait for auth to settle
-          } catch (e) {
-            console.warn('Session refresh before retry failed:', e);
-          }
-          const retry = await examService.getAllExams().catch(() => null);
-          if (retry && retry.length > 0) {
-            fetchedExams = retry;
-            console.log('fetchDashboardData: retry after refresh succeeded,', retry.length, 'exams loaded');
-          }
-        }
-
-        const finalExams = fetchedExams.length > 0
-          ? fetchedExams
-          : [{ id: 'opsc-aio', name: 'OPSC AIO', description: 'Odisha Public Service Commission All In One', icon: '🏛️', category: 'upcoming' }];
-
-        // Group banks by type
-        const groupedBanks: Record<string, any[]> = {};
-        fetchedBanks.forEach((bank: any) => {
-          if (!groupedBanks[bank.type]) groupedBanks[bank.type] = [];
-          let parsedTagline = { text: bank.tagline || '', price: 499 };
-          try { 
-            if (bank.tagline && bank.tagline.includes('{"text"')) {
-               parsedTagline = JSON.parse(bank.tagline);
-            }
-          } catch(e) {}
-          groupedBanks[bank.type].push({
-            id: bank.id,
-            title: bank.title,
-            questions: bank.questionCount,
-            tagline: parsedTagline.text,
-            price: parsedTagline.price || 499,
-            image: bank.image,
-            isPremium: bank.isPremium,
-            examId: bank.examId,
-            pdfUrl: bank.pdfUrl || '',
-            pdfLinks: (() => {
-              if (!bank.pdfUrl) return [];
-              try {
-                const parsed = JSON.parse(bank.pdfUrl);
-                if (Array.isArray(parsed)) return parsed;
-                return [{ title: 'Download PDF', url: bank.pdfUrl }];
-              } catch (e) {
-                return [{ title: 'Download PDF', url: bank.pdfUrl }];
-              }
-            })(),
-            hasPracticeMode: bank.hasPracticeMode
-          });
-        });
-
-        // Write to module-level cache before updating state
-        _dashboardCache.exams = finalExams;
-        _dashboardCache.testSeries = fetchedSeries || [];
-        _dashboardCache.mockTests = fetchedTests || [];
-        _dashboardCache.dynamicQuestionBanks = groupedBanks;
-        _dashboardCache.loadedForUserId = user?.id || 'guest';
-        _dashboardCache.hasFetchedThisSession = true;
-
-        // Save to sessionStorage for persistent SWR caching across reloads
-        try {
-          sessionStorage.setItem('oep_cached_exams', JSON.stringify(finalExams));
-          sessionStorage.setItem('oep_cached_testSeries', JSON.stringify(fetchedSeries || []));
-          sessionStorage.setItem('oep_cached_mockTests', JSON.stringify(fetchedTests || []));
-          sessionStorage.setItem('oep_cached_dynamicQuestionBanks', JSON.stringify(groupedBanks));
-          sessionStorage.setItem('oep_cached_loadedForUserId', user?.id || 'guest');
-        } catch (e) {}
-
-        // Update React state
-        setExams(finalExams);
-        setTestSeries(fetchedSeries || []);
-        setMockTests(fetchedTests || []);
-        setDynamicQuestionBanks(groupedBanks);
-
-        // Clean up activities in localStorage and state that belong to deleted exams/tests/banks
-        if (user?.id && finalExams.length > 1) {
-          const activeExamNames = new Set(finalExams.map((e: any) => e.name));
-          const activeMockTestIds = new Set((fetchedTests || []).map((t: any) => t.id));
-          const activeBankIds = new Set((fetchedBanks || []).map((b: any) => b.id));
-
-          try {
-            const localKey = `oep_activities_${user.id}`;
-            const localActivitiesStr = localStorage.getItem(localKey);
-            if (localActivitiesStr) {
-              const localActivities = JSON.parse(localActivitiesStr);
-              if (Array.isArray(localActivities)) {
-                const filtered = localActivities.filter((act: any) => {
-                  if (!act) return false;
-
-                  // 1. Filter out by examName (if deleted)
-                  const actExamName = act.metadata?.examName;
-                  if (actExamName && actExamName !== 'General' && !activeExamNames.has(actExamName)) {
-                    return false;
-                  }
-
-                  // 2. Filter out by mockTestId (if deleted)
-                  const testId = act.metadata?.test?.id;
-                  if (testId && !testId.startsWith('practice-') && (act.type === 'mock_test_completed' || act.type === 'test_incomplete')) {
-                    if (!activeMockTestIds.has(testId)) {
-                      return false;
-                    }
-                  }
-
-                  // 3. Filter out by bankId (if deleted)
-                  const bankId = act.metadata?.bankId;
-                  if (bankId && act.type === 'question_bank_accessed') {
-                    if (!activeBankIds.has(bankId)) {
-                      return false;
-                    }
-                  }
-
-                  return true;
-                });
-
-                if (filtered.length !== localActivities.length) {
-                  localStorage.setItem(localKey, JSON.stringify(filtered));
-                  
-                  // Sync updated activities to user cloud metadata
-                  const cloudPayload = filtered.slice(0, 50).map((a: any) => {
-                    try {
-                      const m = a.metadata || {};
-                      const lightMeta: any = {
-                        examName: m.examName,
-                        testCategory: m.testCategory,
-                        bankType: m.bankType,
-                        bankId: m.bankId,
-                        resumeSessionId: m.resumeSessionId,
-                      };
-                      if (a.type === 'test_incomplete') {
-                        lightMeta.currentQuestionIndex = m.currentQuestionIndex;
-                        lightMeta.timeLeft = m.timeLeft;
-                        if (m.test && typeof m.test === 'object') {
-                          lightMeta.test = {
-                            id: m.test.id,
-                            title: m.test.title,
-                            durationMinutes: m.test.durationMinutes,
-                            _questionCount: m.test._questionCount || (Array.isArray(m.test.questions) ? m.test.questions.length : 0),
-                          };
-                        }
-                        lightMeta.totalQuestions = m.totalQuestions || lightMeta.test?._questionCount || 0;
-                      }
-                      return { ...a, metadata: lightMeta };
-                    } catch {
-                      return { id: a.id, userId: a.userId, type: a.type, title: a.title, timestamp: a.timestamp, score: a.score, accuracy: a.accuracy };
-                    }
-                  });
-                  await supabase.auth.updateUser({
-                    data: { activities: cloudPayload },
-                  });
-
-                  if (onActivityLogged) onActivityLogged();
-                }
-              }
-            }
-          } catch (e) {
-            console.error("Error cleaning up local activities:", e);
-          }
-        }
-
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        // Even on total failure, show fallback so the grid is never empty
-        if (_dashboardCache.exams.length === 0) {
-          const fallback = [{ id: 'opsc-aio', name: 'OPSC AIO', description: 'Odisha Public Service Commission All In One', icon: '🏛️', category: 'upcoming' }];
-          _dashboardCache.exams = fallback;
-          setExams(fallback);
-        }
-      } finally {
-        setLoadingExams(false);
-      }
+    return () => {
+      engine.stop();
     };
-    fetchDashboardData();
-  }, [user?.id]);
+  }, [user]);
 
   const [examSearchQuery, setExamSearchQuery] = useState('');
 
@@ -4474,14 +4462,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             try {
               const freshQs = await examService.getQuestionsForMockTest(finalTest.id);
               if (freshQs && freshQs.length > 0) {
-                const freshMap = new Map(freshQs.map(q => [q.id, q]));
-                finalTest.questions = (finalTest.questions || []).map((q: any) => {
-                  const fresh = freshMap.get(q.id);
-                  return fresh ? { ...q, ...fresh } : q;
-                });
+                finalTest.questions = freshQs;
               }
             } catch (e) {
-              console.error("Failed to merge fresh questions on resume:", e);
+              console.error("Failed to fetch fresh questions on resume:", e);
             }
           }
           setActiveTest(finalTest);
@@ -4650,10 +4634,23 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       transition={{ type: 'spring', stiffness: 200, damping: 22, delay: i * 0.06 }}
                       whileHover={whileHover.subtle}
                       whileTap={whileTap.press}
-                      onClick={() => {
+                      onClick={async () => {
                         if (!canResume) return;
+                        
+                        let testToResume = { ...a.metadata.test };
+                        if (testToResume.id && !testToResume.id.startsWith('practice-')) {
+                          try {
+                            const freshQs = await examService.getQuestionsForMockTest(testToResume.id);
+                            if (freshQs && freshQs.length > 0) {
+                              testToResume.questions = freshQs;
+                            }
+                          } catch (e) {
+                            console.error("Failed to fetch fresh questions on Continue resume:", e);
+                          }
+                        }
+                        
                         setActiveTestState({ ...a.metadata, resumeSessionId: a.metadata?.resumeSessionId || a.metadata?.test?.id });
-                        setActiveTest(a.metadata.test);
+                        setActiveTest(testToResume);
                       }}
                       className={`snap-start shrink-0 w-[72vw] sm:w-[300px] lg:w-[340px] bg-white rounded-2xl border border-slate-100 hover:border-brand-200/60 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 group p-4 sm:p-5 flex flex-col gap-3 premium-shine-container ${
                         canResume ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed'
@@ -5661,7 +5658,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 backdrop-blur-md bg-slate-900/60 pointer-events-auto"
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 backdrop-blur-xl bg-slate-950/40 pointer-events-auto"
             >
               <div className="absolute inset-0" onClick={() => setShowPracticeConfig(false)} />
               <motion.div
@@ -5669,173 +5666,285 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ type: "spring", bounce: 0.3, duration: 0.5 }}
-                className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-2xl overflow-hidden"
+                className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-slate-200/50 overflow-hidden"
               >
-                <div className="p-4 sm:p-6 md:p-8 overflow-y-auto no-scrollbar md:custom-scrollbar">
+                {/* Background glowing effects */}
+                <div className="absolute -top-40 -left-40 w-96 h-96 bg-brand-500/10 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
 
-              <div className="flex justify-between items-start mb-4 md:mb-6">
-                <div>
-                  <h3 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900">Configure Practice</h3>
-                  <p className="text-[11px] sm:text-xs md:text-sm text-slate-500 font-medium mt-0.5">Set your preferences for this session</p>
-                </div>
-                <Button variant="ghost" onClick={() => setShowPracticeConfig(false)} className="p-1.5 hover:bg-slate-100 rounded-lg -mr-1">
-                  <X className="w-5 h-5 text-slate-400" />
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 mb-4 md:mb-6">
-                <div className="space-y-1.5 md:space-y-3">
-                  <label className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Select Exam</label>
-                  <SearchableSelect
-                    value={practiceSettings.examId || selectedExam || ''}
-                    onChange={(val) => setPracticeSettings({...practiceSettings, examId: val, category: '', topic: ''})}
-                    options={actualExams.map(ex => ({ value: ex.id, label: ex.name }))}
-                    placeholder="Choose an exam..."
-                    searchPlaceholder="Search exams..."
-                    className="px-3 md:px-4 h-[44px] md:h-[50px] rounded-lg md:rounded-xl text-sm md:text-base"
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:space-y-3">
-                  <label className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Select Category</label>
-                  <SearchableSelect
-                    value={practiceSettings.category}
-                    onChange={(val) => setPracticeSettings({...practiceSettings, category: val, topic: ''})}
-                    disabled={!(practiceSettings.examId || selectedExam)}
-                    options={[
-                      { value: "topic-wise", label: "Topic-wise Question Bank" },
-                      { value: "exam-focused", label: "Exam-Focused Bank" },
-                      { value: "revision-sets", label: "Revision Sets" },
-                      { value: "pyq-collections", label: "PYQ Collections" },
-                    ]}
-                    placeholder={(practiceSettings.examId || selectedExam) ? 'Choose a category...' : 'Select an exam first'}
-                    searchPlaceholder="Search categories..."
-                    className="px-3 md:px-4 h-[44px] md:h-[50px] rounded-lg md:rounded-xl text-sm md:text-base"
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:space-y-3 sm:col-span-2 lg:col-span-1">
-                  <label className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Select Topic / Unit</label>
-                  <SearchableSelect
-                    value={practiceSettings.topic}
-                    onChange={(val) => setPracticeSettings({...practiceSettings, topic: val})}
-                    disabled={!practiceSettings.category}
-                    options={(dynamicQuestionBanks[practiceSettings.category] || [])
-                      .filter((item: any) => item.examId === (practiceSettings.examId || selectedExam))
-                      .map((item: any) => ({
-                         value: item.id,
-                         label: `${item.title} ${item.isPremium && !hasAccessTo(item.id, item.examId) ? '(Premium)' : ''}`
-                      }))}
-                    placeholder={practiceSettings.category ? 'Choose a topic...' : 'Select a category first'}
-                    searchPlaceholder="Search topics..."
-                    className="px-3 md:px-4 h-[44px] md:h-[50px] rounded-lg md:rounded-xl text-sm md:text-base"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-6">
-                <div className="space-y-2 md:space-y-3">
-                  <div className="flex justify-between items-end">
-                    <label className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Number of Questions</label>
-                    {practiceSettings.topic && (
-                      <span className="text-[10px] md:text-xs font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded">
-                        {topicMaxQuestions} Available
-                      </span>
-                    )}
-                  </div>
-                  
-                  {!practiceSettings.topic ? (
-                    <div className="w-full p-2.5 md:p-3 rounded-lg md:rounded-xl border border-slate-200 bg-slate-50 text-slate-400 font-bold text-center text-xs md:text-sm">
-                      Select a topic first
-                    </div>
-                  ) : topicMaxQuestions === 0 ? (
-                    <div className="w-full p-2.5 md:p-3 rounded-lg md:rounded-xl border border-rose-100 bg-rose-50 text-rose-500 font-bold text-center text-xs md:text-sm">
-                      No questions available yet
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <input 
-                        type="range" 
-                        min="1" 
-                        max={topicMaxQuestions} 
-                        value={practiceSettings.questions} 
-                        onChange={(e) => setPracticeSettings({...practiceSettings, questions: e.target.value})}
-                        className="flex-1 accent-indigo-600 h-1.5 md:h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                      <div className="relative w-16 md:w-20 shrink-0">
-                        <input
-                          type="number"
-                          min="1"
-                          max={topicMaxQuestions}
-                          value={practiceSettings.questions}
-                          onChange={(e) => {
-                             let val = parseInt(e.target.value);
-                             if (isNaN(val)) val = 1;
-                             if (val > topicMaxQuestions) val = topicMaxQuestions;
-                             if (val < 1) val = 1;
-                             setPracticeSettings({...practiceSettings, questions: val.toString()});
-                          }}
-                          className="w-full p-2 md:p-2.5 rounded-lg md:rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-black text-slate-800 text-center text-xs md:text-sm"
-                        />
+                <div className="p-5 sm:p-7 md:p-9 overflow-y-auto no-scrollbar md:custom-scrollbar relative z-10 flex flex-col">
+                  <div className="flex justify-between items-start mb-6 md:mb-8 border-b border-slate-100 pb-5">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 premium-gradient rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-brand-500/10">
+                        <Dumbbell className="w-6 h-6 text-white animate-[pulse_3s_infinite]" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl sm:text-2xl font-black premium-text-gradient tracking-tight">Configure Practice</h3>
+                        <p className="text-xs sm:text-sm text-slate-500 font-semibold mt-0.5">Set your preferences for this session</p>
                       </div>
                     </div>
-                  )}
-                </div>
-
-                <div className="space-y-2 md:space-y-3">
-                  <div className="flex justify-between items-end">
-                    <label className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Time Limit (Minutes)</label>
+                    <button 
+                      onClick={() => setShowPracticeConfig(false)} 
+                      className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full transition-colors cursor-pointer border border-slate-200/40"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
-                  
-                  {!practiceSettings.topic ? (
-                    <div className="w-full p-2.5 md:p-3 rounded-lg md:rounded-xl border border-slate-200 bg-slate-50 text-slate-400 font-bold text-center text-xs md:text-sm">
-                      Select a topic first
-                    </div>
-                  ) : topicMaxQuestions === 0 ? (
-                    <div className="w-full p-2.5 md:p-3 rounded-lg md:rounded-xl border border-rose-100 bg-rose-50 text-rose-500 font-bold text-center text-xs md:text-sm">
-                      -
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <input 
-                        type="range" 
-                        min="1" 
-                        max="180" 
-                        value={practiceSettings.timeLimit} 
-                        onChange={(e) => setPracticeSettings({...practiceSettings, timeLimit: e.target.value})}
-                        className="flex-1 accent-indigo-600 h-1.5 md:h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
-                      />
-                      <div className="relative w-16 md:w-20 shrink-0 flex items-center bg-white rounded-lg md:rounded-xl border border-slate-200 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all overflow-hidden pr-1.5 md:pr-2">
-                        <input
-                          type="number"
-                          min="1"
-                          max="180"
-                          value={practiceSettings.timeLimit}
-                          onChange={(e) => {
-                             let val = parseInt(e.target.value);
-                             if (isNaN(val)) val = 1;
-                             if (val > 180) val = 180;
-                             if (val < 1) val = 1;
-                             setPracticeSettings({...practiceSettings, timeLimit: val.toString()});
-                          }}
-                          className="w-full p-2 md:p-2.5 pr-0.5 md:pr-1 outline-none font-black text-slate-800 text-center bg-transparent appearance-none text-xs md:text-sm"
-                        />
-                         <span className="text-[10px] md:text-xs font-bold text-slate-400">m</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
 
-              <div className="mt-5 md:mt-8 flex justify-center w-full">
-                <Button 
-                  disabled={!practiceSettings.topic || loadingPractice || topicMaxQuestions === 0}
-                  className="w-full sm:w-auto px-6 sm:px-12 py-3 md:py-3.5 rounded-xl md:rounded-2xl text-sm sm:text-base font-black bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:shadow-none sm:min-w-[280px]"
-                  onClick={handleStartDynamicPractice}
-                >
-                  {loadingPractice ? 'Compiling...' : 'Start Practice Session'}
-                </Button>
-              </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-7 mb-6 md:mb-8">
+                    {/* Select Exam Card */}
+                    <div className="bg-slate-50/50 border border-slate-200/50 rounded-2xl p-4.5 space-y-3 flex flex-col justify-between hover:border-brand-200 hover:shadow-md hover:shadow-brand-500/2 transition-all duration-300 relative group">
+                      <div className="absolute top-0 right-0 w-16 h-16 bg-brand-500/5 rounded-full blur-lg pointer-events-none" />
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />
+                          Select Exam
+                        </label>
+                        <span className="text-[9px] font-extrabold text-brand-600 bg-brand-50/80 px-2 py-0.5 rounded-full uppercase tracking-wider">Step 1</span>
+                      </div>
+                      <SearchableSelect
+                        value={practiceSettings.examId || selectedExam || ''}
+                        onChange={(val) => setPracticeSettings({...practiceSettings, examId: val, category: '', topic: ''})}
+                        options={actualExams.map(ex => ({ value: ex.id, label: ex.name }))}
+                        placeholder="Choose an exam..."
+                        searchPlaceholder="Search exams..."
+                        className="px-4 h-[48px] rounded-xl text-sm border-slate-200 bg-white hover:border-slate-300 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/5 transition-all font-bold text-slate-700 shadow-sm"
+                      />
+                    </div>
+
+                    {/* Select Category Card */}
+                    <div className={cn(
+                      "border rounded-2xl p-4.5 space-y-3 flex flex-col justify-between transition-all duration-300 relative group",
+                      (practiceSettings.examId || selectedExam) 
+                        ? "bg-slate-50/50 border-slate-200/50 hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-500/2" 
+                        : "bg-slate-100/20 border-slate-200/30 opacity-75"
+                    )}>
+                      {(practiceSettings.examId || selectedExam) && <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-500/5 rounded-full blur-lg pointer-events-none" />}
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <span className={cn("w-1.5 h-1.5 rounded-full", (practiceSettings.examId || selectedExam) ? "bg-indigo-500 animate-pulse" : "bg-slate-300")} />
+                          Select Category
+                        </label>
+                        <span className={cn("text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider",
+                          (practiceSettings.examId || selectedExam) ? "text-indigo-600 bg-indigo-50/80" : "text-slate-400 bg-slate-100"
+                        )}>Step 2</span>
+                      </div>
+                      {!(practiceSettings.examId || selectedExam) ? (
+                        <div className="h-[48px] rounded-xl border border-dashed border-slate-200 bg-slate-50/50 flex items-center justify-between px-4 text-slate-400 text-xs font-semibold select-none">
+                          <span className="flex items-center gap-2">
+                            <Lock className="w-3.5 h-3.5 text-slate-300" />
+                            <span>Select an exam first</span>
+                          </span>
+                        </div>
+                      ) : (
+                        <SearchableSelect
+                          value={practiceSettings.category}
+                          onChange={(val) => setPracticeSettings({...practiceSettings, category: val, topic: ''})}
+                          disabled={!(practiceSettings.examId || selectedExam)}
+                          options={[
+                            { value: "topic-wise", label: "Topic-wise Question Bank" },
+                            { value: "exam-focused", label: "Exam-Focused Bank" },
+                            { value: "revision-sets", label: "Revision Sets" },
+                            { value: "pyq-collections", label: "PYQ Collections" },
+                          ]}
+                          placeholder="Choose a category..."
+                          searchPlaceholder="Search categories..."
+                          className="px-4 h-[48px] rounded-xl text-sm border-slate-200 bg-white hover:border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all font-bold text-slate-700 shadow-sm"
+                        />
+                      )}
+                    </div>
+
+                    {/* Select Topic / Unit Card */}
+                    <div className={cn(
+                      "border rounded-2xl p-4.5 space-y-3 flex flex-col justify-between transition-all duration-300 relative group sm:col-span-2 lg:col-span-1",
+                      practiceSettings.category 
+                        ? "bg-slate-50/50 border-slate-200/50 hover:border-purple-200 hover:shadow-md hover:shadow-purple-500/2" 
+                        : "bg-slate-100/20 border-slate-200/30 opacity-75"
+                    )}>
+                      {practiceSettings.category && <div className="absolute top-0 right-0 w-16 h-16 bg-purple-500/5 rounded-full blur-lg pointer-events-none" />}
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <span className={cn("w-1.5 h-1.5 rounded-full", practiceSettings.category ? "bg-purple-500 animate-pulse" : "bg-slate-300")} />
+                          Select Topic / Unit
+                        </label>
+                        <span className={cn("text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider",
+                          practiceSettings.category ? "text-purple-600 bg-purple-50/80" : "text-slate-400 bg-slate-100"
+                        )}>Step 3</span>
+                      </div>
+                      {!practiceSettings.category ? (
+                        <div className="h-[48px] rounded-xl border border-dashed border-slate-200 bg-slate-50/50 flex items-center justify-between px-4 text-slate-400 text-xs font-semibold select-none">
+                          <span className="flex items-center gap-2">
+                            <Lock className="w-3.5 h-3.5 text-slate-300" />
+                            <span>Select a category first</span>
+                          </span>
+                        </div>
+                      ) : (
+                        <SearchableSelect
+                          value={practiceSettings.topic}
+                          onChange={(val) => setPracticeSettings({...practiceSettings, topic: val})}
+                          disabled={!practiceSettings.category}
+                          options={(dynamicQuestionBanks[practiceSettings.category] || [])
+                            .filter((item: any) => item.examId === (practiceSettings.examId || selectedExam))
+                            .map((item: any) => ({
+                              value: item.id,
+                              label: `${item.title} ${item.isPremium && !hasAccessTo(item.id, item.examId) ? '(Premium)' : ''}`
+                            }))}
+                          placeholder="Choose a topic..."
+                          searchPlaceholder="Search topics..."
+                          className="px-4 h-[48px] rounded-xl text-sm border-slate-200 bg-white hover:border-slate-300 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/5 transition-all font-bold text-slate-700 shadow-sm"
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-7">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-end mb-1">
+                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                          Number of Questions
+                        </label>
+                        {practiceSettings.topic && (
+                          <span className="text-[10px] font-bold text-indigo-650 bg-indigo-50 border border-indigo-100/50 px-2 py-0.5 rounded-full">
+                            {topicMaxQuestions} Available
+                          </span>
+                        )}
+                      </div>
+                      {!practiceSettings.topic ? (
+                        <div className="w-full py-9 rounded-2xl border border-dashed border-slate-250 bg-slate-50/30 text-slate-400 font-bold text-center text-xs md:text-sm flex flex-col items-center justify-center gap-2 shadow-sm transition-all duration-300">
+                          <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
+                            <Lock className="w-4 h-4 text-slate-400" />
+                          </div>
+                          <div className="text-slate-400 font-extrabold text-[11px] uppercase tracking-wider">Select a topic first</div>
+                        </div>
+                      ) : topicMaxQuestions === 0 ? (
+                        <div className="w-full py-9 rounded-2xl border border-dashed border-rose-200 bg-rose-50/20 text-rose-500 font-bold text-center text-xs md:text-sm flex flex-col items-center justify-center gap-2 shadow-sm transition-all duration-300">
+                          <div className="w-9 h-9 bg-rose-50 rounded-full flex items-center justify-center text-rose-450">
+                            <AlertCircle className="w-4 h-4 text-rose-500" />
+                          </div>
+                          <div className="text-rose-500 font-extrabold text-[11px] uppercase tracking-wider">No questions available yet</div>
+                        </div>
+                      ) : (
+                        <div className="bg-slate-50/50 border border-slate-200/60 rounded-2xl p-5 relative overflow-hidden transition-all duration-300 shadow-sm hover:border-slate-300/80">
+                          <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-xl pointer-events-none" />
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="text-2xl font-black text-indigo-950 tracking-tight flex items-baseline gap-1">
+                              {practiceSettings.questions}
+                              <span className="text-xs font-semibold text-slate-400">questions</span>
+                            </span>
+                            <span className="text-[10px] font-extrabold text-indigo-650 bg-indigo-50/80 border border-indigo-100/50 px-2 py-0.5 rounded-full">
+                              Range: 1 - {topicMaxQuestions}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <input 
+                              type="range" 
+                              min="1" 
+                              max={topicMaxQuestions} 
+                              value={practiceSettings.questions}
+                              onChange={(e) => setPracticeSettings({...practiceSettings, questions: e.target.value})}
+                              className="flex-1 accent-indigo-600 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" 
+                            />
+                            <div className="relative w-16 shrink-0">
+                              <input 
+                                type="number" 
+                                min="1" 
+                                max={topicMaxQuestions} 
+                                value={practiceSettings.questions}
+                                onChange={(e) => { 
+                                  let val = parseInt(e.target.value); 
+                                  if (isNaN(val)) val = 1; 
+                                  if (val > topicMaxQuestions) val = topicMaxQuestions; 
+                                  if (val < 1) val = 1; 
+                                  setPracticeSettings({...practiceSettings, questions: val.toString()}); 
+                                }}
+                                className="w-full py-1.5 px-2 rounded-xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black text-slate-800 text-center text-xs md:text-sm shadow-sm" 
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-end mb-1">
+                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                          Time Limit
+                        </label>
+                      </div>
+                      {!practiceSettings.topic ? (
+                        <div className="w-full py-9 rounded-2xl border border-dashed border-slate-250 bg-slate-50/30 text-slate-400 font-bold text-center text-xs md:text-sm flex flex-col items-center justify-center gap-2 shadow-sm transition-all duration-300">
+                          <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
+                            <Lock className="w-4 h-4 text-slate-400" />
+                          </div>
+                          <div className="text-slate-400 font-extrabold text-[11px] uppercase tracking-wider">Select a topic first</div>
+                        </div>
+                      ) : topicMaxQuestions === 0 ? (
+                        <div className="w-full py-9 rounded-2xl border border-dashed border-slate-200 bg-slate-50/30 text-slate-400 font-bold text-center text-xs md:text-sm flex flex-col items-center justify-center gap-2 shadow-sm transition-all duration-300">
+                          <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
+                            <Lock className="w-4 h-4 text-slate-400" />
+                          </div>
+                          <div className="text-slate-400 font-extrabold text-[11px] uppercase tracking-wider">-</div>
+                        </div>
+                      ) : (
+                        <div className="bg-slate-50/50 border border-slate-200/60 rounded-2xl p-5 relative overflow-hidden transition-all duration-300 shadow-sm hover:border-slate-300/80">
+                          <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-xl pointer-events-none" />
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="text-2xl font-black text-indigo-950 tracking-tight flex items-baseline gap-1">
+                              {practiceSettings.timeLimit}
+                              <span className="text-xs font-semibold text-slate-450">minutes</span>
+                            </span>
+                            <span className="text-[10px] font-extrabold text-indigo-650 bg-indigo-50/80 border border-indigo-100/50 px-2 py-0.5 rounded-full">
+                              Range: 1 - 180 min
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <input 
+                              type="range" 
+                              min="1" 
+                              max="180" 
+                              value={practiceSettings.timeLimit}
+                              onChange={(e) => setPracticeSettings({...practiceSettings, timeLimit: e.target.value})}
+                              className="flex-1 accent-indigo-600 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" 
+                            />
+                            <div className="relative w-16 shrink-0">
+                              <input 
+                                type="number" 
+                                min="1" 
+                                max="180" 
+                                value={practiceSettings.timeLimit}
+                                onChange={(e) => { 
+                                  let val = parseInt(e.target.value); 
+                                  if (isNaN(val)) val = 1; 
+                                  if (val > 180) val = 180; 
+                                  if (val < 1) val = 1; 
+                                  setPracticeSettings({...practiceSettings, timeLimit: val.toString()}); 
+                                }}
+                                className="w-full py-1.5 px-2 rounded-xl border border-slate-200 bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-black text-slate-800 text-center text-xs md:text-sm shadow-sm" 
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-8 md:mt-10 flex justify-center w-full">
+                    <Button
+                      disabled={!practiceSettings.topic || loadingPractice || topicMaxQuestions === 0}
+                      className={cn(
+                        "w-full sm:w-auto px-10 sm:px-16 py-4 rounded-2xl text-sm sm:text-base font-black transition-all sm:min-w-[280px] flex items-center justify-center gap-2 cursor-pointer shadow-lg group/btn",
+                        (!practiceSettings.topic || loadingPractice || topicMaxQuestions === 0)
+                          ? "bg-slate-100 text-slate-400 border border-slate-200/60 shadow-none pointer-events-none cursor-not-allowed"
+                          : "premium-gradient text-white hover:premium-glow hover:scale-[1.02] shadow-brand-500/20"
+                      )}
+                      onClick={handleStartDynamicPractice}
+                    >
+                      {loadingPractice ? 'Compiling Practice...' : 'Start Practice Session'}
+                      <ChevronRight className="w-5 h-5 ml-1 transition-transform group-hover/btn:translate-x-1" />
+                    </Button>
+                  </div>
                 </div>
               </motion.div>
             </motion.div>
@@ -6594,7 +6703,7 @@ function AppContent() {
         <WhatsAppButton />
       )}
       {!(location.pathname.startsWith('/admin') || location.pathname.startsWith('/admin-login')) && (
-        <StickyAICompanion isBottomNavVisible={isBottomNavVisible} />
+        <StickyAICompanion isBottomNavVisible={isBottomNavVisible} activeTab={mainTab} />
       )}
 
       <AnimatePresence>

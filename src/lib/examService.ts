@@ -444,79 +444,8 @@ export const examService = {
       ...relatedTestIds
     ]);
 
-    // 6. Revoke access and clean activities for all users in Supabase Auth
-    try {
-      if (supabaseAdmin.auth.admin) {
-        let page = 1;
-        const perPage = 1000;
-        let hasMore = true;
-
-        while (hasMore) {
-          const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers({
-            page,
-            perPage
-          });
-          if (listError) throw listError;
-          if (!users || users.length === 0) {
-            hasMore = false;
-            break;
-          }
-
-          for (const u of users) {
-            let needsUpdate = false;
-            const currentMetadata = u.user_metadata || {};
-
-            // A. Clean up purchasedSeries
-            let newPurchased = currentMetadata.purchasedSeries;
-            if (Array.isArray(newPurchased)) {
-              const filteredPurchased = newPurchased.filter(p => !contentIdsToRevoke.has(p));
-              if (filteredPurchased.length !== newPurchased.length) {
-                newPurchased = filteredPurchased;
-                needsUpdate = true;
-              }
-            }
-
-            // B. Clean up activities
-            let newActivities = currentMetadata.activities;
-            if (Array.isArray(newActivities)) {
-              const filteredActivities = newActivities.filter((act: any) => {
-                if (!act) return false;
-                
-                // Filter out by examName
-                if (examName && act.metadata?.examName === examName) return false;
-
-                // Filter out by bankId
-                if (act.metadata?.bankId && bankIds.includes(act.metadata.bankId)) return false;
-
-                // Filter out by mock test ID
-                const testId = act.metadata?.test?.id;
-                if (testId && relatedTestIds.includes(testId)) return false;
-
-                return true;
-              });
-
-              if (filteredActivities.length !== newActivities.length) {
-                needsUpdate = true;
-                newActivities = filteredActivities;
-              }
-            }
-
-            if (needsUpdate) {
-              await supabaseAdmin.auth.admin.updateUserById(u.id, {
-                user_metadata: {
-                  ...currentMetadata,
-                  purchasedSeries: newPurchased,
-                  activities: newActivities
-                }
-              });
-            }
-          }
-          page++;
-        }
-      }
-    } catch (err) {
-      console.warn("Failed to clean up user metadata on cloud (likely service role key missing or unauthorized):", err);
-    }
+    // 6. User metadata cleanup was removed to protect existing user purchases and entitlements
+    // as per entitlement protection requirements.
 
     // 7. Delete associated mock test questions (topic matches mockTest__<mockTestId>)
     if (relatedTestIds.length > 0) {

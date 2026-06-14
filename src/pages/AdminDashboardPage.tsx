@@ -9,6 +9,7 @@ const AdminDashboardPage = () => {
 
   const handleLogout = async () => {
     try {
+      sessionStorage.removeItem('oep_adminActiveTab');
       await logout();
       navigate('/admin-login');
     } catch (err) {

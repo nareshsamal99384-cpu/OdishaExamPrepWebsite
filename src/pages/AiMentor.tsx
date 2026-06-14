@@ -667,6 +667,8 @@ export default function AiMentor({ user }: { user: any }) {
   });
 
   const [targetExam, setTargetExam] = useState(() => {
+    const metaVal = user?.user_metadata?.study_coach_planner?.targetExam;
+    if (metaVal) return metaVal;
     const saved = localStorage.getItem('study_coach_target_exam');
     if (saved) return saved;
     return 'OPSC OAS';
@@ -1376,7 +1378,8 @@ export default function AiMentor({ user }: { user: any }) {
               completedSessionsCount,
               completedStudyMinutes,
               timerGoal,
-              breakMaxSeconds
+              breakMaxSeconds,
+              targetExam
             },
             study_coach_practice: {
               quizSubject,
@@ -1427,6 +1430,7 @@ export default function AiMentor({ user }: { user: any }) {
     completedStudyMinutes,
     timerGoal,
     breakMaxSeconds,
+    targetExam,
     // Practice section states
     quizSubject,
     quizDifficulty,
@@ -1444,6 +1448,19 @@ export default function AiMentor({ user }: { user: any }) {
     // Formulas section states
     formulaCategories,
     activeFormulaCatId
+  ]);
+
+  // Dispatch event to sync OEP Buddy AI Companion in real time
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('oep-activity-changed'));
+  }, [
+    targetExam,
+    plannerBlocks,
+    activeBlockIndex,
+    collections,
+    formulaCategories,
+    quizHistory,
+    bookmarkedQuestions
   ]);
 
   // Guard: prevent StrictMode double-mount from firing these one-time toasts twice

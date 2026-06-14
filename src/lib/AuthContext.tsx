@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from './supabase';
 import { User, createClient } from '@supabase/supabase-js';
+import { resolveUserEntitlements, PurchaseRecord } from './entitlementManager';
 
 const supabaseAdmin = createClient(
   import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
@@ -17,10 +18,12 @@ interface AuthContextType {
   logout: () => Promise<void>;
   grantFullAccess: () => Promise<void>;
   unlockItem: (itemId: string) => Promise<void>;
-  hasAccessTo: (itemId: string) => boolean;
+  hasAccessTo: (itemId: string, examId?: string) => boolean;
   guestUsage: { questions: number; tests: number };
   incrementGuestUsage: (type: 'questions' | 'tests') => void;
   refreshProfile: () => Promise<void>;
+  syncEntitlements: (catalog: any) => Promise<void>;
+  resolvedEntitlements: Set<string>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -37,6 +40,8 @@ const AuthContext = createContext<AuthContextType>({
   guestUsage: { questions: 0, tests: 0 },
   incrementGuestUsage: () => {},
   refreshProfile: async () => {},
+  syncEntitlements: async () => {},
+  resolvedEntitlements: new Set(),
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -45,6 +50,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [manualAdmin, setManualAdmin] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [guestUsage, setGuestUsage] = useState({ questions: 0, tests: 0 });
+  const [resolvedEntitlements, setResolvedEntitlements] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     // Load guest usage from local storage
@@ -88,6 +94,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           role: currentRole,
           hasFullAccess: currentFullAccess,
           purchasedSeries: meta.purchasedSeries || [],
+          purchaseRecords: meta.purchaseRecords || [],
         });
       } catch (error) {
         console.error('fetchProfile error:', error);
@@ -130,6 +137,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         fetchProfile(session.user);
       } else {
         setProfile(null);
+        setResolvedEntitlements(new Set());
       }
       setLoading(false);
     });
@@ -153,6 +161,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     setProfile(null);
     setManualAdmin(null);
+    setResolvedEntitlements(new Set());
     localStorage.removeItem('admin_session');
     // Then sign out from Supabase (clears the session cookie/token)
     try {
@@ -198,6 +207,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const hasAccessTo = (itemId: string, examId?: string) => {
     if (isAdmin || profile?.hasFullAccess) return true;
+    if (resolvedEntitlements.has(itemId)) return true;
+    if (examId && (resolvedEntitlements.has(`exam_bundle_${examId}`) || resolvedEntitlements.has(examId))) return true;
+
+    // Fallback/bootstrap state (before catalog sync)
     const purchased = profile?.purchasedSeries || [];
     if (purchased.includes(itemId)) return true;
     if (examId && purchased.includes(`exam_bundle_${examId}`)) return true;
@@ -222,7 +235,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         role: currentRole,
         hasFullAccess: currentFullAccess,
         purchasedSeries: meta.purchasedSeries || [],
+        purchaseRecords: meta.purchaseRecords || [],
       });
+    }
+  };
+
+  const syncEntitlements = async (catalog: any) => {
+    if (!profile) return;
+    const purchased = profile.purchasedSeries || [];
+    const records = profile.purchaseRecords || [];
+    const { resolvedIds, updatedRecords, needsUpdate } = resolveUserEntitlements(
+      purchased,
+      records,
+      catalog
+    );
+
+    setResolvedEntitlements(resolvedIds);
+
+    if (needsUpdate) {
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          purchaseRecords: updatedRecords
+        }
+      });
+      if (!error) {
+        setProfile(prev => prev ? { ...prev, purchaseRecords: updatedRecords } : null);
+      } else {
+        console.error("Failed to persist synced purchase records:", error);
+      }
     }
   };
 
@@ -240,11 +280,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       hasAccessTo,
       guestUsage, 
       incrementGuestUsage,
-      refreshProfile
+      refreshProfile,
+      syncEntitlements,
+      resolvedEntitlements
     }}>
       {children}
     </AuthContext.Provider>
   );
 };
-
 export const useAuth = () => useContext(AuthContext);

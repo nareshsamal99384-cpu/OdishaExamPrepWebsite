@@ -123,18 +123,72 @@ interface MockTestProps {
 
 const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit }: MockTestProps) => {
   const { user } = useAuth();
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(initialState?.currentQuestionIndex || 0);
-  const [answers, setAnswers] = useState<Record<number, number>>(initialState?.answers || {});
-  const [markedForReview, setMarkedForReview] = useState<number[]>(initialState?.markedForReview || []);
-  const [timeSpent, setTimeSpent] = useState<Record<number, number>>(initialState?.timeSpent || {});
-  const [timeLeft, setTimeLeft] = useState(initialState?.timeLeft ?? test.durationMinutes * 60);
-  const [visited, setVisited] = useState<number[]>(initialState?.visited || [0]);
+
+  // Robust parsing: Map ID-keyed progress from saved state back to current/fresh question indices
+  const mappedInitialState = useMemo(() => {
+    if (!initialState) return null;
+
+    const hasIds = initialState.answersById || initialState.currentQuestionId;
+    if (!hasIds) {
+      return initialState; // Legacy index-keyed compatibility fallback
+    }
+
+    const questions = test.questions || [];
+    const answersMap: Record<number, number> = {};
+    const markedList: number[] = [];
+    const timeMap: Record<number, number> = {};
+    const visitedList: number[] = [];
+
+    const answersById = initialState.answersById || {};
+    const markedForReviewIds = initialState.markedForReviewIds || [];
+    const timeSpentById = initialState.timeSpentById || {};
+    const visitedIds = initialState.visitedIds || [];
+
+    questions.forEach((q, idx) => {
+      if (answersById[q.id] !== undefined) {
+        answersMap[idx] = answersById[q.id];
+      }
+      if (markedForReviewIds.includes(q.id)) {
+        markedList.push(idx);
+      }
+      if (timeSpentById[q.id] !== undefined) {
+        timeMap[idx] = timeSpentById[q.id];
+      }
+      if (visitedIds.includes(q.id)) {
+        visitedList.push(idx);
+      }
+    });
+
+    let currentQuestionIndex = 0;
+    if (initialState.currentQuestionId) {
+      const idx = questions.findIndex(q => q.id === initialState.currentQuestionId);
+      if (idx !== -1) currentQuestionIndex = idx;
+    } else if (initialState.currentQuestionIndex !== undefined) {
+      currentQuestionIndex = Math.min(initialState.currentQuestionIndex, Math.max(0, questions.length - 1));
+    }
+
+    return {
+      ...initialState,
+      currentQuestionIndex,
+      answers: answersMap,
+      markedForReview: markedList,
+      timeSpent: timeMap,
+      visited: visitedList
+    };
+  }, [initialState, test.questions]);
+
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(mappedInitialState?.currentQuestionIndex || 0);
+  const [answers, setAnswers] = useState<Record<number, number>>(mappedInitialState?.answers || {});
+  const [markedForReview, setMarkedForReview] = useState<number[]>(mappedInitialState?.markedForReview || []);
+  const [timeSpent, setTimeSpent] = useState<Record<number, number>>(mappedInitialState?.timeSpent || {});
+  const [timeLeft, setTimeLeft] = useState(mappedInitialState?.timeLeft ?? test.durationMinutes * 60);
+  const [visited, setVisited] = useState<number[]>(mappedInitialState?.visited || [0]);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [showMobilePalette, setShowMobilePalette] = useState(false);
-  const [currentMode, setCurrentMode] = useState<'mock' | 'practice'>(mode);
-  const [untimedPractice, setUntimedPractice] = useState(false);
+  const [currentMode, setCurrentMode] = useState<'mock' | 'practice'>(mappedInitialState?.currentMode || mode);
+  const [untimedPractice, setUntimedPractice] = useState(mappedInitialState?.untimedPractice || false);
   const [targetScore, setTargetScore] = useState(() => {
     const totalQs = test.questions.length;
     const testTotalMarks = test.totalMarks || totalQs;
@@ -142,13 +196,68 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
   });
   const questionTextRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
+  
   // Show overview only for new tests; skip if user is genuinely resuming saved progress
   const [isStarted, setIsStarted] = useState(() => {
-    if (!initialState) return false;
-    const hasAnswers = Object.keys(initialState.answers || {}).length > 0;
-    const hasPartialTime = initialState.timeLeft !== undefined && initialState.timeLeft < test.durationMinutes * 60;
+    if (!mappedInitialState) return false;
+    if (mappedInitialState.isStarted) return true;
+    const hasAnswers = Object.keys(mappedInitialState.answers || {}).length > 0;
+    const hasPartialTime = mappedInitialState.timeLeft !== undefined && mappedInitialState.timeLeft < test.durationMinutes * 60;
     return hasAnswers || hasPartialTime;
   });
+
+  // Synchronize active test state to sessionStorage on any progress/change
+  useEffect(() => {
+    if (isStarted && test) {
+      const questions = test.questions || [];
+      const answersById: Record<string, number> = {};
+      const markedForReviewIds: string[] = [];
+      const timeSpentById: Record<string, number> = {};
+      const visitedIds: string[] = [];
+
+      Object.entries(answers).forEach(([idxStr, val]) => {
+        const idx = parseInt(idxStr);
+        const q = questions[idx];
+        if (q?.id) answersById[q.id] = val as number;
+      });
+
+      markedForReview.forEach(idx => {
+        const q = questions[idx];
+        if (q?.id) markedForReviewIds.push(q.id);
+      });
+
+      Object.entries(timeSpent).forEach(([idxStr, val]) => {
+        const idx = parseInt(idxStr);
+        const q = questions[idx];
+        if (q?.id) timeSpentById[q.id] = val as number;
+      });
+
+      visited.forEach(idx => {
+        const q = questions[idx];
+        if (q?.id) visitedIds.push(q.id);
+      });
+
+      const currentQuestionId = questions[currentQuestionIndex]?.id || null;
+
+      sessionStorage.setItem('oep_activeTestState', JSON.stringify({
+        resumeSessionId: initialState?.resumeSessionId || `session-${Date.now()}`,
+        currentQuestionIndex,
+        currentQuestionId,
+        answers,
+        answersById,
+        markedForReview,
+        markedForReviewIds,
+        timeSpent,
+        timeSpentById,
+        timeLeft,
+        visited,
+        visitedIds,
+        isStarted: true,
+        currentMode,
+        untimedPractice
+      }));
+    }
+  }, [isStarted, test, currentQuestionIndex, answers, markedForReview, timeSpent, timeLeft, visited, currentMode, untimedPractice, initialState?.resumeSessionId]);
 
   // Derived test settings used on both overview & sidebar
   const totalQs = test.questions.length;
@@ -349,16 +458,53 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
   }, [test, answers, timeLeft, timeSpent, markedForReview, currentMode, untimedPractice, onComplete]);
 
   const handleExit = useCallback(() => {
+    const questions = test.questions || [];
+    const answersById: Record<string, number> = {};
+    const markedForReviewIds: string[] = [];
+    const timeSpentById: Record<string, number> = {};
+    const visitedIds: string[] = [];
+
+    Object.entries(answers).forEach(([idxStr, val]) => {
+      const idx = parseInt(idxStr);
+      const q = questions[idx];
+      if (q?.id) answersById[q.id] = val as number;
+    });
+
+    markedForReview.forEach(idx => {
+      const q = questions[idx];
+      if (q?.id) markedForReviewIds.push(q.id);
+    });
+
+    Object.entries(timeSpent).forEach(([idxStr, val]) => {
+      const idx = parseInt(idxStr);
+      const q = questions[idx];
+      if (q?.id) timeSpentById[q.id] = val as number;
+    });
+
+    visited.forEach(idx => {
+      const q = questions[idx];
+      if (q?.id) visitedIds.push(q.id);
+    });
+
+    const currentQuestionId = questions[currentQuestionIndex]?.id || null;
+
     onExit({
       answers,
+      answersById,
       timeLeft,
       timeSpent,
+      timeSpentById,
       markedForReview,
+      markedForReviewIds,
+      visited,
+      visitedIds,
       currentQuestionIndex,
+      currentQuestionId,
       test,
-      mode: currentMode
+      mode: currentMode,
+      untimedPractice
     });
-  }, [answers, timeLeft, timeSpent, markedForReview, currentQuestionIndex, test, currentMode, onExit]);
+  }, [answers, timeLeft, timeSpent, markedForReview, visited, currentQuestionIndex, test, currentMode, untimedPractice, onExit]);
 
   const nextQuestion = useCallback(() => {
     if (currentQuestionIndex < test.questions.length - 1) {
@@ -721,7 +867,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
               <div className="lg:col-span-2 space-y-6">
                 
                 {/* CBT Keyboard Navigation Guide */}
-                <div className="bg-white border border-slate-200/60 rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm">
+                <div className="hidden sm:block bg-white border border-slate-200/60 rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm">
                   <h3 className="text-slate-900 font-serif font-black text-base flex items-center gap-2">
                     <Zap className="w-4.5 h-4.5 text-amber-500" /> CBT Keyboard Shortcuts
                   </h3>
