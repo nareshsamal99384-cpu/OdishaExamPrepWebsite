@@ -1136,7 +1136,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                                 )}
                               >
                                 <div className={cn(
-                                  "w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center font-black text-xs shrink-0 transition-all duration-300",
+                                  "w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center font-black text-xs shrink-0 transition-all duration-300 pointer-events-none",
                                   showResult
                                     ? isCorrect 
                                       ? "bg-emerald-600 text-white" 
@@ -1149,16 +1149,16 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                                 </div>
                                 
                                 <span className={cn(
-                                  "flex-1 text-slate-800 text-sm sm:text-base transition-all",
+                                  "flex-1 text-slate-800 text-sm sm:text-base transition-all pointer-events-none",
                                   isSelected ? "font-bold text-slate-900" : "font-medium text-slate-600 group-hover:text-slate-900"
                                 )}><MathTextRenderer text={option} isOption /></span>
                                 
-                                {showResult && isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />}
-                                {showResult && isSelected && !isCorrect && <X className="w-5 h-5 text-rose-600 shrink-0" />}
+                                {showResult && isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 pointer-events-none" />}
+                                {showResult && isSelected && !isCorrect && <X className="w-5 h-5 text-rose-600 shrink-0 pointer-events-none" />}
                                 
                                 {!showResult && (
                                   <span className={cn(
-                                    "text-[10px] font-mono font-black border px-2 py-0.5 rounded-md hidden sm:inline ml-auto select-none transition-all duration-300",
+                                    "text-[10px] font-mono font-black border px-2 py-0.5 rounded-md hidden sm:inline ml-auto select-none transition-all duration-300 pointer-events-none",
                                     isSelected 
                                       ? "border-[#8A1C36]/30 bg-[#8A1C36]/5 text-[#8A1C36]" 
                                       : "border-slate-200 bg-slate-50 text-slate-400 opacity-0 group-hover:opacity-100"
