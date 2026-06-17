@@ -1,0 +1,4 @@
+{
+  "status": 200,
+  "text": "{\"id\":\"chatcmpl-0e678010-2602-4841-9812-52d9510bbca8\",\"choices\":[{\"index\":0,\"message\":{\"content\":\"{ \\\"joke\\\": \\\"Why couldn't the bicycle stand up by itself? Because it was two-tired!\\\" }\",\"role\":\"assistant\",\"reasoning_content\":null},\"finish_reason\":\"stop\"}],\"created\":1781625861,\"model\":\"meta/llama-3.1-8b-instruct\",\"object\":\"chat.completion\",\"usage\":{\"prompt_tokens\":53,\"completion_tokens\":25,\"total_tokens\":78},\"nvext\":{\"worker_id\":{\"prefill_worker_id\":7587895464335640000,\"prefill_dp_rank\":0,\"decode_worker_id\":7587895464335640000,\"decode_dp_rank\":0},\"timing\":{\"request_received_ms\":1781625861601,\"prefill_wait_time_ms\":0.92186,\"prefill_time_ms\":24.511011,\"ttft_ms\":25.432871,\"total_time_ms\":162.521314,\"kv_hit_rate\":0.25,\"router_queue_depth\":0}}}"
+}

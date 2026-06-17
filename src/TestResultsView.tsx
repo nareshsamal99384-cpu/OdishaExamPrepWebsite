@@ -325,11 +325,11 @@ export default function TestResultsView({ results, onClose }: { results: any, on
       </div>
 
       {/* BOTTOM SECTION: Detailed Question-by-Question Review */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-6">
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-6">
         
         {/* Left Col: Quick Navigation (Question Navigator) */}
         <div className="lg:col-span-1">
-          <div className="glass p-6 sm:p-8 rounded-[2rem] border border-slate-200 premium-shadow bg-white/60 lg:sticky lg:top-24">
+          <div className="glass px-2.5 py-4 sm:p-8 rounded-xl sm:rounded-[2rem] border border-slate-200 premium-shadow bg-white/60 lg:sticky lg:top-24">
              <h3 className="font-extrabold text-slate-900 mb-6 text-lg sm:text-xl tracking-tight">Question Navigator</h3>
               <div className="max-h-[300px] lg:max-h-[450px] overflow-y-auto p-1.5 custom-scrollbar">
                <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-7 gap-2 sm:gap-3 py-1">
@@ -368,7 +368,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
 
         {/* Right Col: Detailed Question Card */}
         <div className="lg:col-span-2 space-y-6">
-          <div ref={questionCardRef} className="glass p-4 sm:p-10 lg:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-200 premium-shadow bg-white">
+          <div ref={questionCardRef} className="glass px-2.5 py-5 sm:p-10 lg:p-8 rounded-2xl sm:rounded-[2.5rem] border border-slate-200 premium-shadow bg-white">
             <motion.div 
                key={currentIdx}
                {...fadeSlideUpSm}
@@ -401,7 +401,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
              </div>
 
               {/* Question text with expand/collapse */}
-              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/50 shadow-[0_10px_30px_rgba(0,0,0,0.02)] mb-8 sm:mb-10 relative overflow-hidden">
+              <div className="bg-white rounded-xl sm:rounded-3xl px-3 py-4 sm:p-8 border border-slate-200/50 shadow-[0_10px_30px_rgba(0,0,0,0.02)] mb-8 sm:mb-10 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-brand-500/[0.04] rounded-full blur-3xl -mr-12 -mt-12 pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-500/[0.03] rounded-full blur-3xl -ml-10 -mb-10 pointer-events-none" />
                 <motion.div
@@ -470,7 +470,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
                   }
 
                   return (
-                    <div key={i} className={cn("mcq-option p-4 sm:p-6 lg:p-5 rounded-2xl border-2 flex items-center gap-4 sm:gap-5 lg:gap-4 transition-all text-left w-full", ringClass)}>
+                    <div key={i} className={cn("mcq-option px-3 py-3.5 sm:p-6 lg:p-5 rounded-xl sm:rounded-2xl border-2 flex items-center gap-3 sm:gap-5 lg:gap-4 transition-all text-left w-full", ringClass)}>
                        <div className={cn(
                           "w-8 h-8 sm:w-10 sm:h-10 lg:w-9 lg:h-9 rounded-lg sm:rounded-xl flex items-center justify-center font-extrabold text-sm sm:text-base lg:text-sm shrink-0",
                          isThisCorrect ? "bg-emerald-500 text-white" :
@@ -488,7 +488,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
              </div>
 
              {currentQ.explanation && (
-                 <div className="math-explanation bg-brand-50 p-5 sm:p-8 lg:p-6 rounded-2xl sm:rounded-3xl border border-brand-100 mb-2 lg:mb-10">
+                 <div className="math-explanation bg-brand-50 px-3 py-4 sm:p-8 lg:p-6 rounded-xl sm:rounded-3xl border border-brand-100 mb-2 lg:mb-10">
                   <h4 className="font-extrabold text-brand-900 flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 text-base sm:text-lg">
                     <div className="bg-white p-1.5 sm:p-2 rounded-lg sm:rounded-xl shadow-sm"><AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-brand-600"/></div> 
                     Detailed Explanation

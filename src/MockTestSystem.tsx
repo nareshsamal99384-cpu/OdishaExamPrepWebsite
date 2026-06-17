@@ -1034,7 +1034,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
 
             return (
               <main className={cn(
-                "flex-1 p-3 sm:p-5 lg:p-6 relative bg-[#FBF9F6] flex flex-col",
+                "flex-1 px-2 py-3 sm:p-5 lg:p-6 relative bg-[#FBF9F6] flex flex-col",
                 mathHeavy ? "overflow-y-auto no-scrollbar" : "overflow-hidden"
               )}>
                 <div className={cn(
@@ -1057,8 +1057,8 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                       <div className={cn(
                         "bg-white rounded-xl sm:rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md transition-shadow flex flex-col space-y-2.5 sm:space-y-3",
                         mathHeavy
-                          ? "p-4 sm:p-6"
-                          : "p-3 sm:p-5 flex-shrink-0 lg:flex-1 lg:h-full lg:max-h-none overflow-hidden"
+                          ? "px-3 py-4 sm:p-6"
+                          : "px-2.5 py-3 sm:p-5 flex-shrink-0 lg:flex-1 lg:h-full lg:max-h-none overflow-hidden"
                       )}>
                         {/* Question label + Math badge */}
                         <div className="flex items-center justify-between flex-shrink-0">

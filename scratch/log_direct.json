@@ -1,0 +1,4 @@
+{
+  "status": 200,
+  "text": "{\"id\":\"chatcmpl-7b4783be-be2e-4f99-af20-32c18e05af2f\",\"choices\":[{\"index\":0,\"message\":{\"content\":\"Hello. How can I assist you today?\",\"role\":\"assistant\",\"reasoning_content\":null},\"finish_reason\":\"stop\"}],\"created\":1781625743,\"model\":\"meta/llama-3.1-8b-instruct\",\"object\":\"chat.completion\",\"usage\":{\"prompt_tokens\":36,\"completion_tokens\":10,\"total_tokens\":46,\"prompt_tokens_details\":{\"audio_tokens\":null,\"cached_tokens\":16}},\"nvext\":{\"worker_id\":{\"prefill_worker_id\":7587895464335639579,\"prefill_dp_rank\":0,\"decode_worker_id\":7587895464335639579,\"decode_dp_rank\":0},\"timing\":{\"request_received_ms\":1781625743836,\"prefill_wait_time_ms\":0.723874,\"prefill_time_ms\":21.449736,\"ttft_ms\":22.17361,\"total_time_ms\":67.538274,\"kv_hit_rate\":0.0,\"router_queue_depth\":0}}}"
+}

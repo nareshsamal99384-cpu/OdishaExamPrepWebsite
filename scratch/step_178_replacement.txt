@@ -1,0 +1,1 @@
+"export class DiagramErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {\n  props: ErrorBoundaryProps;\n  state: ErrorBoundaryState;\n\n  constructor(props: ErrorBoundaryProps) {\n    super(props);\n    this.props = props;\n    this.state = { hasError: false, error: null };\n  }"
