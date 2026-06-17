@@ -219,7 +219,7 @@ const RenderLatexLabel: React.FC<{
   const isPointLabel = plainText.length <= 2;
 
   const foWidth = 500;
-  const foHeight = 40;
+  const foHeight = Math.max(40, size * 2.2);
   let foX = x - foWidth / 2;
   const foY = y - foHeight / 2;
 
@@ -259,7 +259,9 @@ const RenderLatexLabel: React.FC<{
       <div 
         className={cn(
           "bg-white dark:bg-[#070b12] border border-slate-200/90 dark:border-slate-800/80 font-black select-none text-slate-800 dark:text-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.08)]",
-          isPointLabel ? "px-1.5 py-0.5 rounded text-[12px]" : "px-2 py-0.5 rounded-md text-[13px]"
+          isPointLabel 
+            ? (size > 15 ? "px-2 py-1 rounded" : "px-1.5 py-0.5 rounded") 
+            : (size > 15 ? "px-3 py-1.5 rounded-md" : "px-2 py-0.5 rounded-md")
         )}
         style={divStyle}
       >
@@ -1272,7 +1274,9 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
   }, [shapesData]);
 
   // Premium Grid Line Color
-  const gridLineColor = isDark ? "rgba(99, 102, 241, 0.12)" : "rgba(99, 102, 241, 0.08)";
+  const gridLineColor = isDark 
+    ? (isMobile ? "rgba(99, 102, 241, 0.35)" : "rgba(99, 102, 241, 0.18)") 
+    : (isMobile ? "rgba(99, 102, 241, 0.25)" : "rgba(99, 102, 241, 0.12)");
 
   const arrowDefs = (
     <defs>
@@ -1431,7 +1435,8 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
 
       if (!labelStr) return;
 
-      const size = shape.fontSize || shape.size || 14;
+      const baseSize = shape.fontSize || shape.size || 14;
+      const size = isMobile ? baseSize * 1.4 : baseSize;
       const plainText = labelStr.replace(/[\$\\]/g, '').trim();
       const isPointLabel = plainText.length <= 2;
 
@@ -1808,7 +1813,8 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
   // Render 3D Shape
   const render3DWireframe = (shape: ShapeElement, key: string, idx?: number) => {
     const strokeColor = getPremiumColor(shape.stroke, isDark, idx);
-    const strokeW = shape.strokeWidth || 2;
+    const baseStrokeW = shape.strokeWidth || 2.0;
+    const strokeW = isMobile ? baseStrokeW * 1.6 : baseStrokeW;
     const fill = shape.fill ? getPremiumColor(shape.fill, isDark, idx) : strokeColor;
     const fillOpacity = shape.fill ? 1 : 0.04;
     
@@ -2083,8 +2089,8 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                     x2={mx(x)} 
                     y2={vHeight} 
                     stroke={gridLineColor} 
-                    strokeWidth="1" 
-                    strokeDasharray="4 4" 
+                    strokeWidth={isMobile ? 1.75 : 1} 
+                    strokeDasharray={isMobile ? "6 6" : "4 4"} 
                   />
                 ))}
                 {/* Horizontal grid lines */}
@@ -2096,8 +2102,8 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                     x2={vWidth} 
                     y2={my(y)} 
                     stroke={gridLineColor} 
-                    strokeWidth="1" 
-                    strokeDasharray="4 4" 
+                    strokeWidth={isMobile ? 1.75 : 1} 
+                    strokeDasharray={isMobile ? "6 6" : "4 4"} 
                   />
                 ))}
               </g>
@@ -2175,23 +2181,25 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
               }
 
               return (
-                <g className="x-axis-layer stroke-indigo-500/50 dark:stroke-indigo-400/50">
+                <g className="x-axis-layer text-indigo-500/60 dark:text-indigo-400/50">
                   {showLine && (
                     <line 
                       x1={0} 
                       y1={sy} 
-                      x2={vWidth - (showArrow ? 15 : 0)} 
+                      x2={vWidth - (showArrow ? (isMobile ? 24 : 15) : 0)} 
                       y2={sy} 
-                      stroke="currentColor" 
-                      strokeWidth="2.5" 
+                      stroke={isDark ? "#818cf8" : "#4f46e5"} 
+                      strokeWidth={isMobile ? 4.5 : 2.5} 
+                      opacity={isDark ? 0.65 : 0.75}
+                      color={isDark ? "#818cf8" : "#4f46e5"}
                       markerEnd={showArrow ? "url(#arrow)" : undefined} 
                     />
                   )}
                   {data.xAxisLabel && (
                     <text 
                       x={vWidth - 10} 
-                      y={sy + 5} 
-                      className="text-base font-black fill-indigo-600 dark:fill-indigo-400 font-serif" 
+                      y={sy + (isMobile ? 8 : 5)} 
+                      className={cn("font-black fill-indigo-600 dark:fill-indigo-400 font-serif", isMobile ? "text-xl" : "text-base")} 
                       stroke="none" 
                       textAnchor="start"
                     >
@@ -2206,14 +2214,25 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                     return (
                       <g key={`xtick-diag-${x}`}>
                         {showTicks && (
-                          <line x1={px} y1={sy - 4} x2={px} y2={sy + 4} stroke="currentColor" strokeWidth="1.5" />
+                          <line 
+                            x1={px} 
+                            y1={sy - (isMobile ? 7 : 4)} 
+                            x2={px} 
+                            y2={sy + (isMobile ? 7 : 4)} 
+                            stroke={isDark ? "#818cf8" : "#4f46e5"} 
+                            strokeWidth={isMobile ? 3.0 : 1.5}
+                            opacity={isDark ? 0.65 : 0.75}
+                          />
                         )}
                         {renderLabel && (
                           <text 
                             x={px} 
-                            y={nearBottom ? sy - 12 : sy + 20} 
+                            y={nearBottom ? sy - (isMobile ? 18 : 12) : sy + (isMobile ? 28 : 20)} 
                             stroke="none"
-                            className="text-[15px] font-black font-mono fill-slate-700 dark:fill-slate-200 select-none" 
+                            className={cn(
+                              "font-black font-mono fill-slate-700 dark:fill-slate-200 select-none",
+                              isMobile ? "text-[21px]" : "text-[15px]"
+                            )}
                             textAnchor="middle"
                           >
                             {x}{unit}
@@ -2294,23 +2313,25 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
               }
 
               return (
-                <g className="y-axis-layer stroke-indigo-500/50 dark:stroke-indigo-400/50">
+                <g className="y-axis-layer text-indigo-500/60 dark:text-indigo-400/50">
                   {showLine && (
                     <line 
                       x1={sx} 
                       y1={vHeight} 
                       x2={sx} 
-                      y2={showArrow ? 15 : 0} 
-                      stroke="currentColor" 
-                      strokeWidth="2.5" 
+                      y2={showArrow ? (isMobile ? 24 : 15) : 0} 
+                      stroke={isDark ? "#818cf8" : "#4f46e5"} 
+                      strokeWidth={isMobile ? 4.5 : 2.5} 
+                      opacity={isDark ? 0.65 : 0.75}
+                      color={isDark ? "#818cf8" : "#4f46e5"}
                       markerEnd={showArrow ? "url(#arrow)" : undefined} 
                     />
                   )}
                   {data.yAxisLabel && (
                     <text 
                       x={sx} 
-                      y={10} 
-                      className="text-base font-black fill-indigo-600 dark:fill-indigo-400 font-serif" 
+                      y={isMobile ? 14 : 10} 
+                      className={cn("font-black fill-indigo-600 dark:fill-indigo-400 font-serif", isMobile ? "text-xl" : "text-base")} 
                       stroke="none" 
                       textAnchor="middle"
                     >
@@ -2325,14 +2346,25 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                     return (
                       <g key={`ytick-diag-${y}`}>
                         {showTicks && (
-                          <line x1={sx - 4} y1={py} x2={sx + 4} y2={py} stroke="currentColor" strokeWidth="1.5" />
+                          <line 
+                            x1={sx - (isMobile ? 7 : 4)} 
+                            y1={py} 
+                            x2={sx + (isMobile ? 7 : 4)} 
+                            y2={py} 
+                            stroke={isDark ? "#818cf8" : "#4f46e5"} 
+                            strokeWidth={isMobile ? 3.0 : 1.5}
+                            opacity={isDark ? 0.65 : 0.75}
+                          />
                         )}
                         {renderLabel && (
                           <text 
-                            x={nearLeft ? sx + 12 : sx - 12} 
-                            y={py + 5} 
+                            x={nearLeft ? sx + (isMobile ? 18 : 12) : sx - (isMobile ? 18 : 12)} 
+                            y={py + (isMobile ? 7 : 5)} 
                             stroke="none"
-                            className="text-[15px] font-black font-mono fill-slate-700 dark:fill-slate-200 select-none" 
+                            className={cn(
+                              "font-black font-mono fill-slate-700 dark:fill-slate-200 select-none",
+                              isMobile ? "text-[21px]" : "text-[15px]"
+                            )}
                             textAnchor={nearLeft ? 'start' : 'end'}
                           >
                             {y}{unit}
@@ -2350,11 +2382,11 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
               <circle 
                 cx={mx(0)} 
                 cy={my(0)} 
-                r="4" 
+                r={isMobile ? "6" : "4"} 
                 fill={isDark ? '#818cf8' : '#4f46e5'} 
                 className="opacity-80" 
                 stroke={isDark ? 'rgba(129, 140, 248, 0.4)' : 'rgba(79, 70, 229, 0.4)'}
-                strokeWidth="3"
+                strokeWidth={isMobile ? "4.5" : "3"}
               />
             )}
 
@@ -2383,7 +2415,9 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                 fillOpacity = isDark ? 0.06 : 0.04;
               }
 
-              const sWidth = isHovered ? (shape.strokeWidth || 3) + 1.5 : (shape.strokeWidth || 2.5);
+              const baseStrokeWidth = shape.strokeWidth !== undefined ? shape.strokeWidth : 2.5;
+              const scaledStrokeWidth = isMobile ? baseStrokeWidth * 1.6 : baseStrokeWidth;
+              const sWidth = isHovered ? scaledStrokeWidth + 1.5 : scaledStrokeWidth;
               const opacity = shape.opacity !== undefined ? shape.opacity : 1;
               const isDashed = !!shape.dashed;
 
@@ -2472,9 +2506,12 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                     const allowNegative = shape.allowNegative !== false;
 
                     const strokeColor = getPremiumColor(shape.color || 'currentColor', isDark);
-                    const lineWidth = shape.lineWidth || 2.5;
-                    const fontSize = shape.fontSize || 13;
-                    const tickLen = shape.tickLength || 6;
+                    const baseLineWidth = shape.lineWidth || 2.5;
+                    const lineWidth = isMobile ? baseLineWidth * 1.6 : baseLineWidth;
+                    const baseFontSize = shape.fontSize || 13;
+                    const fontSize = isMobile ? baseFontSize * 1.5 : baseFontSize;
+                    const baseTickLen = shape.tickLength || 6;
+                    const tickLen = isMobile ? baseTickLen * 1.5 : baseTickLen;
                     const rotation = shape.rotation || 0;
 
                     const rangeVal = valEnd - valStart;
@@ -2551,8 +2588,8 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                               x2={mx(cx)}
                               y2={vHeight}
                               stroke={gridLineColor}
-                              strokeWidth={1}
-                              strokeDasharray="4 4"
+                              strokeWidth={isMobile ? 1.75 : 1}
+                              strokeDasharray={isMobile ? "6 6" : "4 4"}
                             />
                           );
                         })}
@@ -2595,7 +2632,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                               {renderLabel && (
                                 <text
                                   x={px}
-                                  y={sy + fontSize + 6}
+                                  y={sy + fontSize + (isMobile ? 9 : 6)}
                                   fontSize={fontSize}
                                   fontFamily="var(--font-mono, monospace)"
                                   fontWeight="bold"
@@ -2612,7 +2649,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                         {/* Axis title label */}
                         {shape.label && (() => {
                           let labelX = (sx + ex) / 2;
-                          let labelY = sy + fontSize + 24;
+                          let labelY = sy + fontSize + (isMobile ? 36 : 24);
                           let anchor = "middle";
 
                           const labelPos = shape.labelPosition || 'center';
@@ -2631,7 +2668,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                             <text
                               x={labelX}
                               y={labelY}
-                              fontSize={fontSize + 2}
+                              fontSize={fontSize + (isMobile ? 3 : 2)}
                               fontFamily="var(--font-sans, sans-serif)"
                               fontWeight="black"
                               fill={strokeColor}
@@ -2700,9 +2737,12 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                     const allowNegative = shape.allowNegative !== false;
 
                     const strokeColor = getPremiumColor(shape.color || 'currentColor', isDark);
-                    const lineWidth = shape.lineWidth || 2.5;
-                    const fontSize = shape.fontSize || 13;
-                    const tickLen = shape.tickLength || 6;
+                    const baseLineWidth = shape.lineWidth || 2.5;
+                    const lineWidth = isMobile ? baseLineWidth * 1.6 : baseLineWidth;
+                    const baseFontSize = shape.fontSize || 13;
+                    const fontSize = isMobile ? baseFontSize * 1.5 : baseFontSize;
+                    const baseTickLen = shape.tickLength || 6;
+                    const tickLen = isMobile ? baseTickLen * 1.5 : baseTickLen;
                     const rotation = shape.rotation || 0;
                     const unit = shape.unit || '';
 
@@ -2777,8 +2817,8 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                               x2={vWidth}
                               y2={my(cy)}
                               stroke={gridLineColor}
-                              strokeWidth={1}
-                              strokeDasharray="4 4"
+                              strokeWidth={isMobile ? 1.75 : 1}
+                              strokeDasharray={isMobile ? "6 6" : "4 4"}
                             />
                           );
                         })}
@@ -2821,7 +2861,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                               )}
                               {renderLabel && (
                                 <text
-                                  x={nearLeft ? sx + tickLen + 4 : sx - tickLen - 4}
+                                  x={nearLeft ? sx + tickLen + (isMobile ? 8 : 4) : sx - tickLen - (isMobile ? 8 : 4)}
                                   y={py + fontSize * 0.3}
                                   fontSize={fontSize}
                                   fontFamily="var(--font-mono, monospace)"
@@ -2839,7 +2879,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                         {/* Axis title label */}
                         {shape.label && (() => {
                           const labelPos = shape.labelPosition || 'center';
-                          let labelX = sx - 35;
+                          let labelX = sx - (isMobile ? 48 : 35);
                           let labelY = (sy + ey) / 2;
                           let rot = -90;
 
@@ -2853,7 +2893,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                             <text
                               x={labelX}
                               y={labelY}
-                              fontSize={fontSize + 2}
+                              fontSize={fontSize + (isMobile ? 3 : 2)}
                               fontFamily="var(--font-sans, sans-serif)"
                               fontWeight="black"
                               fill={strokeColor}
@@ -2896,12 +2936,13 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                   case 'coordinatePoint': {
                     const cxVal = mx(shape.x || 0);
                     const cyVal = my(shape.y || 0);
-                    const rVal = shape.r || 6;
+                    const baseRadius = shape.r || 6;
+                    const rVal = isMobile ? baseRadius * 1.5 : baseRadius;
                     
                     return (
                       <g key={shapeKey}>
                         {isHovered && (
-                          <circle cx={cxVal} cy={cyVal} r={rVal + 6} fill={strokeColor} opacity={0.2} stroke="none" />
+                          <circle cx={cxVal} cy={cyVal} r={rVal + (isMobile ? 9 : 6)} fill={strokeColor} opacity={0.2} stroke="none" />
                         )}
                         <circle 
                           cx={cxVal} 
@@ -2909,7 +2950,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                           r={rVal} 
                           fill={isHovered ? (isDark ? '#cbd5e1' : '#1e293b') : getPremiumColor(shape.fill || shape.stroke, isDark)}
                           stroke="#ffffff"
-                          strokeWidth={1.5}
+                          strokeWidth={isMobile ? 2.5 : 1.5}
                           {...interactiveProps}
                         />
                       </g>
@@ -3310,14 +3351,14 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                       const cy3 = my(-1.2);
                       return (
                         <g key={shapeKey} opacity={opacity}>
-                          <circle cx={cx1} cy={cyVal} r={rVal} fill="rgba(138,28,54,0.05)" stroke="#8a1c36" strokeWidth={2.5} />
-                          <circle cx={cx2} cy={cyVal} r={rVal} fill="rgba(99,102,241,0.05)" stroke="#4f46e5" strokeWidth={2.5} />
-                          <circle cx={cx3} cy={cy3} r={rVal} fill="rgba(16,185,129,0.05)" stroke="#059669" strokeWidth={2.5} />
+                          <circle cx={cx1} cy={cyVal} r={rVal} fill="rgba(138,28,54,0.05)" stroke="#8a1c36" strokeWidth={sWidth} />
+                          <circle cx={cx2} cy={cyVal} r={rVal} fill="rgba(99,102,241,0.05)" stroke="#4f46e5" strokeWidth={sWidth} />
+                          <circle cx={cx3} cy={cy3} r={rVal} fill="rgba(16,185,129,0.05)" stroke="#059669" strokeWidth={sWidth} />
                           {showLabels && (
                             <>
-                              <text x={cx1 - rVal * 0.4} y={cyVal} className="text-xs font-black fill-[#8a1c36]">Set A</text>
-                              <text x={cx2 + rVal * 0.4} y={cyVal} className="text-xs font-black fill-[#4f46e5]">Set B</text>
-                              <text x={cx3} y={cy3 - rVal * 0.4} className="text-xs font-black fill-[#059669]" textAnchor="middle">Set C</text>
+                              <text x={cx1 - rVal * 0.4} y={cyVal} className={cn("font-black fill-[#8a1c36]", isMobile ? "text-[14px]" : "text-xs")}>Set A</text>
+                              <text x={cx2 + rVal * 0.4} y={cyVal} className={cn("font-black fill-[#4f46e5]", isMobile ? "text-[14px]" : "text-xs")}>Set B</text>
+                              <text x={cx3} y={cy3 - rVal * 0.4} className={cn("font-black fill-[#059669]", isMobile ? "text-[14px]" : "text-xs")} textAnchor="middle">Set C</text>
                             </>
                           )}
                         </g>
@@ -3327,12 +3368,12 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                       const cx2 = mx(1.2);
                       return (
                         <g key={shapeKey} opacity={opacity}>
-                          <circle cx={cx1} cy={cyVal} r={rVal} fill="rgba(138,28,54,0.06)" stroke="#8a1c36" strokeWidth={2} />
-                          <circle cx={cx2} cy={cyVal} r={rVal} fill="rgba(99,102,241,0.06)" stroke="#4f46e5" strokeWidth={2} />
+                          <circle cx={cx1} cy={cyVal} r={rVal} fill="rgba(138,28,54,0.06)" stroke="#8a1c36" strokeWidth={sWidth} />
+                          <circle cx={cx2} cy={cyVal} r={rVal} fill="rgba(99,102,241,0.06)" stroke="#4f46e5" strokeWidth={sWidth} />
                           {showLabels && (
                             <>
-                              <text x={cx1 - 30} y={cyVal - rVal - 10} className="text-xs font-black fill-[#8a1c36]" textAnchor="middle">Set A</text>
-                              <text x={cx2 + 30} y={cyVal - rVal - 10} className="text-xs font-black fill-[#4f46e5]" textAnchor="middle">Set B</text>
+                              <text x={cx1 - 30} y={cyVal - rVal - 10} className={cn("font-black fill-[#8a1c36]", isMobile ? "text-[14px]" : "text-xs")} textAnchor="middle">Set A</text>
+                              <text x={cx2 + 30} y={cyVal - rVal - 10} className={cn("font-black fill-[#4f46e5]", isMobile ? "text-[14px]" : "text-xs")} textAnchor="middle">Set B</text>
                             </>
                           )}
                         </g>
@@ -3354,20 +3395,20 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                     return (
                       <g key={shapeKey} className="clock-group">
                         <circle cx={cxVal} cy={cyVal} r={rVal} fill="#ffffff" stroke={strokeColor} strokeWidth={sWidth} />
-                        <circle cx={cxVal} cy={cyVal} r="5" fill="#8a1c36" />
+                        <circle cx={cxVal} cy={cyVal} r={isMobile ? 8 : 5} fill="#8a1c36" />
                         
                         <line 
                           x1={cxVal} y1={cyVal} 
                           x2={cxVal + rVal * 0.5 * Math.cos(hrAngle * Math.PI / 180)} 
                           y2={cyVal + rVal * 0.5 * Math.sin(hrAngle * Math.PI / 180)} 
-                          stroke="#8a1c36" strokeWidth={4} strokeLinecap="round"
+                          stroke="#8a1c36" strokeWidth={isMobile ? 6 : 4} strokeLinecap="round"
                         />
                         
                         <line 
                           x1={cxVal} y1={cyVal} 
                           x2={cxVal + rVal * 0.8 * Math.cos(minAngle * Math.PI / 180)} 
                           y2={cyVal + rVal * 0.8 * Math.sin(minAngle * Math.PI / 180)} 
-                          stroke="#1e293b" strokeWidth={2.5} strokeLinecap="round"
+                          stroke="#1e293b" strokeWidth={isMobile ? 4 : 2.5} strokeLinecap="round"
                         />
 
                         {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(deg => {
@@ -3375,7 +3416,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                           const tickY1 = cyVal + rVal * 0.9 * Math.sin(deg * Math.PI / 180);
                           const tickX2 = cxVal + rVal * 0.98 * Math.cos(deg * Math.PI / 180);
                           const tickY2 = cyVal + rVal * 0.98 * Math.sin(deg * Math.PI / 180);
-                          return <line key={deg} x1={tickX1} y1={tickY1} x2={tickX2} y2={tickY2} stroke="#475569" strokeWidth={1.5} />;
+                          return <line key={deg} x1={tickX1} y1={tickY1} x2={tickX2} y2={tickY2} stroke="#475569" strokeWidth={isMobile ? 2.5 : 1.5} />;
                         })}
                       </g>
                     );
@@ -3393,9 +3434,9 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                           const py = my(Array.isArray(p) ? p[1] : p.y);
                           return (
                             <g key={pIdx}>
-                              <circle cx={px} cy={py} r={5} fill="#ffffff" stroke={strokeColor} strokeWidth={2} />
+                              <circle cx={px} cy={py} r={isMobile ? 7.5 : 5} fill="#ffffff" stroke={strokeColor} strokeWidth={isMobile ? 3.0 : 2} />
                               {showLabels && (
-                                <text x={px} y={py - 10} className="text-[10px] font-bold fill-current" textAnchor="middle">
+                                <text x={px} y={py - (isMobile ? 14 : 10)} className={cn("font-bold fill-current", isMobile ? "text-[14px]" : "text-[10px]")} textAnchor="middle">
                                   {p.label || `${Array.isArray(p) ? p[1] : p.y}`}
                                 </text>
                               )}
@@ -3432,7 +3473,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                                 strokeWidth={sWidth}
                               />
                               {showLabels && (
-                                <text x={px + bw / 2} y={by - 8} className="text-[10px] font-bold fill-current" textAnchor="middle">
+                                <text x={px + bw / 2} y={by - (isMobile ? 12 : 8)} className={cn("font-bold fill-current", isMobile ? "text-[14px]" : "text-[10px]")} textAnchor="middle">
                                   {p.label || `${Array.isArray(p) ? p[1] : p.y}`}
                                 </text>
                               )}
@@ -3482,10 +3523,10 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                                 fill={segmentColor}
                                 fillOpacity={0.7}
                                 stroke="#ffffff"
-                                strokeWidth={1.5}
+                                strokeWidth={isMobile ? 2.5 : 1.5}
                               />
                               {showLabels && (
-                                <text x={lx} y={ly} className="text-[10px] font-black fill-white" textAnchor="middle" dominantBaseline="middle">
+                                <text x={lx} y={ly} className={cn("font-black fill-white", isMobile ? "text-[14px]" : "text-[10px]")} textAnchor="middle" dominantBaseline="middle">
                                   {Math.round((v / total) * 100)}%
                                 </text>
                               )}
@@ -3505,10 +3546,10 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                           const py = my(Array.isArray(p) ? p[1] : p.y);
                           return (
                             <g key={pIdx}>
-                              <line x1={px - 4} y1={py - 4} x2={px + 4} y2={py + 4} stroke={strokeColor} strokeWidth={2} />
-                              <line x1={px + 4} y1={py - 4} x2={px - 4} y2={py + 4} stroke={strokeColor} strokeWidth={2} />
+                              <line x1={px - (isMobile ? 6 : 4)} y1={py - (isMobile ? 6 : 4)} x2={px + (isMobile ? 6 : 4)} y2={py + (isMobile ? 6 : 4)} stroke={strokeColor} strokeWidth={isMobile ? 3.0 : 2} />
+                              <line x1={px + (isMobile ? 6 : 4)} y1={py - (isMobile ? 6 : 4)} x2={px - (isMobile ? 6 : 4)} y2={py + (isMobile ? 6 : 4)} stroke={strokeColor} strokeWidth={isMobile ? 3.0 : 2} />
                               {showLabels && (
-                                <text x={px} y={py - 8} className="text-[9px] font-bold fill-current" textAnchor="middle">
+                                <text x={px} y={py - (isMobile ? 12 : 8)} className={cn("font-bold fill-current", isMobile ? "text-[13px]" : "text-[9px]")} textAnchor="middle">
                                   {p.label || `(${Array.isArray(p) ? p[0] : p.x}, ${Array.isArray(p) ? p[1] : p.y})`}
                                 </text>
                               )}
@@ -3531,25 +3572,25 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                     
                     return (
                       <g key={shapeKey}>
-                        <circle cx={cxVal} cy={cyVal} r={rVal} fill="none" stroke={strokeColor} strokeWidth={2} />
-                        <line x1={cxVal - rVal - 20} y1={cyVal} x2={cxVal + rVal + 20} y2={cyVal} stroke="currentColor" strokeWidth={1} opacity={0.3} />
-                        <line x1={cxVal} y1={cyVal - rVal - 20} x2={cxVal} y2={cyVal + rVal + 20} stroke="currentColor" strokeWidth={1} opacity={0.3} />
-                        <line x1={cxVal} y1={cyVal} x2={px} y2={py} stroke="#f43f5e" strokeWidth={2.5} />
-                        <line x1={px} y1={py} x2={px} y2={cyVal} stroke="#059669" strokeWidth={1.5} strokeDasharray="3 3" />
-                        <line x1={px} y1={py} x2={cxVal} y2={py} stroke="#059669" strokeWidth={1.5} strokeDasharray="3 3" />
+                        <circle cx={cxVal} cy={cyVal} r={rVal} fill="none" stroke={strokeColor} strokeWidth={isMobile ? 3.2 : 2} />
+                        <line x1={cxVal - rVal - (isMobile ? 30 : 20)} y1={cyVal} x2={cxVal + rVal + (isMobile ? 30 : 20)} y2={cyVal} stroke="currentColor" strokeWidth={isMobile ? 1.6 : 1} opacity={0.3} />
+                        <line x1={cxVal} y1={cyVal - rVal - (isMobile ? 30 : 20)} x2={cxVal} y2={cyVal + rVal + (isMobile ? 30 : 20)} stroke="currentColor" strokeWidth={isMobile ? 1.6 : 1} opacity={0.3} />
+                        <line x1={cxVal} y1={cyVal} x2={px} y2={py} stroke="#f43f5e" strokeWidth={isMobile ? 4.0 : 2.5} />
+                        <line x1={px} y1={py} x2={px} y2={cyVal} stroke="#059669" strokeWidth={isMobile ? 2.5 : 1.5} strokeDasharray="3 3" />
+                        <line x1={px} y1={py} x2={cxVal} y2={py} stroke="#059669" strokeWidth={isMobile ? 2.5 : 1.5} strokeDasharray="3 3" />
                         <path
-                          d={`M ${cxVal + 25} ${cyVal} A 25 25 0 0 0 ${cxVal + 25 * Math.cos(thetaRad)} ${cyVal - 25 * Math.sin(thetaRad)}`}
+                          d={`M ${cxVal + (isMobile ? 35 : 25)} ${cyVal} A ${isMobile ? 35 : 25} ${isMobile ? 35 : 25} 0 0 0 ${cxVal + (isMobile ? 35 : 25) * Math.cos(thetaRad)} ${cyVal - (isMobile ? 35 : 25) * Math.sin(thetaRad)}`}
                           fill="none"
                           stroke="orange"
-                          strokeWidth={2}
+                          strokeWidth={isMobile ? 3.0 : 2}
                         />
-                        <circle cx={px} cy={py} r={4.5} fill="#f43f5e" />
+                        <circle cx={px} cy={py} r={isMobile ? 7 : 4.5} fill="#f43f5e" />
                         {showLabels && (
                           <>
-                            <text x={px + 10} y={py - 10} className="text-[10px] font-black fill-current">
+                            <text x={px + (isMobile ? 15 : 10)} y={py - (isMobile ? 15 : 10)} className={cn("font-black fill-current", isMobile ? "text-[14px]" : "text-[10px]")}>
                               P(cos θ, sin θ)
                             </text>
-                            <text x={cxVal + 35} y={cyVal - 10} className="text-[10px] font-black fill-current">
+                            <text x={cxVal + (isMobile ? 45 : 35)} y={cyVal - (isMobile ? 15 : 10)} className={cn("font-black fill-current", isMobile ? "text-[14px]" : "text-[10px]")}>
                               θ = {angleDeg}°
                             </text>
                           </>
@@ -3572,27 +3613,27 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                     
                     return (
                       <g key={shapeKey}>
-                        <line x1={gX - 40} y1={gY} x2={tX + 40} y2={tY} stroke="currentColor" strokeWidth={3} />
-                        <line x1={tX} y1={tY} x2={topX} y2={topY} stroke={strokeColor} strokeWidth={3} />
-                        <line x1={gX} y1={gY} x2={topX} y2={topY} stroke="#f43f5e" strokeWidth={2.5} />
+                        <line x1={gX - (isMobile ? 60 : 40)} y1={gY} x2={tX + (isMobile ? 60 : 40)} y2={tY} stroke="currentColor" strokeWidth={isMobile ? 4.8 : 3} />
+                        <line x1={tX} y1={tY} x2={topX} y2={topY} stroke={strokeColor} strokeWidth={isMobile ? 4.8 : 3} />
+                        <line x1={gX} y1={gY} x2={topX} y2={topY} stroke="#f43f5e" strokeWidth={isMobile ? 4.0 : 2.5} />
                         
-                        <text x={tX + 15} y={(tY + topY)/2} className="text-xs font-black fill-current" dominantBaseline="middle">
+                        <text x={tX + (isMobile ? 22 : 15)} y={(tY + topY)/2} className={cn("font-black fill-current", isMobile ? "text-[16px]" : "text-xs")} dominantBaseline="middle">
                           Height = {h}m
                         </text>
-                        <text x={(gX + tX)/2} y={gY + 18} className="text-xs font-black fill-current" textAnchor="middle">
+                        <text x={(gX + tX)/2} y={gY + (isMobile ? 26 : 18)} className={cn("font-black fill-current", isMobile ? "text-[16px]" : "text-xs")} textAnchor="middle">
                           Distance = {d}m
                         </text>
                         
                         <path
-                          d={`M ${gX + 35} ${gY} A 35 35 0 0 0 ${gX + 35 * Math.cos(elevAngle * Math.PI / 180)} ${gY - 35 * Math.sin(elevAngle * Math.PI / 180)}`}
+                          d={`M ${gX + (isMobile ? 50 : 35)} ${gY} A ${isMobile ? 50 : 35} ${isMobile ? 50 : 35} 0 0 0 ${gX + (isMobile ? 50 : 35) * Math.cos(elevAngle * Math.PI / 180)} ${gY - (isMobile ? 50 : 35) * Math.sin(elevAngle * Math.PI / 180)}`}
                           fill="none"
                           stroke="#ef4444"
-                          strokeWidth={2}
+                          strokeWidth={isMobile ? 3.0 : 2}
                         />
-                        <text x={gX + 50} y={gY - 12} className="text-[10px] font-black fill-[#ef4444]">
+                        <text x={gX + (isMobile ? 70 : 50)} y={gY - (isMobile ? 18 : 12)} className={cn("font-black fill-[#ef4444]", isMobile ? "text-[14px]" : "text-[10px]")}>
                           {elevAngle}°
                         </text>
-                        <rect x={tX - 15} y={tY - 15} width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.5} />
+                        <rect x={tX - (isMobile ? 22 : 15)} y={tY - (isMobile ? 22 : 15)} width={isMobile ? 22 : 15} height={isMobile ? 22 : 15} fill="none" stroke="currentColor" strokeWidth={isMobile ? 2.5 : 1.5} />
                       </g>
                     );
                   }
