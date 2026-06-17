@@ -301,7 +301,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
               <div className="absolute -top-12 -right-12 w-28 h-28 bg-slate-500/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
               <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
                 <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Unanswered</span>
-                <div className="p-2 bg-slate-50/70 border border-slate-150 rounded-xl text-slate-500 group-hover:scale-105 group-hover:rotate-2 transition-all duration-300">
+                <div className="p-2 bg-slate-50/70 border border-slate-200 rounded-xl text-slate-500 group-hover:scale-105 group-hover:rotate-2 transition-all duration-300">
                   <AlertCircle className="w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0"/>
                 </div>
               </div>

@@ -28,7 +28,7 @@ import { DEFAULT_ACHIEVERS_JOURNAL, AchieverStory } from './lib/defaultAchievers
 import { cn } from './lib/utils';
 import { supabase } from './lib/supabase';
 import { dropdown, modalContent, scaleIn } from './lib/animations';
-import { MathTextRenderer, DiagramRenderer } from './components/MathTextRenderer';
+import { MathTextRenderer, DiagramRenderer, cleanJsonString, extractEmbeddedDiagram, diagramValidator } from './components/MathTextRenderer';
 import DiagramTemplateSelector from './components/DiagramTemplateSelector';
 import { validateCatalogEntitlements } from './lib/entitlementManager';
 
@@ -214,6 +214,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
   const [youtubeVideosInput, setYoutubeVideosInput] = useState('');
   const [newsUpdatesInput, setNewsUpdatesInput] = useState('');
   const [diagramText, setDiagramText] = useState('');
+  const [showDiagramHelp, setShowDiagramHelp] = useState(false);
 
   // Hero Card state
   const DEFAULT_HERO_CARD = {
@@ -299,32 +300,50 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [subscriberSearchQuery, setSubscriberSearchQuery] = useState('');
 
+  const [questionsPage, setQuestionsPage] = useState(1);
+  const [questionsLimit] = useState(50);
+  const [questionsTotalCount, setQuestionsTotalCount] = useState(0);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const [isInitialMount, setIsInitialMount] = useState(true);
+
+  const fetchQuestions = async (page = questionsPage, search = searchQuery, examId = filterExamId, qFilter = questionFilter) => {
+    setLoadingQuestions(true);
+    try {
+      const result = await examService.getQuestionsPaginated(page, questionsLimit, search, examId, qFilter);
+      if (result.success) {
+        setQuestions(result.data || []);
+        setQuestionsTotalCount(result.totalCount || 0);
+      }
+    } catch (err) {
+      console.error("Failed to load paginated questions:", err);
+    } finally {
+      setLoadingQuestions(false);
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
       let usersFetchPromise = Promise.resolve([] as any[]);
-      const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-      if (supabaseServiceKey) {
-         try {
-           const { createClient } = await import('@supabase/supabase-js');
-           const supabaseAdminLocal = createClient(import.meta.env.VITE_SUPABASE_URL, supabaseServiceKey, { auth: { autoRefreshToken: false, persistSession: false } });
-           
-           usersFetchPromise = supabaseAdminLocal.auth.admin.listUsers().then(res => res.data.users || []).then(authUsers => {
-              return authUsers.map(au => ({
-                 uid: au.id,
-                 email: au.email,
-                 displayName: au.user_metadata?.displayName || au.user_metadata?.full_name || au.user_metadata?.name || au.email?.split('@')[0],
-                 photoURL: au.user_metadata?.photoURL || au.user_metadata?.avatar_url || au.user_metadata?.picture,
-                 role: au.user_metadata?.role || 'user',
-                 hasFullAccess: !!au.user_metadata?.hasFullAccess,
-                 purchasedSeries: au.user_metadata?.purchasedSeries || []
-              }));
-           });
-         } catch(e) {}
+      try {
+         const session = (await supabase.auth.getSession()).data.session;
+         const token = session?.access_token;
+         if (token) {
+            usersFetchPromise = fetch('/api/admin/users', {
+               headers: {
+                  'Authorization': `Bearer ${token}`
+               }
+            }).then(res => {
+               if (!res.ok) throw new Error('Failed to fetch users');
+               return res.json();
+            });
+         }
+      } catch(e) {
+         console.error("Error setting up user fetch:", e);
       }
 
       const [qs, ss, ts, ex, bks, fetchedUsers] = await Promise.all([
-        examService.getAllQuestions(),
+        Promise.resolve([] as Question[]),
         examService.getAllTestSeries(),
         examService.getAllMockTests(),
         examService.getAllExams(),
@@ -395,6 +414,10 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
           .order('created_at', { ascending: false });
         if (!subsErr && subs) setSubscribers(subs);
       } catch (e) {}
+
+      if (activeTab === 'questions') {
+        await fetchQuestions(questionsPage, searchQuery, filterExamId, questionFilter);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -404,11 +427,22 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
 
   useEffect(() => {
     fetchData();
+    setIsInitialMount(false);
   }, []);
 
   useEffect(() => {
     sessionStorage.setItem('oep_adminActiveTab', activeTab);
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'questions' && !isInitialMount) {
+      fetchQuestions(questionsPage, searchQuery, filterExamId, questionFilter);
+    }
+  }, [activeTab, questionsPage, searchQuery, filterExamId, questionFilter, isInitialMount]);
+
+  useEffect(() => {
+    setQuestionsPage(1);
+  }, [searchQuery, filterExamId, questionFilter]);
 
   useEffect(() => {
     let list: any[] = [];
@@ -696,6 +730,9 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         ...newData,
         name: item.name || '',
         icon: item.icon || 'BookOpen',
+        examCategory: item.category || 'popular',
+        examDate: item.examDate || '',
+        metaTitle: item.metaTitle || '',
         metaDescription: item.metaDescription || '',
         keywords: item.keywords || '',
         targetExamId: item.targetExamId || '',
@@ -792,19 +829,32 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       if (activeTab === 'questions') {
         if (!formData.examId) { alert("Please select an exam."); return; }
         let parsedDiagram = null;
+        let cleanedQuestionText = formData.questionText;
+
+        const extraction = extractEmbeddedDiagram(formData.questionText);
+        if (extraction.diagram) {
+          parsedDiagram = extraction.diagram;
+          cleanedQuestionText = extraction.cleanedText;
+        }
+
         if (diagramText.trim()) {
           try {
-            parsedDiagram = JSON.parse(diagramText);
+            parsedDiagram = JSON.parse(cleanJsonString(diagramText));
           } catch(e) {
             alert("Invalid Diagram JSON. Please verify syntax.");
             return;
           }
         }
+
+        if (parsedDiagram) {
+          parsedDiagram = diagramValidator(parsedDiagram);
+        }
+
         const payload: any = {
           examId: formData.examId,
           topic: formData.topic,
           difficulty: formData.difficulty as 'easy' | 'medium' | 'hard',
-          questionText: formData.questionText,
+          questionText: cleanedQuestionText,
           options: formData.options,
           correctAnswerIndex: Number(formData.correctAnswerIndex),
           explanation: formData.explanation
@@ -916,8 +966,11 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       });
 
       await Promise.all(promises);
-      // Optional: Refresh data to ensure everything is synced
-      // await fetchData();
+      if (activeTab === 'questions') {
+        await fetchQuestions(questionsPage, searchQuery, filterExamId, questionFilter);
+      } else {
+        await fetchData();
+      }
     } catch (e) {
       console.error("Reorder failed", e);
     }
@@ -936,10 +989,10 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       
       let parsed;
       try {
-        parsed = JSON.parse(bulkFileContent);
+        parsed = JSON.parse(cleanJsonString(bulkFileContent));
       } catch (e) {
         try {
-          parsed = new Function('return ' + bulkFileContent)();
+          parsed = new Function('return ' + cleanJsonString(bulkFileContent))();
         } catch (e2) {
           alert("Invalid format. Please ensure the file is valid JSON or a JavaScript array.");
           return;
@@ -956,6 +1009,27 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         }
       }
       
+      const processedQuestions = questionArray.map((q: any) => {
+        let diagram = q.diagram || null;
+        let questionText = q.questionText || q.question || '';
+        
+        const extraction = extractEmbeddedDiagram(questionText);
+        if (extraction.diagram) {
+          diagram = extraction.diagram;
+          questionText = extraction.cleanedText;
+        }
+        
+        if (diagram) {
+          diagram = diagramValidator(diagram);
+        }
+        
+        return {
+          ...q,
+          questionText,
+          diagram
+        };
+      });
+
       const targetTest = mockTests.find(mt => mt.id === attachMockTestId);
       let targetExamId = 'generic';
       try {
@@ -964,7 +1038,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         }
       } catch(e) {}
       
-      await examService.addQuestionsToMockTest(attachMockTestId, targetExamId, questionArray);
+      await examService.addQuestionsToMockTest(attachMockTestId, targetExamId, processedQuestions);
       alert(`Successfully added ${questionArray.length} questions to Mock Test!`);
       setShowMockUploadModal(false);
       setBulkFileContent('');
@@ -988,10 +1062,10 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       
       let parsed;
       try {
-        parsed = JSON.parse(bulkFileContent);
+        parsed = JSON.parse(cleanJsonString(bulkFileContent));
       } catch (e) {
         try {
-          parsed = new Function('return ' + bulkFileContent)();
+          parsed = new Function('return ' + cleanJsonString(bulkFileContent))();
         } catch (e2) {
           alert("Invalid format. Please ensure the file is valid JSON or a JavaScript array.");
           return;
@@ -1009,17 +1083,30 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       }
       
       const formatted = questionArray.map(q => {
+        let diagram = q.diagram || null;
+        let questionText = q.questionText || q.question || '';
+        
+        const extraction = extractEmbeddedDiagram(questionText);
+        if (extraction.diagram) {
+          diagram = extraction.diagram;
+          questionText = extraction.cleanedText;
+        }
+        
+        if (diagram) {
+          diagram = diagramValidator(diagram);
+        }
+
         const item: any = {
           examId: bulkExamId,
           topic: bulkTopic,
           difficulty: q.difficulty || 'medium',
-          questionText: q.questionText || q.question || '',
+          questionText: questionText,
           options: Array.isArray(q.options) ? q.options : ['', '', '', ''],
           correctAnswerIndex: Number(q.correctAnswerIndex) || 0,
           explanation: q.explanation || ''
         };
-        if (q.diagram !== undefined && q.diagram !== null) {
-          item.diagram = q.diagram;
+        if (diagram !== undefined && diagram !== null) {
+          item.diagram = diagram;
         }
         return item;
       });
@@ -1595,7 +1682,30 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
             </div>
 
             <div className="space-y-2">
-              <label className={labelClass}>Diagram JSON (Optional)</label>
+              <div className="flex justify-between items-center">
+                <label className={labelClass}>Diagram JSON (Optional)</label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowDiagramHelp(!showDiagramHelp)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-extrabold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-all focus:outline-none cursor-pointer"
+                  >
+                    <span>{showDiagramHelp ? 'Hide' : 'Show'} Guide</span>
+                  </button>
+                  <DiagramTemplateSelector onSelect={(jsonStr) => {
+                    try {
+                      const parsedArray = JSON.parse(jsonStr);
+                      if (Array.isArray(parsedArray) && parsedArray.length > 0 && parsedArray[0].diagram) {
+                        setDiagramText(JSON.stringify(parsedArray[0].diagram, null, 2));
+                      } else {
+                        setDiagramText(jsonStr);
+                      }
+                    } catch (_) {
+                      setDiagramText(jsonStr);
+                    }
+                  }} />
+                </div>
+              </div>
               <textarea 
                 value={diagramText} 
                 onChange={e => setDiagramText(e.target.value)} 
@@ -1604,8 +1714,55 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                 rows={4}
               />
               <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">
-                Use valid JSON formatting. Example circle: <code>{"{ \"type\": \"circle\", \"radius\": 10, \"centerLabel\": \"O\" }"}</code>. Example coordinate: <code>{"{ \"type\": \"coordinate\", \"points\": [{\"x\": 3, \"y\": 4, \"label\": \"A\"}] }"}</code>.
+                Use valid JSON formatting. Select templates above or click "Show Guide" to view layout properties and mathematical rendering rules.
               </p>
+
+              {showDiagramHelp && (
+                <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50 dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-350 space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar shadow-inner mt-2">
+                  <div>
+                    <h4 className="font-black text-slate-900 dark:text-white uppercase tracking-wider mb-1">Diagram Creation Quick Guide</h4>
+                    <p className="font-medium">You can create mathematical diagrams using preset templates or build custom ones from vector shapes. The editor automatically fixes quote errors and trailing commas.</p>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <span className="font-extrabold uppercase text-indigo-600 dark:text-indigo-400">1. Embedding Math Notations (KaTeX)</span>
+                    <p className="font-medium">You can display complex math symbols, formulas, and Greek characters inside labels. Just wrap them in single dollar signs <code>$formula$</code>.</p>
+                    <p className="font-mono bg-white dark:bg-slate-950 p-1.5 rounded border border-slate-200 dark:border-slate-800">
+                      {"\"label\": \"Radius $r = \\\\sqrt{x^2 + y^2}$\""}
+                    </p>
+                    <p className="text-[10px] text-amber-600 font-bold">⚠️ Important: Backslashes inside JSON must be escaped (e.g. write \\sqrt instead of \sqrt).</p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="font-extrabold uppercase text-indigo-600 dark:text-indigo-400">2. Preset Visual Templates</span>
+                    <p className="font-medium">Import presets from the template selector. Key templates include:</p>
+                    <ul className="list-disc pl-4 space-y-0.5 font-medium">
+                      <li><code>{"{\"type\": \"circle\", \"radius\": 10, \"chord\": \"AB\", \"distanceFromCenter\": 6}"}</code></li>
+                      <li><code>{"{\"type\": \"rightTriangle\", \"leg\": 6, \"hypotenuse\": 10}"}</code></li>
+                      <li><code>{"{\"type\": \"parallelogram\", \"base\": 15, \"height\": 6}"}</code></li>
+                      <li><code>{"{\"type\": \"cube\", \"side\": 4}"}</code></li>
+                      <li><code>{"{\"type\": \"trapezium\", \"parallelSides\": [10, 14], \"height\": 6}"}</code></li>
+                      <li><code>{"{\"type\": \"cylinder\", \"radius\": 7, \"height\": 10}"}</code></li>
+                    </ul>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <span className="font-extrabold uppercase text-indigo-600 dark:text-indigo-400">3. Generic Vector Canvas (Custom Layouts)</span>
+                    <p className="font-medium">Use <code>type: \"vector\"</code> to compile multiple primitives on a grid. Supported primitives are:</p>
+                    <ul className="list-disc pl-4 space-y-1 font-mono text-[10px]">
+                      <li><b>line</b>: <code>{"{\"type\": \"line\", \"start\": [1,2], \"end\": [5,2], \"stroke\": \"red\", \"dashed\": true, \"label\": \"$L_1$\"}"}</code></li>
+                      <li><b>rect</b>: <code>{"{\"type\": \"rect\", \"points\": [[1,1],[9,7]], \"fill\": \"blue\", \"rx\": 4}"}</code></li>
+                      <li><b>circle</b>: <code>{"{\"type\": \"circle\", \"center\": [5,4], \"r\": 2.5, \"label\": \"Center\"}"}</code></li>
+                      <li><b>text</b>: <code>{"{\"type\": \"text\", \"pos\": [5,4], \"text\": \"$\\theta = 30^\\circ$\"}"}</code></li>
+                      <li><b>arc</b>: <code>{"{\"type\": \"arc\", \"center\": [0,0], \"r\": 2, \"startAngle\": 0, \"endAngle\": 90, \"label\": \"$\\alpha$\"}"}</code></li>
+                    </ul>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-200">
+                    <p className="font-extrabold">Refer to the full guide in your project directory: <code className="bg-white px-1 py-0.5 border rounded">diagram_guidelines.md</code></p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -1707,16 +1864,26 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                        if (!confirm(`Are you manually revoking content access to ${name} for ${item.email}?`)) return;
                        const newPurchased = item.purchasedSeries.filter((id: string) => id !== p);
                        
-                       let activeClient = supabase;
-                       const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-                       if (serviceKey) {
-                          const { createClient } = await import('@supabase/supabase-js');
-                          activeClient = createClient(import.meta.env.VITE_SUPABASE_URL, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
-                       }
-                       
-                       const { error } = await activeClient.auth.admin.updateUserById(item.uid, { user_metadata: { purchasedSeries: newPurchased } });
-                       if (error) alert(`Failed to revoke access: ${error.message}`);
-                       else alert('Access revoked successfully.');
+                       try {
+                           const session = (await supabase.auth.getSession()).data.session;
+                           const token = session?.access_token;
+                           const response = await fetch('/api/admin/users/update', {
+                              method: 'POST',
+                              headers: {
+                                 'Content-Type': 'application/json',
+                                 'Authorization': `Bearer ${token}`
+                              },
+                              body: JSON.stringify({
+                                 userId: item.uid,
+                                 updates: { purchasedSeries: newPurchased }
+                              })
+                           });
+                           const resData = await response.json();
+                           if (!response.ok) throw new Error(resData.error || 'Failed to revoke access');
+                           alert('Access revoked successfully.');
+                        } catch (err: any) {
+                           alert(`Failed to revoke access: ${err.message}`);
+                        }
                        
                        fetchData();
                     }} className="text-red-500 hover:text-red-700 text-[10px] uppercase mt-1 border-t border-brand-200/50 pt-0.5 self-start">Revoke</button>
@@ -1757,15 +1924,25 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   if (!confirm(`Are you sure you want to globally ${item.hasFullAccess ? 'revoke' : 'grant'} full system access to ${item.email}?`)) return;
                   const newAccess = !item.hasFullAccess;
                   
-                  let activeClient = supabase;
-                  const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-                  if (serviceKey) {
-                     const { createClient } = await import('@supabase/supabase-js');
-                     activeClient = createClient(import.meta.env.VITE_SUPABASE_URL, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+                  try {
+                     const session = (await supabase.auth.getSession()).data.session;
+                     const token = session?.access_token;
+                     const response = await fetch('/api/admin/users/update', {
+                        method: 'POST',
+                        headers: {
+                           'Content-Type': 'application/json',
+                           'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                           userId: item.uid,
+                           updates: { hasFullAccess: newAccess }
+                        })
+                     });
+                     const resData = await response.json();
+                     if (!response.ok) throw new Error(resData.error || 'Failed to update access');
+                  } catch (err: any) {
+                     alert(`Failed to update access: ${err.message}`);
                   }
-                  
-                  const { error } = await activeClient.auth.admin.updateUserById(item.uid, { user_metadata: { hasFullAccess: newAccess } });
-                  if (error) alert(`Failed to update access: ${error.message}`);
                   fetchData();
                 }}
                 className="w-full text-center px-3 py-1.5 text-slate-600 bg-slate-50 hover:text-slate-900 hover:bg-slate-200 rounded-lg transition-all text-xs font-bold border border-slate-200 shadow-sm"
@@ -1804,27 +1981,25 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                    e.stopPropagation();
                    if (!confirm('DANGER ZONE: Are you sure you want to revoke access to this content for EVERY SINGLE USER who purchased it? They will need to repurchase it if you add it to a new cycle.')) return;
                    
-                   let count = 0;
-                   let activeClient = supabase;
-                   const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-                   if (serviceKey) {
-                      const { createClient } = await import('@supabase/supabase-js');
-                      activeClient = createClient(import.meta.env.VITE_SUPABASE_URL, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+                   try {
+                      const session = (await supabase.auth.getSession()).data.session;
+                      const token = session?.access_token;
+                      const response = await fetch('/api/admin/content/revoke', {
+                         method: 'POST',
+                         headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                         },
+                         body: JSON.stringify({
+                            productId: item.id
+                         })
+                      });
+                      const resData = await response.json();
+                      if (!response.ok) throw new Error(resData.error || 'Failed to revoke content');
+                      alert(`Successfully revoked access from users (processed: ${resData.count || 0}).`);
+                   } catch (err: any) {
+                      alert(`Failed to revoke access: ${err.message}`);
                    }
-                   
-                   let errorCount = 0;
-                   for (const u of users) {
-                      if (u.purchasedSeries?.includes(item.id)) {
-                         const newPurchased = u.purchasedSeries.filter((p: string) => p !== item.id);
-                         const { error } = await activeClient.auth.admin.updateUserById(u.uid, { user_metadata: { purchasedSeries: newPurchased } });
-                         if (error) errorCount++;
-                         else count++;
-                      }
-                   }
-                   
-                   if (errorCount > 0) alert(`Revoked from ${count} users, but failed for ${errorCount} users.`);
-                   else if (count > 0) alert(`Successfully revoked access from ${count} users.`);
-                   else alert('No users currently hold access to this item.');
                    
                    fetchData();
                 }}
@@ -3369,24 +3544,25 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                                        e.stopPropagation();
                                        if (!confirm('DANGER ZONE: Are you sure you want to revoke access to this content for EVERY SINGLE USER who purchased it?')) return;
                                        
-                                       let count = 0;
-                                       let activeClient = supabase;
-                                       const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-                                       if (serviceKey) {
-                                          const { createClient } = await import('@supabase/supabase-js');
-                                          activeClient = createClient(import.meta.env.VITE_SUPABASE_URL, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+                                       try {
+                                          const session = (await supabase.auth.getSession()).data.session;
+                                          const token = session?.access_token;
+                                          const response = await fetch('/api/admin/content/revoke', {
+                                             method: 'POST',
+                                             headers: {
+                                                'Content-Type': 'application/json',
+                                                'Authorization': `Bearer ${token}`
+                                             },
+                                             body: JSON.stringify({
+                                                productId: item.id
+                                             })
+                                          });
+                                          const resData = await response.json();
+                                          if (!response.ok) throw new Error(resData.error || 'Failed to revoke content');
+                                          alert(`Access revoked from users (processed: ${resData.count || 0}).`);
+                                       } catch (err: any) {
+                                          alert(`Failed to revoke access: ${err.message}`);
                                        }
-                                       
-                                       let errorCount = 0;
-                                       for (const u of users) {
-                                          if (u.purchasedSeries?.includes(item.id)) {
-                                             const newPurchased = u.purchasedSeries.filter((p: string) => p !== item.id);
-                                             const { error } = await activeClient.auth.admin.updateUserById(u.uid, { user_metadata: { purchasedSeries: newPurchased } });
-                                             if (error) errorCount++;
-                                             else count++;
-                                          }
-                                       }
-                                       alert(`Access revoked from ${count} users.` + (errorCount > 0 ? ` Failed for ${errorCount}.` : ''));
                                        fetchData();
                                     }}
                                     className="p-2.5 text-red-500 hover:text-white hover:bg-red-500 rounded-xl transition-all"
@@ -3407,30 +3583,26 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                                           ...banks.filter((b: any) => b.examId === item.id).map((b: any) => b.id)
                                        ];
                                        
-                                       let count = 0;
-                                       let activeClient = supabase;
-                                       const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-                                       if (serviceKey) {
-                                          const { createClient } = await import('@supabase/supabase-js');
-                                          activeClient = createClient(import.meta.env.VITE_SUPABASE_URL, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
-                                       }
-                                       
-                                       let errorCount = 0;
-                                       for (const u of users) {
-                                          let hasAny = false;
-                                          if (u.purchasedSeries) {
-                                            for (const rid of relatedIds) {
-                                              if (u.purchasedSeries.includes(rid)) hasAny = true;
-                                            }
-                                          }
-                                          if (hasAny) {
-                                             const newPurchased = u.purchasedSeries.filter((p: string) => !relatedIds.includes(p));
-                                             const { error } = await activeClient.auth.admin.updateUserById(u.uid, { user_metadata: { purchasedSeries: newPurchased } });
-                                             if (error) errorCount++;
-                                             else count++;
-                                          }
-                                       }
-                                       alert(`Cycle Reset Complete: Exam Access revoked from ${count} users.` + (errorCount > 0 ? ` Failed for ${errorCount}.` : ''));
+                                        try {
+                                           const session = (await supabase.auth.getSession()).data.session;
+                                           const token = session?.access_token;
+                                           const response = await fetch('/api/admin/content/revoke', {
+                                              method: 'POST',
+                                              headers: {
+                                                 'Content-Type': 'application/json',
+                                                 'Authorization': `Bearer ${token}`
+                                              },
+                                              body: JSON.stringify({
+                                                 productId: `exam_bundle_${item.id}`,
+                                                 relatedIds
+                                              })
+                                           });
+                                           const resData = await response.json();
+                                           if (!response.ok) throw new Error(resData.error || 'Failed to revoke exam access');
+                                           alert(`Cycle Reset Complete: Exam access and all related content revoked (processed: ${resData.count || 0}).`);
+                                        } catch (err: any) {
+                                           alert(`Failed to revoke access: ${err.message}`);
+                                        }
                                        fetchData();
                                     }}
                                     className="p-2.5 text-red-500 hover:text-white hover:bg-red-500 rounded-xl transition-all"
@@ -3463,6 +3635,38 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                      ))}
                    </Reorder.Group>
                  )}
+
+                  {/* Pagination Controls */}
+                  {activeTab === 'questions' && questionsTotalCount > questionsLimit && (
+                    <div className="flex items-center justify-between px-8 py-5 bg-slate-50 border-t border-slate-100 rounded-b-2xl">
+                      <div className="text-sm font-semibold text-slate-500">
+                        Showing <span className="font-extrabold text-slate-800">{((questionsPage - 1) * questionsLimit) + 1}</span> to <span className="font-extrabold text-slate-800">{Math.min(questionsPage * questionsLimit, questionsTotalCount)}</span> of <span className="font-extrabold text-slate-800">{questionsTotalCount}</span> questions
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          disabled={questionsPage === 1 || loadingQuestions}
+                          onClick={() => setQuestionsPage(p => Math.max(p - 1, 1))}
+                          className={cn(
+                            "px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm shrink-0",
+                            (questionsPage === 1 || loadingQuestions) && "opacity-50 cursor-not-allowed pointer-events-none"
+                          )}
+                        >
+                          Previous
+                        </button>
+                        <span className="text-sm font-bold text-slate-600 px-2">Page {questionsPage}</span>
+                        <button
+                          disabled={questionsPage * questionsLimit >= questionsTotalCount || loadingQuestions}
+                          onClick={() => setQuestionsPage(p => p + 1)}
+                          className={cn(
+                            "px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm shrink-0",
+                            (questionsPage * questionsLimit >= questionsTotalCount || loadingQuestions) && "opacity-50 cursor-not-allowed pointer-events-none"
+                          )}
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  )}
               </div>
           )}
         </div>
@@ -3683,7 +3887,6 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                 <div className="bg-red-50 p-4 rounded-xl border border-red-100">
                    <p className="text-sm font-bold text-red-800">You are manually overriding the password for:</p>
                    <p className="text-sm font-mono text-red-600 mt-1">{passwordTargetUser.email}</p>
-                   <p className="text-xs text-red-700/80 mt-2 font-medium">To enforce security policies, you MUST have the Service Role Key configured in your environment to perform this administrative override.</p>
                 </div>
 
                 <div className="space-y-3">
@@ -3702,27 +3905,28 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   <button onClick={async () => {
                      if (!newPasswordValue || newPasswordValue.length < 6) return alert('Password must be at least 6 characters.');
                      
-                     // Requires Service Role Key to bypass Auth limits
-                     const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-                     if (!supabaseServiceKey) {
-                        return alert('ACTION REQUIRED: To force-change user passwords directly from the browser, you MUST add "VITE_SUPABASE_SERVICE_ROLE_KEY" to your .env file. The Anon key does not have permission to modify other users credentials.');
-                     }
-                     
                      try {
-                        const { createClient } = await import('@supabase/supabase-js');
-                        const supabaseAdminLocal = createClient(import.meta.env.VITE_SUPABASE_URL, supabaseServiceKey, { auth: { autoRefreshToken: false, persistSession: false } });
-                        
-                        const { error } = await supabaseAdminLocal.auth.admin.updateUserById(
-                           passwordTargetUser.uid,
-                           { password: newPasswordValue }
-                        );
-                        if (error) throw error;
-                        
-                        alert(`Success! Password for ${passwordTargetUser.email} has been forcibly changed to: ${newPasswordValue}`);
-                        setShowPasswordModal(false);
-                     } catch(err: any) {
-                        alert(`Error: ${err.message}`);
-                     }
+                         const session = (await supabase.auth.getSession()).data.session;
+                         const token = session?.access_token;
+                         const response = await fetch('/api/admin/users/update', {
+                            method: 'POST',
+                            headers: {
+                               'Content-Type': 'application/json',
+                               'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                               userId: passwordTargetUser.uid,
+                               password: newPasswordValue
+                            })
+                         });
+                         const resData = await response.json();
+                         if (!response.ok) throw new Error(resData.error || 'Failed to update password');
+                         
+                         alert(`Success! Password for ${passwordTargetUser.email} has been forcibly changed to: ${newPasswordValue}`);
+                         setShowPasswordModal(false);
+                      } catch(err: any) {
+                         alert(`Error: ${err.message}`);
+                      }
                   }} className="px-8 py-2.5 bg-red-600 text-white font-extrabold rounded-xl hover:bg-red-700 shadow-sm transition-all">Update Password</button>
                 </div>
               </div>
@@ -3834,20 +4038,27 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                         }
 
                         const newPurchased = [...currentPurchased, contentIdToGrant];
-                        let activeClient = supabase;
-                        const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-                        if (serviceKey) {
-                           const { createClient } = await import('@supabase/supabase-js');
-                           activeClient = createClient(import.meta.env.VITE_SUPABASE_URL, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
-                        }
-                        
-                        const { error } = await activeClient.auth.admin.updateUserById(grantTargetUser.uid, { user_metadata: { purchasedSeries: newPurchased } });
-                        if (error) {
-                           alert(`Failed to grant access: ${error.message}`);
-                        } else {
+                        try {
+                           const session = (await supabase.auth.getSession()).data.session;
+                           const token = session?.access_token;
+                           const response = await fetch('/api/admin/users/update', {
+                              method: 'POST',
+                              headers: {
+                                 'Content-Type': 'application/json',
+                                 'Authorization': `Bearer ${token}`
+                              },
+                              body: JSON.stringify({
+                                 userId: grantTargetUser.uid,
+                                 updates: { purchasedSeries: newPurchased }
+                              })
+                           });
+                           const resData = await response.json();
+                           if (!response.ok) throw new Error(resData.error || 'Failed to grant access');
                            alert('Access granted successfully.');
                            setShowGrantModal(false);
                            fetchData();
+                        } catch (err: any) {
+                           alert(`Failed to grant access: ${err.message}`);
                         }
                     }} 
                     className="flex-1 bg-brand-600 text-white font-extrabold rounded-xl py-3 hover:bg-brand-700 disabled:opacity-50 shadow-lg shadow-brand-500/20 transition-all active:scale-[0.98]"

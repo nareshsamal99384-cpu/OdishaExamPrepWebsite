@@ -36,6 +36,19 @@ const AdminLoginPage = () => {
       const data = await response.json();
 
       if (data.success) {
+        try {
+          const { error: supabaseAuthError } = await supabase.auth.signInWithPassword({ email, password });
+          if (supabaseAuthError) {
+            setError(supabaseAuthError.message || "Failed to authenticate with database client.");
+            setLoading(false);
+            return;
+          }
+        } catch (supabaseErr: any) {
+          console.error("[Admin Login] Client-side Supabase authentication exception:", supabaseErr);
+          setError(supabaseErr.message || "An exception occurred during Supabase login.");
+          setLoading(false);
+          return;
+        }
         loginAsAdmin(data.user);
         navigate('/admin');
       } else {

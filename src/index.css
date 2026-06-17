@@ -30,6 +30,7 @@
 html {
   scroll-behavior: auto; /* Custom RAF easing in scrollManager.ts handles programmatic scrolling */
   overscroll-behavior: contain;
+  scrollbar-gutter: stable; /* Reserve scrollbar space to prevent layout shift */
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -269,6 +270,14 @@ body {
   /* ---------- Scrollbars ---------- */
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .smooth-scroll-gpu {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    will-change: transform;
+    transform: translateZ(0);
+    overscroll-behavior: contain;
+  }
 
   .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
   .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -729,7 +738,6 @@ body {
 .premium-shine-container {
   position: relative;
   overflow: hidden;
-  will-change: transform, box-shadow;
   transform: translateZ(0);
 }
 
@@ -861,7 +869,6 @@ body {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   scroll-padding: 8px;
-  will-change: scroll-position;
 }
 
 /* Palette glow for active question */
@@ -876,7 +883,6 @@ body {
 /* Palette button base */
 .palette-btn {
   transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
-  will-change: transform;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -926,7 +932,6 @@ body {
 /* Option card hover lift */
 .option-card {
   transition: all 0.25s cubic-bezier(0.23, 1, 0.32, 1);
-  will-change: transform, box-shadow;
 }
 .option-card:hover {
   transform: translateY(-2px);
@@ -1306,5 +1311,10 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 body[data-review-mode="true"] header.z-\[60\],
 body[data-review-mode="true"] nav.fixed.bottom-0 {
   display: none !important;
+}
+
+/* Prevent KaTeX labels inside SVG diagrams from having their color overridden to dark slate in dark mode */
+.svg-diagram-card .katex {
+  color: inherit !important;
 }
 

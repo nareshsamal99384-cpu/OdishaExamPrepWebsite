@@ -262,7 +262,7 @@ function AccuracyRow({ label, value, total, color }: { label: string, value: num
        </div>
        <div className="flex items-center gap-4 font-sans">
           <span className="text-xs font-black text-slate-800">{value}</span>
-          <span className="text-[10px] font-black text-slate-450 px-2.5 py-0.5 bg-white border border-slate-100 rounded-lg leading-none">{percentage}%</span>
+          <span className="text-[10px] font-black text-slate-400 px-2.5 py-0.5 bg-white border border-slate-100 rounded-lg leading-none">{percentage}%</span>
        </div>
     </div>
   );
@@ -317,7 +317,7 @@ const SubjectRow = ({ subject }: { subject: any; key?: string }) => {
                transition={{ duration: 0.85, ease: "easeOut" }}
                className={cn(
                  "h-full rounded-full bg-gradient-to-r", 
-                 subject.avgScore >= 70 ? "from-emerald-500 to-emerald-400" : "from-rose-500 to-rose-450"
+                 subject.avgScore >= 70 ? "from-emerald-500 to-emerald-400" : "from-rose-500 to-rose-400"
                )}
             />
          </div>
@@ -577,8 +577,15 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
       }
 
       const actScore = typeof a.score === 'number' ? a.score : (actCorrect - (actWrong * negativeMarking));
-      const actAccuracy = actAttempted > 0 ? (actCorrect / actAttempted) * 100 : 0;
+      const actAccuracy = isNaN(actCorrect) || isNaN(actAttempted) || actAttempted <= 0 
+        ? 0 
+        : (actCorrect / actAttempted) * 100;
       const timeTaken = a.metadata?.timeTaken || a.timeSpent || 0;
+
+      const actMaxMarks = a.totalMarks || a.metadata?.test?.totalMarks || a.metadata?.totalMarks || actTotalQ || 1;
+      const actScorePct = isNaN(actScore) || isNaN(actMaxMarks) || actMaxMarks <= 0 
+        ? 0 
+        : (actScore / actMaxMarks) * 100;
 
       totalCorrect += actCorrect;
       totalWrong += actWrong;
@@ -595,13 +602,19 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
         recal_wrong: actWrong,
         recal_attempted: actAttempted,
         recal_totalQ: actTotalQ,
+        recal_maxMarks: actMaxMarks,
+        recal_score_pct: actScorePct,
         recal_time: timeTaken
       };
     });
 
     const totalTests = recalculatedActivities.length;
-    const avgAccuracy = totalAttempted > 0 ? (totalCorrect / totalAttempted) * 100 : 0;
-    const avgTimePerQuestion = totalAttempted > 0 ? (totalTimeTaken / totalAttempted) : 0;
+    const avgAccuracy = isNaN(totalCorrect) || isNaN(totalAttempted) || totalAttempted <= 0 
+      ? 0 
+      : (totalCorrect / totalAttempted) * 100;
+    const avgTimePerQuestion = isNaN(totalTimeTaken) || isNaN(totalAttempted) || totalAttempted <= 0 
+      ? 0 
+      : (totalTimeTaken / totalAttempted);
     const totalSkipped = Math.max(0, totalQuestions - totalAttempted);
 
     const pieData = [
@@ -615,8 +628,8 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
     if (totalTests >= 2) {
       const last = recalculatedActivities[recalculatedActivities.length - 1];
       const prev = recalculatedActivities[recalculatedActivities.length - 2];
-      const lastScorePct = (last.recal_score / (last.recal_totalQ || 1)) * 100;
-      const prevScorePct = (prev.recal_score / (prev.recal_totalQ || 1)) * 100;
+      const lastScorePct = last.recal_score_pct;
+      const prevScorePct = prev.recal_score_pct;
       
       impScore = lastScorePct - prevScorePct;
       impAcc = last.recal_accuracy - prev.recal_accuracy;
@@ -625,7 +638,7 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
     const recent15 = recalculatedActivities.slice(-15);
     const chartData = recent15.map((a, i) => ({
       name: `T${totalTests - recent15.length + i + 1}`,
-      score: Math.round((a.recal_score / (a.recal_totalQ || 1)) * 100),
+      score: Math.round(a.recal_score_pct),
       accuracy: Math.round(a.recal_accuracy),
       time: a.recal_attempted > 0 ? Math.round(a.recal_time / a.recal_attempted) : 0,
     }));
@@ -757,7 +770,9 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
     const parsedExamAnalysis = Array.from(examGroups.entries()).map(([name, data]) => {
       const formatMap = (m: Map<string, any>) => {
         return Array.from(m.entries()).map(([subName, sData]) => {
-          const acc = sData.attempted > 0 ? (sData.correct / sData.attempted) * 100 : 0;
+          const acc = isNaN(sData.correct) || isNaN(sData.attempted) || sData.attempted <= 0 
+            ? 0 
+            : (sData.correct / sData.attempted) * 100;
           return { 
              name: subName, 
              avgScore: Math.round(acc), 
@@ -808,7 +823,7 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
 
     return {
       totalTests,
-      avgScore: Math.round(totalQuestions > 0 ? (totalCalculatedScore / totalQuestions) * 100 : 0),
+      avgScore: Math.round(recalculatedActivities.reduce((sum, a) => sum + (a.recal_score_pct || 0), 0) / (recalculatedActivities.length || 1)),
       avgAccuracy: Math.round(avgAccuracy),
       avgTimePerQuestion,
       pieData,
@@ -1290,12 +1305,12 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
               <div className="flex flex-col items-center justify-center py-10 text-center">
                 <div className="relative w-28 h-28 mb-6 flex items-center justify-center">
                   <div className="absolute inset-0 rounded-full border-4 border-slate-100 border-t-[#8A1C36] animate-spin" />
-                  <div className="absolute inset-3 rounded-full border-4 border-slate-105/5 border-b-indigo-400 animate-spin [animation-duration:1.5s]" />
-                  <div className="absolute inset-6 rounded-full border-2 border-slate-105/10 border-t-emerald-400 animate-spin [animation-duration:0.8s]" />
+                  <div className="absolute inset-3 rounded-full border-4 border-slate-100/5 border-b-indigo-400 animate-spin [animation-duration:1.5s]" />
+                  <div className="absolute inset-6 rounded-full border-2 border-slate-100/10 border-t-emerald-400 animate-spin [animation-duration:0.8s]" />
                   <Brain className="w-8 h-8 text-[#8A1C36] animate-pulse" />
                 </div>
                 <div className="space-y-1">
-                  <div className="text-xs font-black uppercase tracking-widest text-slate-550 flex items-center gap-1.5 justify-center">
+                  <div className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5 justify-center">
                     <Loader2 className="w-3.5 h-3.5 animate-spin text-[#8A1C36]" />
                     Holographic Scanning Active
                   </div>
@@ -1483,10 +1498,10 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                             </div>
 
                             <div className="flex items-center gap-2 mt-auto pt-2">
-                              <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-[9px] font-black rounded-lg border border-emerald-250/30 uppercase">
+                              <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-[9px] font-black rounded-lg border border-emerald-200/30 uppercase">
                                 Lift {item.boost || '+5%'}
                               </span>
-                              <span className="px-2 py-1 bg-slate-100 text-slate-650 text-[9px] font-black rounded-lg border border-slate-200 uppercase">
+                              <span className="px-2 py-1 bg-slate-100 text-slate-500 text-[9px] font-black rounded-lg border border-slate-200 uppercase">
                                 {item.timeframe || '3 days'}
                               </span>
                             </div>
@@ -1508,23 +1523,23 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                         <div className="px-4 py-2.5 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
                           <div className="flex items-center gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[10px] font-black text-slate-705 uppercase tracking-wider">AI Performance Coach</span>
+                            <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider">AI Performance Coach</span>
                           </div>
                           {chatHistory.length > 0 && (
                             <button
                               onClick={() => setChatHistory([])}
-                              className="text-[9px] font-black text-slate-450 hover:text-[#8A1C36] flex items-center gap-1.5 transition-colors cursor-pointer border-none bg-transparent"
+                              className="text-[9px] font-black text-slate-400 hover:text-[#8A1C36] flex items-center gap-1.5 transition-colors cursor-pointer border-none bg-transparent"
                             >
                               <Trash2 className="w-3 h-3" /> CLEAR CHAT
                             </button>
                           )}
                         </div>
 
-                        <div ref={chatContainerRef} className="p-4 overflow-y-auto space-y-3.5 flex-1 custom-scrollbar text-xs">
+                        <div ref={chatContainerRef} className="p-4 overflow-y-auto space-y-3.5 flex-1 no-scrollbar text-xs">
                           {chatHistory.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 p-6">
                               <Cpu className="w-10 h-10 text-slate-400 mb-3 animate-float-gentle" />
-                              <p className="font-semibold text-sm text-slate-750 mb-1">Your AI Exam Coach is ready</p>
+                              <p className="font-semibold text-sm text-slate-700 mb-1">Your AI Exam Coach is ready</p>
                               <p className="text-[10px] font-medium leading-relaxed max-w-xs text-slate-500">Ask specific questions about your mock scores, speed problems, or request target study advice.</p>
                             </div>
                           ) : (
@@ -1558,7 +1573,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                               <div className="w-6 h-6 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center text-[10px] font-black shadow-sm">
                                 AI
                               </div>
-                              <div className="p-3 rounded-2xl bg-white border border-slate-200 text-slate-550 rounded-tl-none flex items-center gap-1.5 shadow-sm">
+                              <div className="p-3 rounded-2xl bg-white border border-slate-200 text-slate-500 rounded-tl-none flex items-center gap-1.5 shadow-sm">
                                 <Loader2 className="w-3.5 h-3.5 animate-spin text-[#8A1C36]" /> Thinking...
                               </div>
                             </div>
@@ -1636,7 +1651,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                       <div className="w-1 h-5 bg-[#8a1c36] rounded-full shrink-0" />
                       <h3 className="text-lg sm:text-xl font-sans font-black text-slate-900 tracking-tight">Performance Trend</h3>
                     </div>
-                    <p className="text-xs font-semibold text-slate-450 leading-none mt-1">Your mock exam score progression history</p>
+                    <p className="text-xs font-semibold text-slate-400 leading-none mt-1">Your mock exam score progression history</p>
                  </div>
                  {stats.impScore !== 0 && (
                    <div className={cn(
@@ -1714,7 +1729,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                    </div>
                 </div>
               ) : (
-                 <div className="p-4 bg-slate-50/40 rounded-2xl border border-slate-150/50 text-center text-xs font-bold text-slate-450">
+                 <div className="p-4 bg-slate-50/40 rounded-2xl border border-slate-200/50 text-center text-xs font-bold text-slate-400">
                     No question breakdown history available.
                  </div>
               )}
@@ -1842,7 +1857,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                    </div>
                  </div>
                ) : (
-                 <div className="p-4 bg-slate-50/40 rounded-2xl border border-slate-150/50 text-center text-xs font-bold text-slate-450">
+                 <div className="p-4 bg-slate-50/40 rounded-2xl border border-slate-200/50 text-center text-xs font-bold text-slate-400">
                     Complete tests to compile your skill profile.
                  </div>
               )}
@@ -1939,7 +1954,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                            )}
       
                            {(!exam.practiceTests || exam.practiceTests.length === 0) && (!exam.mockTests || exam.mockTests.length === 0) && (
-                             <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 text-center text-xs font-semibold text-slate-450">
+                             <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 text-center text-xs font-semibold text-slate-400">
                                No subject metrics compiled yet.
                              </div>
                            )}
@@ -1959,7 +1974,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                  </div>
                  <div>
                     <h4 className="font-extrabold text-slate-800 mb-1 tracking-tight text-sm sm:text-base">{stats.impScore >= 0 ? "You are improving" : "Scores dropped recently"}</h4>
-                    <p className="text-xs sm:text-sm font-medium text-slate-450 leading-relaxed">{stats.impScore >= 0 ? "Your latest test scores show positive momentum. Keep up the good work!" : "Review your recent mistakes to get back on track."}</p>
+                    <p className="text-xs sm:text-sm font-medium text-slate-400 leading-relaxed">{stats.impScore >= 0 ? "Your latest test scores show positive momentum. Keep up the good work!" : "Review your recent mistakes to get back on track."}</p>
                  </div>
               </motion.div>
                <motion.div variants={stagger.itemFadeUp} whileHover={{ y: -3 }} className="bg-white/80 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(15,23,42,0.015)] border border-slate-200/50 hover:border-slate-200 flex gap-5 items-start">
@@ -1968,7 +1983,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                  </div>
                  <div>
                     <h4 className="font-extrabold text-slate-800 mb-1 tracking-tight text-sm sm:text-base">{stats.avgTimePerQuestion > 60 ? "Improve Question Speed" : "Optimal Solving Pace"}</h4>
-                    <p className="text-xs sm:text-sm font-medium text-slate-450 leading-relaxed">Averaging {stats.avgTimePerQuestion.toFixed(1)}s per question. {stats.avgTimePerQuestion > 60 ? "Try to solve familiar questions faster." : "Excellent pacing, maintain this rate in real exams."}</p>
+                    <p className="text-xs sm:text-sm font-medium text-slate-400 leading-relaxed">Averaging {stats.avgTimePerQuestion.toFixed(1)}s per question. {stats.avgTimePerQuestion > 60 ? "Try to solve familiar questions faster." : "Excellent pacing, maintain this rate in real exams."}</p>
                  </div>
               </motion.div>
            </div>

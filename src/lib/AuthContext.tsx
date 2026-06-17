@@ -1,12 +1,83 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from './supabase';
 import { User, createClient } from '@supabase/supabase-js';
-import { resolveUserEntitlements, PurchaseRecord } from './entitlementManager';
+import { hasAccessTo as engineHasAccessTo, runEntitlementAudit } from './entitlementEngine';
+import { toast } from 'react-hot-toast';
 
-const supabaseAdmin = createClient(
-  import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
-  import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || 'placeholder_key'
-);
+// Helper for cryptographic/checksummed local caching
+const generateChecksum = (userId: string, items: string[]): string => {
+  const data = `${userId}:${(items || []).sort().join(',')}`;
+  let hash = 0;
+  for (let i = 0; i < data.length; i++) {
+    const char = data.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash;
+  }
+  return hash.toString(36);
+};
+
+const cacheOfflineAccess = (userId: string, tempProfile: any) => {
+  try {
+    const vault = {
+      userId,
+      purchasedSeries: tempProfile.purchasedSeries || [],
+      hasFullAccess: tempProfile.hasFullAccess || false,
+      role: tempProfile.role || 'user',
+      timestamp: Date.now(),
+      checksum: generateChecksum(userId, tempProfile.purchasedSeries || [])
+    };
+    localStorage.setItem('oep_offline_vault', JSON.stringify(vault));
+  } catch (e) {
+    console.error('[Offline Vault] Failed to cache entitlements:', e);
+  }
+};
+
+const loadOfflineAccess = (userId: string) => {
+  try {
+    const rawVault = localStorage.getItem('oep_offline_vault');
+    if (!rawVault) return null;
+    const vault = JSON.parse(rawVault);
+    if (vault.userId !== userId) {
+      console.warn('[Offline Vault] Vault user ID mismatch');
+      return null;
+    }
+    const computedChecksum = generateChecksum(userId, vault.purchasedSeries);
+    if (computedChecksum !== vault.checksum) {
+      console.error('[Offline Vault] Checksum mismatch. Entitlements tampered with.');
+      return null;
+    }
+    return {
+      role: vault.role,
+      hasFullAccess: vault.hasFullAccess,
+      purchasedSeries: vault.purchasedSeries,
+      isOfflineFallback: true
+    };
+  } catch (e) {
+    console.error('[Offline Vault] Failed to load offline cache:', e);
+    return null;
+  }
+};
+
+function withTimeout<T>(promise: Promise<T>, ms: number, fallbackValue: T): Promise<T> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      console.warn(`[Timeout] Promise timed out after ${ms}ms. Using fallback.`);
+      resolve(fallbackValue);
+    }, ms);
+    promise
+      .then((res) => {
+        clearTimeout(timer);
+        resolve(res);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        console.error('[Timeout Error]', err);
+        resolve(fallbackValue);
+      });
+  });
+}
+
+const supabaseAdmin = supabase;
 
 interface AuthContextType {
   user: User | null;
@@ -16,14 +87,12 @@ interface AuthContextType {
   hasFullAccess: boolean;
   loginAsAdmin: (adminData: any) => void;
   logout: () => Promise<void>;
-  grantFullAccess: (paymentDetails?: { pricePaid: number; orderId: string; paymentId: string }) => Promise<void>;
-  unlockItem: (itemId: string, paymentDetails?: { pricePaid: number; orderId: string; paymentId: string }) => Promise<void>;
-  hasAccessTo: (itemId: string, examId?: string) => boolean;
+  grantFullAccess: () => Promise<void>;
+  unlockItem: (itemId: string) => Promise<void>;
+  hasAccessTo: (itemId: string | { id: string; isPremium?: boolean; examId?: string; seriesId?: string | any }, examId?: string) => boolean;
   guestUsage: { questions: number; tests: number };
   incrementGuestUsage: (type: 'questions' | 'tests') => void;
   refreshProfile: () => Promise<void>;
-  syncEntitlements: (catalog: any) => Promise<void>;
-  resolvedEntitlements: Set<string>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -40,8 +109,6 @@ const AuthContext = createContext<AuthContextType>({
   guestUsage: { questions: 0, tests: 0 },
   incrementGuestUsage: () => {},
   refreshProfile: async () => {},
-  syncEntitlements: async () => {},
-  resolvedEntitlements: new Set(),
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -50,7 +117,93 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [manualAdmin, setManualAdmin] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [guestUsage, setGuestUsage] = useState({ questions: 0, tests: 0 });
-  const [resolvedEntitlements, setResolvedEntitlements] = useState<Set<string>>(new Set());
+
+  const fetchProfile = async (sessionUser: User, forceRefresh = false) => {
+    try {
+      let freshUser = null;
+      if (forceRefresh) {
+        // Wrap fresh user fetch with timeout
+        const userPromise = supabase.auth.getUser();
+        const userResult = await withTimeout(userPromise, 3000, { data: { user: null }, error: { name: 'AuthError', message: 'timeout', status: 408, code: 'request_timeout', __isAuthError: true } as any });
+        freshUser = userResult.data?.user;
+
+        if (!freshUser || !navigator.onLine) {
+          const offlineVault = loadOfflineAccess(sessionUser.id);
+          if (offlineVault) {
+            setProfile({
+              uid: sessionUser.id,
+              email: sessionUser.email,
+              displayName: sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.displayName || sessionUser.email?.split('@')[0],
+              photoURL: sessionUser.user_metadata?.avatar_url || sessionUser.user_metadata?.photoURL,
+              role: offlineVault.role,
+              hasFullAccess: offlineVault.hasFullAccess,
+              purchasedSeries: offlineVault.purchasedSeries,
+              isOfflineFallback: true
+            });
+            toast.error("Offline Mode: Using cached entitlements from your device.", { id: 'offline-fallback' });
+            return;
+          }
+        }
+      }
+
+      const activeUser = freshUser || sessionUser;
+      const adminEmails = ['odishaexamprep365@gmail.com', 'nareshsamal99384@gmail.com'];
+      const isAuthorizedAdmin = adminEmails.includes(activeUser.email || '');
+
+      const meta = activeUser.user_metadata || {};
+      let currentRole = isAuthorizedAdmin ? 'admin' : (meta.role || 'user');
+      let currentFullAccess = isAuthorizedAdmin || !!meta.hasFullAccess;
+
+      const metaPurchased = meta.purchasedSeries || [];
+      const isFullAccess = currentFullAccess || metaPurchased.includes('full_access');
+
+      // Run proactive entitlement audit and self-healing
+      const tempProfile = {
+        role: currentRole,
+        hasFullAccess: isFullAccess,
+        purchasedSeries: metaPurchased
+      };
+      
+      let mergedPurchased = metaPurchased;
+      if (navigator.onLine && forceRefresh && freshUser) {
+        const auditResult = await withTimeout(runEntitlementAudit(supabase, activeUser.id, tempProfile), 3000, null);
+        if (auditResult && auditResult.finalList) {
+          mergedPurchased = auditResult.finalList;
+        }
+      }
+
+      const finalProfile = {
+        uid: activeUser.id,
+        email: activeUser.email,
+        displayName: meta.full_name || meta.displayName || activeUser.email?.split('@')[0],
+        photoURL: meta.avatar_url || meta.photoURL,
+        role: currentRole,
+        hasFullAccess: isFullAccess || mergedPurchased.includes('full_access'),
+        purchasedSeries: mergedPurchased,
+      };
+
+      setProfile(finalProfile);
+      cacheOfflineAccess(activeUser.id, finalProfile);
+    } catch (error) {
+      console.error('fetchProfile error:', error);
+      if (sessionUser) {
+        const offlineVault = loadOfflineAccess(sessionUser.id);
+        if (offlineVault) {
+          setProfile({
+            uid: sessionUser.id,
+            email: sessionUser.email,
+            displayName: sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.displayName || sessionUser.email?.split('@')[0],
+            photoURL: sessionUser.user_metadata?.avatar_url || sessionUser.user_metadata?.photoURL,
+            role: offlineVault.role,
+            hasFullAccess: offlineVault.hasFullAccess,
+            purchasedSeries: offlineVault.purchasedSeries,
+            isOfflineFallback: true
+          });
+          toast.error("Offline Mode: Using cached entitlements from your device.", { id: 'offline-fallback' });
+        }
+      }
+    }
+  };
 
   useEffect(() => {
     // Load guest usage from local storage
@@ -63,44 +216,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (storedAdmin) {
       setManualAdmin(JSON.parse(storedAdmin));
     }
-
-    const fetchProfile = async (sessionUser: User) => {
-      try {
-        // Fetch fresh user data from server to avoid stale metadata in session
-        const { data: { user: freshUser }, error: userError } = await supabase.auth.getUser();
-        const activeUser = freshUser || sessionUser;
-
-        const adminEmails = ['odishaexamprep365@gmail.com'];
-        const isAuthorizedAdmin = adminEmails.includes(activeUser.email || '');
-
-        const meta = activeUser.user_metadata || {};
-        let currentRole = isAuthorizedAdmin ? 'admin' : (meta.role || 'user');
-        let currentFullAccess = isAuthorizedAdmin || !!meta.hasFullAccess;
-
-        // Sync role in Supabase if mismatched (runs at most once per session)
-        if (isAuthorizedAdmin && meta.role !== 'admin') {
-          await supabase.auth.updateUser({ data: { role: 'admin', hasFullAccess: true } });
-        } else if (!isAuthorizedAdmin && meta.role === 'admin') {
-          currentRole = 'user';
-          currentFullAccess = false;
-          await supabase.auth.updateUser({ data: { role: 'user', hasFullAccess: false } });
-        }
-
-        setProfile({
-          uid: activeUser.id,
-          email: activeUser.email,
-          displayName: meta.full_name || meta.displayName || activeUser.email?.split('@')[0],
-          photoURL: meta.avatar_url || meta.photoURL,
-          role: currentRole,
-          hasFullAccess: currentFullAccess,
-          purchasedSeries: meta.purchasedSeries || [],
-          purchaseRecords: meta.purchaseRecords || [],
-        });
-      } catch (error) {
-        console.error('fetchProfile error:', error);
-      }
-    };
-
 
     // Load the existing session (may have stale/bloated JWT from localStorage).
     // Always force a token refresh so the JWT reflects the CURRENT server-side
@@ -122,7 +237,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
         // Fallback: use cached session if refresh fails
         setUser(session.user);
-        fetchProfile(session.user);
+        fetchProfile(session.user, false);
       } else {
         setUser(null);
         setProfile(null);
@@ -134,16 +249,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user);
+        fetchProfile(session.user, false);
       } else {
         setProfile(null);
-        setResolvedEntitlements(new Set());
       }
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Listen for online/offline events to re-verify cache and self-heal automatically
+  useEffect(() => {
+    const handleOnline = () => {
+      toast.success("Connection restored! Syncing your study profile...", { id: 'network-status' });
+      if (user) {
+        fetchProfile(user, true);
+      }
+    };
+    const handleOffline = () => {
+      toast.error("You are offline. Study resources may be limited to cached content.", { id: 'network-status' });
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [user]);
 
   const incrementGuestUsage = (type: 'questions' | 'tests') => {
     const newUsage = { ...guestUsage, [type]: guestUsage[type] + 1 };
@@ -161,7 +296,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
     setProfile(null);
     setManualAdmin(null);
-    setResolvedEntitlements(new Set());
     localStorage.removeItem('admin_session');
     // Then sign out from Supabase (clears the session cookie/token)
     try {
@@ -174,157 +308,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const isAdmin = profile?.role === 'admin' || manualAdmin?.role === 'admin';
   const hasFullAccess = isAdmin || profile?.hasFullAccess === true;
 
-  const grantFullAccess = async (paymentDetails?: { pricePaid: number; orderId: string; paymentId: string }) => {
+  const grantFullAccess = async () => {
     if (!user) return;
-    const currentRecords = profile?.purchaseRecords || [];
-    let newRecords = [...currentRecords];
-
-    if (paymentDetails) {
-      const exists = newRecords.some(r => r.paymentId === paymentDetails.paymentId || r.orderId === paymentDetails.orderId);
-      if (!exists) {
-        newRecords.push({
-          purchaseId: `pay_${paymentDetails.paymentId}`,
-          itemId: 'site_wide_full_access',
-          itemType: 'exam_bundle' as const,
-          purchasedAt: new Date().toISOString(),
-          pricePaid: paymentDetails.pricePaid,
-          paymentId: paymentDetails.paymentId,
-          orderId: paymentDetails.orderId,
-          grantedEntitlements: ['site_wide_full_access']
-        });
-      }
-    }
-
-    const updatedProfile = { 
-      ...profile, 
-      hasFullAccess: true, 
-      purchaseRecords: newRecords 
-    };
-    const { error } = await supabase.auth.updateUser({ 
-      data: { 
-        hasFullAccess: true,
-        purchaseRecords: newRecords
-      } 
-    });
-    
-    if (error) {
-      console.error("Metadata update failed:", error);
-      alert("Payment successful, but we couldn't update your profile automatically. Please contact support.");
-    } else {
-      setProfile(updatedProfile);
-    }
+    await refreshProfile();
   };
 
-  const unlockItem = async (
-    itemId: string, 
-    paymentDetails?: { pricePaid: number; orderId: string; paymentId: string }
-  ) => {
+  const unlockItem = async (itemId: string) => {
     if (!user || !profile) return;
-    const currentPurchased = profile.purchasedSeries || [];
-    const currentRecords = profile.purchaseRecords || [];
-
-    let newPurchased = [...currentPurchased];
-    if (!newPurchased.includes(itemId)) {
-      newPurchased.push(itemId);
-    }
-
-    let newRecords = [...currentRecords];
-    if (paymentDetails) {
-      const exists = newRecords.some(r => r.paymentId === paymentDetails.paymentId || r.orderId === paymentDetails.orderId);
-      if (!exists) {
-        newRecords.push({
-          purchaseId: `pay_${paymentDetails.paymentId}`,
-          itemId,
-          itemType: itemId.startsWith('exam_bundle_') ? 'exam_bundle' as const : 'mock_test' as const,
-          purchasedAt: new Date().toISOString(),
-          pricePaid: paymentDetails.pricePaid,
-          paymentId: paymentDetails.paymentId,
-          orderId: paymentDetails.orderId,
-          grantedEntitlements: [itemId]
-        });
-      }
-    }
-
-    const updatedProfile = { 
-      ...profile, 
-      purchasedSeries: newPurchased,
-      purchaseRecords: newRecords
-    };
-    
-    const { error } = await supabase.auth.updateUser({ 
-      data: { 
-        purchasedSeries: newPurchased,
-        purchaseRecords: newRecords
-      } 
-    });
-    
-    if (error) {
-      console.error("Metadata update failed:", error);
-      alert("Payment successful, but we couldn't update your profile automatically. Please contact support.");
-    } else {
-      setProfile(updatedProfile);
-    }
+    await refreshProfile();
   };
 
-  const hasAccessTo = (itemId: string, examId?: string) => {
-    if (isAdmin || profile?.hasFullAccess) return true;
-    if (resolvedEntitlements.has(itemId)) return true;
-    if (examId && (resolvedEntitlements.has(`exam_bundle_${examId}`) || resolvedEntitlements.has(examId))) return true;
-
-    // Fallback/bootstrap state (before catalog sync)
-    const purchased = profile?.purchasedSeries || [];
-    if (purchased.includes(itemId)) return true;
-    if (examId && purchased.includes(`exam_bundle_${examId}`)) return true;
-    return false;
+  const hasAccessTo = (
+    itemOrId: string | { id: string; isPremium?: boolean; examId?: string; seriesId?: string | any },
+    examId?: string
+  ): boolean => {
+    return engineHasAccessTo(profile || manualAdmin, itemOrId, examId);
   };
 
   const refreshProfile = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
-      const { data: { user: freshUser } } = await supabase.auth.getUser();
-      const activeUser = freshUser || session.user;
-      const adminEmails = ['odishaexamprep365@gmail.com'];
-      const isAuthorizedAdmin = adminEmails.includes(activeUser.email || '');
-      const meta = activeUser.user_metadata || {};
-      const currentRole = isAuthorizedAdmin ? 'admin' : (meta.role || 'user');
-      const currentFullAccess = isAuthorizedAdmin || !!meta.hasFullAccess;
-      setProfile({
-        uid: activeUser.id,
-        email: activeUser.email,
-        displayName: meta.full_name || meta.displayName || activeUser.email?.split('@')[0],
-        photoURL: meta.avatar_url || meta.photoURL,
-        role: currentRole,
-        hasFullAccess: currentFullAccess,
-        purchasedSeries: meta.purchasedSeries || [],
-        purchaseRecords: meta.purchaseRecords || [],
-      });
-    }
-  };
-
-  const syncEntitlements = async (catalog: any) => {
-    if (!profile) return;
-    const purchased = profile.purchasedSeries || [];
-    const records = profile.purchaseRecords || [];
-    const { resolvedIds, updatedRecords, updatedSeries, needsUpdate } = resolveUserEntitlements(
-      purchased,
-      records,
-      catalog
-    );
-
-    setResolvedEntitlements(resolvedIds);
-
-    if (needsUpdate) {
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          purchaseRecords: updatedRecords,
-          purchasedSeries: updatedSeries
-        }
-      });
-      if (!error) {
-        setProfile(prev => prev ? { ...prev, purchaseRecords: updatedRecords, purchasedSeries: updatedSeries } : null);
-      } else {
-        console.error("Failed to persist synced purchase records:", error);
-      }
+      await fetchProfile(session.user, true);
     }
   };
 
@@ -342,12 +346,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       hasAccessTo,
       guestUsage, 
       incrementGuestUsage,
-      refreshProfile,
-      syncEntitlements,
-      resolvedEntitlements
+      refreshProfile
     }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
 export const useAuth = () => useContext(AuthContext);

@@ -1,4 +1,4 @@
-import { supabase, supabaseAdmin } from './supabase';
+import { supabase } from './supabase';
 
 let schemaHasDiagram: boolean | null = null;
 
@@ -14,6 +14,29 @@ async function checkSchemaHasDiagram(): Promise<boolean> {
     schemaHasDiagram = false;
   }
   return schemaHasDiagram;
+}
+
+async function callAdminDbProxy(table: string, action: 'insert' | 'update' | 'delete', payload?: any, id?: string, filters?: any) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) {
+    throw new Error("Admin authorization token is missing. Please log in again.");
+  }
+
+  const res = await fetch(`/api/admin/db/${table}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ action, payload, id, filters })
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || `Failed to perform ${action} on ${table}`);
+  }
+  return data.data;
 }
 
 // --- Types ---
@@ -42,6 +65,7 @@ export interface TestSeries {
   testIds: string[];
   sortOrder?: number;
   createdAt?: string;
+  is_archived?: boolean;
 }
 
 export interface MockTest {
@@ -54,6 +78,7 @@ export interface MockTest {
   questions?: Question[];
   sortOrder?: number;
   createdAt?: string;
+  is_archived?: boolean;
 }
 
 export interface Exam {
@@ -69,6 +94,7 @@ export interface Exam {
   keywords?: string;
   sortOrder?: number;
   createdAt?: string;
+  is_archived?: boolean;
 }
 
 export interface QuestionBank {
@@ -84,6 +110,7 @@ export interface QuestionBank {
   hasPracticeMode?: boolean;
   sortOrder?: number;
   createdAt?: string;
+  is_archived?: boolean;
 }
 
 // --- Services ---
@@ -105,38 +132,58 @@ export const examService = {
       payload.diagram = question.diagram;
     }
     console.log("Single Add Payload:", payload);
-    const { data, error } = await supabaseAdmin
-      .from('questions')
-      .insert([payload])
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    const data = await callAdminDbProxy('questions', 'insert', payload);
+    return data?.[0] || data;
   },
 
   async addQuestionsBulk(questions: Question[]) {
-    const hasDiagramCol = await checkSchemaHasDiagram();
-    const payloads = questions.map(q => {
-      const payload: any = {
-        examId: q.examId,
-        topic: q.topic,
-        difficulty: q.difficulty || 'medium',
-        questionText: q.questionText,
-        options: q.options,
-        correctAnswerIndex: q.correctAnswerIndex,
-        explanation: q.explanation || ''
-      };
-      if (q.diagram && hasDiagramCol) {
-        payload.diagram = q.diagram;
-      }
-      console.log("Bulk Payload Item:", payload);
-      return payload;
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) {
+      throw new Error("Admin authorization token is missing. Please log in again.");
+    }
+
+    const res = await fetch('/api/admin/questions/bulk', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ questions })
     });
-    const { data, error } = await supabaseAdmin
-      .from('questions')
-      .insert(payloads)
-      .select();
-    if (error) throw error;
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to bulk upload questions');
+    }
+    return data.data;
+  },
+
+  async getQuestionsPaginated(page = 1, limit = 50, search = '', examId = 'all', questionFilter = 'all') {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) {
+      throw new Error("Admin authorization token is missing. Please log in again.");
+    }
+
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      search,
+      examId,
+      questionFilter
+    });
+
+    const res = await fetch(`/api/admin/questions?${params.toString()}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to fetch paginated questions');
+    }
     return data;
   },
 
@@ -150,11 +197,7 @@ export const examService = {
   },
 
   async deleteQuestion(id: string) {
-    const { error } = await supabaseAdmin
-      .from('questions')
-      .delete()
-      .eq('id', id);
-    if (error) throw error;
+    await callAdminDbProxy('questions', 'delete', undefined, id);
   },
 
   async updateQuestion(id: string, updates: Partial<Question>) {
@@ -178,25 +221,14 @@ export const examService = {
       payload.diagram = updates.diagram;
     }
     console.log("Update Payload:", payload);
-    const { data, error } = await supabaseAdmin
-      .from('questions')
-      .update(payload)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    const data = await callAdminDbProxy('questions', 'update', payload, id);
+    return data?.[0] || data;
   },
 
   // Test Series
   async createTestSeries(series: TestSeries) {
-    const { data, error } = await supabaseAdmin
-      .from('testSeries')
-      .insert([series])
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    const data = await callAdminDbProxy('testSeries', 'insert', series);
+    return data?.[0] || data;
   },
 
   async getAllTestSeries() {
@@ -209,34 +241,67 @@ export const examService = {
   },
 
   async deleteTestSeries(id: string) {
-    const { error } = await supabaseAdmin
-      .from('testSeries')
-      .delete()
-      .eq('id', id);
-    if (error) throw error;
+    // Check if purchased
+    const { data: purchaseCount } = await supabase
+      .from('user_purchases')
+      .select('id')
+      .eq('product_id', id);
+
+    // Also check if any mock tests inside this series are purchased
+    const { data: allTests } = await supabase
+      .from('mockTests')
+      .select('id, seriesId');
+    
+    const testIds = (allTests || [])
+      .filter((t: any) => {
+        if (t.seriesId === id) return true;
+        if (typeof t.seriesId === 'string' && t.seriesId.includes(id)) return true;
+        return false;
+      })
+      .map((t: any) => t.id);
+
+    let hasPurchasedChildren = false;
+    if (testIds.length > 0) {
+      const { data: childPurchases } = await supabase
+        .from('user_purchases')
+        .select('id')
+        .in('product_id', testIds);
+      if (childPurchases && childPurchases.length > 0) {
+        hasPurchasedChildren = true;
+      }
+    }
+
+    const isPurchased = (purchaseCount && purchaseCount.length > 0) || hasPurchasedChildren;
+
+    if (isPurchased) {
+      // Soft delete: set is_archived = true on the testSeries, and on its mockTests
+      console.log(`Test series ${id} or its mock tests have active user purchases. Archiving to protect access.`);
+      await callAdminDbProxy('testSeries', 'update', { is_archived: true }, id);
+
+      if (testIds.length > 0) {
+        await callAdminDbProxy('mockTests', 'update', { is_archived: true }, undefined, { id: { op: 'in', val: testIds } });
+      }
+    } else {
+      // Hard delete: delete associated mock tests and questions, then the series
+      if (testIds.length > 0) {
+        const topicIds = testIds.map(tId => `mockTest__${tId}`);
+        await callAdminDbProxy('questions', 'delete', undefined, undefined, { topic: { op: 'in', val: topicIds } });
+        await callAdminDbProxy('mockTests', 'delete', undefined, undefined, { id: { op: 'in', val: testIds } });
+      }
+      await callAdminDbProxy('testSeries', 'delete', undefined, id);
+    }
   },
 
   async updateTestSeries(id: string, updates: Partial<TestSeries>) {
-    const { data, error } = await supabaseAdmin
-      .from('testSeries')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    const data = await callAdminDbProxy('testSeries', 'update', updates, id);
+    return data?.[0] || data;
   },
 
   // Mock Tests
   async createMockTest(test: MockTest) {
     const { questions, ...testData } = test;
-    const { data, error } = await supabaseAdmin
-      .from('mockTests')
-      .insert([testData])
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    const data = await callAdminDbProxy('mockTests', 'insert', testData);
+    return data?.[0] || data;
   },
 
   async getAllMockTests() {
@@ -321,26 +386,27 @@ export const examService = {
   },
 
   async deleteMockTest(id: string) {
-    // Delete associated questions first
-    await supabaseAdmin.from('questions').delete().eq('topic', `mockTest__${id}`);
+    // Check if mock test is purchased
+    const { data: purchaseCount } = await supabase
+      .from('user_purchases')
+      .select('id')
+      .eq('product_id', id);
 
-    const { error } = await supabaseAdmin
-      .from('mockTests')
-      .delete()
-      .eq('id', id);
-    if (error) throw error;
+    if (purchaseCount && purchaseCount.length > 0) {
+      // Soft delete
+      console.log(`Mock test ${id} has active user purchases. Archiving to protect access.`);
+      await callAdminDbProxy('mockTests', 'update', { is_archived: true }, id);
+    } else {
+      // Hard delete: delete associated questions first
+      await callAdminDbProxy('questions', 'delete', undefined, undefined, { topic: { op: 'eq', val: `mockTest__${id}` } });
+      await callAdminDbProxy('mockTests', 'delete', undefined, id);
+    }
   },
 
   async updateMockTest(id: string, updates: Partial<MockTest>) {
     const { questions, ...updateData } = updates;
-    const { data, error } = await supabaseAdmin
-      .from('mockTests')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    const data = await callAdminDbProxy('mockTests', 'update', updateData, id);
+    return data?.[0] || data;
   },
 
   async getQuestionsForMockTest(mockTestId: string) {
@@ -354,7 +420,7 @@ export const examService = {
 
   async addQuestionsToMockTest(mockTestId: string, examId: string, questions: Partial<Question>[]) {
     const hasDiagramCol = await checkSchemaHasDiagram();
-    const payload = questions.map(q => {
+    const payloads = questions.map(q => {
       const item: any = {
         examId: examId || 'generic',
         topic: `mockTest__${mockTestId}`,
@@ -367,25 +433,36 @@ export const examService = {
       if (q.diagram && hasDiagramCol) {
         item.diagram = q.diagram;
       }
-      console.log("Mock Test Question Payload Item:", item);
       return item;
     });
-    const { data, error } = await supabaseAdmin
-      .from('questions')
-      .insert(payload);
-    if (error) throw error;
-    return data;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) {
+      throw new Error("Admin authorization token is missing. Please log in again.");
+    }
+
+    const res = await fetch('/api/admin/questions/bulk', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ questions: payloads })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to bulk upload mock test questions');
+    }
+    return data.data;
   },
 
   // Exams
+  // Exams
   async addExam(exam: Exam) {
-    const { data, error } = await supabaseAdmin
-      .from('exams')
-      .insert([exam])
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    const data = await callAdminDbProxy('exams', 'insert', exam);
+    return data?.[0] || data;
   },
 
   async getAllExams() {
@@ -396,10 +473,9 @@ export const examService = {
     if (error) throw error;
     return data as Exam[];
   },
-
   async deleteExam(id: string) {
     // 1. Fetch the exam details to get the name
-    const { data: examData } = await supabaseAdmin
+    const { data: examData } = await supabase
       .from('exams')
       .select('name')
       .eq('id', id)
@@ -407,21 +483,21 @@ export const examService = {
     const examName = examData?.name;
 
     // 2. Fetch associated question banks
-    const { data: banks } = await supabaseAdmin
+    const { data: banks } = await supabase
       .from('questionBanks')
       .select('id')
       .eq('examId', id);
     const bankIds = (banks || []).map(b => b.id);
 
     // 3. Fetch associated test series
-    const { data: series } = await supabaseAdmin
+    const { data: series } = await supabase
       .from('testSeries')
       .select('id')
       .eq('examId', id);
     const seriesIds = (series || []).map(s => s.id);
 
     // 4. Fetch associated mock tests
-    const { data: allTests } = await supabaseAdmin
+    const { data: allTests } = await supabase
       .from('mockTests')
       .select('id, examId, seriesId');
     
@@ -436,67 +512,158 @@ export const examService = {
       }
     });
 
-    // 5. Gather all content IDs to revoke
-    const contentIdsToRevoke = new Set([
+    // 5. Gather all content IDs to check for purchases
+    const contentIdsToCheck = [
       `exam_bundle_${id}`,
       ...bankIds,
       ...seriesIds,
       ...relatedTestIds
-    ]);
+    ];
 
-    // 6. User metadata cleanup was removed to protect existing user purchases and entitlements
-    // as per entitlement protection requirements.
-
-    // 7. Delete associated mock test questions (topic matches mockTest__<mockTestId>)
-    if (relatedTestIds.length > 0) {
-      const topicIds = relatedTestIds.map(mtId => `mockTest__${mtId}`);
-      await supabaseAdmin.from('questions').delete().in('topic', topicIds);
+    // Check if there are any active purchases for these items in user_purchases
+    let hasPurchases = false;
+    if (contentIdsToCheck.length > 0) {
+      const { data: purchases } = await supabase
+        .from('user_purchases')
+        .select('id')
+        .in('product_id', contentIdsToCheck);
+      if (purchases && purchases.length > 0) {
+        hasPurchases = true;
+      }
     }
 
-    // 8. Delete associated direct questions
-    const { error: questionsError } = await supabaseAdmin
-      .from('questions')
-      .delete()
-      .eq('examId', id);
-    if (questionsError) throw questionsError;
+    if (hasPurchases) {
+      console.log(`Exam ${id} has active user purchases. Performing conditional soft-delete (archiving) to protect paid users.`);
+      
+      // Soft-delete the exam
+      await callAdminDbProxy('exams', 'update', { is_archived: true }, id);
+      
+      // Soft-delete associated question banks
+      if (bankIds.length > 0) {
+        await callAdminDbProxy('questionBanks', 'update', { is_archived: true }, undefined, { id: { op: 'in', val: bankIds } });
+      }
+      
+      // Soft-delete associated test series
+      if (seriesIds.length > 0) {
+        await callAdminDbProxy('testSeries', 'update', { is_archived: true }, undefined, { id: { op: 'in', val: seriesIds } });
+      }
+      
+      // Soft-delete associated mock tests
+      if (relatedTestIds.length > 0) {
+        await callAdminDbProxy('mockTests', 'update', { is_archived: true }, undefined, { id: { op: 'in', val: relatedTestIds } });
+      }
+      
+      return; // Stop here, do not delete from database
+    }
 
-    // 9. Delete associated question banks
-    await supabaseAdmin.from('questionBanks').delete().eq('examId', id);
+    console.log(`Exam ${id} has no active user purchases. Proceeding with hard-delete.`);
+    const contentIdsToRevoke = new Set(contentIdsToCheck);
 
-    // 10. Delete associated test series
-    await supabaseAdmin.from('testSeries').delete().eq('examId', id);
+    // Revoke access and clean activities for all users in Supabase Auth
+    try {
+      if (supabase.auth.admin) {
+        let page = 1;
+        const perPage = 1000;
+        let hasMore = true;
 
-    // 11. Delete associated mock tests
-    await supabaseAdmin.from('mockTests').delete().like('seriesId', `%"examId":"${id}"%`);
+        while (hasMore) {
+          const { data: { users }, error: listError } = await supabase.auth.admin.listUsers({
+            page,
+            perPage
+          });
+          if (listError) throw listError;
+          if (!users || users.length === 0) {
+            hasMore = false;
+            break;
+          }
 
-    // 12. Delete the exam
-    const { error } = await supabaseAdmin
-      .from('exams')
-      .delete()
-      .eq('id', id);
-    if (error) throw error;
+          for (const u of users) {
+            let needsUpdate = false;
+            const currentMetadata = u.user_metadata || {};
+
+            // A. Clean up purchasedSeries
+            let newPurchased = currentMetadata.purchasedSeries;
+            if (Array.isArray(newPurchased)) {
+              const filteredPurchased = newPurchased.filter(p => !contentIdsToRevoke.has(p));
+              if (filteredPurchased.length !== newPurchased.length) {
+                newPurchased = filteredPurchased;
+                needsUpdate = true;
+              }
+            }
+
+            // B. Clean up activities
+            let newActivities = currentMetadata.activities;
+            if (Array.isArray(newActivities)) {
+              const filteredActivities = newActivities.filter((act: any) => {
+                if (!act) return false;
+                
+                // Filter out by examName
+                if (examName && act.metadata?.examName === examName) return false;
+
+                // Filter out by bankId
+                if (act.metadata?.bankId && bankIds.includes(act.metadata.bankId)) return false;
+
+                // Filter out by mock test ID
+                const testId = act.metadata?.test?.id;
+                if (testId && relatedTestIds.includes(testId)) return false;
+
+                return true;
+              });
+
+              if (filteredActivities.length !== newActivities.length) {
+                needsUpdate = true;
+                newActivities = filteredActivities;
+              }
+            }
+
+            if (needsUpdate) {
+              await supabase.auth.admin.updateUserById(u.id, {
+                user_metadata: {
+                  ...currentMetadata,
+                  purchasedSeries: newPurchased,
+                  activities: newActivities
+                }
+              });
+            }
+          }
+          page++;
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to clean up user metadata on cloud (likely service role key missing or unauthorized):", err);
+    }
+
+    // Delete associated mock test questions (topic matches mockTest__<mockTestId>)
+    if (relatedTestIds.length > 0) {
+      const topicIds = relatedTestIds.map(mtId => `mockTest__${mtId}`);
+      await callAdminDbProxy('questions', 'delete', undefined, undefined, { topic: { op: 'in', val: topicIds } });
+    }
+
+    // Delete associated direct questions
+    await callAdminDbProxy('questions', 'delete', undefined, undefined, { examId: { op: 'eq', val: id } });
+
+    // Delete associated question banks
+    await callAdminDbProxy('questionBanks', 'delete', undefined, undefined, { examId: { op: 'eq', val: id } });
+
+    // Delete associated test series
+    await callAdminDbProxy('testSeries', 'delete', undefined, undefined, { examId: { op: 'eq', val: id } });
+
+    // Delete associated mock tests
+    await callAdminDbProxy('mockTests', 'delete', undefined, undefined, { seriesId: { op: 'like', val: `%\"examId\":\"${id}\"%` } });
+
+    // Delete the exam
+    await callAdminDbProxy('exams', 'delete', undefined, id);
   },
 
   async updateExam(id: string, updates: Partial<Exam>) {
-    const { data, error } = await supabaseAdmin
-      .from('exams')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    const data = await callAdminDbProxy('exams', 'update', updates, id);
+    return data?.[0] || data;
   },
 
   // Question Banks
   async createQuestionBank(bank: QuestionBank) {
-    const { data, error } = await supabaseAdmin
-      .from('questionBanks')
-      .insert([bank])
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    const data = await callAdminDbProxy('questionBanks', 'insert', bank);
+    return data?.[0] || data;
   },
 
   async getAllQuestionBanks() {
@@ -509,21 +676,23 @@ export const examService = {
   },
 
   async deleteQuestionBank(id: string) {
-    const { error } = await supabaseAdmin
-      .from('questionBanks')
-      .delete()
-      .eq('id', id);
-    if (error) throw error;
+    // Check if question bank is purchased
+    const { data: purchaseCount } = await supabase
+      .from('user_purchases')
+      .select('id')
+      .eq('product_id', id);
+
+    if (purchaseCount && purchaseCount.length > 0) {
+      // Soft delete
+      console.log(`Question bank ${id} has active user purchases. Archiving to protect access.`);
+      await callAdminDbProxy('questionBanks', 'update', { is_archived: true }, id);
+    } else {
+      await callAdminDbProxy('questionBanks', 'delete', undefined, id);
+    }
   },
 
   async updateQuestionBank(id: string, updates: Partial<QuestionBank>) {
-    const { data, error } = await supabaseAdmin
-      .from('questionBanks')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    const data = await callAdminDbProxy('questionBanks', 'update', updates, id);
+    return data?.[0] || data;
   }
 };

@@ -14,27 +14,28 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-async function run() {
-  const { data: questions, error } = await supabase.from('questions').select('*');
+async function inspect() {
+  console.log("Querying questions table...");
+  const { data: questions, error } = await supabase
+    .from('questions')
+    .select('id, questionText, diagram');
+    
   if (error) {
-    console.error('Error fetching questions:', error);
+    console.error("Error fetching questions:", error);
     return;
   }
-  console.log(`Total questions: ${questions.length}`);
-  questions.forEach(q => {
-    let hasDiagram = false;
-    if (q.questionText && (q.questionText.includes('diagram') || q.questionText.includes('{') || q.questionText.includes('*') || q.questionText.includes('|'))) {
-      hasDiagram = true;
+  
+  console.log(`Loaded ${questions.length} questions. Searching for keywords...`);
+  
+  for (const q of questions) {
+    const txt = (q.questionText || "").toLowerCase();
+    if (txt.includes("hexagon") || txt.includes("square")) {
+      console.log("-----------------------------------------");
+      console.log(`ID: ${q.id}`);
+      console.log(`Question: ${q.questionText}`);
+      console.log(`Diagram Schema:`, JSON.stringify(q.diagram, null, 2));
     }
-    if (q.explanation && (q.explanation.includes('diagram') || q.explanation.includes('{') || q.explanation.includes('*') || q.explanation.includes('|'))) {
-      hasDiagram = true;
-    }
-    if (hasDiagram) {
-      console.log(`--- Question ID: ${q.id} (Topic: ${q.topic}) ---`);
-      console.log(`Text: ${q.questionText.substring(0, 150)}...`);
-      console.log(`Explanation: ${q.explanation?.substring(0, 150)}...`);
-    }
-  });
+  }
 }
 
-run();
+inspect();

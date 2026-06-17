@@ -241,6 +241,15 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
 
       sessionStorage.setItem('oep_activeTestState', JSON.stringify({
         resumeSessionId: initialState?.resumeSessionId || `session-${Date.now()}`,
+        userId: user?.id || null,
+        test: {
+          id: test.id,
+          title: test.title,
+          durationMinutes: test.durationMinutes,
+          totalMarks: test.totalMarks,
+          negativeMarking: test.negativeMarking,
+          questions: test.questions
+        },
         currentQuestionIndex,
         currentQuestionId,
         answers,
@@ -257,7 +266,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
         untimedPractice
       }));
     }
-  }, [isStarted, test, currentQuestionIndex, answers, markedForReview, timeSpent, timeLeft, visited, currentMode, untimedPractice, initialState?.resumeSessionId]);
+  }, [isStarted, test, currentQuestionIndex, answers, markedForReview, timeSpent, timeLeft, visited, currentMode, untimedPractice, initialState?.resumeSessionId, user]);
 
   // Derived test settings used on both overview & sidebar
   const totalQs = test.questions.length;
@@ -510,6 +519,8 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
     if (currentQuestionIndex < test.questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
       setShowExplanation(false);
+    } else {
+      setShowSubmitConfirm(true);
     }
   }, [currentQuestionIndex, test.questions.length]);
 
@@ -573,7 +584,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
         </header>
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-10 py-8 sm:py-12 pb-28 sm:pb-32 relative z-10">
+        <div className="flex-1 overflow-y-auto no-scrollbar px-4 sm:px-10 py-8 sm:py-12 pb-28 sm:pb-32 relative z-10">
           <div className="max-w-6xl mx-auto space-y-8">
             
             {/* Motivation Header */}
@@ -885,7 +896,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                       <div key={sh.desc} className="flex items-center gap-3 bg-slate-50 border border-slate-200/40 p-2.5 rounded-xl text-[11px] font-semibold">
                         <div className="flex gap-1 shrink-0">
                           {sh.keys.map(k => (
-                            <kbd key={k} className="px-1.5 py-0.5 bg-white border border-slate-350 shadow-sm rounded text-[9px] font-black text-slate-700 font-mono">{k}</kbd>
+                            <kbd key={k} className="px-1.5 py-0.5 bg-white border border-slate-300 shadow-sm rounded text-[9px] font-black text-slate-700 font-mono">{k}</kbd>
                           ))}
                         </div>
                         <span className="text-slate-600 font-medium leading-tight">{sh.desc}</span>
@@ -1024,7 +1035,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
             return (
               <main className={cn(
                 "flex-1 p-3 sm:p-5 lg:p-6 relative bg-[#FBF9F6] flex flex-col",
-                mathHeavy ? "overflow-y-auto" : "overflow-hidden"
+                mathHeavy ? "overflow-y-auto no-scrollbar" : "overflow-hidden"
               )}>
                 <div className={cn(
                   "max-w-4xl lg:max-w-6xl mx-auto w-full flex flex-col space-y-2.5 sm:space-y-3 lg:space-y-4",
@@ -1067,7 +1078,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                           ref={questionTextRef}
                           className={cn(
                             "text-base sm:text-lg lg:text-xl font-serif font-extrabold text-slate-900 leading-relaxed break-words overflow-wrap-anywhere",
-                            !mathHeavy && "flex-1 overflow-y-auto pr-2 custom-scrollbar"
+                            !mathHeavy && "flex-1 overflow-y-auto pr-2 no-scrollbar"
                           )}
                         >
                           {paragraphs.map((para, i) => (
@@ -1097,7 +1108,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                       {/* ── Options & Explanation ── */}
                       <div className={cn(
                         "space-y-3 lg:space-y-4",
-                        !mathHeavy && "flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0 py-1 lg:h-full flex flex-col justify-start",
+                        !mathHeavy && "flex-1 overflow-y-auto no-scrollbar min-h-0 py-1 lg:h-full flex flex-col justify-start",
                         mathHeavy && "py-1"
                       )}>
                         <div className={cn(
@@ -1239,7 +1250,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                     onClick={nextQuestion}
                     className="col-span-3 bg-[#8a1c36] hover:bg-[#76142c] text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-[#8a1c36]/10 active:scale-95 flex items-center justify-center gap-1 cursor-pointer font-extrabold"
                   >
-                    Save & Next <ChevronRight className="w-4 h-4" />
+                    {currentQuestionIndex === test.questions.length - 1 ? 'Save & Submit' : 'Save & Next'} <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -1280,7 +1291,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                     onClick={nextQuestion}
                     className="bg-[#8a1c36] hover:bg-[#76142c] text-white px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer shadow-md shadow-[#8a1c36]/10 hover:shadow-lg active:scale-95 flex items-center gap-1 font-extrabold"
                   >
-                    Save & Next <ChevronRight className="w-4 h-4" />
+                    {currentQuestionIndex === test.questions.length - 1 ? 'Save & Submit' : 'Save & Next'} <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -1315,7 +1326,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
             </span>
           </div>
 
-          <div ref={desktopPaletteRef} className="flex-1 overflow-y-auto px-5 py-4 custom-scrollbar palette-scroll">
+          <div ref={desktopPaletteRef} className="flex-1 overflow-y-auto px-5 py-4 no-scrollbar palette-scroll">
             <div className="grid grid-cols-4 gap-3">
               {test.questions.map((_, idx) => {
                 const isAnswered = answers[idx] !== undefined;
@@ -1433,7 +1444,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
               </div>
               
               {/* Palette grid */}
-              <div ref={mobilePaletteRef} className="overflow-y-auto px-6 py-5 flex-1 custom-scrollbar palette-scroll">
+              <div ref={mobilePaletteRef} className="overflow-y-auto px-6 py-5 flex-1 no-scrollbar palette-scroll">
                 <div className="grid grid-cols-5 sm:grid-cols-6 gap-3">
                   {test.questions.map((_, idx) => {
                     const isAnswered = answers[idx] !== undefined;

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { Component, ReactNode } from 'react';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { cn } from '../lib/utils';
+import UniversalMathDiagramEngine from './UniversalMathDiagramEngine';
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -285,14 +286,91 @@ const isDiagramLabelLine = (line: string): boolean => {
 /**
  * Try parsing the text as JSON to see if it represents a structured diagram definition.
  */
-const tryParseJsonDiagram = (text: string): any | null => {
-  let trimmed = text.trim();
-  if (trimmed.startsWith('```')) {
-    trimmed = trimmed.replace(/^```(?:json)?\n/, '').replace(/\n```$/, '').trim();
+export const repairJSStringLatex = (str: string): string => {
+  if (!str) return '';
+  return str
+    .replace(/\x0c(rac|orall|rown|lat|otnote)(?![a-zA-Z])/g, '\\$1')
+    .replace(/\x08(eta|ar|ox|ullet|igcap|igcup|igsqcup|iguplus|igodot|mod|owtie)(?![a-zA-Z])/g, '\\$1')
+    .replace(/\x09(heta|imes|riangle|an|tilde|ext|tfrac|tau|o|op|hickspace|iny|today|binom|extbf|extit|exttt|extsf)(?![a-zA-Z])/g, '\\$1')
+    .replace(/\x0d(ight|ho|angle|ightarrow|ightharpoonup|ightharpoondown|brace|floor|ceil)(?![a-zA-Z])/g, '\\$1')
+    .replace(/\x0a(eq|earrow|abla|eg|ode|u|otin|olimits|ormalsize|obreak|cong|parallel|exists|geq|leq|sub|sube|supe|sup|mid|succ|prec|sim|simeq|um)(?![a-zA-Z])/g, '\\$1');
+};
+
+export const repairLatexBackslashes = (str: string): string => {
+  // Pre-repair raw control characters introduced by JSON parser escaping bugs
+  let preCleaned = str
+    .replace(/\x0c(rac|orall|rown|lat|otnote)(?![a-zA-Z])/g, '\\\\f$1') // Form Feed (\f) -> \\f
+    .replace(/\x08(eta|ar|ox|ullet|igcap|igcup|igsqcup|iguplus|igodot|mod|owtie)(?![a-zA-Z])/g, '\\\\b$1') // Backspace (\b) -> \\b
+    .replace(/\x09(heta|imes|riangle|an|tilde|ext|tfrac|tau|o|op|hickspace|iny|today|binom|extbf|extit|exttt|extsf)(?![a-zA-Z])/g, '\\\\t$1') // Tab (\t) -> \\t
+    .replace(/\x0d(ight|ho|angle|ightarrow|ightharpoonup|ightharpoondown|brace|floor|ceil)(?![a-zA-Z])/g, '\\\\r$1') // Carriage Return (\r) -> \\r
+    .replace(/\x0a(eq|earrow|abla|eg|ode|u|otin|olimits|ormalsize|obreak|cong|parallel|exists|geq|leq|sub|sube|supe|sup|mid|succ|prec|sim|simeq|um)(?![a-zA-Z])/g, '\\\\n$1'); // Newline (\n) -> \\n
+
+  // Escape backslash followed by a sequence of letters (length >= 2, or length 1 not in bfnrtu)
+  return preCleaned.replace(/\\\\|\\([a-zA-Z]+)/g, (match, p1) => {
+    if (match === '\\\\') {
+      return '\\\\';
+    }
+    if (p1.length === 1 && 'bfnrtu'.includes(p1)) {
+      return match;
+    }
+    return '\\\\' + p1;
+  });
+};
+
+export const cleanJsonString = (str: string): string => {
+  let cleaned = str.trim();
+  
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:json)?\s*\n/, '').replace(/\n\s*```$/, '').trim();
   }
-  if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+
+  if (!((cleaned.startsWith('{') && cleaned.endsWith('}')) || (cleaned.startsWith('[') && cleaned.endsWith(']')))) {
+    return cleaned;
+  }
+
+  // Pre-repair backslashes for LaTeX content before doing any JSON parsing/validation
+  cleaned = repairLatexBackslashes(cleaned);
+
+  try {
+    JSON.parse(cleaned);
+    return cleaned;
+  } catch (_) {
+    // repair mode
+  }
+
+  try {
+    let repaired = cleaned
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2018\u2019]/g, "'")
+      // Replace single quotes surrounding keys
+      .replace(/(?:\s*['"]?([a-zA-Z0-9_.-]+)['"]?\s*):/g, '"$1":')
+      // Replace single quotes surrounding string values
+      .replace(/:\s*'([^'\\]*(?:\\.[^'\\]*)*)'/g, ':"$1"')
+      // Remove trailing commas
+      .replace(/,\s*([}\]])/g, '$1');
+
+    // Replace single quotes around list items/properties
+    repaired = repaired.replace(/\[\s*'([^']*)'\s*(?:,\s*'([^']*)'\s*)*\]/g, (match) => {
+      return match.replace(/'/g, '"');
+    });
+
+    JSON.parse(repaired);
+    return repaired;
+  } catch (_) {
+    // fallback
+  }
+
+  return cleaned;
+};
+
+/**
+ * Try parsing the text as JSON to see if it represents a structured diagram definition.
+ */
+const tryParseJsonDiagram = (text: string): any | null => {
+  const cleaned = cleanJsonString(text);
+  if (cleaned.startsWith('{') && cleaned.endsWith('}')) {
     try {
-      const parsed = JSON.parse(trimmed);
+      const parsed = JSON.parse(cleaned);
       if (parsed && typeof parsed === 'object' && parsed.type) {
         return parsed;
       }
@@ -303,9 +381,255 @@ const tryParseJsonDiagram = (text: string): any | null => {
   return null;
 };
 
-/**
- * Splits text into blocks of plain text and blocks containing valid JSON diagrams.
- */
+export const extractEmbeddedDiagram = (questionText: string): { cleanedText: string; diagram: any | null } => {
+  if (!questionText) return { cleanedText: '', diagram: null };
+  
+  const jsonSplits = splitTextByJsonDiagrams(questionText);
+  let cleanedText = '';
+  let diagram: any = null;
+  
+  for (const split of jsonSplits) {
+    if (split.type === 'json') {
+      const parsed = tryParseJsonDiagram(split.content);
+      if (parsed) {
+        diagram = parsed;
+      } else {
+        cleanedText += split.content;
+      }
+    } else {
+      cleanedText += split.content;
+    }
+  }
+  
+  return {
+    cleanedText: cleanedText.trim(),
+    diagram
+  };
+};
+
+const KNOWN_DIAGRAM_TYPES = new Set([
+  'circle', 'coordinate', 'plot', 'triangle', 'polygon', 'rectangle', 'geometry',
+  'matrix', 'grid', 'distance', 'cone', 'probability', 'sequence', 'equation',
+  'quadratic', 'sphereDivision', 'boatStream', 'ratio', 'statistics', 'profitLoss',
+  'cylinder', 'numberTheory', 'square', 'rightTriangle', 'parallelogram', 'cube',
+  'trapezium', 'semicircle', 'cuboid', 'equilateralTriangle', 'vector', 'universal'
+]);
+
+const repairObjectStrings = (val: any): any => {
+  if (typeof val === 'string') {
+    return repairJSStringLatex(val);
+  }
+  if (Array.isArray(val)) {
+    return val.map(repairObjectStrings);
+  }
+  if (val && typeof val === 'object') {
+    const res = {};
+    for (const k in val) {
+      if (Object.prototype.hasOwnProperty.call(val, k)) {
+        res[k] = repairObjectStrings(val[k]);
+      }
+    }
+    return res;
+  }
+  return val;
+};
+
+export const diagramValidator = (diagram: any): any => {
+  if (!diagram || typeof diagram !== 'object') return null;
+  
+  // Recursively repair all string properties to recover any lost backslashes or corrupted control characters
+  const repaired = repairObjectStrings(diagram);
+  const clone = { ...repaired };
+  
+  if (typeof clone.type !== 'string') {
+    clone.type = String(clone.type || 'unknown');
+  }
+
+  if (!KNOWN_DIAGRAM_TYPES.has(clone.type)) {
+    console.warn(`[Diagram Validation] Unknown diagram type: "${clone.type}"`);
+    clone._unknownType = true;
+  }
+
+  // Map elements -> shapes if elements is present but shapes is not
+  if (clone.elements && !clone.shapes) {
+    clone.shapes = clone.elements;
+  }
+
+  // Validate vector shapes
+  if (clone.type === 'vector' && Array.isArray(clone.shapes)) {
+    clone.shapes = clone.shapes.filter((shape) => {
+      if (!shape || typeof shape !== 'object') return false;
+      const type = shape.type;
+      if (typeof type !== 'string') return false;
+
+      const isNum = (v) => v !== undefined && !isNaN(Number(v));
+      const isValidPoint = (p) => Array.isArray(p) && p.length >= 2 && isNum(p[0]) && isNum(p[1]);
+
+      switch (type) {
+        case 'line': {
+          const hasStartEnd = isValidPoint(shape.start) && isValidPoint(shape.end);
+          const hasX1Y1X2Y2 = isNum(shape.x1) && isNum(shape.y1) && isNum(shape.x2) && isNum(shape.y2);
+          if (!hasStartEnd && !hasX1Y1X2Y2) {
+            console.warn('[Diagram Validation] Line shape missing start/end coordinates:', shape);
+            return false;
+          }
+          return true;
+        }
+        case 'rect':
+        case 'rectangle': {
+          const hasPoints = Array.isArray(shape.points) && shape.points.length >= 2 && shape.points.every(isValidPoint);
+          const hasXYWH = isNum(shape.x) && isNum(shape.y) && isNum(shape.width) && isNum(shape.height);
+          if (!hasPoints && !hasXYWH) {
+            console.warn('[Diagram Validation] Rectangle shape missing bounds/points:', shape);
+            return false;
+          }
+          return true;
+        }
+        case 'circle':
+        case 'ellipse': {
+          const hasCenter = isValidPoint(shape.center) || (isNum(shape.cx) && isNum(shape.cy));
+          const hasRadius = isNum(shape.r) || isNum(shape.rx) || isNum(shape.ry);
+          if (!hasCenter || !hasRadius) {
+            console.warn('[Diagram Validation] Circle/Ellipse shape missing center/radius:', shape);
+            return false;
+          }
+          return true;
+        }
+        case 'polygon':
+        case 'polyline': {
+          const hasPoints = Array.isArray(shape.points) && shape.points.length >= 1 && shape.points.every(isValidPoint);
+          if (!hasPoints) {
+            console.warn('[Diagram Validation] Polygon/Polyline shape missing points:', shape);
+            return false;
+          }
+          return true;
+        }
+        case 'path': {
+          if (typeof shape.d !== 'string' || !shape.d.trim()) {
+            console.warn('[Diagram Validation] Path shape missing d path data:', shape);
+            return false;
+          }
+          return true;
+        }
+        case 'text': {
+          const hasPos = isValidPoint(shape.pos) || (isNum(shape.x) && isNum(shape.y));
+          if (!hasPos) {
+            console.warn('[Diagram Validation] Text shape missing position:', shape);
+            return false;
+          }
+          return true;
+        }
+        case 'arc': {
+          const hasCenter = isValidPoint(shape.center) || (isNum(shape.cx) && isNum(shape.cy));
+          if (!hasCenter) {
+            console.warn('[Diagram Validation] Arc shape missing center:', shape);
+            return false;
+          }
+          return true;
+        }
+        case 'curve': {
+          const hasEndPoints = isValidPoint(shape.start) && isValidPoint(shape.end);
+          const hasControl = isValidPoint(shape.control1);
+          if (!hasEndPoints || !hasControl) {
+            console.warn('[Diagram Validation] Curve shape missing start/end/control coordinates:', shape);
+            return false;
+          }
+          return true;
+        }
+        case 'grid':
+          return true;
+        default:
+          return true;
+      }
+    });
+  }
+
+  const numParams = [
+    'radius', 'height', 'width', 'distance', 'speedA', 'speedB', 'distanceFromCenter',
+    'red', 'blue', 'green', 'yellow', 'terms', 'firstTerm', 'difference', 'sides',
+    'diagonal', 'perimeter', 'largeRadius', 'smallRadius', 'costPrice', 'profitPercent',
+    'mean', 'count', 'upstreamTime', 'downstreamTime', 'angle', 'hypotenuse', 'adjacent', 'opposite',
+    'side', 'leg', 'length'
+  ];
+
+  numParams.forEach(param => {
+    if (clone[param] !== undefined) {
+      const parsedVal = Number(clone[param]);
+      if (isNaN(parsedVal)) {
+        console.warn(`[Diagram Validation] Parameter "${param}" in diagram of type "${clone.type}" is not a valid number:`, clone[param]);
+        delete clone[param];
+      } else {
+        clone[param] = parsedVal;
+      }
+    }
+  });
+
+  if (Array.isArray(clone.points)) {
+    clone.points = clone.points.filter((pt) => {
+      if (Array.isArray(pt)) {
+        return pt.length >= 2 && !isNaN(Number(pt[0])) && !isNaN(Number(pt[1]));
+      }
+      if (pt && typeof pt === 'object') {
+        return !isNaN(Number(pt.x)) && !isNaN(Number(pt.y));
+      }
+      return false;
+    }).map((pt) => {
+      if (Array.isArray(pt)) {
+        return [Number(pt[0]), Number(pt[1])];
+      }
+      return { x: Number(pt.x), y: Number(pt.y), label: pt.label };
+    });
+  }
+
+  return clone;
+};
+
+class DiagramErrorBoundary extends Component<any, any> {
+  props: { children: ReactNode; fallbackData: any };
+  state: { hasError: boolean; error: any };
+
+  constructor(props: { children: ReactNode; fallbackData: any }) {
+    super(props);
+    this.props = props;
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("[DiagramErrorBoundary] Diagram rendering crashed:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      const fallbackData = this.props.fallbackData;
+      return (
+        <div className="p-4 my-2 border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/20 text-rose-800 dark:text-rose-200 rounded-lg">
+          <div className="font-bold flex items-center gap-2 mb-1">
+            <svg className="w-5 h-5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            Diagram Rendering Error
+          </div>
+          <p className="text-xs mb-2 text-rose-600 dark:text-rose-400">
+            {this.state.error?.message || "An unexpected error occurred during rendering."}
+          </p>
+          {fallbackData && (
+            <div className="bg-white dark:bg-slate-900 p-2 rounded border border-slate-200 dark:border-slate-800 text-[10px] font-mono overflow-auto max-h-[120px]">
+              {JSON.stringify(fallbackData, null, 2)}
+            </div>
+          )}
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+
+
 function splitTextByJsonDiagrams(text: string): { type: 'text' | 'json'; content: string }[] {
   const result: { type: 'text' | 'json'; content: string }[] = [];
   let currentIndex = 0;
@@ -646,642 +970,6 @@ const CoordinateGrid: React.FC<{
   return <g>{lines}</g>;
 };
 
-const SvgDiagramCanvas: React.FC<{ data: any }> = ({ data }) => {
-  const width = 1000;
-  const height = 600;
-
-  const arrowDefs = (
-    <defs>
-      <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
-      </marker>
-      <marker id="dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4">
-        <circle cx="5" cy="5" r="5" fill="currentColor" />
-      </marker>
-    </defs>
-  );
-
-  if (data.type === 'circle') {
-    const cx = data.cx !== undefined ? data.cx : 500;
-    const cy = data.cy !== undefined ? data.cy : 300;
-    
-    // Auto-scale radius if it's small (e.g. math units like 10)
-    const rawRadius = data.radius !== undefined ? data.radius : 180;
-    const isMathUnits = rawRadius < 50;
-    const screenRadius = isMathUnits ? 180 : rawRadius;
-    const label = data.centerLabel || data.label || 'O';
-
-    const hasChord = !!data.chord;
-    const hasDist = data.distanceFromCenter !== undefined;
-
-    let chordStart = { x: 0, y: 0 };
-    let chordEnd = { x: 0, y: 0 };
-    let perpFoot = { x: 0, y: 0 };
-    let screenDist = 0;
-    let halfChordLength = 0;
-
-    if (hasChord || hasDist) {
-      const mathRadius = isMathUnits ? rawRadius : 10;
-      const mathDist = data.distanceFromCenter !== undefined ? data.distanceFromCenter : 6;
-      screenDist = (mathDist / mathRadius) * screenRadius;
-      // Clamp screen distance to prevent Math.sqrt errors
-      if (screenDist >= screenRadius) screenDist = screenRadius * 0.9;
-      halfChordLength = Math.sqrt(screenRadius * screenRadius - screenDist * screenDist);
-
-      chordStart = { x: cx - halfChordLength, y: cy + screenDist };
-      chordEnd = { x: cx + halfChordLength, y: cy + screenDist };
-      perpFoot = { x: cx, y: cy + screenDist };
-    }
-
-    return (
-      <svg 
-        width="100%"
-        height="500"
-        viewBox="0 0 1000 600" 
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full text-slate-800 dark:text-slate-200"
-      >
-        {arrowDefs}
-        {/* Draw main circle */}
-        <circle 
-          cx={cx} 
-          cy={cy} 
-          r={screenRadius} 
-          fill={data.fill || "none"} 
-          stroke={data.stroke || "currentColor"} 
-          strokeWidth={data.strokeWidth || 3} 
-          className="transition-colors duration-300"
-        />
-        
-        {/* Draw center point */}
-        <circle cx={cx} cy={cy} r="5" fill="currentColor" />
-        <text x={cx - 10} y={cy - 12} className="text-base font-black font-serif fill-current">{label}</text>
-
-        {/* If chord and/or perpendicular distance is specified */}
-        {(hasChord || hasDist) && (
-          <g>
-            {/* Chord line */}
-            <line 
-              x1={chordStart.x} 
-              y1={chordStart.y} 
-              x2={chordEnd.x} 
-              y2={chordEnd.y} 
-              stroke="currentColor" 
-              strokeWidth="3.5" 
-            />
-            {/* Chord labels */}
-            <text x={chordStart.x - 20} y={chordStart.y + 18} className="text-base font-black font-serif fill-current">
-              {data.chord ? data.chord[0] : 'A'}
-            </text>
-            <text x={chordEnd.x + 10} y={chordEnd.y + 18} className="text-base font-black font-serif fill-current">
-              {data.chord ? data.chord[1] : 'B'}
-            </text>
-
-            {/* Perpendicular line to chord */}
-            <line 
-              x1={cx} 
-              y1={cy} 
-              x2={perpFoot.x} 
-              y2={perpFoot.y} 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeDasharray="4 4" 
-            />
-            {/* Perpendicular foot point marker */}
-            <circle cx={perpFoot.x} cy={perpFoot.y} r="3" fill="currentColor" />
-            
-            {/* Right-angle indicator at perpendicular intersection */}
-            <rect 
-              x={cx} 
-              y={perpFoot.y - 12} 
-              width="12" 
-              height="12" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="1.5" 
-            />
-
-            {/* Radius line from center to chord end/start */}
-            <line 
-              x1={cx} 
-              y1={cy} 
-              x2={chordStart.x} 
-              y2={chordStart.y} 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeDasharray="4 4" 
-            />
-
-            {/* Labels for values */}
-            {/* Distance label */}
-            {hasDist && (
-              <text x={cx + 12} y={cy + screenDist / 2 + 5} className="text-sm font-extrabold fill-current text-indigo-650 dark:text-indigo-400">
-                {data.distanceFromCenter}
-              </text>
-            )}
-            {/* Radius value label */}
-            <text x={(cx + chordStart.x) / 2 - 20} y={(cy + chordStart.y) / 2 - 10} className="text-sm font-extrabold fill-current text-indigo-650 dark:text-indigo-400">
-              {isMathUnits ? rawRadius : 'r'}
-            </text>
-          </g>
-        )}
-      </svg>
-    );
-  }
-
-  if (data.type === 'coordinate') {
-    const points = data.points || [];
-    const { xRange, yRange } = getCoordinateBounds(points);
-    const mxVal = (x: number) => mapX(x, xRange, width);
-    const myVal = (y: number) => mapY(y, yRange, height);
-
-    return (
-      <svg 
-        width="100%"
-        height="500"
-        viewBox="0 0 1000 600" 
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full text-slate-800 dark:text-slate-200"
-      >
-        {arrowDefs}
-        <CoordinateGrid xRange={xRange} yRange={yRange} width={width} height={height} />
-
-        {data.xAxis !== false && (
-          <g>
-            <line x1={mapX(xRange[0], xRange, width)} y1={myVal(0)} x2={mapX(xRange[1], xRange, width)} y2={myVal(0)} stroke="currentColor" strokeWidth="2.5" markerEnd="url(#arrow)" />
-            <text x={mapX(xRange[1], xRange, width) - 15} y={myVal(0) - 8} className="text-xs font-bold fill-current">X</text>
-          </g>
-        )}
-        {data.yAxis !== false && (
-          <g>
-            <line x1={mxVal(0)} y1={mapY(yRange[0], yRange, height)} x2={mxVal(0)} y2={mapY(yRange[1], yRange, height)} stroke="currentColor" strokeWidth="2.5" markerEnd="url(#arrow)" />
-            <text x={mxVal(0) + 8} y={mapY(yRange[1], yRange, height) + 15} className="text-xs font-bold fill-current">Y</text>
-          </g>
-        )}
-        {data.xAxis !== false && data.yAxis !== false && (
-          <text x={mxVal(0) - 12} y={myVal(0) + 14} className="text-[10px] font-bold fill-current">O</text>
-        )}
-
-        {points.map((pt: any, idx: number) => {
-          const px = mxVal(pt.x);
-          const py = myVal(pt.y);
-          return (
-            <g key={idx}>
-              <circle cx={px} cy={py} r="5" fill="#8A1C36" />
-              <text x={px + 8} y={py - 8} className="text-[10px] font-black fill-current">
-                {pt.label || `(${pt.x}, ${pt.y})`}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-    );
-  }
-
-  if (data.type === 'plot') {
-    const equation = data.equation || '';
-    const expr = equation.replace(/^y\s*=\s*/, '');
-    const xRange = data.xRange || [-10, 10];
-    const yRange = data.yRange || getPlotBounds(expr, xRange).yRange;
-    const mxVal = (x: number) => mapX(x, xRange, width);
-    const myVal = (y: number) => mapY(y, yRange, height);
-
-    return (
-      <svg 
-        width="100%"
-        height="500"
-        viewBox="0 0 1000 600" 
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full text-slate-800 dark:text-slate-200"
-      >
-        {arrowDefs}
-        <CoordinateGrid xRange={xRange} yRange={yRange} width={width} height={height} />
-
-        <g>
-          <line x1={mapX(xRange[0], xRange, width)} y1={myVal(0)} x2={mapX(xRange[1], xRange, width)} y2={myVal(0)} stroke="currentColor" strokeWidth="2.5" markerEnd="url(#arrow)" />
-          <text x={mapX(xRange[1], xRange, width) - 15} y={myVal(0) - 8} className="text-xs font-bold fill-current">X</text>
-        </g>
-        <g>
-          <line x1={mxVal(0)} y1={mapY(yRange[0], yRange, height)} x2={mxVal(0)} y2={mapY(yRange[1], yRange, height)} stroke="currentColor" strokeWidth="2.5" markerEnd="url(#arrow)" />
-          <text x={mxVal(0) + 8} y={mapY(yRange[1], yRange, height) + 15} className="text-xs font-bold fill-current">Y</text>
-        </g>
-        {data.xAxis !== false && data.yAxis !== false && (
-          <text x={mxVal(0) - 12} y={myVal(0) + 14} className="text-[10px] font-bold fill-current">O</text>
-        )}
-
-        <path 
-          d={generatePlotPath(expr, xRange, yRange, width, height)}
-          fill="none"
-          stroke="rgb(79, 70, 229)"
-          strokeWidth={3}
-          className="transition-colors duration-300"
-        />
-
-        <text 
-          x={100} 
-          y={50} 
-          className="text-xs font-bold fill-current text-indigo-600 dark:text-indigo-400"
-        >
-          {equation}
-        </text>
-      </svg>
-    );
-  }
-
-  if (data.type === 'triangle' || data.type === 'polygon') {
-    const points = data.points || [];
-    const xs = points.map((p: any) => p[0]);
-    const ys = points.map((p: any) => p[1]);
-    const minX = Math.min(...xs, 0);
-    const maxX = Math.max(...xs, 10);
-    const minY = Math.min(...ys, 0);
-    const maxY = Math.max(...ys, 10);
-    
-    const padX = (maxX - minX) * 0.1 || 2;
-    const padY = (maxY - minY) * 0.1 || 2;
-    const xRange: [number, number] = [minX - padX, maxX + padX];
-    const yRange: [number, number] = [minY - padY, maxY + padY];
-
-    const mxVal = (x: number) => mapX(x, xRange, width);
-    const myVal = (y: number) => mapY(y, yRange, height);
-
-    const pointsStr = points.map((p: any) => `${mxVal(p[0])},${myVal(p[1])}`).join(' ');
-
-    return (
-      <svg 
-        width="100%"
-        height="500"
-        viewBox="0 0 1000 600" 
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full text-slate-800 dark:text-slate-200"
-      >
-        {arrowDefs}
-        <polygon 
-          points={pointsStr}
-          fill="rgba(138, 28, 54, 0.05)"
-          stroke="currentColor"
-          strokeWidth="3"
-        />
-        {points.map((pt: any, idx: number) => {
-          const label = String.fromCharCode(65 + idx);
-          const px = mxVal(pt[0]);
-          const py = myVal(pt[1]);
-          return (
-            <g key={idx}>
-              <circle cx={px} cy={py} r="5" fill="currentColor" />
-              <text x={px + 10} y={py - 10} className="text-xs font-black fill-current font-serif" textAnchor="middle">{label}</text>
-            </g>
-          );
-        })}
-      </svg>
-    );
-  }
-
-  if (data.type === 'rectangle') {
-    let rx = data.x !== undefined ? data.x : -2;
-    let ry = data.y !== undefined ? data.y : -2;
-    let rw = data.width !== undefined ? data.width : 4;
-    let rh = data.height !== undefined ? data.height : 4;
-
-    if (data.points && data.points.length >= 2) {
-      const x1 = data.points[0][0];
-      const y1 = data.points[0][1];
-      const x2 = data.points[1][0];
-      const y2 = data.points[1][1];
-      rx = Math.min(x1, x2);
-      ry = Math.min(y1, y2);
-      rw = Math.abs(x1 - x2);
-      rh = Math.abs(y1 - y2);
-    }
-
-    const xRange: [number, number] = [rx - rw * 0.2 - 1, rx + rw * 1.2 + 1];
-    const yRange: [number, number] = [ry - rh * 0.2 - 1, ry + rh * 1.2 + 1];
-
-    const mxVal = (x: number) => mapX(x, xRange, width);
-    const myVal = (y: number) => mapY(y, yRange, height);
-
-    const px = mxVal(rx);
-    const py = myVal(ry + rh);
-    const pw = mxVal(rx + rw) - px;
-    const ph = myVal(ry) - py;
-
-    return (
-      <svg 
-        width="100%"
-        height="500"
-        viewBox="0 0 1000 600" 
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full text-slate-800 dark:text-slate-200"
-      >
-        {arrowDefs}
-        <rect 
-          x={px} 
-          y={py} 
-          width={pw} 
-          height={ph} 
-          fill={data.fill || "rgba(79, 70, 229, 0.05)"} 
-          stroke={data.stroke || "currentColor"} 
-          strokeWidth={data.strokeWidth || 3} 
-        />
-        {data.label && (
-          <text x={px + pw/2} y={py + ph/2} className="text-sm font-bold fill-current" textAnchor="middle" dominantBaseline="middle">
-            {data.label}
-          </text>
-        )}
-      </svg>
-    );
-  }
-
-  // Fallback to legacy shape renderer if not matching coordinate/plot/circle/triangle
-  const { xRange, yRange } = getBounds(data);
-  const mx = (x: number) => mapX(x, xRange, width);
-  const my = (y: number) => mapY(y, yRange, height);
-
-  if (data.type === 'graph' || data.type === 'coordinate_plane') {
-    return (
-      <svg 
-        width="100%"
-        height="500"
-        viewBox="0 0 1000 600" 
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full text-slate-800 dark:text-slate-200"
-      >
-        {arrowDefs}
-        {data.grid !== false && <GridLines xRange={xRange} yRange={yRange} width={width} height={height} />}
-        
-        {data.xAxis !== false && (
-          <g>
-            <line x1={0} y1={my(0)} x2={width} y2={my(0)} stroke="currentColor" strokeWidth="2.5" markerEnd="url(#arrow)" />
-            <text x={width - 15} y={my(0) - 8} className="text-xs font-bold fill-current">X</text>
-          </g>
-        )}
-        {data.yAxis !== false && (
-          <g>
-            <line x1={mx(0)} y1={height} x2={mx(0)} y2={0} stroke="currentColor" strokeWidth="2.5" markerEnd="url(#arrow)" />
-            <text x={mx(0) + 8} y={15} className="text-xs font-bold fill-current">Y</text>
-          </g>
-        )}
-
-        {data.functions?.map((fn: any, idx: number) => (
-          <path 
-            key={idx}
-            d={generateFunctionPath(fn.expr, xRange, yRange, width, height)}
-            fill="none"
-            stroke={fn.color || "rgb(79, 70, 229)"}
-            strokeWidth={3}
-            className="transition-colors duration-300"
-          />
-        ))}
-
-        {data.lines?.map((line: any, idx: number) => (
-          <g key={idx}>
-            <line 
-              x1={mx(line.start[0])} 
-              y1={my(line.start[1])} 
-              x2={mx(line.end[0])} 
-              y2={my(line.end[1])} 
-              stroke={line.color || "currentColor"} 
-              strokeWidth="2" 
-              strokeDasharray={line.dashed ? "4 4" : undefined}
-            />
-            {line.label && (
-              <text 
-                x={(mx(line.start[0]) + mx(line.end[0])) / 2 + 5} 
-                y={(my(line.start[1]) + my(line.end[1])) / 2 - 5}
-                className="text-[10px] font-semibold fill-current"
-              >
-                {line.label}
-              </text>
-            )}
-          </g>
-        ))}
-
-        {data.points?.map((pt: any, idx: number) => {
-          const pos = Array.isArray(pt) ? pt : pt.pos;
-          const label = pt.label || (Array.isArray(pt) ? `(${pos[0]}, ${pos[1]})` : null);
-          return (
-            <g key={idx}>
-              <circle cx={mx(pos[0])} cy={my(pos[1])} r="5" fill={data.pointColor || "#8A1C36"} />
-              {label && (
-                <text x={mx(pos[0]) + 6} y={my(pos[1]) - 6} className="text-[9px] font-black fill-current">
-                  {label}
-                </text>
-              )}
-            </g>
-          );
-        })}
-      </svg>
-    );
-  }
-
-  if (data.type === 'geometry') {
-    return (
-      <svg 
-        width="100%"
-        height="500"
-        viewBox="0 0 1000 600" 
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full text-slate-800 dark:text-slate-200"
-      >
-        {arrowDefs}
-        
-        {data.shapes?.map((shape: any, idx: number) => {
-          if (shape.type === 'triangle' || shape.type === 'polygon') {
-            const pointsStr = shape.points.map((p: any) => `${mx(p[0])},${my(p[1])}`).join(' ');
-            return (
-              <polygon 
-                key={idx}
-                points={pointsStr}
-                fill={shape.fill || "rgba(138, 28, 54, 0.05)"}
-                stroke={shape.stroke || "currentColor"}
-                strokeWidth={shape.strokeWidth || 2.5}
-              />
-            );
-          }
-          if (shape.type === 'rectangle') {
-            let rx, ry, rw, rh;
-            if (shape.points) {
-              const x1 = mx(shape.points[0][0]);
-              const y1 = my(shape.points[0][1]);
-              const x2 = mx(shape.points[1][0]);
-              const y2 = my(shape.points[1][1]);
-              rx = Math.min(x1, x2);
-              ry = Math.min(y1, y2);
-              rw = Math.abs(x1 - x2);
-              rh = Math.abs(y1 - y2);
-            } else {
-              rx = mx(shape.x);
-              ry = my(shape.y);
-              rw = shape.width * (width / (xRange[1] - xRange[0]));
-              rh = shape.height * (height / (yRange[1] - yRange[0]));
-            }
-            return (
-              <rect 
-                key={idx}
-                x={rx}
-                y={ry}
-                width={rw}
-                height={rh}
-                fill={shape.fill || "rgba(79, 70, 229, 0.05)"}
-                stroke={shape.stroke || "currentColor"}
-                strokeWidth={shape.strokeWidth || 2.5}
-              />
-            );
-          }
-          if (shape.type === 'circle') {
-            const cx = mx(shape.cx !== undefined ? shape.cx : shape.center[0]);
-            const cy = my(shape.cy !== undefined ? shape.cy : shape.center[1]);
-            const r = shape.r * (width / (xRange[1] - xRange[0]));
-            return (
-              <circle 
-                key={idx}
-                cx={cx}
-                cy={cy}
-                r={r}
-                fill={shape.fill || "none"}
-                stroke={shape.stroke || "currentColor"}
-                strokeWidth={shape.strokeWidth || 2.5}
-              />
-            );
-          }
-          if (shape.type === 'line') {
-            return (
-              <line 
-                key={idx}
-                x1={mx(shape.x1 !== undefined ? shape.x1 : shape.start[0])}
-                y1={my(shape.y1 !== undefined ? shape.y1 : shape.start[1])}
-                x2={mx(shape.x2 !== undefined ? shape.x2 : shape.end[0])}
-                y2={my(shape.y2 !== undefined ? shape.y2 : shape.end[1])}
-                stroke={shape.stroke || "currentColor"}
-                strokeWidth={shape.strokeWidth || 2}
-                strokeDasharray={shape.dashed ? "4 4" : undefined}
-              />
-            );
-          }
-          return null;
-        })}
-
-        {data.labels?.map((lbl: any, idx: number) => (
-          <text 
-            key={idx} 
-            x={mx(lbl.pos[0])} 
-            y={my(lbl.pos[1])} 
-            className="text-xs font-black fill-current font-serif"
-            textAnchor="middle"
-            alignmentBaseline="middle"
-          >
-            {lbl.text}
-          </text>
-        ))}
-      </svg>
-    );
-  }
-
-  if (data.type === 'matrix' || data.type === 'grid') {
-    const isGrid = data.type === 'grid';
-    const values = data.values || [[]];
-    const rows = values.length;
-    const cols = values[0]?.length || 0;
-
-    if (isGrid) {
-      const cellW = width / cols;
-      const cellH = height / rows;
-
-      return (
-        <svg 
-          width="100%"
-          height="500"
-          viewBox="0 0 1000 600" 
-          preserveAspectRatio="xMidYMid meet"
-          className="w-full h-full text-slate-800 dark:text-slate-200"
-        >
-          {values.map((rowArr: any[], rIdx: number) => (
-            rowArr.map((val: any, cIdx: number) => {
-              const x = cIdx * cellW;
-              const y = rIdx * cellH;
-              return (
-                <g key={`${rIdx}-${cIdx}`}>
-                  <rect 
-                    x={x} 
-                    y={y} 
-                    width={cellW} 
-                    height={cellH} 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="1.5" 
-                  />
-                  <text 
-                    x={x + cellW/2} 
-                    y={y + cellH/2} 
-                    className="text-sm font-bold fill-current"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                  >
-                    {val}
-                  </text>
-                </g>
-              );
-            })
-          ))}
-        </svg>
-      );
-    } else {
-      const cellW = (width - 60) / cols;
-      const cellH = (height - 60) / rows;
-
-      return (
-        <svg 
-          width="100%"
-          height="500"
-          viewBox="0 0 1000 600" 
-          preserveAspectRatio="xMidYMid meet"
-          className="w-full h-full text-slate-800 dark:text-slate-200"
-        >
-          <path 
-            d={`M 25 20 L 15 20 L 15 ${height - 20} L 25 ${height - 20}`} 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="3.5" 
-          />
-          {values.map((rowArr: any[], rIdx: number) => (
-            rowArr.map((val: any, cIdx: number) => {
-              const x = 30 + cIdx * cellW + cellW/2;
-              const y = 30 + rIdx * cellH + cellH/2;
-              return (
-                <text 
-                  key={`${rIdx}-${cIdx}`}
-                  x={x} 
-                  y={y} 
-                  className="text-lg font-black fill-current font-serif"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                >
-                  {val}
-                </text>
-              );
-            })
-          ))}
-          <path 
-            d={`M ${width - 25} 20 L ${width - 15} 20 L ${width - 15} ${height - 20} L ${width - 25} ${height - 20}`} 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="3.5" 
-          />
-        </svg>
-      );
-    }
-  }
-
-  // If type unknown, show raw JSON
-  return (
-    <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 w-full overflow-auto max-h-[400px]">
-      <pre className="font-mono text-xs text-slate-700 dark:text-slate-350 whitespace-pre">
-        {JSON.stringify(data, null, 2)}
-      </pre>
-    </div>
-  );
-};
-
 export interface DiagramRendererProps {
   content?: string;
   data?: any;
@@ -1295,120 +983,29 @@ export const DiagramRenderer: React.FC<DiagramRendererProps> = ({
   diagram: diagramProp,
   isOption = false,
 }) => {
-  const [zoom, setZoom] = React.useState(1.0);
-  const [offset, setOffset] = React.useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = React.useState(false);
-  const dragStart = React.useRef({ x: 0, y: 0, offsetX: 0, offsetY: 0 });
-
   let diagram = data || diagramProp || (content ? tryParseJsonDiagram(content) : null);
   if (typeof diagram === 'string') {
     diagram = tryParseJsonDiagram(diagram);
   }
+  diagram = diagramValidator(diagram);
 
-  if (!diagram) {
-    return <div>Diagram Missing</div>;
+  if (diagram) {
+    return (
+      <DiagramErrorBoundary fallbackData={diagram}>
+        <UniversalMathDiagramEngine data={diagram} />
+      </DiagramErrorBoundary>
+    );
   }
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return; // Only left-click / primary touch
-    const target = e.currentTarget;
-    target.setPointerCapture(e.pointerId);
-    dragStart.current = {
-      x: e.clientX,
-      y: e.clientY,
-      offsetX: offset.x,
-      offsetY: offset.y,
-    };
-    setIsDragging(true);
-    e.preventDefault();
-  };
-
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-    const dx = e.clientX - dragStart.current.x;
-    const dy = e.clientY - dragStart.current.y;
-    // Divide delta by zoom to maintain 1:1 mouse tracking visually
-    setOffset({
-      x: dragStart.current.offsetX + dx / zoom,
-      y: dragStart.current.offsetY + dy / zoom,
-    });
-  };
-
-  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-    try {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch (err) {
-      // Ignore
-    }
-    setIsDragging(false);
-  };
-
   return (
-    <div className="svg-diagram-card my-4 rounded-2xl border border-slate-200/80 bg-white dark:bg-slate-900 overflow-hidden shadow-md max-w-full relative group">
-      <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 select-none">
-        <div className="flex items-center gap-2">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-[#8A1C36] dark:text-brand-400 shrink-0">
-            <polygon points="7,1 13,5 13,9 7,13 1,9 1,5" stroke="currentColor" strokeWidth="1.5" fill="none" />
-          </svg>
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-            {diagram.type} Diagram
-          </span>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => { setZoom(1.0); setOffset({ x: 0, y: 0 }); }}
-            className="px-2 h-6 rounded-md bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-650 cursor-pointer select-none active:scale-95 transition-all"
-            title="Reset view"
-          >
-            Reset
-          </button>
-          <button
-            type="button"
-            onClick={() => setZoom(prev => Math.max(0.5, prev - 0.1))}
-            className="w-6 h-6 rounded-md bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-600 cursor-pointer select-none active:scale-95 transition-all"
-          >
-            -
-          </button>
-          <span className="text-[10px] font-black text-slate-500 w-8 text-center select-none">
-            {Math.round(zoom * 100)}%
-          </span>
-          <button
-            type="button"
-            onClick={() => setZoom(prev => Math.min(3.0, prev + 0.1))}
-            className="w-6 h-6 rounded-md bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-600 cursor-pointer select-none active:scale-95 transition-all"
-          >
-            +
-          </button>
-        </div>
-      </div>
-
-      <div 
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        className="diagram-container p-6 flex justify-center items-center bg-slate-50/20 dark:bg-slate-950/10 overflow-hidden w-full custom-scrollbar select-none"
-        style={{ 
-          cursor: isDragging ? 'grabbing' : 'grab',
-          touchAction: 'none'
-        }}
-      >
-        <div 
-          style={{ 
-            transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`, 
-            transformOrigin: 'center center', 
-            transition: isDragging ? 'none' : 'transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1)' 
-          }}
-          className="w-full max-w-[800px] flex justify-center items-center shrink-0 pointer-events-none"
-        >
-          <div className="w-full">
-            <SvgDiagramCanvas data={diagram} />
-          </div>
-        </div>
-      </div>
+    <div className="p-5 my-4 bg-amber-50 dark:bg-amber-950/20 border border-dashed border-amber-300 dark:border-amber-800/60 rounded-xl text-amber-800 dark:text-amber-300 flex flex-col items-center justify-center text-center">
+      <svg className="w-8 h-8 text-amber-500 mb-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+      <span className="text-sm font-bold">Diagram Not Available</span>
+      <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+        The diagram data is missing, empty, or failed validation.
+      </p>
     </div>
   );
 };
@@ -1570,7 +1167,8 @@ export const MathTextRenderer: React.FC<MathTextRendererProps> = ({
 }) => {
   if (!text) return null;
 
-  const parts = text.split(MATH_REGEX);
+  const repairedText = repairJSStringLatex(text);
+  const parts = repairedText.split(MATH_REGEX);
 
   return (
     <span className={cn('math-text-container break-words', className)}>

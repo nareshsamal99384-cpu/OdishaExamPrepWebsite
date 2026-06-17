@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import DOMPurify from 'dompurify';
 import { cn } from '../lib/utils';
 import { useAuth } from '../lib/AuthContext';
 import { examService } from '../lib/examService';
@@ -408,6 +409,8 @@ ${trendStr}`
       case 'history': return 'History (Activity Logs)';
       case 'library': return 'Library (My Purchases)';
       case 'ai_mentor': return 'AI Mentor (Study Coach & Tutor)';
+      case 'blog': return 'Blog (OEP Knowledge Base)';
+      case 'support': return 'Help & Support';
       default: return activeTab ? (activeTab.charAt(0).toUpperCase() + activeTab.slice(1)) : 'Home / Dashboard';
     }
   })();
@@ -599,6 +602,9 @@ The Home tab consists of two distinct views based on whether the student has sel
    - **Recent Activity Slider**: A horizontal list of up to 6 recently completed tests or activities with score badges (e.g., score out of total marks) and completion dates. Clicking a card opens the detailed test result breakdown page.
    - **Curated YouTube Carousel**: Displays curated preparation video lectures.
    - **Exam Selection Controls**: Users can switch between "Popular Exams" (already active) and "Upcoming Exams" (coming soon) tabs. A Search input filters exams. Clicking any exam card selects it, transitioning the Home tab to that exam's detailed dashboard page.
+   - **Live Exam Registry (Odisha Recruitment Bulletin)**: Displays official recruitment notification timelines and updates (e.g. OPSC Civil Services Examination (OCS), OSSC Combined Graduate Level (CGL), OSSSC RI/ARI & Amin Recruitment). Shows status badges (e.g., Notification Released, Admit Card Out, Applications Active, Result Declared, Postponed, Upcoming) and dates. Clicking the "Practice [Exam]" button automatically selects that exam on the dashboard and scrolls down to the exam section.
+   - **Syllabus Roadmaps (Curriculum Roadmap)**: Mapped directly to available practice quiz sets. Users switch between subject pillar tabs (e.g., General Studies, Language Core, Aptitude & DI) to see topic names, description/weightage labels (e.g., "Crucial for OPSC Prelims"), and the number of practice sets available.
+   - **Achievers' Journal (Preparation Journeys)**: Displays verified logs, ranks, districts, and stories from real successful candidates who cleared Odisha exams. Features a search input to search candidates by name, district, rank, or story keywords, and filter tabs to filter by category: All Journeys, OPSC, OSSC, OSSSC.
 
 2. Selected Exam Dashboard View (An Exam is Selected):
    - **Back Button**: A left-facing arrow button next to the exam title that deselects the exam and returns the user to the general exam listing view.
@@ -635,6 +641,21 @@ The Home tab consists of two distinct views based on whether the student has sel
 - **Purpose**: A planned feature to host premium video preparation lectures.
 - **Current Behavior & Limitations**: There are no active video lectures, courses, playlists, or downloadable files available directly on this tab currently.
 - **Guidance & Next Steps**: Inform the student that video lectures are coming soon. Encourage them to prepare using active resources on the platform, such as **Mock Tests** and **Question Banks** (PDF study materials) available under the Home and Library tabs.
+
+### Blog Tab (OEP Knowledge Base):
+- **Overview & URL Path**: Accessible at '/blog' (list of articles) or '/blog/:id' (article details page). It is a hub for the latest preparation insights, exam strategies, and announcements tailored specifically for Odisha government exam aspirants.
+- **Header Section**: Displays the title "OEP Knowledge Base" and subtitle "Latest insights, exam strategies, and announcements...". Includes a "Back to Home" button to return to the dashboard ('/').
+- **Search Articles**: A search input filters articles dynamically as the user types (case-insensitive title matching on 'blog.name').
+- **Blog Cards Grid**: Displays articles. Each card shows:
+  * Cover Image: Custom image if 'blog.icon' exists, or fallback gradient placeholder with a book icon.
+  * Date Badge: Article publication date or "Recent".
+  * Title: Heading matching 'blog.name'.
+  * Read CTA: "Read Article" link with a chevron right icon pointing to '/blog/:id'.
+- **Blog Post Detail Page ('/blog/:id' route)**:
+  * Displays cover image banner, back link ("Back to Articles" returning to '/blog'), date, and full post content (rendered HTML formatted).
+  * **Recommended for You Sidebar**: If the article is associated with a target exam ('found.targetExamId'), it recommends up to 3 question banks and 3 mock tests related to that target exam (with titles, question count or duration/marks, and Free/Premium labels). Card clicks navigate back to the Home page dashboard.
+  * If no related items exist, it displays a premium brand CTA card ("Start Your Journey with OEP") pointing to the Home dashboard.
+  * **SEO Mappings**: Dynamically updates page document title, HTML meta descriptions, and injects JSON-LD 'BlogPosting' schemas automatically.
 
 ### Library Tab (My Purchases):
 - **Overview**: Shows all premium, purchased, and unlocked resources for the student in one location.
@@ -678,9 +699,26 @@ The Home tab consists of two distinct views based on whether the student has sel
 - Profile shows name, email, purchased plans
 - Logout from top-right corner menu
 
-### Support:
-- WhatsApp: +91 7377431715
-- Email: odishaexamprep365@gmail.com
+### Support Options & Help Channels:
+- **Purpose**: Provides official channels to assist students with billing issues, platform queries, technical problems, or exam clarifications.
+- **Desktop Access Flow**:
+  * For logged-in users, a 'Support' navigation item (represented by a HelpCircle icon) is available in the desktop top-header/navbar next to the Blog link.
+  * Clicking it opens a new tab redirecting to WhatsApp chat (https://wa.me/917377431715) with a pre-filled context-aware message: "Hello! I am [student_email] reaching out from the OdishaExamPrep website. I have a query."
+- **Mobile Access Flow**:
+  * Click the Menu (hamburger icon) on the top-right to open the Mobile Drawer.
+  * Click the 'Help & Support' list item (represented by a HelpCircle icon).
+  * This launches WhatsApp chat support in a new tab with the same pre-filled message structure.
+- **Guest Floating WhatsApp Button (Support for Logged-Out Users)**:
+  * For guests/logged-out users only, a green WhatsApp floating button is displayed on the bottom-right corner of the page.
+  * Features a pulsing ring, a live online indicator green dot, and a hover tooltip reading "Support Online - Need any help? Chat with our experts now for instant support."
+  * Clicking the floating button redirects to WhatsApp with the guest message: "Hello! I am reaching out from the OdishaExamPrep website. I have a query."
+  * *Important Limitation*: The guest WhatsApp floating button is hidden completely during active mock tests or practice sessions to prevent distraction. It is also hidden for logged-in users (since they have access to OEP Buddy instead).
+- **Official Contact Coordinates**:
+  * **WhatsApp Number**: +91 7377431715 (Primary chat support).
+  * **Email**: odishaexamprep365@gmail.com (Used for official requests, business queries, or billing/refund issues).
+  * **Priority Support**: Premium Exam Bundle purchases unlock priority Telegram group access and call support ("Expert Support").
+- **Refund Requests Flow**:
+  * Students must email support at odishaexamprep365@gmail.com within 48 hours of transaction. Refund window is 7 days if the platform doesn't work for them.
 
 ---
 
@@ -745,10 +783,11 @@ function RenderMessage({ text }: { text: string }) {
 }
 
 function inlineFormat(text: string): string {
-  return text
+  const formatted = text
     .replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-slate-800">$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     .replace(/`(.+?)`/g, '<code class="bg-slate-100 text-brand-700 px-1 py-0.5 rounded text-[10px] font-mono">$1</code>');
+  return DOMPurify.sanitize(formatted);
 }
 
 /* ─────────────────────────────────────────────
@@ -831,6 +870,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
     let totalQuestions = 0;
     let totalTimeTaken = 0;
     let totalCalculatedScore = 0;
+    let totalCalculatedScorePctSum = 0;
 
     const chartDataList: { name: string; score: number; accuracy: number; time: number; testName: string }[] = [];
 
@@ -868,16 +908,26 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
       const actScore = typeof a?.score === 'number' ? a.score : (actCorrect - (actWrong * negativeMarking));
       const timeTaken = a?.metadata?.timeTaken || a?.timeSpent || 0;
 
+      const actMaxMarks = a.totalMarks || a.metadata?.test?.totalMarks || a.metadata?.totalMarks || actTotalQ || 1;
+      const completionScorePct = isNaN(actScore) || isNaN(actMaxMarks) || actMaxMarks <= 0 
+        ? 0 
+        : Math.round((actScore / actMaxMarks) * 100);
+      const completionAccuracy = isNaN(actCorrect) || isNaN(actAttempted) || actAttempted <= 0 
+        ? 0 
+        : Math.round((actCorrect / actAttempted) * 100);
+      const completionTime = isNaN(timeTaken) || isNaN(actAttempted) || actAttempted <= 0 
+        ? 0 
+        : Math.round(timeTaken / actAttempted);
+
       totalCorrect += actCorrect;
       totalWrong += actWrong;
       totalAttempted += actAttempted;
       totalQuestions += actTotalQ;
       totalTimeTaken += timeTaken;
       totalCalculatedScore += actScore;
-
-      const completionScorePct = actTotalQ > 0 ? Math.round((actScore / actTotalQ) * 100) : 0;
-      const completionAccuracy = actAttempted > 0 ? Math.round((actCorrect / actAttempted) * 100) : 0;
-      const completionTime = actAttempted > 0 ? Math.round(timeTaken / actAttempted) : 0;
+      totalCalculatedScorePctSum += isNaN(actScore) || isNaN(actMaxMarks) || actMaxMarks <= 0 
+        ? 0 
+        : (actScore / actMaxMarks) * 100;
 
       chartDataList.push({
         name: `T${i + 1}`,
@@ -889,12 +939,18 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
     });
 
     const totalTests = completions.length;
-    const avgAccuracy = totalAttempted > 0 ? Math.round((totalCorrect / totalAttempted) * 100) : 0;
-    const avgScore = totalQuestions > 0 ? Math.round((totalCalculatedScore / totalQuestions) * 100) : 0;
-    const avgTimePerQuestion = totalAttempted > 0 ? Math.round(totalTimeTaken / totalAttempted) : 0;
+    const avgAccuracy = isNaN(totalCorrect) || isNaN(totalAttempted) || totalAttempted <= 0 
+      ? 0 
+      : Math.round((totalCorrect / totalAttempted) * 100);
+    const avgScore = totalTests > 0 ? Math.round(totalCalculatedScorePctSum / totalTests) : 0;
+    const avgTimePerQuestion = isNaN(totalTimeTaken) || isNaN(totalAttempted) || totalAttempted <= 0 
+      ? 0 
+      : Math.round(totalTimeTaken / totalAttempted);
 
     const attemptedWithoutSkips = totalCorrect + totalWrong;
-    const precision = attemptedWithoutSkips > 0 ? Math.round((totalCorrect / attemptedWithoutSkips) * 100) : 0;
+    const precision = isNaN(totalCorrect) || isNaN(attemptedWithoutSkips) || attemptedWithoutSkips <= 0 
+      ? 0 
+      : Math.round((totalCorrect / attemptedWithoutSkips) * 100);
     const speed = Math.max(0, Math.min(100, Math.round(100 - ((avgTimePerQuestion - 30) / (120 - 30)) * 100)));
     const endurance = Math.min(100, Math.round((totalQuestions / 300) * 100));
 
@@ -1123,7 +1179,8 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
       const uQuestionBanks: string[] = [];
 
       mappedExams.forEach((e: any) => {
-        if (hasAccessTo(`exam_bundle_${e.id}`)) {
+        const isExamPremium = e.price !== undefined && e.price > 0;
+        if (!isExamPremium || hasAccessTo(`exam_bundle_${e.id}`)) {
           uExams.push(e.name);
         }
       });
@@ -1131,14 +1188,14 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
       mappedMockTests.forEach((t: any) => {
         const resolvedExamId = t.examId || t._resolvedExamId || (t.seriesId && seriesExamMap[t.seriesId]);
         if (!t.isPremium) return;
-        if (hasAccessTo(t.id, resolvedExamId)) {
+        if (hasAccessTo(t, resolvedExamId)) {
           uMockTests.push(t.title);
         }
       });
 
       mappedQuestionBanks.forEach((b: any) => {
         if (!b.isPremium) return;
-        if (hasAccessTo(b.id, b.examId)) {
+        if (hasAccessTo(b, b.examId)) {
           uQuestionBanks.push(b.title);
         }
       });
@@ -1691,7 +1748,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
                 <div 
                   className="flex-1 overflow-y-auto px-3 py-3 space-y-3 overscroll-contain" 
                   style={{ 
-                    scrollbarWidth: 'thin',
+                    scrollbarWidth: 'none',
                     WebkitOverflowScrolling: 'touch',
                     willChange: 'transform'
                   }}

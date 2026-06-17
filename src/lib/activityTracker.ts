@@ -18,7 +18,7 @@ const STORAGE_KEY_PREFIX = 'oep_activities_';
 // Maximum activities to keep in localStorage (full data including questions)
 const LOCAL_MAX = 500;
 // Maximum activities to sync to cloud (lightweight, no questions)
-const CLOUD_MAX = 50;
+const CLOUD_MAX = 5;
 
 /**
  * Strip ALL heavy session state from an activity before cloud sync.
@@ -158,6 +158,27 @@ export const activityTracker = {
       // Sync LIGHTWEIGHT version to cloud (no questions, no large timeSpent maps)
       // Only send the most recent CLOUD_MAX activities to keep metadata small
       const cloudPayload = updated.slice(0, CLOUD_MAX).map(toCloudSafe);
+
+      // Relational database attempts logging
+      if (activity.type === 'mock_test_completed' || activity.type === 'practice_test_completed') {
+        try {
+          const testId = activity.metadata?.test?.id || (activity.metadata?.resumeSessionId?.startsWith('session-') ? undefined : activity.metadata?.resumeSessionId);
+          if (testId) {
+            await supabase
+              .from('attempts')
+              .insert([{
+                userId: userId,
+                testId: testId,
+                score: activity.score || 0,
+                accuracy: activity.accuracy || 0,
+                answers: activity.metadata?.answers || {},
+                completedAt: new Date().toISOString()
+              }]);
+          }
+        } catch (dbErr) {
+          console.error('[Attempts System] Failed to write attempt to database:', dbErr);
+        }
+      }
 
       try {
         await supabase.auth.updateUser({

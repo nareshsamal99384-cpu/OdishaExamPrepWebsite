@@ -3127,7 +3127,7 @@ JSON structure:
                         transition={{ duration: 0.15 }}
                         className="absolute left-0 mt-2 w-56 rounded-xl bg-white border border-slate-200/60   shadow-2xl p-1 z-50 overflow-hidden"
                       >
-                        <div className="max-h-64 overflow-y-auto pr-0.5 custom-scrollbar">
+                        <div className="max-h-64 overflow-y-auto pr-0.5 no-scrollbar">
                           {userExams.length === 0 ? (
                             <div className="px-3 py-4 text-center text-[9px] text-slate-500 font-black uppercase tracking-wider">
                               No target exams. Add one below!
@@ -3214,7 +3214,7 @@ JSON structure:
             </div>
 
             {/* Chat Messages Console */}
-            <div ref={chatConsoleRef} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+            <div ref={chatConsoleRef} className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
               {messages.map((m, idx) => (
                 <div 
                   key={idx} 
@@ -3448,7 +3448,7 @@ JSON structure:
           </div>
 
           {/* Scrollable content pane */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3.5 pb-8 custom-scrollbar relative z-10 flex flex-col">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3.5 pb-8 no-scrollbar relative z-10 flex flex-col">
             <AnimatePresence mode="wait">
               {activeRightTab === 'planner' && (
                 <motion.div
@@ -3837,7 +3837,7 @@ JSON structure:
                         value={timerGoal}
                         onChange={(e) => setTimerGoal(e.target.value)}
                         placeholder="Focus Target (e.g. History)"
-                        className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-[10px] text-slate-850 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#8a1c36]/10 focus:border-[#8a1c36] transition-all duration-300 font-semibold shadow-2xs"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-[10px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#8a1c36]/10 focus:border-[#8a1c36] transition-all duration-300 font-semibold shadow-2xs"
                       />
                     )}
                   </div>
@@ -4409,7 +4409,7 @@ JSON structure:
                           value={quizSubject}
                           onChange={(e) => setQuizSubject(e.target.value)}
                           placeholder="Enter subject or topic (e.g., Odisha Rivers, Trigonometry)"
-                          className="w-full bg-white border border-slate-200/60 rounded-xl px-3.5 py-2.5 text-xs text-slate-850 placeholder:text-slate-450 focus:outline-none focus:ring-1 focus:ring-teal-500/40 focus:border-teal-500/40 transition-all font-semibold"
+                          className="w-full bg-white border border-slate-200/60 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500/40 focus:border-teal-500/40 transition-all font-semibold"
                         />
 
                         {/* Popular Suggestion Chips */}
@@ -4612,7 +4612,7 @@ JSON structure:
                             Clear
                           </button>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[120px] overflow-y-auto custom-scrollbar">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[120px] overflow-y-auto no-scrollbar">
                           {quizHistory.map((rec, rIdx) => (
                             <div key={rIdx} className="bg-slate-50 border border-slate-200/50 rounded-xl p-2.5 flex justify-between items-center text-[10px] font-semibold text-slate-700">
                               <div className="space-y-0.5 pr-2 truncate">
@@ -5788,7 +5788,7 @@ JSON structure:
                     </div>
 
                     <div className="space-y-2 max-w-xs mx-auto relative z-10">
-                      <h5 className="font-serif font-black text-lg text-slate-850 tracking-tight font-black">
+                      <h5 className="font-serif font-black text-lg text-slate-800 tracking-tight font-black">
                         Your Shortcut Deck is empty
                       </h5>
                       <p className="text-slate-500 text-xs font-semibold leading-relaxed">
@@ -5887,7 +5887,7 @@ JSON structure:
                                 setEditingFormulaKey(null);
                                 setEditingFormulaIndex(null);
                               }}
-                              className="px-3.5 py-1.5 border border-slate-200/60 hover:bg-slate-100 text-slate-355 rounded-lg text-[9px] font-black uppercase tracking-widest cursor-pointer active:scale-95"
+                              className="px-3.5 py-1.5 border border-slate-200/60 hover:bg-slate-100 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-widest cursor-pointer active:scale-95"
                             >
                               Cancel
                             </button>

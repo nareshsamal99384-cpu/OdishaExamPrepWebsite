@@ -54,7 +54,6 @@ import { useAuth } from './lib/AuthContext';
 import { supabase } from './lib/supabase';
 import { cn, getDirectImageUrl } from './lib/utils';
 import { examService } from './lib/examService';
-import { startSyncEngine } from './lib/syncEngine';
 import { DEFAULT_ACHIEVERS_JOURNAL } from './lib/defaultAchievers';
 import { useScrollSpy } from './hooks/useScrollSpy';
 import { scrollToElement, scrollToTop } from './lib/scrollManager';
@@ -187,7 +186,7 @@ const HistoryView = ({
                   </button>
                   <button
                     onClick={() => setConfirmClearAll(false)}
-                    className="px-2.5 py-1.5 rounded-lg bg-slate-150 hover:bg-slate-200 text-slate-700 text-[10px] font-black uppercase tracking-wider cursor-pointer border-none"
+                    className="px-2.5 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-[10px] font-black uppercase tracking-wider cursor-pointer border-none"
                   >
                     Cancel
                   </button>
@@ -195,7 +194,7 @@ const HistoryView = ({
               ) : (
                 <button
                   onClick={() => setConfirmClearAll(true)}
-                  className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-50 hover:bg-rose-50/70 text-slate-500 hover:text-rose-650 border border-slate-200/60 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                  className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-50 hover:bg-rose-50/70 text-slate-500 hover:text-rose-600 border border-slate-200/60 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>Clear All</span>
@@ -204,7 +203,7 @@ const HistoryView = ({
             </div>
           )}
         </div>
-        <p className="text-[10px] sm:text-xs font-semibold text-slate-455 pl-0 sm:pl-[52px]">
+        <p className="text-[10px] sm:text-xs font-semibold text-slate-400 pl-0 sm:pl-[52px]">
           Manage and track your exam mock tests and practice sessions
         </p>
       </div>
@@ -318,7 +317,7 @@ const HistoryView = ({
                      e.stopPropagation();
                      setConfirmDeleteId(a.id);
                    }}
-                   className="delete-btn p-2 rounded-xl text-slate-350 hover:text-rose-650 hover:bg-rose-50/50 transition-all cursor-pointer border-none bg-transparent"
+                   className="delete-btn p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50/50 transition-all cursor-pointer border-none bg-transparent"
                    title="Delete from history"
                  >
                    <Trash2 className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
@@ -1140,35 +1139,47 @@ const Navbar = ({
       return;
     }
 
+    let ticking = false;
+
     const handleScroll = () => {
-      // Pause spy while a programmatic smooth-scroll is animating
-      if (isScrollingRef.current) return;
-
-      const sectionIds = ['exam-registry', 'exams', 'syllabus-paths', 'achievers-journal'];
-
-      // If we are at the very top of the page, clear active section
-      if (window.scrollY < 100) {
-        setActiveSection('');
-        return;
-      }
-
-      // Standard scroll-spy: iterate sections in REVERSE order.
-      // Find the LAST section whose top edge has scrolled above the trigger offset.
-      const NAVBAR_OFFSET = 100;
-
-      let currentActive = '';
-      for (let i = sectionIds.length - 1; i >= 0; i--) {
-        const id = sectionIds[i];
-        const el = document.getElementById(id);
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          if (rect.top <= NAVBAR_OFFSET) {
-            currentActive = id;
-            break;
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          // Pause spy while a programmatic smooth-scroll is animating
+          if (isScrollingRef.current) {
+            ticking = false;
+            return;
           }
-        }
+
+          const sectionIds = ['exam-registry', 'exams', 'syllabus-paths', 'achievers-journal'];
+
+          // If we are at the very top of the page, clear active section
+          if (window.scrollY < 100) {
+            setActiveSection('');
+            ticking = false;
+            return;
+          }
+
+          // Standard scroll-spy: iterate sections in REVERSE order.
+          // Find the LAST section whose top edge has scrolled above the trigger offset.
+          const NAVBAR_OFFSET = 100;
+
+          let currentActive = '';
+          for (let i = sectionIds.length - 1; i >= 0; i--) {
+            const id = sectionIds[i];
+            const el = document.getElementById(id);
+            if (el) {
+              const rect = el.getBoundingClientRect();
+              if (rect.top <= NAVBAR_OFFSET) {
+                currentActive = id;
+                break;
+              }
+            }
+          }
+          setActiveSection(currentActive);
+          ticking = false;
+        });
+        ticking = true;
       }
-      setActiveSection(currentActive);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -1419,7 +1430,7 @@ const Navbar = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="absolute top-full left-0 right-0 bg-white/95 backdrop-blur-3xl border-b border-slate-200/40 shadow-2xl overflow-y-auto md:hidden max-h-[calc(100vh-70px)]"
+            className="absolute top-full left-0 right-0 bg-white/95 backdrop-blur-3xl border-b border-slate-200/40 shadow-2xl overflow-y-auto no-scrollbar md:hidden max-h-[calc(100vh-70px)]"
           >
             <div className="p-4 flex flex-col gap-2">
               {!user && (
@@ -2291,7 +2302,7 @@ const LandingPage = () => {
 };
 
 const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQuestionBanks, hasAccessTo, onLaunchMockTest, onLaunchBank, onViewExam, loadingExams }: any) => {
-  const { refreshProfile, syncEntitlements } = useAuth();
+  const { refreshProfile } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
   // Sync profile when the library is opened/mounted
@@ -2299,21 +2310,11 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
     refreshProfile().catch((err) => console.error("Error refreshing profile on mount:", err));
   }, []);
 
-  // Synchronize entitlements automatically when the catalog is loaded or user metadata changes
+  // Self-healing cleanup of deleted items from user purchases
+  // Disabled client-side destructive cleanup to protect entitlements of users when admin panel restructures or archives items.
   React.useEffect(() => {
-    if (!user || !profile || loadingExams || exams.length === 0) return;
-
-    const catalog = {
-      exams,
-      mockTests,
-      testSeries,
-      questionBanks: Object.values(dynamicQuestionBanks).flat()
-    };
-
-    syncEntitlements(catalog).catch((err: any) => {
-      console.error("Error synchronizing entitlements:", err);
-    });
-  }, [user, profile?.purchasedSeries, exams, testSeries, mockTests, dynamicQuestionBanks, loadingExams]);
+    // Entitlements are validated and healed directly from database user_purchases ledger in AuthContext.
+  }, [user, profile?.purchasedSeries]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -2414,7 +2415,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
   // 3. All question banks the user can access
   Object.values(dynamicQuestionBanks).flat().forEach((bank: any) => {
     const b = bank as any;
-    if (b.isPremium && hasAccessTo(b.id, b.examId) && !(profile.hasFullAccess || profile.role === 'admin')) {
+    if (b.isPremium && hasAccessTo(b) && !(profile.hasFullAccess || profile.role === 'admin')) {
       const section = getOrCreate(b.examId || '_misc');
       if (!section.questionBanks.find((q: any) => q.id === b.id)) {
         section.questionBanks.push(b);
@@ -2726,11 +2727,11 @@ const OnboardingModal = ({
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        className="bg-[#FAF8F5] border-2 border-slate-900 rounded-[2.5rem] p-6 sm:p-10 max-w-lg w-full shadow-[8px_8px_0px_rgba(0,0,0,1)] relative overflow-hidden"
+        className="bg-[#FAF8F5] border-2 border-slate-900 rounded-[2.5rem] p-6 sm:p-10 max-w-lg w-full shadow-[8px_8px_0px_rgba(0,0,0,1)] relative overflow-hidden max-h-[90vh] flex flex-col"
       >
         <div className="absolute inset-0 pointer-events-none border-[12px] border-slate-900/5 rounded-[2.5rem]" />
         
-        <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
+        <form onSubmit={handleSubmit} className="space-y-8 relative z-10 flex-1 overflow-y-auto no-scrollbar smooth-scroll-gpu pr-1 py-1">
           <div className="text-center space-y-3">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#8A1C36]/10 text-[#8A1C36] rounded-full text-xs font-black uppercase tracking-wider border border-[#8A1C36]/20">
               <Target className="w-3.5 h-3.5" />
@@ -2838,7 +2839,7 @@ const OnboardingModal = ({
 };
 
 const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activities = [], onNavigate, onActivityLogged, selectedExam: propsSelectedExam, setSelectedExam: propsSetSelectedExam }: { isGuest?: boolean, onSignIn?: () => void, mainTab?: string, user?: any, activities?: any[], onNavigate?: (tab: any) => void, onActivityLogged?: () => void, selectedExam?: string | null, setSelectedExam?: (val: string | null) => void }) => {
-  const { profile, isAdmin, hasFullAccess, grantFullAccess, hasAccessTo, unlockItem, guestUsage, incrementGuestUsage, syncEntitlements } = useAuth();
+  const { profile, isAdmin, hasFullAccess, grantFullAccess, hasAccessTo, unlockItem, guestUsage, incrementGuestUsage } = useAuth();
   const navigate = useNavigate();
   const [dynamicQuestionBanks, setDynamicQuestionBanks] = useState<Record<string, any[]>>(() => _dashboardCache.dynamicQuestionBanks);
   const [exams, setExams] = useState<any[]>(() => _dashboardCache.exams);
@@ -2947,22 +2948,6 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     }
   }, [user]);
 
-  // Synchronize entitlements automatically when the catalog is loaded or user metadata changes
-  useEffect(() => {
-    if (!user || !profile || loadingExams || exams.length === 0) return;
-
-    const catalog = {
-      exams,
-      mockTests,
-      testSeries,
-      questionBanks: Object.values(dynamicQuestionBanks).flat()
-    };
-
-    syncEntitlements(catalog).catch((err: any) => {
-      console.error("Error synchronizing entitlements on dashboard mount:", err);
-    });
-  }, [user, profile?.purchasedSeries, exams, testSeries, mockTests, dynamicQuestionBanks, loadingExams]);
-
 
 
   const [activeTest, setActiveTest] = useState<any | null>(null);
@@ -2978,6 +2963,24 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     }
     return () => document.body.removeAttribute('data-test-mode');
   }, [activeTest]);
+
+  // Recovery Effect: Automatically restore active test state on page reload
+  useEffect(() => {
+    try {
+      const rawState = sessionStorage.getItem('oep_activeTestState');
+      if (rawState) {
+        const parsed = JSON.parse(rawState);
+        const currentUserId = user?.id || null;
+        if (currentUserId && parsed.userId === currentUserId && parsed.test) {
+          console.log('[Recovery] Restoring active test session:', parsed.resumeSessionId);
+          setActiveTest(parsed.test);
+          setActiveTestState(parsed);
+        }
+      }
+    } catch (e) {
+      console.error('[Recovery] Failed to restore active test state:', e);
+    }
+  }, [user]);
   const [testResults, setTestResults] = useState<any | null>(null);
 
   const handleViewResults = async (results: any) => {
@@ -3034,7 +3037,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="bg-[#FAF8F5] rounded-[2rem] w-[95%] sm:w-[90%] md:w-full max-w-sm md:max-w-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] flex flex-col md:flex-row border border-slate-200/50 relative"
+                className="bg-[#FAF8F5] rounded-[2rem] w-[95%] sm:w-[90%] md:w-full max-w-sm md:max-w-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] flex flex-col md:flex-row border border-slate-200/50 relative max-h-[90vh] md:max-h-[85vh]"
               >
                 {/* Unified Close Button (Adaptive theme based on viewport layout context) */}
                 <button 
@@ -3113,7 +3116,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 </div>
                 
                 {/* Right Column: Metadata, List & Actions */}
-                <div className="relative md:w-[62%] p-6 md:p-8 flex flex-col justify-between relative overflow-hidden">
+                <div className="relative md:w-[62%] p-6 md:p-8 flex flex-col relative overflow-y-auto no-scrollbar smooth-scroll-gpu max-h-full flex-1">
                   {/* Subtle grid background */}
                   <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" />
 
@@ -3194,7 +3197,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                   setShowLoginPrompt(true);
                                   return;
                                 }
-                                if (selectedBankItem.isPremium && !hasAccessTo(selectedBankItem.id, selectedBankItem.examId)) {
+                                if (selectedBankItem.isPremium && !hasAccessTo(selectedBankItem)) {
                                   setPaywallPrice(selectedBankItem.price || 499);
                                   setPaywallOriginalPrice(selectedBankItem.originalPrice || ((selectedBankItem.price || 499) * 2));
                                   setPaywallItemTitle(selectedBankItem.title || 'Premium Content');
@@ -3205,6 +3208,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                     'Advanced Performance Analytics'
                                   ]);
                                   setPaywallItemId(selectedBankItem.id);
+                                  setPaywallProductType('question_bank');
                                   setShowPaywall(true);
                                 } else {
                                   const currentExamName = exams.find((e: any) => e.id === selectedExam)?.name || 'General';
@@ -3241,10 +3245,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                 </div>
                               </div>
                               
-                              {selectedBankItem.isPremium && !hasAccessTo(selectedBankItem.id, selectedBankItem.examId) ? (
-                                <Lock className="w-4 h-4 text-slate-350 group-hover:text-[#8A1C36] transition-colors" />
+                              {selectedBankItem.isPremium && !hasAccessTo(selectedBankItem) ? (
+                                <Lock className="w-4 h-4 text-slate-400 group-hover:text-[#8A1C36] transition-colors" />
                               ) : (
-                                <ChevronRight className="w-4 h-4 text-slate-350 group-hover:text-[#8A1C36] group-hover:translate-x-1 transition-all" />
+                                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#8A1C36] group-hover:translate-x-1 transition-all" />
                               )}
                             </motion.button>
                           ))
@@ -3276,7 +3280,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                             return;
                           }
 
-                          if (selectedBankItem.isPremium && !hasAccessTo(selectedBankItem.id, selectedBankItem.examId)) {
+                          if (selectedBankItem.isPremium && !hasAccessTo(selectedBankItem)) {
                             setPaywallPrice(selectedBankItem.price || 499);
                             setPaywallOriginalPrice(selectedBankItem.originalPrice || ((selectedBankItem.price || 499) * 2));
                             setPaywallItemTitle(selectedBankItem.title || 'Premium Content');
@@ -3287,6 +3291,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                               'Advanced Performance Analytics'
                             ]);
                             setPaywallItemId(selectedBankItem.id);
+                            setPaywallProductType('question_bank');
                             setShowPaywall(true);
                           } else {
                             setSelectedBankItem(null);
@@ -3307,7 +3312,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                             <Clock className="w-4 h-4 mr-2" />
                             Coming Soon
                           </>
-                        ) : selectedBankItem.isPremium && !hasAccessTo(selectedBankItem.id, selectedBankItem.examId) ? (
+                        ) : selectedBankItem.isPremium && !hasAccessTo(selectedBankItem) ? (
                           <>
                             <Lock className="w-4 h-4 mr-2" />
                             Unlock to Practice
@@ -3348,7 +3353,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 <div className="absolute -top-40 -left-40 w-96 h-96 bg-brand-500/10 rounded-full blur-[100px] pointer-events-none" />
                 <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
 
-                <div className="p-5 sm:p-7 md:p-9 overflow-y-auto no-scrollbar md:custom-scrollbar relative z-10 flex flex-col">
+                <div className="p-5 sm:p-7 md:p-9 overflow-y-auto no-scrollbar relative z-10 flex flex-col">
                   <div className="flex justify-between items-start mb-6 md:mb-8 border-b border-slate-100 pb-5">
                     <div className="flex items-center gap-3.5">
                       <div className="w-12 h-12 premium-gradient rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-brand-500/10">
@@ -3460,10 +3465,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           onChange={(val) => setPracticeSettings({...practiceSettings, topic: val})}
                           disabled={!practiceSettings.category}
                           options={(dynamicQuestionBanks[practiceSettings.category] || [])
-                            .filter((item: any) => item.examId === practiceSettings.examId)
+                            .filter((item: any) => item.examId === practiceSettings.examId && (!item.is_archived || hasAccessTo(item)))
                             .map((item: any) => ({
                               value: item.id,
-                              label: `${item.title} ${item.isPremium && !hasAccessTo(item.id, item.examId) ? '(Premium)' : ''}`
+                              label: `${item.title} ${item.isPremium && !hasAccessTo(item) ? '(Premium)' : ''}`
                             }))}
                           placeholder="Choose a topic..."
                           searchPlaceholder="Search topics..."
@@ -3487,7 +3492,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         )}
                       </div>
                       {!practiceSettings.topic ? (
-                        <div className="w-full py-9 rounded-2xl border border-dashed border-slate-250 bg-slate-50/30 text-slate-400 font-bold text-center text-xs md:text-sm flex flex-col items-center justify-center gap-2 shadow-sm transition-all duration-300">
+                        <div className="w-full py-9 rounded-2xl border border-dashed border-slate-300 bg-slate-50/30 text-slate-400 font-bold text-center text-xs md:text-sm flex flex-col items-center justify-center gap-2 shadow-sm transition-all duration-300">
                           <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
                             <Lock className="w-4 h-4 text-slate-400" />
                           </div>
@@ -3495,7 +3500,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         </div>
                       ) : topicMaxQuestions === 0 ? (
                         <div className="w-full py-9 rounded-2xl border border-dashed border-rose-200 bg-rose-50/20 text-rose-500 font-bold text-center text-xs md:text-sm flex flex-col items-center justify-center gap-2 shadow-sm transition-all duration-300">
-                          <div className="w-9 h-9 bg-rose-50 rounded-full flex items-center justify-center text-rose-450">
+                          <div className="w-9 h-9 bg-rose-50 rounded-full flex items-center justify-center text-rose-400">
                             <AlertCircle className="w-4 h-4 text-rose-500" />
                           </div>
                           <div className="text-rose-500 font-extrabold text-[11px] uppercase tracking-wider">No questions available yet</div>
@@ -3550,7 +3555,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         </label>
                       </div>
                       {!practiceSettings.topic ? (
-                        <div className="w-full py-9 rounded-2xl border border-dashed border-slate-250 bg-slate-50/30 text-slate-400 font-bold text-center text-xs md:text-sm flex flex-col items-center justify-center gap-2 shadow-sm transition-all duration-300">
+                        <div className="w-full py-9 rounded-2xl border border-dashed border-slate-300 bg-slate-50/30 text-slate-400 font-bold text-center text-xs md:text-sm flex flex-col items-center justify-center gap-2 shadow-sm transition-all duration-300">
                           <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
                             <Lock className="w-4 h-4 text-slate-400" />
                           </div>
@@ -3569,7 +3574,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           <div className="flex items-center justify-between mb-4">
                             <span className="text-2xl font-black text-indigo-950 tracking-tight flex items-baseline gap-1">
                               {practiceSettings.timeLimit}
-                              <span className="text-xs font-semibold text-slate-450">minutes</span>
+                              <span className="text-xs font-semibold text-slate-400">minutes</span>
                             </span>
                             <span className="text-[10px] font-extrabold text-indigo-650 bg-indigo-50/80 border border-indigo-100/50 px-2 py-0.5 rounded-full">
                               Range: 1 - 180 min
@@ -3630,226 +3635,442 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         {/* Paywall Modal */}
         <AnimatePresence>
           {showPaywall && (
-            <div className="fixed inset-0 bg-slate-950/75 z-[250] flex items-center justify-center p-4 backdrop-blur-xl">
+            <div className="fixed inset-0 bg-slate-950/75 z-[250] flex items-center justify-center p-4 backdrop-blur-md">
               <motion.div 
                 initial={{ opacity: 0, scale: 0.95, y: 15 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 15 }}
                 transition={{ type: 'spring', stiffness: 350, damping: 28 }}
-                className="relative overflow-hidden rounded-[2.5rem] p-[1px] bg-gradient-to-b from-white/15 via-white/5 to-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] w-full max-w-md"
+                className="relative overflow-hidden rounded-[2.5rem] p-[1px] bg-gradient-to-b from-white/15 via-white/5 to-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] w-full max-w-md max-h-[90vh] flex flex-col"
               >
                 {/* Background ambient light */}
                 <div className="absolute top-0 left-1/4 w-[180px] h-[180px] bg-brand-500/10 rounded-full blur-[50px] pointer-events-none" />
                 <div className="absolute bottom-0 right-1/4 w-[180px] h-[180px] bg-indigo-500/10 rounded-full blur-[50px] pointer-events-none" />
 
-                <div className="bg-[#0B0F19] rounded-[2.45rem] p-6 sm:p-8 relative overflow-hidden flex flex-col">
+                <div className="bg-[#0B0F19] rounded-[2.45rem] p-6 sm:p-8 relative overflow-hidden flex flex-col max-h-full flex-1">
                   {/* Close button with subtle outline */}
-                  <button 
-                    onClick={() => { setShowPaywall(false); setPaywallItemId(null); }}
-                    className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 hover:scale-105 active:scale-95 transition-all z-20"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-
-                  <div className="text-center space-y-6">
-                    {/* Pulsing visual badge */}
-                    <motion.div 
-                      animate={{ y: [0, -4, 0] }}
-                      transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-                      className="w-16 h-16 bg-gradient-to-tr from-brand-600 via-brand-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-[0_8px_25px_rgba(138,28,54,0.3)] border border-white/10 relative group"
-                    >
-                      <Award className="text-white w-8 h-8 filter drop-shadow-[0_2px_8px_rgba(255,255,255,0.25)]" />
-                      <div className="absolute inset-0 border border-brand-400/25 rounded-2xl animate-ping opacity-25 pointer-events-none" />
-                    </motion.div>
-                    
-                    <div className="space-y-2">
-                      <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight px-1 font-sans">
-                        {paywallItemTitle.includes('Full Access') ? (
-                          <>Unlock <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-pink-200 to-indigo-300">Full Access</span></>
-                        ) : (
-                          <>Unlock <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-pink-200 to-indigo-300">{paywallItemTitle}</span></>
-                        )}
-                      </h2>
-                      <p className="text-slate-400 text-xs sm:text-sm font-medium leading-relaxed max-w-sm mx-auto">
-                        {paywallItemTitle.includes('Full Access') 
-                          ? 'Unlock full lifetime access to all Question Banks, Practice Mode, Premium Mock Tests, PDF notes, and any future content added to this exam.' 
-                          : `Unlock full lifetime access to this specific premium content, including detailed solutions and any future updates.`
-                        }
-                      </p>
-                    </div>
-
-                    {/* Features Panel */}
-                    <motion.div 
-                      initial="hidden"
-                      animate="show"
-                      variants={{
-                        hidden: { opacity: 0 },
-                        show: {
-                          opacity: 1,
-                          transition: { staggerChildren: 0.06 }
-                        }
+                  {paymentState === 'idle' && (
+                    <button 
+                      onClick={() => { 
+                        setShowPaywall(false); 
+                        setPaywallItemId(null); 
+                        setPaymentState('idle');
+                        setPaymentError(null);
                       }}
-                      className="space-y-3.5 text-left bg-white/[0.02] border border-white/[0.06] p-5 rounded-[1.5rem] backdrop-blur-md"
+                      className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 hover:scale-105 active:scale-95 transition-all z-20"
                     >
-                      {paywallFeatures.map((benefit, i) => (
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+
+                  <AnimatePresence mode="wait">
+                    {paymentState === 'idle' && (
+                      <motion.div 
+                        key="idle"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.25 }}
+                        className="text-center space-y-6 overflow-y-auto no-scrollbar smooth-scroll-gpu flex-1 pr-1 py-2 mt-4"
+                      >
+                        {/* Pulsing visual badge */}
                         <motion.div 
-                          key={i} 
-                          variants={{
-                            hidden: { opacity: 0, x: -8 },
-                            show: { opacity: 1, x: 0 }
-                          }}
-                          className="flex items-center gap-3 text-slate-200 font-bold"
+                          animate={{ y: [0, -4, 0] }}
+                          transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+                          className="w-16 h-16 bg-gradient-to-tr from-brand-600 via-brand-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-[0_8px_25px_rgba(138,28,54,0.3)] border border-white/10 relative group"
                         >
-                          <div className="w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                          </div>
-                          <span className="text-xs sm:text-sm tracking-wide">{benefit}</span>
+                          <Award className="text-white w-8 h-8 filter drop-shadow-[0_2px_8px_rgba(255,255,255,0.25)]" />
+                          <div className="absolute inset-0 border border-brand-400/25 rounded-2xl animate-ping opacity-25 pointer-events-none" />
                         </motion.div>
-                      ))}
-                    </motion.div>
-
-                    {/* Pricing Block */}
-                    <div className="space-y-4 pt-1">
-                      <div className="flex flex-col items-center justify-center">
-                        <div className="flex items-end justify-center gap-2.5 mb-1.5">
-                          <span className="text-lg sm:text-xl font-bold text-slate-500 line-through mb-1 font-mono">₹{paywallOriginalPrice}</span>
-                          <span className="text-4xl sm:text-5xl font-black text-white font-mono tracking-tighter">₹{paywallPrice}</span>
-                        </div>
-                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3.5 py-1.5 rounded-full border border-emerald-500/20">
-                          {Math.round(((paywallOriginalPrice - paywallPrice) / paywallOriginalPrice) * 100)}% OFF • Lifetime Access
-                        </span>
-                      </div>
-
-                      {/* CTA Button */}
-                      <Button 
-                        className="w-full h-13 rounded-2xl text-base font-black bg-gradient-to-r from-brand-600 via-brand-500 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white shadow-[0_8px_30px_rgba(138,28,54,0.3)] hover:shadow-[0_15px_45px_rgba(138,28,54,0.5)] group/btn relative overflow-hidden transition-all duration-300 active:scale-[0.98] border border-white/10"
-                        onClick={async () => {
-                        try {
-                          const res = await loadRazorpay();
-                          if (!res) {
-                            alert('Failed to load payment gateway SDK. Please check your internet connection.');
-                            return;
-                          }
-
-                          // 1. Create order on the server
-                          const orderRes = await fetch('/api/payment/order', {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                              itemId: paywallItemId || 'site_wide_full_access',
-                              currency: 'INR'
-                            })
-                          });
-
-                          let orderData;
-                          const orderText = await orderRes.text();
-                          try {
-                            orderData = orderText ? JSON.parse(orderText) : {};
-                          } catch (e) {
-                            throw new Error(`Invalid response from server. Status: ${orderRes.status}. If you just updated the server, please restart the dev server (npm run dev).`);
-                          }
-
-                          if (!orderRes.ok) {
-                            throw new Error(orderData.message || `Failed to create payment order (status ${orderRes.status}).`);
-                          }
-
-                          if (!orderData.orderId) {
-                            throw new Error('Server did not return a valid order ID. Please verify your Razorpay API key configurations in .env and restart your dev server.');
-                          }
-
-                          // 2. Open Razorpay checkout with the orderId
-                          const options = {
-                            key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_StcJAJY1MgRGmJ',
-                            amount: orderData.amount,
-                            currency: orderData.currency,
-                            name: 'OdishaExamPrep Premium',
-                            description: paywallItemTitle === 'Full Access' ? 'Unlock Full Access' : `Unlock ${paywallItemTitle}`,
-                            order_id: orderData.orderId,
-                            handler: async function (response: any) {
-                              try {
-                                // 3. Verify payment signature on the server
-                                const verifyRes = await fetch('/api/payment/verify', {
-                                  method: 'POST',
-                                  headers: {
-                                    'Content-Type': 'application/json'
-                                  },
-                                  body: JSON.stringify({
-                                    razorpay_order_id: response.razorpay_order_id,
-                                    razorpay_payment_id: response.razorpay_payment_id,
-                                    razorpay_signature: response.razorpay_signature
-                                  })
-                                });
-
-                                let verifyData;
-                                const verifyText = await verifyRes.text();
-                                try {
-                                  verifyData = verifyText ? JSON.parse(verifyText) : {};
-                                } catch (e) {
-                                  throw new Error(`Invalid verification response from server. Status: ${verifyRes.status}`);
-                                }
-
-                                if (!verifyRes.ok) {
-                                  throw new Error(verifyData.message || 'Payment verification failed.');
-                                }
-                                if (verifyData.success) {
-                                  const paymentDetails = {
-                                    pricePaid: paywallPrice,
-                                    orderId: response.razorpay_order_id,
-                                    paymentId: response.razorpay_payment_id
-                                  };
-                                  if (paywallItemId) {
-                                    await unlockItem(paywallItemId, paymentDetails);
-                                  } else {
-                                    await grantFullAccess(paymentDetails);
-                                  }
-                                  setShowPaywall(false);
-                                  setPaywallItemId(null);
-                                } else {
-                                  alert('Payment verification failed. Please contact support.');
-                                }
-                              } catch (err: any) {
-                                console.error('Verification error:', err);
-                                alert('Error verifying payment: ' + err.message);
-                              }
-                            },
-                            prefill: {
-                              name: profile?.displayName || '',
-                              email: profile?.email || ''
-                            },
-                            theme: { color: '#4f46e5' },
-                            modal: {
-                              ondismiss: function () {
-                                console.log('Payment checkout closed');
-                              }
+                        
+                        <div className="space-y-2">
+                          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight px-1 font-sans">
+                            {paywallItemTitle.includes('Full Access') ? (
+                              <>Unlock <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-pink-200 to-indigo-300">Full Access</span></>
+                            ) : (
+                              <>Unlock <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-pink-200 to-indigo-300">{paywallItemTitle}</span></>
+                            )}
+                          </h2>
+                          <p className="text-slate-400 text-xs sm:text-sm font-medium leading-relaxed max-w-sm mx-auto">
+                            {paywallItemTitle.includes('Full Access') 
+                              ? 'Unlock full lifetime access to all Question Banks, Practice Mode, Premium Mock Tests, PDF notes, and any future content added to this exam.' 
+                              : `Unlock full lifetime access to this specific premium content, including detailed solutions and any future updates.`
                             }
-                          };
+                          </p>
+                        </div>
 
-                          const rzp = new (window as any).Razorpay(options);
-                          rzp.open();
-                        } catch (err: any) {
-                          console.error('Payment initialization failed:', err);
-                          alert('Payment initialization failed: ' + err.message);
-                        }
-                      }}
-                    >
-                      {/* Button Shine Effect */}
-                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 z-10" />
+                        {/* Features Panel */}
+                        <motion.div 
+                          initial="hidden"
+                          animate="show"
+                          variants={{
+                            hidden: { opacity: 0 },
+                            show: {
+                              opacity: 1,
+                              transition: { staggerChildren: 0.06 }
+                            }
+                          }}
+                          className="space-y-3.5 text-left bg-white/[0.02] border border-white/[0.06] p-5 rounded-[1.5rem] backdrop-blur-md"
+                        >
+                          {paywallFeatures.map((benefit, i) => (
+                            <motion.div 
+                              key={i} 
+                              variants={{
+                                hidden: { opacity: 0, x: -8 },
+                                show: { opacity: 1, x: 0 }
+                              }}
+                              className="flex items-center gap-3 text-slate-200 font-bold"
+                            >
+                              <div className="w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                              </div>
+                              <span className="text-xs sm:text-sm tracking-wide">{benefit}</span>
+                            </motion.div>
+                          ))}
+                        </motion.div>
 
-                      <span className="relative z-10 flex items-center justify-center gap-2">
-                        Unlock Now
-                        <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
-                      </span>
-                    </Button>
+                        {/* Pricing Block */}
+                        <div className="space-y-4 pt-1">
+                          <div className="flex flex-col items-center justify-center">
+                            <div className="flex items-end justify-center gap-2.5 mb-1.5">
+                              <span className="text-lg sm:text-xl font-bold text-slate-500 line-through mb-1 font-mono">₹{paywallOriginalPrice}</span>
+                              <span className="text-4xl sm:text-5xl font-black text-white font-mono tracking-tighter">₹{paywallPrice}</span>
+                            </div>
+                            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3.5 py-1.5 rounded-full border border-emerald-500/20">
+                              {Math.round(((paywallOriginalPrice - paywallPrice) / paywallOriginalPrice) * 100)}% OFF • Lifetime Access
+                            </span>
+                          </div>
 
-                    {/* Secure Info Footer */}
-                    <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 font-semibold pt-1">
-                      <Lock className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Secure payment via Razorpay • Instant Activation</span>
-                    </div>
-                  </div>
-                </div>
+                          {/* CTA Button */}
+                          <Button 
+                            className="w-full h-13 rounded-2xl text-base font-black bg-gradient-to-r from-brand-600 via-brand-500 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white shadow-[0_8px_30px_rgba(138,28,54,0.3)] hover:shadow-[0_15px_45px_rgba(138,28,54,0.5)] group/btn relative overflow-hidden transition-all duration-300 active:scale-[0.98] border border-white/10"
+                            onClick={async () => {
+                            try {
+                              const res = await loadRazorpay();
+                              if (!res) {
+                                alert('Failed to load payment gateway SDK. Please check your internet connection.');
+                                // Reset paymentState just in case
+                                setPaymentState('idle');
+                                return;
+                              }
+
+                              // 1. Create order on the server
+                              const orderRes = await fetch('/api/payment/order', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                  productId: paywallItemId || 'full_access',
+                                  productType: paywallProductType,
+                                  userId: profile?.uid || 'unknown',
+                                  currency: 'INR'
+                                })
+                              });
+
+                              let orderData;
+                              const orderText = await orderRes.text();
+                              try {
+                                orderData = orderText ? JSON.parse(orderText) : {};
+                              } catch (e) {
+                                throw new Error(`Invalid response from server. Status: ${orderRes.status}. If you just updated the server, please restart the dev server (npm run dev).`);
+                              }
+
+                              if (!orderRes.ok) {
+                                throw new Error(orderData.message || `Failed to create payment order (status ${orderRes.status}).`);
+                              }
+
+                              if (!orderData.orderId) {
+                                throw new Error('Server did not return a valid order ID. Please verify your Razorpay API key configurations in .env and restart your dev server.');
+                              }
+
+                              // 2. Open Razorpay checkout with the orderId
+                              const options = {
+                                key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_StcJAJY1MgRGmJ',
+                                amount: orderData.amount,
+                                currency: orderData.currency,
+                                name: 'OdishaExamPrep Premium',
+                                description: paywallItemTitle === 'Full Access' ? 'Unlock Full Access' : `Unlock ${paywallItemTitle}`,
+                                order_id: orderData.orderId,
+                                handler: async function (response: any) {
+                                  try {
+                                    setPaymentState('processing');
+                                    setPaymentError(null);
+                                    // 3. Verify payment signature on the server and record secure entitlement
+                                    const verifyRes = await fetch('/api/payment/verify', {
+                                      method: 'POST',
+                                      headers: {
+                                        'Content-Type': 'application/json'
+                                      },
+                                      body: JSON.stringify({
+                                        razorpay_order_id: response.razorpay_order_id,
+                                        razorpay_payment_id: response.razorpay_payment_id,
+                                        razorpay_signature: response.razorpay_signature,
+                                        userId: profile?.uid,
+                                        productId: paywallItemId || 'full_access',
+                                        productType: paywallProductType,
+                                        pricePaid: paywallPrice,
+                                        snapshot: {
+                                          id: paywallItemId || 'full_access',
+                                          title: paywallItemTitle,
+                                          price: paywallPrice
+                                        }
+                                      })
+                                    });
+
+                                    let verifyData;
+                                    const verifyText = await verifyRes.text();
+                                    try {
+                                      verifyData = verifyText ? JSON.parse(verifyText) : {};
+                                    } catch (e) {
+                                      throw new Error(`Invalid verification response from server. Status: ${verifyRes.status}`);
+                                    }
+
+                                    if (!verifyRes.ok) {
+                                      throw new Error(verifyData.message || 'Payment verification failed.');
+                                    }
+                                    if (verifyData.success) {
+                                      setPaymentState('success');
+                                      if (paywallItemId) {
+                                        await unlockItem(paywallItemId);
+                                      } else {
+                                        await grantFullAccess();
+                                      }
+                                      setTimeout(() => {
+                                        setShowPaywall(false);
+                                        setPaywallItemId(null);
+                                        setPaymentState('idle');
+                                      }, 2000);
+                                    } else {
+                                      throw new Error(verifyData.message || 'Payment verification failed.');
+                                    }
+                                  } catch (err: any) {
+                                    console.error('Verification error:', err);
+                                    setPaymentState('error');
+                                    setPaymentError(err.message || 'Payment verification failed.');
+                                  }
+                                },
+                                prefill: {
+                                  name: profile?.displayName || '',
+                                  email: profile?.email || ''
+                                },
+                                theme: { color: '#4f46e5' },
+                                modal: {
+                                  ondismiss: function () {
+                                    console.log('Payment checkout closed');
+                                  }
+                                }
+                              };
+
+                              const rzp = new (window as any).Razorpay(options);
+                              rzp.open();
+                            } catch (err: any) {
+                              console.error('Payment initialization failed:', err);
+                              alert('Payment initialization failed: ' + err.message);
+                            }
+                          }}
+                          >
+                            {/* Button Shine Effect */}
+                            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 z-10" />
+
+                            <span className="relative z-10 flex items-center justify-center gap-2">
+                              Unlock Now
+                              <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+                            </span>
+                          </Button>
+
+                          {/* Secure Info Footer */}
+                          <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 font-semibold pt-1">
+                            <Lock className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Secure payment via Razorpay • Instant Activation</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {paymentState === 'processing' && (
+                      <motion.div
+                        key="processing"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-center space-y-8 py-10 flex-1 flex flex-col justify-center items-center"
+                      >
+                        {/* Glowing progress ring */}
+                        <div className="relative w-24 h-24 flex items-center justify-center">
+                          {/* Pulsing outer aura */}
+                          <div className="absolute inset-0 bg-brand-500/20 rounded-full blur-xl animate-pulse" />
+                          {/* Spinning border ring */}
+                          <div className="absolute inset-0 border-4 border-white/5 rounded-full" />
+                          <motion.div 
+                            animate={{ rotate: 360 }}
+                            transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
+                            className="absolute inset-0 border-4 border-t-brand-500 border-r-indigo-500 border-b-transparent border-l-transparent rounded-full shadow-[0_0_15px_rgba(138,28,54,0.4)]"
+                          />
+                          <Lock className="w-8 h-8 text-slate-400 animate-bounce" />
+                        </div>
+
+                        <div className="space-y-3">
+                          <h3 className="text-xl font-extrabold text-white tracking-tight">Confirming Purchase...</h3>
+                          <p className="text-slate-400 text-xs max-w-xs mx-auto leading-relaxed">
+                            Please do not close this window, refresh the page, or click back. We are verifying your transaction signature securely.
+                          </p>
+                        </div>
+
+                        {/* Verification steps animation */}
+                        <div className="w-full max-w-xs bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4 text-left space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-5 h-5 rounded-full bg-emerald-500/25 border border-emerald-500/50 flex items-center justify-center shrink-0">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            </div>
+                            <span className="text-xs font-bold text-slate-200">Secure Payment Received</span>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <div className="w-5 h-5 rounded-full border border-brand-500/50 flex items-center justify-center shrink-0 animate-pulse bg-brand-500/10">
+                              <RotateCw className="w-3 h-3 text-brand-400 animate-spin" />
+                            </div>
+                            <span className="text-xs font-black text-white">Cryptographic Verification</span>
+                          </div>
+
+                          <div className="flex items-center gap-3 opacity-40">
+                            <div className="w-5 h-5 rounded-full border border-slate-600 flex items-center justify-center shrink-0 text-slate-500">
+                              <span className="text-[9px] font-black">3</span>
+                            </div>
+                            <span className="text-xs font-bold text-slate-400">Activating Lifetime Access</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {paymentState === 'success' && (
+                      <motion.div
+                        key="success"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-center space-y-8 py-10 flex-1 flex flex-col justify-center items-center"
+                      >
+                        {/* Celebrate circle checkmark */}
+                        <div className="relative w-24 h-24 flex items-center justify-center">
+                          {/* Pulsing successful aura */}
+                          <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl" />
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                            className="w-20 h-20 bg-gradient-to-tr from-emerald-600 to-teal-500 rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(16,185,129,0.3)] border border-white/10"
+                          >
+                            <ShieldCheck className="w-10 h-10 text-white" />
+                          </motion.div>
+                          
+                          {/* Animated Sparkles popping out */}
+                          <motion.div 
+                            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.8, 0.3] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                            className="absolute -top-1 -right-1"
+                          >
+                            <Sparkles className="w-5 h-5 text-amber-300" />
+                          </motion.div>
+                          <motion.div 
+                            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.8, 0.3] }}
+                            transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                            className="absolute -bottom-1 -left-1"
+                          >
+                            <Sparkles className="w-4 h-4 text-pink-300" />
+                          </motion.div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300 tracking-tight leading-tight font-sans">Payment Verified!</h3>
+                          <p className="text-slate-400 text-xs max-w-xs mx-auto leading-relaxed font-medium">
+                            {paywallItemTitle === 'Full Access' 
+                              ? 'Your lifetime access package is activated! Unlocking all practice systems and mock tests now.' 
+                              : `Successfully unlocked: "${paywallItemTitle}". Enjoy your learning journey!`
+                            }
+                          </p>
+                        </div>
+
+                        {/* Completed Verification steps */}
+                        <div className="w-full max-w-xs bg-emerald-950/20 border border-emerald-500/20 rounded-2xl p-4 text-left space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-5 h-5 rounded-full bg-emerald-500/25 border border-emerald-500/50 flex items-center justify-center shrink-0">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            </div>
+                            <span className="text-xs font-bold text-slate-300">Secure Payment Received</span>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <div className="w-5 h-5 rounded-full bg-emerald-500/25 border border-emerald-500/50 flex items-center justify-center shrink-0">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            </div>
+                            <span className="text-xs font-bold text-slate-300">Cryptographic Verification</span>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <div className="w-5 h-5 rounded-full bg-emerald-500/25 border border-emerald-500/50 flex items-center justify-center shrink-0">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            </div>
+                            <span className="text-xs font-black text-emerald-400">Access Activated Successfully</span>
+                          </div>
+                        </div>
+
+                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-2 animate-pulse">
+                          <RotateCw className="w-3 h-3 animate-spin text-slate-500" />
+                          Redirecting to your course...
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {paymentState === 'error' && (
+                      <motion.div
+                        key="error"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-center space-y-6 py-6 flex-1 flex flex-col justify-center items-center"
+                      >
+                        <div className="relative w-20 h-20 flex items-center justify-center">
+                          <div className="absolute inset-0 bg-rose-500/20 rounded-full blur-xl animate-pulse" />
+                          <div className="w-16 h-16 bg-rose-500/10 border border-rose-500/35 rounded-2xl flex items-center justify-center text-rose-500 shadow-lg shadow-rose-950/20">
+                            <AlertCircle className="w-8 h-8" />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2.5">
+                          <h3 className="text-lg font-black text-rose-400 tracking-tight leading-tight">Verification Failed</h3>
+                          <p className="text-slate-400 text-xs max-w-xs mx-auto leading-relaxed">
+                            {paymentError || 'There was a problem verifying your purchase entitlement with our servers.'}
+                          </p>
+                        </div>
+
+                        {/* Customer Support Reassurance Card */}
+                        <div className="w-full max-w-xs bg-rose-950/15 border border-rose-500/15 p-4 rounded-xl text-left space-y-2">
+                          <h4 className="text-[10px] font-black text-rose-300 uppercase tracking-widest">Debited but not unlocked?</h4>
+                          <p className="text-[11px] text-slate-400 leading-normal font-medium">
+                            If the amount was deducted from your account, do not worry. Your money is safe. Please email us at <strong className="text-rose-200 font-bold select-all">support@odishaexamprep.com</strong> with your transaction ID, and our support team will unlock it manually within a few hours.
+                          </p>
+                        </div>
+
+                        <div className="flex flex-col gap-2 w-full max-w-xs">
+                          <Button 
+                            className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all active:scale-95 cursor-pointer"
+                            onClick={() => {
+                              setShowPaywall(false);
+                              setPaywallItemId(null);
+                              setPaymentState('idle');
+                              setPaymentError(null);
+                            }}
+                          >
+                            Close Overlay
+                          </Button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
               </div>
             </motion.div>
           </div>
@@ -3864,7 +4085,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 20, opacity: 0 }}
-                className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 space-y-6 shadow-2xl relative overflow-hidden"
+                className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 space-y-6 shadow-2xl relative overflow-y-auto no-scrollbar smooth-scroll-gpu max-h-[90vh] sm:max-h-[85vh] flex flex-col"
               >
                 {/* Decorative background orbs */}
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
@@ -3898,6 +4119,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   const [bankSearchQuery, setBankSearchQuery] = useState("");
   const [bankSortBy, setBankSortBy] = useState("Name");
   const [showPaywall, setShowPaywall] = useState(false);
+  const [paymentState, setPaymentState] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [paywallPrice, setPaywallPrice] = useState(499);
   const [paywallOriginalPrice, setPaywallOriginalPrice] = useState(999);
   const [paywallItemTitle, setPaywallItemTitle] = useState('Full Access');
@@ -3908,6 +4131,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     'Advanced Performance Analytics'
   ]);
   const [paywallItemId, setPaywallItemId] = useState<string | null>(null);
+  const [paywallProductType, setPaywallProductType] = useState<string>('full_access');
   const [loadingPractice, setLoadingPractice] = useState(false);
   const [topicMaxQuestions, setTopicMaxQuestions] = useState<number>(0);
   const [practiceSettings, setPracticeSettings] = useState(() => {
@@ -3972,7 +4196,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     else sessionStorage.removeItem('oep_selectedMockCategory');
   }, [selectedMockCategory]);
   const actualExams = useMemo(() => {
-    return exams.filter(e => e.category !== 'blog' && e.category !== 'system' && !(e.name || '').startsWith('SYSTEM_SETTINGS_'));
+    return exams.filter(e => !e.is_archived && e.category !== 'blog' && e.category !== 'system' && !(e.name || '').startsWith('SYSTEM_SETTINGS_'));
   }, [exams]);
 
   useEffect(() => {
@@ -4004,21 +4228,216 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     fetchMaxQuestions();
   }, [practiceSettings.topic, practiceSettings.examId, selectedExam, dynamicQuestionBanks]);
 
-  // Start the Content Sync and Self-Recovery Engine
   useEffect(() => {
-    const engine = startSyncEngine({
-      setExams,
-      setMockTests,
-      setTestSeries,
-      setDynamicQuestionBanks,
-      setLoadingExams,
-      user
-    });
+    const fetchDashboardData = async () => {
+      // Skip re-fetch if we already fetched database updates in this session (e.g., from tab switching)
+      if (_dashboardCache.hasFetchedThisSession && _dashboardCache.loadedForUserId === (user?.id || 'guest') && _dashboardCache.exams.length > 0) {
+        // Data is already in state (from cache initializer) — just ensure loading is off
+        setLoadingExams(false);
+        return;
+      }
 
-    return () => {
-      engine.stop();
+      try {
+        // Use allSettled so one failing table doesn't block everything else.
+        // Use getAllMockTestsLite — metadata only, no question payloads.
+        // This prevents large question responses from timing out and breaking the dashboard.
+        const [examsResult, banksResult, seriesResult, testsResult] = await Promise.allSettled([
+          examService.getAllExams(),
+          examService.getAllQuestionBanks(),
+          examService.getAllTestSeries(),
+          examService.getAllMockTestsLite()
+        ]);
+
+        let fetchedExams   = examsResult.status   === 'fulfilled' ? examsResult.value   : [];
+        const fetchedBanks   = banksResult.status   === 'fulfilled' ? banksResult.value   : [];
+        const fetchedSeries  = seriesResult.status  === 'fulfilled' ? seriesResult.value  : [];
+        const fetchedTests   = testsResult.status   === 'fulfilled' ? testsResult.value   : [];
+
+        // Log any individual failures for debugging
+        [examsResult, banksResult, seriesResult, testsResult].forEach((r, i) => {
+          if (r.status === 'rejected') {
+            console.error(`fetchDashboardData[${i}] failed:`, r.reason);
+          }
+        });
+
+        // If exams returned empty, the JWT may be too large/stale.
+        // Force a session refresh to get a fresh JWT, then retry.
+        if (fetchedExams.length === 0) {
+          try {
+            const { supabase: sb } = await import('./lib/supabase');
+            await sb.auth.refreshSession();
+            await new Promise(r => setTimeout(r, 400)); // wait for auth to settle
+          } catch (e) {
+            console.warn('Session refresh before retry failed:', e);
+          }
+          const retry = await examService.getAllExams().catch(() => null);
+          if (retry && retry.length > 0) {
+            fetchedExams = retry;
+            console.log('fetchDashboardData: retry after refresh succeeded,', retry.length, 'exams loaded');
+          }
+        }
+
+        const finalExams = fetchedExams.length > 0
+          ? fetchedExams
+          : [{ id: 'opsc-aio', name: 'OPSC AIO', description: 'Odisha Public Service Commission All In One', icon: '🏛️', category: 'upcoming' }];
+
+        // Group banks by type
+        const groupedBanks: Record<string, any[]> = {};
+        fetchedBanks.forEach((bank: any) => {
+          if (!groupedBanks[bank.type]) groupedBanks[bank.type] = [];
+          let parsedTagline = { text: bank.tagline || '', price: 499 };
+          try { 
+            if (bank.tagline && bank.tagline.includes('{"text"')) {
+               parsedTagline = JSON.parse(bank.tagline);
+            }
+          } catch(e) {}
+          groupedBanks[bank.type].push({
+            id: bank.id,
+            title: bank.title,
+            questions: bank.questionCount,
+            tagline: parsedTagline.text,
+            price: parsedTagline.price || 499,
+            image: bank.image,
+            isPremium: bank.isPremium,
+            examId: bank.examId,
+            pdfUrl: bank.pdfUrl || '',
+            pdfLinks: (() => {
+              if (!bank.pdfUrl) return [];
+              try {
+                const parsed = JSON.parse(bank.pdfUrl);
+                if (Array.isArray(parsed)) return parsed;
+                return [{ title: 'Download PDF', url: bank.pdfUrl }];
+              } catch (e) {
+                return [{ title: 'Download PDF', url: bank.pdfUrl }];
+              }
+            })(),
+            hasPracticeMode: bank.hasPracticeMode,
+            is_archived: bank.is_archived || false
+          });
+        });
+
+        // Write to module-level cache before updating state
+        _dashboardCache.exams = finalExams;
+        _dashboardCache.testSeries = fetchedSeries || [];
+        _dashboardCache.mockTests = fetchedTests || [];
+        _dashboardCache.dynamicQuestionBanks = groupedBanks;
+        _dashboardCache.loadedForUserId = user?.id || 'guest';
+        _dashboardCache.hasFetchedThisSession = true;
+
+        // Save to sessionStorage for persistent SWR caching across reloads
+        try {
+          sessionStorage.setItem('oep_cached_exams', JSON.stringify(finalExams));
+          sessionStorage.setItem('oep_cached_testSeries', JSON.stringify(fetchedSeries || []));
+          sessionStorage.setItem('oep_cached_mockTests', JSON.stringify(fetchedTests || []));
+          sessionStorage.setItem('oep_cached_dynamicQuestionBanks', JSON.stringify(groupedBanks));
+          sessionStorage.setItem('oep_cached_loadedForUserId', user?.id || 'guest');
+        } catch (e) {}
+
+        // Update React state
+        setExams(finalExams);
+        setTestSeries(fetchedSeries || []);
+        setMockTests(fetchedTests || []);
+        setDynamicQuestionBanks(groupedBanks);
+
+        // Clean up activities in localStorage and state that belong to deleted exams/tests/banks
+        if (user?.id && finalExams.length > 1) {
+          const activeExamNames = new Set(finalExams.map((e: any) => e.name));
+          const activeMockTestIds = new Set((fetchedTests || []).map((t: any) => t.id));
+          const activeBankIds = new Set((fetchedBanks || []).map((b: any) => b.id));
+
+          try {
+            const localKey = `oep_activities_${user.id}`;
+            const localActivitiesStr = localStorage.getItem(localKey);
+            if (localActivitiesStr) {
+              const localActivities = JSON.parse(localActivitiesStr);
+              if (Array.isArray(localActivities)) {
+                const filtered = localActivities.filter((act: any) => {
+                  if (!act) return false;
+
+                  // 1. Filter out by examName (if deleted)
+                  const actExamName = act.metadata?.examName;
+                  if (actExamName && actExamName !== 'General' && !activeExamNames.has(actExamName)) {
+                    return false;
+                  }
+
+                  // 2. Filter out by mockTestId (if deleted)
+                  const testId = act.metadata?.test?.id;
+                  if (testId && !testId.startsWith('practice-') && (act.type === 'mock_test_completed' || act.type === 'test_incomplete')) {
+                    if (!activeMockTestIds.has(testId)) {
+                      return false;
+                    }
+                  }
+
+                  // 3. Filter out by bankId (if deleted)
+                  const bankId = act.metadata?.bankId;
+                  if (bankId && act.type === 'question_bank_accessed') {
+                    if (!activeBankIds.has(bankId)) {
+                      return false;
+                    }
+                  }
+
+                  return true;
+                });
+
+                if (filtered.length !== localActivities.length) {
+                  localStorage.setItem(localKey, JSON.stringify(filtered));
+                  
+                  // Sync updated activities to user cloud metadata
+                  const cloudPayload = filtered.slice(0, 50).map((a: any) => {
+                    try {
+                      const m = a.metadata || {};
+                      const lightMeta: any = {
+                        examName: m.examName,
+                        testCategory: m.testCategory,
+                        bankType: m.bankType,
+                        bankId: m.bankId,
+                        resumeSessionId: m.resumeSessionId,
+                      };
+                      if (a.type === 'test_incomplete') {
+                        lightMeta.currentQuestionIndex = m.currentQuestionIndex;
+                        lightMeta.timeLeft = m.timeLeft;
+                        if (m.test && typeof m.test === 'object') {
+                          lightMeta.test = {
+                            id: m.test.id,
+                            title: m.test.title,
+                            durationMinutes: m.test.durationMinutes,
+                            _questionCount: m.test._questionCount || (Array.isArray(m.test.questions) ? m.test.questions.length : 0),
+                          };
+                        }
+                        lightMeta.totalQuestions = m.totalQuestions || lightMeta.test?._questionCount || 0;
+                      }
+                      return { ...a, metadata: lightMeta };
+                    } catch {
+                      return { id: a.id, userId: a.userId, type: a.type, title: a.title, timestamp: a.timestamp, score: a.score, accuracy: a.accuracy };
+                    }
+                  });
+                  await supabase.auth.updateUser({
+                    data: { activities: cloudPayload },
+                  });
+
+                  if (onActivityLogged) onActivityLogged();
+                }
+              }
+            }
+          } catch (e) {
+            console.error("Error cleaning up local activities:", e);
+          }
+        }
+
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        // Even on total failure, show fallback so the grid is never empty
+        if (_dashboardCache.exams.length === 0) {
+          const fallback = [{ id: 'opsc-aio', name: 'OPSC AIO', description: 'Odisha Public Service Commission All In One', icon: '🏛️', category: 'upcoming' }];
+          _dashboardCache.exams = fallback;
+          setExams(fallback);
+        }
+      } finally {
+        setLoadingExams(false);
+      }
     };
-  }, [user]);
+    fetchDashboardData();
+  }, [user?.id]);
 
   const [examSearchQuery, setExamSearchQuery] = useState('');
 
@@ -4095,7 +4514,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       try { testExamId = JSON.parse(test.seriesId).examId || ''; } catch(e){}
     }
 
-    if (test.isPremium && !hasAccessTo(test.id, testExamId)) {
+    if (test.isPremium && !hasAccessTo(test, testExamId)) {
       setPaywallPrice(test.price || 499);
       setPaywallOriginalPrice(test.originalPrice || ((test.price || 499) * 2));
       setPaywallItemTitle(test.title || 'Premium Test');
@@ -4106,6 +4525,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         `Advanced Performance Analytics`
       ]);
       setPaywallItemId(test.id);
+      setPaywallProductType('mock_test');
       setShowPaywall(true);
       return;
     }
@@ -4170,7 +4590,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       // Access check: if the bank is premium, verify the user has purchased it OR has purchased
       // the exam bundle it belongs to. This ensures any new banks added to an exam the user already
       // purchased are automatically unlocked for that user.
-      if (topicBank?.isPremium && !hasAccessTo(topicBank.id, topicBank.examId)) {
+      if (topicBank?.isPremium && !hasAccessTo(topicBank)) {
         setPaywallPrice(topicBank.price || 499);
         setPaywallOriginalPrice(topicBank.originalPrice || ((topicBank.price || 499) * 2));
         setPaywallItemTitle(topicBank.title || 'Premium Bank');
@@ -4181,6 +4601,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           'Advanced Performance Analytics'
         ]);
         setPaywallItemId(topicBank.id);
+        setPaywallProductType('question_bank');
         setShowPaywall(true);
         setLoadingPractice(false);
         return;
@@ -4263,7 +4684,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          itemId: test.id,
+          productId: test.id,
+          productType: 'mock_test',
+          userId: profile?.uid || 'unknown',
           currency: 'INR'
         })
       });
@@ -4301,7 +4724,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               body: JSON.stringify({
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature
+                razorpay_signature: response.razorpay_signature,
+                userId: profile?.uid,
+                productId: test.id,
+                productType: 'mock_test',
+                pricePaid: price,
+                snapshot: test
               })
             });
 
@@ -4317,12 +4745,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               throw new Error(verifyData.message || 'Payment verification failed.');
             }
             if (verifyData.success) {
-              const paymentDetails = {
-                pricePaid: price,
-                orderId: response.razorpay_order_id,
-                paymentId: response.razorpay_payment_id
-              };
-              await unlockItem(test.id, paymentDetails);
+              await unlockItem(test.id);
               alert('Payment Successful and Verified! Course unlocked.');
             } else {
               alert('Payment verification failed. Please contact support.');
@@ -4374,6 +4797,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         test={activeTest} 
         initialState={activeTestState}
         onExit={(progressState) => {
+          sessionStorage.removeItem('oep_activeTestState');
           setActiveTest(null);
           setActiveTestState(null);
           // Log as incomplete whenever the user exits a test — even if they answered 0 questions.
@@ -4408,6 +4832,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           }
         }} 
         onComplete={(results) => {
+          sessionStorage.removeItem('oep_activeTestState');
           scrollToTop({ behavior: 'instant' });
           setActiveTest(null);
           setTestResults(results);
@@ -4473,16 +4898,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               const freshQs = await examService.getQuestionsForMockTest(finalTest.id);
               if (freshQs && freshQs.length > 0) {
                 finalTest.questions = freshQs;
-              } else if (!finalTest.questions || finalTest.questions.length === 0) {
-                toast.error("This mock test is no longer available or contains no questions.");
-                return;
               }
             } catch (e) {
               console.error("Failed to fetch fresh questions on resume:", e);
-              if (!finalTest.questions || finalTest.questions.length === 0) {
-                toast.error("Failed to load questions. Please check your network connection.");
-                return;
-              }
             }
           }
           setActiveTest(finalTest);
@@ -4500,7 +4918,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         <PurchasesView 
           user={user} 
           profile={profile}
-          exams={actualExams}
+          exams={exams.filter(e => e.category !== 'blog' && e.category !== 'system' && !(e.name || '').startsWith('SYSTEM_SETTINGS_'))}
           mockTests={mockTests}
           testSeries={testSeries}
           dynamicQuestionBanks={dynamicQuestionBanks}
@@ -4855,6 +5273,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
             <div 
               className="max-h-[420px] sm:max-h-[500px] md:max-h-[600px] overflow-y-auto no-scrollbar pb-6 pt-6 px-4 rounded-3xl border-2 border-slate-900 bg-[#FAF8F5] shadow-[6px_6px_0px_rgba(138,28,54,0.15)]"
+              style={{ scrollbarGutter: 'stable' }}
               onWheel={(e) => {
                 const el = e.currentTarget;
                 const isAtBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 2;
@@ -4867,7 +5286,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               <motion.div 
                 className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 px-1"
               >
-                <AnimatePresence mode="popLayout">
+                <AnimatePresence mode="wait">
                   {loadingExams ? (
                     Array.from({ length: 6 }).map((_, i) => (
                       <motion.div
@@ -4998,7 +5417,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   }
 
   if (selectedBankType) {
-    let items = (dynamicQuestionBanks[selectedBankType] || []).filter(item => item.examId === selectedExam);
+    let items = (dynamicQuestionBanks[selectedBankType] || []).filter(item => {
+      if (item.is_archived && !hasAccessTo(item.id, selectedExam)) return false;
+      return item.examId === selectedExam;
+    });
     const bankTitle = selectedBankType.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
     if (bankSearchQuery.trim()) {
@@ -5080,7 +5502,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
             >
           {items.map((item) => {
-            const isLocked = item.isPremium && !hasAccessTo(item.id, item.examId);
+            const isLocked = item.isPremium && !hasAccessTo(item);
             return (
               <motion.div
                 key={item.id}
@@ -5213,8 +5635,14 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 <ChevronRight className="w-6 h-6 rotate-180 text-brand-600" />
               </Button>
               <div className="min-w-0 flex-1">
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight leading-tight mb-1">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight leading-tight mb-1 flex flex-wrap items-center gap-3">
                   {currentExam?.name}
+                  {hasAccessTo(`exam_bundle_${selectedExam}`) && (
+                    <span className="px-3.5 py-1 bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 text-[10px] font-black rounded-lg uppercase tracking-wider inline-flex items-center gap-1.5 h-6">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Premium Unlocked
+                    </span>
+                  )}
                 </h1>
                 <div className="max-w-3xl">
                   <p 
@@ -5261,7 +5689,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
         {/* Full Exam Access Banner - Refined for Laptop & Mobile */}
         {/* Full Exam Access Banner - Refined for Laptop & Mobile */}
-        {hasBundle && (
+        {hasBundle && !hasAccessTo(`exam_bundle_${selectedExam}`) && (
           <motion.div 
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -5528,6 +5956,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           'Lifetime Validity & Updates'
                         ]);
                         setPaywallItemId(`exam_bundle_${selectedExam}`);
+                        setPaywallProductType('exam_bundle');
                         setShowPaywall(true);
                       }}
                       className="w-full sm:w-auto h-14 lg:h-16 px-10 rounded-2xl bg-gradient-to-r from-white via-slate-100 to-white hover:from-brand-100 hover:to-white text-brand-950 font-black text-base lg:text-lg shadow-xl shadow-brand-500/10 hover:shadow-brand-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 group/btn relative overflow-hidden"
@@ -5689,7 +6118,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 <div className="absolute -top-40 -left-40 w-96 h-96 bg-brand-500/10 rounded-full blur-[100px] pointer-events-none" />
                 <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
 
-                <div className="p-5 sm:p-7 md:p-9 overflow-y-auto no-scrollbar md:custom-scrollbar relative z-10 flex flex-col">
+                <div className="p-5 sm:p-7 md:p-9 overflow-y-auto no-scrollbar relative z-10 flex flex-col">
                   <div className="flex justify-between items-start mb-6 md:mb-8 border-b border-slate-100 pb-5">
                     <div className="flex items-center gap-3.5">
                       <div className="w-12 h-12 premium-gradient rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-brand-500/10">
@@ -5801,10 +6230,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           onChange={(val) => setPracticeSettings({...practiceSettings, topic: val})}
                           disabled={!practiceSettings.category}
                           options={(dynamicQuestionBanks[practiceSettings.category] || [])
-                            .filter((item: any) => item.examId === (practiceSettings.examId || selectedExam))
+                            .filter((item: any) => item.examId === (practiceSettings.examId || selectedExam) && (!item.is_archived || hasAccessTo(item)))
                             .map((item: any) => ({
                               value: item.id,
-                              label: `${item.title} ${item.isPremium && !hasAccessTo(item.id, item.examId) ? '(Premium)' : ''}`
+                              label: `${item.title} ${item.isPremium && !hasAccessTo(item) ? '(Premium)' : ''}`
                             }))}
                           placeholder="Choose a topic..."
                           searchPlaceholder="Search topics..."
@@ -5828,7 +6257,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         )}
                       </div>
                       {!practiceSettings.topic ? (
-                        <div className="w-full py-9 rounded-2xl border border-dashed border-slate-250 bg-slate-50/30 text-slate-400 font-bold text-center text-xs md:text-sm flex flex-col items-center justify-center gap-2 shadow-sm transition-all duration-300">
+                        <div className="w-full py-9 rounded-2xl border border-dashed border-slate-300 bg-slate-50/30 text-slate-400 font-bold text-center text-xs md:text-sm flex flex-col items-center justify-center gap-2 shadow-sm transition-all duration-300">
                           <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
                             <Lock className="w-4 h-4 text-slate-400" />
                           </div>
@@ -5836,7 +6265,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         </div>
                       ) : topicMaxQuestions === 0 ? (
                         <div className="w-full py-9 rounded-2xl border border-dashed border-rose-200 bg-rose-50/20 text-rose-500 font-bold text-center text-xs md:text-sm flex flex-col items-center justify-center gap-2 shadow-sm transition-all duration-300">
-                          <div className="w-9 h-9 bg-rose-50 rounded-full flex items-center justify-center text-rose-450">
+                          <div className="w-9 h-9 bg-rose-50 rounded-full flex items-center justify-center text-rose-400">
                             <AlertCircle className="w-4 h-4 text-rose-500" />
                           </div>
                           <div className="text-rose-500 font-extrabold text-[11px] uppercase tracking-wider">No questions available yet</div>
@@ -5891,7 +6320,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         </label>
                       </div>
                       {!practiceSettings.topic ? (
-                        <div className="w-full py-9 rounded-2xl border border-dashed border-slate-250 bg-slate-50/30 text-slate-400 font-bold text-center text-xs md:text-sm flex flex-col items-center justify-center gap-2 shadow-sm transition-all duration-300">
+                        <div className="w-full py-9 rounded-2xl border border-dashed border-slate-300 bg-slate-50/30 text-slate-400 font-bold text-center text-xs md:text-sm flex flex-col items-center justify-center gap-2 shadow-sm transition-all duration-300">
                           <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
                             <Lock className="w-4 h-4 text-slate-400" />
                           </div>
@@ -5910,7 +6339,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           <div className="flex items-center justify-between mb-4">
                             <span className="text-2xl font-black text-indigo-950 tracking-tight flex items-baseline gap-1">
                               {practiceSettings.timeLimit}
-                              <span className="text-xs font-semibold text-slate-450">minutes</span>
+                              <span className="text-xs font-semibold text-slate-400">minutes</span>
                             </span>
                             <span className="text-[10px] font-extrabold text-indigo-650 bg-indigo-50/80 border border-indigo-100/50 px-2 py-0.5 rounded-full">
                               Range: 1 - 180 min
@@ -6003,8 +6432,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 testExamId = parsed.examId || '';
               } catch(e) {}
             }
-            const isLocked = isPremium && !hasAccessTo(test.id, testExamId);
-            const isPremiumUnlocked = isPremium && hasAccessTo(test.id, testExamId);
+            const isLocked = isPremium && !hasAccessTo(test, testExamId);
+            const isPremiumUnlocked = isPremium && hasAccessTo(test, testExamId);
 
             return (
               <motion.div
@@ -6165,6 +6594,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             
               {(() => {
                 const matchingTests = mockTests.filter(mt => {
+                  if (mt.is_archived && !hasAccessTo(mt.id, selectedExam)) return false;
                   try {
                     const cfg = JSON.parse(mt.seriesId);
                     return cfg.examId === selectedExam && cfg.category === selectedMockCategory;
@@ -6720,7 +7150,10 @@ function AppContent() {
         <WhatsAppButton />
       )}
       {!(location.pathname.startsWith('/admin') || location.pathname.startsWith('/admin-login')) && (
-        <StickyAICompanion isBottomNavVisible={isBottomNavVisible} activeTab={mainTab} />
+        <StickyAICompanion 
+          isBottomNavVisible={isBottomNavVisible} 
+          activeTab={location.pathname.startsWith('/blog') ? 'blog' : mainTab} 
+        />
       )}
 
       <AnimatePresence>

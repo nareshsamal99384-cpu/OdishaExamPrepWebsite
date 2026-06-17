@@ -10,6 +10,94 @@ export interface DiagramTemplateSelectorProps {
 }
 
 const DIAGRAM_TEMPLATES = {
+  universal: {
+    name: "🎨 Universal Custom Vector",
+    description: "Demonstrates all vector elements (grid, rect, circle, arc, curves, polygon, math text)",
+    json: [
+      {
+        "questionText": "Observe the composite vector diagram below and identify which geometric shape is not represented in the template schema.",
+        "options": ["Hexagon", "Circle", "Bezier Curve", "Arc Line"],
+        "correctAnswerIndex": 0,
+        "explanation": "The template demonstrates circles, rectangles, lines, Bezier curves, and arcs, but not a hexagon.",
+        "diagram": {
+          "type": "vector",
+          "width": 1000,
+          "height": 600,
+          "xRange": [0, 10],
+          "yRange": [0, 6],
+          "grid": true,
+          "xAxis": true,
+          "yAxis": true,
+          "shapes": [
+            {
+              "type": "rect",
+              "x": 1,
+              "y": 1,
+              "width": 8,
+              "height": 4,
+              "fill": "rgba(99, 102, 241, 0.03)",
+              "stroke": "#4f46e5",
+              "strokeWidth": 2.5,
+              "label": "Rectangle Boundary"
+            },
+            {
+              "type": "circle",
+              "center": [5, 3],
+              "r": 1.5,
+              "fill": "rgba(239, 68, 68, 0.05)",
+              "stroke": "#ef4444",
+              "strokeWidth": 2.5,
+              "label": "Center Circle"
+            },
+            {
+              "type": "line",
+              "start": [5, 3],
+              "end": [8, 3],
+              "stroke": "#ef4444",
+              "strokeWidth": 2,
+              "dashed": true,
+              "arrowEnd": true,
+              "label": "$r = 1.5$"
+            },
+            {
+              "type": "arc",
+              "center": [5, 3],
+              "r": 1.0,
+              "startAngle": 0,
+              "endAngle": 90,
+              "stroke": "#f59e0b",
+              "strokeWidth": 3,
+              "label": "$\\theta = 90^\\circ$"
+            },
+            {
+              "type": "curve",
+              "start": [1, 1],
+              "control1": [3, 5],
+              "end": [5, 3],
+              "stroke": "#10b981",
+              "strokeWidth": 2,
+              "label": "Bezier Curve"
+            },
+            {
+              "type": "polygon",
+              "points": [[2, 1.5], [3, 2.5], [1.5, 2.5]],
+              "fill": "rgba(16, 185, 129, 0.1)",
+              "stroke": "#10b981",
+              "strokeWidth": 2,
+              "label": "Triangle"
+            },
+            {
+              "type": "text",
+              "pos": [5, 5.5],
+              "text": "Universal Layout Showcase: $E = mc^2$ and $\\int f(x)dx$",
+              "color": "#1e293b",
+              "size": 16
+            }
+          ]
+        }
+      }
+    ]
+  },
   circle: {
     name: "⭕ Circle & Chord",
     description: "Circle with chord AB, radius & center distance",
@@ -186,6 +274,248 @@ const DIAGRAM_TEMPLATES = {
           "values": [
             [3, 4],
             [2, 2]
+          ]
+        }
+      }
+    ]
+  },
+  vector: {
+    name: "📐 Vector / Custom Shapes",
+    description: "Composite shapes (grid, rect, circle, lines, text with KaTeX formulas)",
+    json: [
+      {
+        "questionText": "In the composite diagram below, a circle is inscribed within a rectangle. Find the area of the shaded region outside the circle if the rectangle is 10x8 and circle radius is 3.",
+        "options": ["51.73 sq units", "80.00 sq units", "28.27 sq units", "62.50 sq units"],
+        "correctAnswerIndex": 0,
+        "explanation": "Area of rectangle = 10 * 8 = 80. Area of circle = pi * r^2 = 9 * pi ≈ 28.27. Shaded area = 80 - 28.27 = 51.73 sq units.",
+        "diagram": {
+          "type": "vector",
+          "width": 800,
+          "height": 500,
+          "xRange": [0, 10],
+          "yRange": [0, 8],
+          "grid": true,
+          "shapes": [
+            {
+              "type": "rect",
+              "points": [[1, 1], [9, 7]],
+              "fill": "rgba(99, 102, 241, 0.05)",
+              "stroke": "#4f46e5",
+              "strokeWidth": 3
+            },
+            {
+              "type": "circle",
+              "center": [5, 4],
+              "r": 2.5,
+              "fill": "rgba(239, 68, 68, 0.08)",
+              "stroke": "#ef4444",
+              "strokeWidth": 3
+            },
+            {
+              "type": "line",
+              "start": [5, 4],
+              "end": [7.5, 4],
+              "stroke": "#ef4444",
+              "strokeWidth": 2,
+              "dashed": true,
+              "label": "$r = 2.5$"
+            },
+            {
+              "type": "text",
+              "pos": [5, 0.5],
+              "text": "width = 10",
+              "color": "#4f46e5"
+            },
+            {
+              "type": "text",
+              "pos": [0.5, 4],
+              "text": "height = 8",
+              "color": "#4f46e5",
+              "anchor": "end"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  boatStream: {
+    name: "⛵ Boat & Stream Flow",
+    description: "Visualizes downstream/upstream flow velocities and times",
+    json: [
+      {
+        "questionText": "A boat travels 60 km downstream in 3 hours and returns upstream in 5 hours. Find the speed of the boat in still water.",
+        "options": ["16 km/h", "12 km/h", "14 km/h", "18 km/h"],
+        "correctAnswerIndex": 0,
+        "explanation": "Downstream speed = 60 / 3 = 20 km/h. Upstream speed = 60 / 5 = 12 km/h. Boat speed in still water = (20 + 12) / 2 = 16 km/h.",
+        "diagram": {
+          "type": "boatStream",
+          "distance": 60,
+          "upstreamTime": 5,
+          "downstreamTime": 3
+        }
+      }
+    ]
+  },
+  ratio: {
+    name: "📊 Tape model / Ratio blocks",
+    description: "Visualizes bar/tape models comparing two quantities",
+    json: [
+      {
+        "questionText": "The ratio of ages of A and B is 4:5. After 8 years, their ratio becomes 5:6. Find their present ages.",
+        "options": ["A: 32, B: 40", "A: 24, B: 30", "A: 40, B: 50", "A: 16, B: 20"],
+        "correctAnswerIndex": 0,
+        "explanation": "Let ages be 4x and 5x. (4x+8)/(5x+8) = 5/6 => 24x+48 = 25x+40 => x = 8. Present ages: A = 32, B = 40.",
+        "diagram": {
+          "type": "ratio",
+          "ratio": "4:5",
+          "labelA": "A's Block",
+          "labelB": "B's Block"
+        }
+      }
+    ]
+  },
+  statistics: {
+    name: "📉 Normal Distribution Bell Curve",
+    description: "Plots normal bell curve with mean and standard deviation lines",
+    json: [
+      {
+        "questionText": "In a normal distribution with mean μ = 50 and standard deviation σ = 5, what percentage of values lie between 45 and 55?",
+        "options": ["68.2%", "95.4%", "99.7%", "50.0%"],
+        "correctAnswerIndex": 0,
+        "explanation": "Values between 45 and 55 lie within 1 standard deviation from the mean (50 - 5 to 50 + 5). In a normal curve, approximately 68.2% of data falls within ±1σ.",
+        "diagram": {
+          "type": "statistics",
+          "mean": 50,
+          "sd": 5,
+          "label": "μ = 50, σ = 5"
+        }
+      }
+    ]
+  },
+  profitLoss: {
+    name: "💰 Profit & Loss CP/SP chart",
+    description: "Compares Cost Price vs Selling Price with dynamic arrow",
+    json: [
+      {
+        "questionText": "A man buys an item for ₹1200 and sells it at 15% profit. Find the Selling Price.",
+        "options": ["₹1380", "₹1400", "₹1350", "₹1420"],
+        "correctAnswerIndex": 0,
+        "explanation": "Profit = 15% of 1200 = ₹180. SP = CP + Profit = 1200 + 180 = ₹1380.",
+        "diagram": {
+          "type": "profitLoss",
+          "costPrice": 1200,
+          "profitPercent": 15
+        }
+      }
+    ]
+  },
+  cylinder: {
+    name: "🛢️ Cylinder 3D Shape",
+    description: "Renders a 3D cylindrical container with radius and height",
+    json: [
+      {
+        "questionText": "A cylindrical water tank has radius 7 m and height 10 m. Find its volume.",
+        "options": ["1540 m³", "1480 m³", "1620 m³", "1500 m³"],
+        "correctAnswerIndex": 0,
+        "explanation": "Volume of cylinder = pi * r^2 * h = (22/7) * 49 * 10 = 1540 m³.",
+        "diagram": {
+          "type": "cylinder",
+          "radius": 7,
+          "height": 10
+        }
+      }
+    ]
+  },
+  numberTheory: {
+    name: "🕒 Modular Clock Arithmetic",
+    description: "Visualizes modulus operations using clock dial arithmetic",
+    json: [
+      {
+        "questionText": "Find the remainder when 7^100 is divided by 6.",
+        "options": ["1", "5", "0", "2"],
+        "correctAnswerIndex": 0,
+        "explanation": "7 ≡ 1 (mod 6). Therefore, 7^100 ≡ 1^100 ≡ 1 (mod 6).",
+        "diagram": {
+          "type": "numberTheory",
+          "expression": "7^100 mod 6"
+        }
+      }
+    ]
+  },
+  universalEngine: {
+    name: "⚡ Universal Diagram Engine Showcase",
+    description: "Draggable points, 3D cone wireframe, clock diagram, function plotting, and Latex labels",
+    json: [
+      {
+        "questionText": "Observe the universal diagram below. A cylinder and a cone have equal heights and bases. Drag the coordinates point A to see the updated positions. At what angle is the hour hand of the analog clock showing 10:10?",
+        "options": ["300°", "120°", "60°", "90°"],
+        "correctAnswerIndex": 0,
+        "explanation": "At 10:10, the hour hand has moved 10 * 30° + 10 * 0.5° = 305° from 12 o'clock, which is standard clock logic.",
+        "diagram": {
+          "type": "universal",
+          "width": 1000,
+          "height": 600,
+          "grid": true,
+          "xAxis": true,
+          "yAxis": true,
+          "xRange": [-6, 6],
+          "yRange": [-4, 4],
+          "shapes": [
+            {
+              "id": "drag-pt-a",
+              "type": "point",
+              "x": 2,
+              "y": 2,
+              "r": 8,
+              "fill": "#3b82f6",
+              "draggable": true,
+              "label": "Point A (Draggable)",
+              "labelPosition": "top"
+            },
+            {
+              "id": "cone-3d",
+              "type": "cone",
+              "x": -5,
+              "y": -3,
+              "width": 3,
+              "height": 4,
+              "stroke": "#10b981",
+              "fill": "rgba(16, 185, 129, 0.05)",
+              "label": "3D Cone Wireframe"
+            },
+            {
+              "id": "clock-logic",
+              "type": "clock",
+              "x": -3,
+              "y": 2,
+              "r": 1.2,
+              "time": "10:10",
+              "stroke": "#8a1c36",
+              "label": "Analog Clock (10:10)",
+              "labelPosition": "bottom"
+            },
+            {
+              "id": "trig-sin",
+              "type": "functionPlot",
+              "equation": "sin(x)",
+              "stroke": "#f59e0b",
+              "strokeWidth": 3.5,
+              "label": "$y = \\sin(x)$",
+              "labelX": 3,
+              "labelY": 1.2
+            },
+            {
+              "id": "rt-triangle-angle",
+              "type": "rightAngle",
+              "cx": 2,
+              "cy": -2,
+              "r": 40,
+              "startAngle": 0,
+              "endAngle": 90,
+              "stroke": "#8b5cf6",
+              "fill": "rgba(139, 92, 246, 0.1)",
+              "label": "$90^\\circ$"
+            }
           ]
         }
       }

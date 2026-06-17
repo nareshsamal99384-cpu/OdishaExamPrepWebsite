@@ -52,6 +52,7 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
   // Refs
   const trackRef  = useRef<HTMLDivElement>(null);
   const offsetRef = useRef(0);            // current scroll offset (px)
+  const lastRenderedOffset = useRef(-1);  // prevent redundant style updates
   const rafRef    = useRef<number>(0);    // requestAnimationFrame id
   const isPaused  = useRef(false);
   const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -68,15 +69,19 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
     const loopLen = totalWidth / 3;           // length of ONE copy of the array
     offsetRef.current = ((offsetRef.current % loopLen) + loopLen) % loopLen;
 
-    track.style.transform = `translateX(-${offsetRef.current}px)`;
+    if (offsetRef.current !== lastRenderedOffset.current) {
+      track.style.transform = `translateX(-${offsetRef.current}px)`;
+      lastRenderedOffset.current = offsetRef.current;
+    }
   }, [totalWidth]);
 
   // Auto-scroll loop
   const tick = useCallback(() => {
     if (!isPaused.current && !isDragging.current) {
       offsetRef.current += AUTO_SPEED;
-      applyOffset();
     }
+    // Always render target offset in browser paint cycles
+    applyOffset();
     rafRef.current = requestAnimationFrame(tick);
   }, [applyOffset]);
 
@@ -114,8 +119,7 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
     if (!isDragging.current) return;
     const delta = dragStartX.current - e.clientX;
     offsetRef.current = dragStartOffset.current + delta;
-    applyOffset();
-  }, [applyOffset]);
+  }, []);
 
   const onMouseUp = useCallback(() => {
     if (!isDragging.current) return;
@@ -135,9 +139,8 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
     if (!isDragging.current) return;
     const delta = dragStartX.current - e.touches[0].clientX;
     offsetRef.current = dragStartOffset.current + delta;
-    applyOffset();
     e.preventDefault(); // prevent page scroll while swiping the carousel
-  }, [applyOffset]);
+  }, []);
 
   const onTouchEnd = useCallback(() => {
     if (!isDragging.current) return;
