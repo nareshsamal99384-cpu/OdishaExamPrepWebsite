@@ -426,7 +426,9 @@ export default function TestResultsView({ results, onClose }: { results: any, on
                       return null;
                     })()}
                     {currentQ.diagram ? (
-                      <DiagramRenderer diagram={currentQ.diagram} data={currentQ.diagram} />
+                      <div className="mt-5 sm:mt-6 w-full block">
+                        <DiagramRenderer diagram={currentQ.diagram} data={currentQ.diagram} />
+                      </div>
                     ) : null}
                   </div>
 

@@ -4365,7 +4365,9 @@ JSON structure:
                           return null;
                         })()}
                         {bq.diagram ? (
-                          <DiagramRenderer diagram={bq.diagram} data={bq.diagram} />
+                          <div className="mt-4 sm:mt-5 w-full block">
+                            <DiagramRenderer diagram={bq.diagram} data={bq.diagram} />
+                          </div>
                         ) : null}
                         <div className="space-y-1.5">
                           {bq.options.map((opt: string, oIdx: number) => (
@@ -4683,7 +4685,9 @@ JSON structure:
                             return null;
                           })()}
                           {q.diagram ? (
-                            <DiagramRenderer diagram={q.diagram} data={q.diagram} />
+                            <div className="mt-4 sm:mt-5 w-full block">
+                              <DiagramRenderer diagram={q.diagram} data={q.diagram} />
+                            </div>
                           ) : null}
                           <div className="grid grid-cols-1 gap-2">
                             {q.options.map((opt: string, optIdx: number) => {

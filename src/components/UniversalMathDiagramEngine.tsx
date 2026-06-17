@@ -1928,11 +1928,11 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
 
   return (
     <div 
-      className="universal-math-engine rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl relative flex flex-col w-full select-none overflow-hidden group"
+      className="universal-math-engine rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl sm:shadow-2xl relative flex flex-col w-full select-none overflow-hidden group"
       ref={containerRef}
     >
       {/* 1. Header Toolbar Panel */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 bg-slate-50 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 select-none backdrop-blur-md z-20 gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 bg-slate-50 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 select-none backdrop-blur-md z-20 gap-3 rounded-t-2xl sm:rounded-t-[22px]">
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-[#8A1C36]" />
           <span className="text-[10px] font-black font-sans uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
@@ -2028,7 +2028,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
         onPointerCancel={handleCanvasPointerUp}
         onPointerEnter={() => setIsMouseOverCanvas(true)}
         onPointerLeave={() => setIsMouseOverCanvas(false)}
-        className="canvas-viewport p-6 sm:p-10 flex justify-center items-center bg-slate-50/50 dark:bg-[#070b12] overflow-hidden w-full select-none relative min-h-[300px] sm:min-h-[420px]"
+        className="canvas-viewport p-3.5 sm:p-10 flex justify-center items-center bg-slate-50/50 dark:bg-[#070b12] overflow-hidden w-full select-none relative min-h-[260px] sm:min-h-[420px]"
         style={{ 
           cursor: isPanning ? 'grabbing' : (draggedId ? 'grabbing' : 'grab'),
           touchAction: 'none'

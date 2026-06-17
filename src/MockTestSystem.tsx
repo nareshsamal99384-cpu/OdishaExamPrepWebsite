@@ -1097,10 +1097,12 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                             return null;
                           })()}
                           {currentQuestion.diagram ? (
-                            <DiagramRenderer
-                              diagram={currentQuestion.diagram}
-                              data={currentQuestion.diagram}
-                            />
+                            <div className="mt-4 sm:mt-5 w-full block">
+                              <DiagramRenderer
+                                diagram={currentQuestion.diagram}
+                                data={currentQuestion.diagram}
+                              />
+                            </div>
                           ) : null}
                         </div>
                       </div>
