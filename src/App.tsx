@@ -4634,9 +4634,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
       setActiveTestState({ resumeSessionId: `session-${Date.now()}` });
       handleStartTest(practiceTest);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Failed to compile practice session.");
+      alert("Failed to compile practice session: " + (err?.message || err));
     } finally {
       setLoadingPractice(false);
     }
