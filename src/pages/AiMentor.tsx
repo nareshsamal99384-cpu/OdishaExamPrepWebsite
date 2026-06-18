@@ -3125,7 +3125,7 @@ JSON structure:
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: -10 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute left-0 mt-2 w-56 rounded-xl bg-white border border-slate-200/60   shadow-2xl p-1 z-50 overflow-hidden"
+                        className="absolute right-0 lg:left-0 lg:right-auto mt-2 w-56 rounded-xl bg-white border border-slate-200/60   shadow-2xl p-1 z-50 overflow-hidden"
                       >
                         <div className="max-h-64 overflow-y-auto pr-0.5 no-scrollbar">
                           {userExams.length === 0 ? (
@@ -3159,7 +3159,7 @@ JSON structure:
                                       e.stopPropagation();
                                       handleDeleteExam(exam);
                                     }}
-                                    className="opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 p-1 rounded transition-all text-slate-500 hover:text-[#8A1C36] cursor-pointer"
+                                    className="opacity-100 md:opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 p-1 rounded transition-all text-slate-500 hover:text-[#8A1C36] cursor-pointer"
                                     title="Delete Target Exam"
                                   >
                                     <X className="w-2.5 h-2.5" />
@@ -3182,7 +3182,7 @@ JSON structure:
                                 value={newExamName}
                                 onChange={(e) => setNewExamName(e.target.value)}
                                 placeholder="Add exam (e.g. UPSC)..."
-                                className="w-full bg-slate-50 border border-slate-200/60 focus:border-teal-500/50 rounded-lg px-2 py-1 text-[9px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-teal-500/30 transition-all font-semibold uppercase tracking-wider placeholder:text-slate-400"
+                                className="w-full min-w-0 bg-slate-50 border border-slate-200/60 focus:border-teal-500/50 rounded-lg px-2 py-1 text-[9px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-teal-500/30 transition-all font-semibold uppercase tracking-wider placeholder:text-slate-400"
                               />
                               <button
                                 type="submit"
