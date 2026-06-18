@@ -77,6 +77,7 @@ const BlogList = React.lazy(() => import('./pages/BlogList'));
 const BlogPost = React.lazy(() => import('./pages/BlogPost'));
 const AiMentor = React.lazy(() => import('./pages/AiMentor'));
 const StickyAICompanion = React.lazy(() => import('./components/StickyAICompanion'));
+import { MathTextRenderer } from './components/MathTextRenderer';
 import LoadingPortal from './components/LoadingPortal';
 
 const HistoryView = ({ 
