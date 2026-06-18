@@ -343,22 +343,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const interval = setInterval(async () => {
           attempts++;
           
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
-            // We fetch the profile with forceRefresh = true to hit the database user_purchases
-            const freshProfile = await fetchProfile(session.user, true);
-            const isUnlocked = freshProfile?.purchasedSeries?.includes(pending.productId) || freshProfile?.hasFullAccess;
-            
-            if (isUnlocked) {
-              console.log(`[Pending Payment] Payment verified! Product ${pending.productId} is now unlocked.`);
-              localStorage.removeItem('oep_pending_payment');
-              toast.success("Payment verified! Your bundle has been unlocked successfully.", { 
-                id: 'pending-payment-success',
-                duration: 6000 
-              });
-              clearInterval(interval);
-              return;
+          try {
+            // Verify payment directly against Razorpay API via the server check-status endpoint
+            const statusRes = await fetch('/api/payment/check-status', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                orderId: pending.orderId,
+                userId: user.id,
+                productId: pending.productId
+              })
+            });
+
+            if (statusRes.ok) {
+              const statusData = await statusRes.json();
+              if (statusData.success && statusData.status === 'unlocked') {
+                console.log(`[Pending Payment] Direct verification confirmed unlock for: ${pending.productId}`);
+                // Refresh client profile & user metadata session from server
+                await refreshProfile();
+                localStorage.removeItem('oep_pending_payment');
+                toast.success("Payment verified! Your bundle has been unlocked successfully.", { 
+                  id: 'pending-payment-success',
+                  duration: 6000 
+                });
+                clearInterval(interval);
+                return;
+              }
             }
+          } catch (err) {
+            console.error('[Pending Payment] Error checking payment status:', err);
           }
 
           if (attempts >= maxAttempts) {

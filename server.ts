@@ -683,6 +683,141 @@ async function startServer() {
     }
   });
 
+  // Direct Razorpay Order Status Check API (Bypasses webhook and client-side callback failures)
+  app.post("/api/payment/check-status", async (req, res) => {
+    try {
+      const { orderId, userId, productId, productType } = req.body;
+      if (!orderId || !userId) {
+        return res.status(400).json({ success: false, message: "orderId and userId are required" });
+      }
+
+      const keyId = process.env.RAZORPAY_KEY_ID;
+      const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+      if (!keyId || !keySecret) {
+        return res.status(500).json({ success: false, message: "Razorpay keys not configured on server" });
+      }
+
+      const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+
+      // 1. Fetch order details from Razorpay to check if it's paid
+      const orderRes = await fetch(`https://api.razorpay.com/v1/orders/${orderId}`, {
+        headers: {
+          Authorization: `Basic ${auth}`
+        }
+      });
+
+      if (!orderRes.ok) {
+        return res.status(orderRes.status).json({ success: false, message: "Failed to fetch order details from Razorpay" });
+      }
+
+      const orderDetails = await orderRes.json();
+      
+      // If the order has been paid in full
+      if (orderDetails.status === 'paid' || orderDetails.amount_paid > 0) {
+        // Fetch order's payments to get the captured payment ID
+        const paymentsRes = await fetch(`https://api.razorpay.com/v1/orders/${orderId}/payments`, {
+          headers: {
+            Authorization: `Basic ${auth}`
+          }
+        });
+
+        if (!paymentsRes.ok) {
+          return res.status(paymentsRes.status).json({ success: false, message: "Failed to fetch payments for order" });
+        }
+
+        const paymentsData = await paymentsRes.json();
+        const successfulPayment = (paymentsData.items || []).find((p: any) => p.status === 'captured' || p.status === 'authorized');
+
+        if (successfulPayment) {
+          const paymentId = successfulPayment.id;
+          const pricePaid = successfulPayment.amount / 100;
+          
+          const notes = orderDetails.notes || {};
+          const finalProductId = notes.productId || productId;
+          const finalProductType = notes.productType || productType || 'unknown';
+
+          if (!finalProductId) {
+            return res.status(400).json({ success: false, message: "Product context missing in payment" });
+          }
+
+          // 2. Prevent replay attacks: Check for duplicate transaction
+          const { data: existingPurchase } = await supabaseAdmin
+            .from("user_purchases")
+            .select("id")
+            .eq("razorpay_payment_id", paymentId);
+
+          if (existingPurchase && existingPurchase.length > 0) {
+            return res.json({ success: true, status: 'unlocked', message: "Payment already verified and credited" });
+          }
+
+          console.log(`[Check Status] Direct verification success. Recording purchase for User: ${userId}, Product: ${finalProductId}`);
+
+          // 3. Create purchase record in database ledger
+          const { error: dbError } = await supabaseAdmin
+            .from("user_purchases")
+            .upsert(
+              {
+                user_id: userId,
+                product_id: finalProductId,
+                product_type: finalProductType,
+                price_paid: Number(pricePaid),
+                razorpay_order_id: orderId,
+                razorpay_payment_id: paymentId,
+                status: "active",
+                purchase_date: new Date().toISOString()
+              },
+              { onConflict: "user_id,product_id" }
+            );
+
+          if (dbError) {
+            console.error("[Check Status] Failed to insert purchase record:", dbError);
+          }
+
+          // 4. Rebuild user entitlements and sync metadata in Supabase Auth
+          const { data: userPurchases } = await supabaseAdmin
+            .from("user_purchases")
+            .select("product_id")
+            .eq("user_id", userId)
+            .eq("status", "active");
+
+          const purchasedIds = (userPurchases || []).map(p => p.product_id);
+          if (!purchasedIds.includes(finalProductId)) {
+            purchasedIds.push(finalProductId);
+          }
+          const hasFullAccess = purchasedIds.includes("full_access");
+
+          const { data: userData, error: getUserErr } = await supabaseAdmin.auth.admin.getUserById(userId);
+          if (!getUserErr && userData?.user) {
+            const currentMetadata = userData.user.user_metadata || {};
+            const updatedPurchased = Array.from(new Set([
+              ...(currentMetadata.purchasedSeries || []),
+              ...purchasedIds
+            ]));
+
+            const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+              user_metadata: {
+                ...currentMetadata,
+                purchasedSeries: updatedPurchased,
+                hasFullAccess: hasFullAccess || !!currentMetadata.hasFullAccess
+              }
+            });
+            if (authError) {
+              console.error("[Check Status] Failed to sync user metadata in Supabase Auth:", authError);
+            }
+          }
+
+          return res.json({ success: true, status: 'unlocked', message: "Payment verified and unlocked successfully" });
+        }
+      }
+
+      return res.json({ success: true, status: 'pending', message: "Payment is still pending or not completed" });
+    } catch (error: any) {
+      console.error("[Check Status Error]", error);
+      res.status(500).json({ success: false, message: error.message || "Internal server error" });
+    }
+  });
+
   // Admin Content Revoke Endpoint (Deactivates user_purchases & removes from user metadata in bulk)
   app.post("/api/admin/content/revoke", requireAdmin, async (req, res) => {
     try {
