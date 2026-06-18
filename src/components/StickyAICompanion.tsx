@@ -998,7 +998,8 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
     };
 
     const extractSubjectFromTitle = (title: string, examName: string) => {
-      let t = title.replace(new RegExp(examName, 'i'), '')
+      const escapedExamName = examName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      let t = title.replace(new RegExp(escapedExamName, 'i'), '')
                    .replace(/practice/i, '')
                    .replace(/test/i, '')
                    .replace(/mock/i, '')
