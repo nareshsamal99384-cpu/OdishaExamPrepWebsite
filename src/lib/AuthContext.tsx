@@ -155,20 +155,52 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       let currentFullAccess = isAuthorizedAdmin || !!meta.hasFullAccess;
 
       const metaPurchased = meta.purchasedSeries || [];
-      const isFullAccess = currentFullAccess || metaPurchased.includes('full_access');
+
+      // Fetch active purchases from database ledger directly if online to ensure instant unlock
+      let dbPurchasedIds: string[] = [];
+      if (navigator.onLine) {
+        try {
+          const dbPromise = supabase
+            .from('user_purchases')
+            .select('product_id')
+            .eq('user_id', activeUser.id)
+            .eq('status', 'active');
+          const dbResult = await withTimeout(dbPromise, 3000, { data: null, error: null });
+          if (dbResult && dbResult.data) {
+            dbPurchasedIds = dbResult.data.map((p: any) => p.product_id);
+          }
+        } catch (e) {
+          console.error('[AuthContext] Failed to fetch user_purchases directly:', e);
+        }
+      }
+
+      // Merge cached metadata entitlements with direct DB ledger entries
+      const mergedPurchased = Array.from(new Set([...metaPurchased, ...dbPurchasedIds]));
+      const isFullAccess = currentFullAccess || mergedPurchased.includes('full_access');
 
       // Run proactive entitlement audit and self-healing
       const tempProfile = {
         role: currentRole,
         hasFullAccess: isFullAccess,
-        purchasedSeries: metaPurchased
+        purchasedSeries: mergedPurchased
       };
       
-      let mergedPurchased = metaPurchased;
-      if (navigator.onLine && forceRefresh && freshUser) {
-        const auditResult = await withTimeout(runEntitlementAudit(supabase, activeUser.id, tempProfile), 3000, null);
-        if (auditResult && auditResult.finalList) {
-          mergedPurchased = auditResult.finalList;
+      let finalPurchased = mergedPurchased;
+      if (navigator.onLine) {
+        if (forceRefresh && freshUser) {
+          const auditResult = await withTimeout(runEntitlementAudit(supabase, activeUser.id, tempProfile), 3000, null);
+          if (auditResult && auditResult.finalList) {
+            finalPurchased = auditResult.finalList;
+          }
+        } else {
+          // Check if there are database purchases that are not yet reflected in user metadata
+          const hasMissingMetadata = dbPurchasedIds.some(id => !metaPurchased.includes(id));
+          if (hasMissingMetadata) {
+            console.log('[AuthContext] Discrepancy detected between DB ledger and auth metadata. Triggering background self-healing...');
+            runEntitlementAudit(supabase, activeUser.id, tempProfile).catch(e => {
+              console.error('[Background Entitlement Audit] Failed:', e);
+            });
+          }
         }
       }
 
@@ -178,8 +210,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         displayName: meta.full_name || meta.displayName || activeUser.email?.split('@')[0],
         photoURL: meta.avatar_url || meta.photoURL,
         role: currentRole,
-        hasFullAccess: isFullAccess || mergedPurchased.includes('full_access'),
-        purchasedSeries: mergedPurchased,
+        hasFullAccess: isFullAccess || finalPurchased.includes('full_access'),
+        purchasedSeries: finalPurchased,
       };
 
       setProfile(finalProfile);
