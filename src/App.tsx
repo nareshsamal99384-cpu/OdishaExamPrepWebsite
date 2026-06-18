@@ -1238,7 +1238,7 @@ const Navbar = ({
           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl border-2 border-slate-900 bg-[#8A1C36] flex items-center justify-center shadow-[3px_3px_0px_#0f172a] group-hover:rotate-3 group-hover:scale-105 transition-all duration-300">
             <BookOpen className="text-white w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          <span className="font-serif font-black text-xl sm:text-2xl tracking-tight text-slate-900 group-hover:text-[#8A1C36] transition-colors duration-300 uppercase">
+          <span className="font-serif font-black text-lg sm:text-2xl tracking-tight text-slate-900 group-hover:text-[#8A1C36] transition-colors duration-300 uppercase">
             Odisha<span className="text-[#8A1C36] font-serif font-black">Exam</span>Prep
           </span>
         </div>
@@ -1405,17 +1405,17 @@ const Navbar = ({
         </nav>
 
         {/* Mobile Menu Toggle */}
-        <div className="md:hidden flex items-center gap-3">
+        <div className="md:hidden flex items-center gap-2 sm:gap-3">
           {!user && onSignIn && (
             <button 
               onClick={onSignIn}
-              className="px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg border-2 border-slate-900 bg-[#8A1C36] text-white shadow-[2px_2px_0px_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all duration-200 cursor-pointer shrink-0"
+              className="hidden sm:inline-flex px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg border-2 border-slate-900 bg-[#8A1C36] text-white shadow-[2px_2px_0px_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all duration-200 cursor-pointer shrink-0"
             >
               Sign In
             </button>
           )}
           <button 
-            className="p-2.5 text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
+            className="p-2 sm:p-2.5 text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -1434,6 +1434,15 @@ const Navbar = ({
             className="absolute top-full left-0 right-0 bg-white/95 backdrop-blur-3xl border-b border-slate-200/40 shadow-2xl overflow-y-auto no-scrollbar md:hidden max-h-[calc(100vh-70px)]"
           >
             <div className="p-4 flex flex-col gap-2">
+              {!user && onSignIn && (
+                <div className="p-4 rounded-2xl border border-slate-200/60 bg-gradient-to-br from-slate-50 to-white shadow-sm mb-2">
+                  <p className="text-[10px] font-black text-[#8A1C36] uppercase tracking-widest mb-1">Welcome Aspirant</p>
+                  <h4 className="text-xs font-serif font-extrabold text-slate-800 mb-3 leading-tight">Master the OPSC, OSSC, and OSSSC syllabus with precision-crafted test series.</h4>
+                  <Button variant="primary" className="w-full py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-wider" onClick={() => { onSignIn(); setMobileMenuOpen(false); }}>
+                    Sign In to Account
+                  </Button>
+                </div>
+              )}
               {!user && (
                 <>
                   <a 
@@ -1526,13 +1535,7 @@ const Navbar = ({
                   <span>Help & Support</span>
                 </a>
               )}
-              {!user && onSignIn && (
-                <div className="pt-4 px-2 pb-2">
-                  <Button variant="primary" className="w-full py-4 rounded-2xl font-bold" onClick={() => { onSignIn(); setMobileMenuOpen(false); }}>
-                    Sign In
-                  </Button>
-                </div>
-              )}
+
               {user && (
                 <>
                   <div className="p-2 border-t border-slate-100 mt-2">
