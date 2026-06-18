@@ -676,8 +676,7 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
     };
 
     const extractSubjectFromTitle = (title: string, examName: string) => {
-      const escapedExamName = examName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      let t = title.replace(new RegExp(escapedExamName, 'i'), '')
+      let t = title.replace(new RegExp(examName, 'i'), '')
                    .replace(/practice/i, '')
                    .replace(/test/i, '')
                    .replace(/mock/i, '')

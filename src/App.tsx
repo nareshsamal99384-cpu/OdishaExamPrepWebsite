@@ -73,8 +73,8 @@ const AdminDashboardPage = React.lazy(() => import('./pages/AdminDashboardPage')
 const PrivacyPolicy = React.lazy(() => import('./PrivacyPolicy'));
 const TermsOfService = React.lazy(() => import('./TermsOfService'));
 const RefundPolicy = React.lazy(() => import('./RefundPolicy'));
-import SearchableSelect from './components/SearchableSelect';
-import YouTubeCarousel from './components/YouTubeCarousel';
+const SearchableSelect = React.lazy(() => import('./components/SearchableSelect'));
+const YouTubeCarousel = React.lazy(() => import('./components/YouTubeCarousel'));
 const BlogList = React.lazy(() => import('./pages/BlogList'));
 const BlogPost = React.lazy(() => import('./pages/BlogPost'));
 const AiMentor = React.lazy(() => import('./pages/AiMentor'));
@@ -355,8 +355,38 @@ const loadRazorpay = () => {
 
 // --- Components ---
 
-import { Button, Card } from './components/ui';
-export { Button, Card };
+export const Button = ({ 
+  children, 
+  className, 
+  variant = 'primary', 
+  ...props 
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'outline' | 'ghost' }) => {
+  const variants = {
+    primary: 'premium-gradient text-white shadow-lg shadow-brand-500/20 hover:premium-glow hover:scale-[1.03] active:scale-95',
+    secondary: 'glass text-brand-600 hover:bg-brand-50 border-brand-100 shadow-sm hover:scale-[1.02] active:scale-95',
+    outline: 'bg-transparent border-2 border-slate-200 hover:border-brand-400 hover:text-brand-600 text-slate-700 active:scale-95',
+    ghost: 'bg-transparent hover:bg-slate-100 text-slate-600 active:scale-95'
+  };
+
+  return (
+    <button 
+      className={cn(
+        'px-6 py-3 rounded-2xl font-medium transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed',
+        variants[variant],
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+};
+
+export const Card = ({ children, className, ...props }: { children: React.ReactNode, className?: string } & React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={cn('glass rounded-2xl premium-shadow hover:shadow-xl transition-all duration-500 overflow-hidden', className)} {...props}>
+    {children}
+  </div>
+);
 
 export const UserAvatar = ({ 
   user, 
@@ -4187,18 +4217,27 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       setTopicMaxQuestions(0);
       return;
     }
-    const topicBank = Object.values(dynamicQuestionBanks).flat().find((b: any) => b.id === practiceSettings.topic) as any;
-    if (topicBank) {
-      const qCount = Number(topicBank.questions) || 0;
-      setTopicMaxQuestions(qCount);
+    const fetchMaxQuestions = async () => {
+      const topicBank = Object.values(dynamicQuestionBanks).flat().find((b: any) => b.id === practiceSettings.topic) as any;
+      const bankTopicName = topicBank ? topicBank.title : practiceSettings.topic;
+
+      const { data } = await supabase.from('questions').select('topic').eq('examId', activeExamId);
+      let matchedQs = data || [];
+      if (bankTopicName) {
+        matchedQs = matchedQs.filter((q: any) => 
+           (q.topic && q.topic.toLowerCase().includes(bankTopicName.toLowerCase())) || 
+           (bankTopicName.toLowerCase().includes((q.topic || '').toLowerCase()))
+        );
+      }
+      setTopicMaxQuestions(matchedQs.length);
+      
       setPracticeSettings(prev => {
          const currentVal = Number(prev.questions) || 20;
-         const safeVal = Math.min(currentVal, qCount);
+         const safeVal = Math.min(currentVal, matchedQs.length);
          return { ...prev, questions: safeVal > 0 ? safeVal.toString() : '0' };
       });
-    } else {
-      setTopicMaxQuestions(0);
-    }
+    };
+    fetchMaxQuestions();
   }, [practiceSettings.topic, practiceSettings.examId, selectedExam, dynamicQuestionBanks]);
 
   useEffect(() => {
@@ -4634,9 +4673,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
       setActiveTestState({ resumeSessionId: `session-${Date.now()}` });
       handleStartTest(practiceTest);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      alert("Failed to compile practice session: " + (err?.message || err));
+      alert("Failed to compile practice session.");
     } finally {
       setLoadingPractice(false);
     }

@@ -21,7 +21,7 @@ import {
   Play
 } from 'lucide-react';
 import { cn } from './lib/utils';
-
+import { Button } from './App';
 import { useAuth } from './lib/AuthContext';
 import { MathTextRenderer, DiagramRenderer } from './components/MathTextRenderer';
 import { fadeSlideUp, modalContent } from './lib/animations';
@@ -133,7 +133,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
       return initialState; // Legacy index-keyed compatibility fallback
     }
 
-    const questions = test?.questions || [];
+    const questions = test.questions || [];
     const answersMap: Record<number, number> = {};
     const markedList: number[] = [];
     const timeMap: Record<number, number> = {};
@@ -175,13 +175,13 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
       timeSpent: timeMap,
       visited: visitedList
     };
-  }, [initialState, test?.questions]);
+  }, [initialState, test.questions]);
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(mappedInitialState?.currentQuestionIndex || 0);
   const [answers, setAnswers] = useState<Record<number, number>>(mappedInitialState?.answers || {});
   const [markedForReview, setMarkedForReview] = useState<number[]>(mappedInitialState?.markedForReview || []);
   const [timeSpent, setTimeSpent] = useState<Record<number, number>>(mappedInitialState?.timeSpent || {});
-  const [timeLeft, setTimeLeft] = useState(mappedInitialState?.timeLeft ?? (test?.durationMinutes || 30) * 60);
+  const [timeLeft, setTimeLeft] = useState(mappedInitialState?.timeLeft ?? test.durationMinutes * 60);
   const [visited, setVisited] = useState<number[]>(mappedInitialState?.visited || [0]);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -190,8 +190,8 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
   const [currentMode, setCurrentMode] = useState<'mock' | 'practice'>(mappedInitialState?.currentMode || mode);
   const [untimedPractice, setUntimedPractice] = useState(mappedInitialState?.untimedPractice || false);
   const [targetScore, setTargetScore] = useState(() => {
-    const totalQs = test?.questions?.length || 0;
-    const testTotalMarks = test?.totalMarks || totalQs;
+    const totalQs = test.questions.length;
+    const testTotalMarks = test.totalMarks || totalQs;
     return Math.round(testTotalMarks * 0.8);
   });
   const questionTextRef = useRef<HTMLDivElement>(null);
@@ -202,14 +202,14 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
     if (!mappedInitialState) return false;
     if (mappedInitialState.isStarted) return true;
     const hasAnswers = Object.keys(mappedInitialState.answers || {}).length > 0;
-    const hasPartialTime = mappedInitialState.timeLeft !== undefined && mappedInitialState.timeLeft < (test?.durationMinutes || 30) * 60;
+    const hasPartialTime = mappedInitialState.timeLeft !== undefined && mappedInitialState.timeLeft < test.durationMinutes * 60;
     return hasAnswers || hasPartialTime;
   });
 
   // Synchronize active test state to sessionStorage on any progress/change
   useEffect(() => {
     if (isStarted && test) {
-      const questions = test?.questions || [];
+      const questions = test.questions || [];
       const answersById: Record<string, number> = {};
       const markedForReviewIds: string[] = [];
       const timeSpentById: Record<string, number> = {};
@@ -243,12 +243,12 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
         resumeSessionId: initialState?.resumeSessionId || `session-${Date.now()}`,
         userId: user?.id || null,
         test: {
-          id: test?.id || '',
-          title: test?.title || '',
-          durationMinutes: test?.durationMinutes || 30,
-          totalMarks: test?.totalMarks || 0,
-          negativeMarking: test?.negativeMarking || 0,
-          questions: test?.questions || []
+          id: test.id,
+          title: test.title,
+          durationMinutes: test.durationMinutes,
+          totalMarks: test.totalMarks,
+          negativeMarking: test.negativeMarking,
+          questions: test.questions
         },
         currentQuestionIndex,
         currentQuestionId,
@@ -269,11 +269,11 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
   }, [isStarted, test, currentQuestionIndex, answers, markedForReview, timeSpent, timeLeft, visited, currentMode, untimedPractice, initialState?.resumeSessionId, user]);
 
   // Derived test settings used on both overview & sidebar
-  const totalQs = test?.questions?.length || 0;
-  const testTotalMarks = useMemo(() => test?.totalMarks || totalQs, [test?.totalMarks, totalQs]);
+  const totalQs = test.questions.length;
+  const testTotalMarks = useMemo(() => test.totalMarks || totalQs, [test.totalMarks, totalQs]);
   const marksPerQ = useMemo(() => totalQs > 0 ? testTotalMarks / totalQs : 1, [totalQs, testTotalMarks]);
-  const negMarkVal = useMemo(() => test?.negativeMarking || 0, [test?.negativeMarking]);
-  const avgSecsPerQ = useMemo(() => totalQs > 0 ? Math.round(((test?.durationMinutes || 30) * 60) / totalQs) : 0, [totalQs, test?.durationMinutes]);
+  const negMarkVal = useMemo(() => test.negativeMarking || 0, [test.negativeMarking]);
+  const avgSecsPerQ = useMemo(() => totalQs > 0 ? Math.round((test.durationMinutes * 60) / totalQs) : 0, [totalQs, test.durationMinutes]);
 
   const answeredCount = useMemo(() => Object.keys(answers).length, [answers]);
   const markedCount = useMemo(() => markedForReview.length, [markedForReview]);
@@ -392,7 +392,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
     let math = 0;
     let general = 0;
 
-    (test?.questions || []).forEach(q => {
+    test.questions.forEach(q => {
       const txt = q.questionText.toLowerCase();
       if (txt.includes('article') || txt.includes('president') || txt.includes('governor') || txt.includes('amendment') || txt.includes('constitution') || txt.includes('legislature') || txt.includes('parliament') || txt.includes('court') || txt.includes('high court')) {
         polity++;
@@ -407,7 +407,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
       }
     });
 
-    const total = test?.questions?.length || 0;
+    const total = test.questions.length;
     if (total === 0) return [];
 
     return [
@@ -420,22 +420,22 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
       ...t,
       percentage: Math.round((t.count / total) * 100)
     }));
-  }, [test?.questions]);
+  }, [test.questions]);
 
   const handleSubmit = useCallback(() => {
-    const totalQuestions = test?.questions?.length || 0;
+    const totalQuestions = test.questions.length;
     const correctCount = Object.entries(answers).reduce((acc, [index, answer]) => {
-      return acc + (answer === test?.questions?.[parseInt(index)]?.correctAnswerIndex ? 1 : 0);
+      return acc + (answer === test.questions[parseInt(index)].correctAnswerIndex ? 1 : 0);
     }, 0);
     const incorrectCount = Object.entries(answers).reduce((acc, [index, answer]) => {
-      const isCorrect = answer === test?.questions?.[parseInt(index)]?.correctAnswerIndex;
+      const isCorrect = answer === test.questions[parseInt(index)].correctAnswerIndex;
       return acc + (answer !== null && answer !== undefined && !isCorrect ? 1 : 0);
     }, 0);
     const unansweredCount = totalQuestions - (correctCount + incorrectCount);
 
-    const totalMarks = test?.totalMarks || totalQuestions;
+    const totalMarks = test.totalMarks || totalQuestions;
     const marksPerQuestion = totalQuestions > 0 ? (totalMarks / totalQuestions) : 1;
-    const negativeMarkingValue = test?.negativeMarking || 0;
+    const negativeMarkingValue = test.negativeMarking || 0;
 
     const obtainedMarks = correctCount * marksPerQuestion;
     const penaltyDeduction = incorrectCount * negativeMarkingValue;
@@ -457,7 +457,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
       answers,
       timeTaken: currentMode === 'practice' && untimedPractice
         ? Object.keys(timeSpent).reduce((a, b) => a + (timeSpent[Number(b)] || 0), 0)
-        : (test?.durationMinutes || 30) * 60 - timeLeft,
+        : test.durationMinutes * 60 - timeLeft,
       timeSpent,
       markedForReview,
       test,
@@ -467,7 +467,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
   }, [test, answers, timeLeft, timeSpent, markedForReview, currentMode, untimedPractice, onComplete]);
 
   const handleExit = useCallback(() => {
-    const questions = test?.questions || [];
+    const questions = test.questions || [];
     const answersById: Record<string, number> = {};
     const markedForReviewIds: string[] = [];
     const timeSpentById: Record<string, number> = {};
@@ -516,13 +516,13 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
   }, [answers, timeLeft, timeSpent, markedForReview, visited, currentQuestionIndex, test, currentMode, untimedPractice, onExit]);
 
   const nextQuestion = useCallback(() => {
-    if (currentQuestionIndex < (test?.questions?.length || 0) - 1) {
+    if (currentQuestionIndex < test.questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
       setShowExplanation(false);
     } else {
       setShowSubmitConfirm(true);
     }
-  }, [currentQuestionIndex, test?.questions?.length]);
+  }, [currentQuestionIndex, test.questions.length]);
 
   const prevQuestion = useCallback(() => {
     if (currentQuestionIndex > 0) {
@@ -531,7 +531,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
     }
   }, [currentQuestionIndex]);
 
-  const currentQuestion = test?.questions?.[currentQuestionIndex];
+  const currentQuestion = test.questions[currentQuestionIndex];
 
   // Keyboard Shortcuts for CBT Usability (30% Modern Usability Improvements)
   useEffect(() => {
@@ -555,16 +555,6 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentQuestionIndex, showSubmitConfirm, showExitConfirm, currentQuestion, handleAnswer, nextQuestion, prevQuestion, toggleMarkForReview]);
-
-  if (!test || !test.questions || test.questions.length === 0) {
-    return (
-      <div className="fixed inset-0 bg-[#FBF9F6] z-[100] flex flex-col items-center justify-center p-6 text-center font-sans">
-        <div className="w-12 h-12 border-4 border-[#8A1C36]/20 border-t-[#8A1C36] rounded-full animate-spin mb-4" />
-        <h2 className="text-xl font-bold text-slate-850">Preparing Practice Session...</h2>
-        <p className="text-slate-500 text-sm mt-2">Loading your customized question bank. Please wait.</p>
-      </div>
-    );
-  }
 
   if (!isStarted) {
     const fmt = (n: number) => Number.isInteger(n) ? String(n) : n.toFixed(2);
@@ -1037,10 +1027,10 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                - Math-heavy questions: stacked full-width (question top, options below)
           */}
           {(() => {
-            const mathHeavy = isMathHeavyQuestion(currentQuestion?.questionText || '') || !!currentQuestion?.diagram;
-            const mathBlockCount = countMathBlocks(currentQuestion?.questionText || '');
+            const mathHeavy = isMathHeavyQuestion(currentQuestion.questionText) || !!currentQuestion.diagram;
+            const mathBlockCount = countMathBlocks(currentQuestion.questionText);
             const useCompactBlocks = mathBlockCount >= 2;
-            const paragraphs = (currentQuestion?.questionText || '').split('\n\n').filter(Boolean);
+            const paragraphs = currentQuestion.questionText.split('\n\n').filter(Boolean);
 
             return (
               <main className={cn(
@@ -1102,11 +1092,11 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                           {(() => {
                             const question = currentQuestion;
                             console.log("QUESTION", question);
-                            console.log("DIAGRAM", question?.diagram);
-                            console.log("TYPE", question?.diagram?.type);
+                            console.log("DIAGRAM", question.diagram);
+                            console.log("TYPE", question.diagram?.type);
                             return null;
                           })()}
-                          {currentQuestion?.diagram ? (
+                          {currentQuestion.diagram ? (
                             <div className="mt-4 sm:mt-5 w-full block">
                               <DiagramRenderer
                                 diagram={currentQuestion.diagram}
@@ -1127,9 +1117,9 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                           "grid gap-2 lg:gap-2.5",
                           mathHeavy ? "sm:grid-cols-2" : "max-w-3xl"
                         )}>
-                          {(currentQuestion?.options || []).map((option, idx) => {
+                          {currentQuestion.options.map((option, idx) => {
                             const isSelected = answers[currentQuestionIndex] === idx;
-                            const isCorrect = idx === currentQuestion?.correctAnswerIndex;
+                            const isCorrect = idx === currentQuestion.correctAnswerIndex;
                             const showResult = currentMode === 'practice' && answers[currentQuestionIndex] !== undefined;
 
                             return (
@@ -1198,7 +1188,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                               </div>
                             </div>
                             <p className="text-slate-700 text-sm sm:text-base leading-relaxed font-serif font-medium border-l-4 border-[#8A1C36] pl-4 py-1">
-                              <MathTextRenderer text={currentQuestion?.explanation} />
+                              <MathTextRenderer text={currentQuestion.explanation} />
                             </p>
                           </motion.div>
                         )}

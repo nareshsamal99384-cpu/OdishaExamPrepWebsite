@@ -342,31 +342,20 @@ export const examService = {
       .order('sortOrder', { ascending: true });
     if (error) throw error;
 
+    // Fast query to get question counts by fetching only the topic string
+    const testIds = (tests ?? []).map(t => `mockTest__${t.id}`);
+    const { data: qTopics } = await supabase
+      .from('questions')
+      .select('topic')
+      .in('topic', testIds);
+      
     const countMap: Record<string, number> = {};
-    try {
-      const { data: rpcCounts, error: rpcError } = await supabase.rpc('get_mock_test_question_counts');
-      if (rpcError) throw rpcError;
-      if (rpcCounts) {
-        rpcCounts.forEach((row: any) => {
-          countMap[`mockTest__${row.mock_test_id}`] = Number(row.question_count) || 0;
-        });
-      }
-    } catch (e) {
-      console.warn("RPC get_mock_test_question_counts failed, falling back to direct query:", e);
-      // Fast query to get question counts by fetching only the topic string
-      const testIds = (tests ?? []).map(t => `mockTest__${t.id}`);
-      const { data: qTopics } = await supabase
-        .from('questions')
-        .select('topic')
-        .in('topic', testIds);
-        
-      if (qTopics) {
-        qTopics.forEach(q => {
-          if (q.topic) {
-            countMap[q.topic] = (countMap[q.topic] || 0) + 1;
-          }
-        });
-      }
+    if (qTopics) {
+      qTopics.forEach(q => {
+        if (q.topic) {
+          countMap[q.topic] = (countMap[q.topic] || 0) + 1;
+        }
+      });
     }
 
     // The `seriesId` column may contain either:
