@@ -29,7 +29,7 @@
    ============================================================ */
 html {
   scroll-behavior: auto; /* Custom RAF easing in scrollManager.ts handles programmatic scrolling */
-  overscroll-behavior: contain;
+  overscroll-behavior-y: auto; /* Allow native pull-to-refresh on mobile devices */
   scrollbar-gutter: stable; /* Reserve scrollbar space to prevent layout shift */
 }
 
