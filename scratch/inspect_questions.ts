@@ -4,38 +4,46 @@ import path from 'path';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.VITE_SUPABASE_URL!;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-if (!supabaseUrl || !supabaseKey) {
-  console.error('Missing Supabase credentials');
-  process.exit(1);
-}
+const supabase = createClient(supabaseUrl, serviceKey);
 
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-async function inspect() {
-  console.log("Querying questions table...");
+async function run() {
+  console.log("Fetching all 70 questions for inspection...");
   const { data: questions, error } = await supabase
     .from('questions')
-    .select('id, questionText, diagram');
+    .select('*')
+    .eq('examId', 'f6efc518-82b0-4a6b-b957-cec4a1fd0969');
     
   if (error) {
-    console.error("Error fetching questions:", error);
+    console.error("DB error:", error);
     return;
   }
   
-  console.log(`Loaded ${questions.length} questions. Searching for keywords...`);
+  console.log(`Successfully fetched ${questions?.length} questions.`);
   
-  for (const q of questions) {
-    const txt = (q.questionText || "").toLowerCase();
-    if (txt.includes("hexagon") || txt.includes("square")) {
-      console.log("-----------------------------------------");
-      console.log(`ID: ${q.id}`);
-      console.log(`Question: ${q.questionText}`);
-      console.log(`Diagram Schema:`, JSON.stringify(q.diagram, null, 2));
+  questions?.forEach((q, idx) => {
+    const errors: string[] = [];
+    if (!q.id) errors.push("Missing id");
+    if (!q.questionText) errors.push("Missing questionText");
+    if (!q.topic) errors.push("Missing topic");
+    if (q.correctAnswerIndex === undefined || q.correctAnswerIndex === null) errors.push("Missing correctAnswerIndex");
+    if (!q.options) {
+      errors.push("Missing options");
+    } else if (!Array.isArray(q.options)) {
+      errors.push(`options is not an array: ${typeof q.options}`);
+    } else if (q.options.length === 0) {
+      errors.push("options array is empty");
     }
-  }
+    
+    if (errors.length > 0) {
+      console.log(`[!] Question Index ${idx} (ID: ${q.id}) has errors:`, errors);
+      console.log(JSON.stringify(q, null, 2));
+    }
+  });
+  
+  console.log("Inspection complete.");
 }
 
-inspect();
+run().catch(console.error);
