@@ -956,11 +956,11 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
       <div className="absolute inset-0 pointer-events-none z-[1] opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle, rgba(138,28,54,0.3) 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
       
       {/* Header (CBT Candidate + Exam details) */}
-      <header className="h-20 bg-white/85 backdrop-blur-md border-b border-slate-200/60 flex items-center justify-between px-6 sm:px-8 shrink-0 sticky top-0 z-40 relative shadow-sm">
+      <header className="h-20 bg-white/85 backdrop-blur-md border-b border-slate-200/60 flex items-center justify-between px-3 sm:px-8 shrink-0 sticky top-0 z-40 relative shadow-sm">
         {/* Scroll Progress Bar */}
         <div ref={progressBarRef} className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#8a1c36] origin-left transition-transform duration-75 ease-out scale-x-0 z-50" />
 
-        <div className="flex items-center gap-3 sm:gap-4 relative z-10">
+        <div className="flex items-center gap-2 sm:gap-4 relative z-10">
           <button 
             onClick={() => setShowExitConfirm(true)} 
             className="p-2.5 bg-slate-50 hover:bg-rose-50 border border-slate-200 hover:border-rose-100 rounded-xl transition-all duration-200 cursor-pointer text-slate-500 hover:text-[#8a1c36]"
@@ -969,15 +969,15 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
             <X className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="font-serif font-extrabold text-slate-900 truncate max-w-[140px] sm:max-w-[300px] lg:max-w-[400px] tracking-tight leading-tight">{test.title}</h1>
+            <h1 className="font-serif font-extrabold text-slate-900 truncate max-w-[100px] xs:max-w-[140px] sm:max-w-[300px] lg:max-w-[400px] tracking-tight leading-tight">{test.title}</h1>
             <p className="text-[10px] font-black text-[#8A1C36] uppercase tracking-widest leading-none mt-1">Subject: General Awareness</p>
           </div>
         </div>
 
         {/* Central Official Timer */}
-        <div className="flex items-center gap-2.5 sm:gap-4 relative z-10">
+        <div className="flex items-center gap-2 sm:gap-4 relative z-10">
           <div className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-xl font-mono font-black text-sm sm:text-base border transition-all duration-300 shadow-sm",
+            "flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl font-mono font-black text-xs sm:text-base border transition-all duration-300 shadow-sm",
             currentMode === 'practice' && untimedPractice
               ? "bg-emerald-50 text-emerald-700 border-emerald-250"
               : timeLeft < 60
@@ -999,9 +999,9 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
 
           <button 
             onClick={() => setShowSubmitConfirm(true)}
-            className="bg-[#8a1c36] hover:bg-[#76142c] text-white px-5 py-2.5 sm:px-6 rounded-xl font-bold transition-all duration-300 text-xs sm:text-sm uppercase tracking-widest cursor-pointer shadow-md shadow-[#8a1c36]/10 hover:shadow-lg hover:shadow-[#8a1c36]/20 active:scale-95 flex items-center gap-2"
+            className="bg-[#8a1c36] hover:bg-[#76142c] text-white p-2.5 sm:px-6 sm:py-2.5 rounded-xl font-bold transition-all duration-300 text-xs sm:text-sm uppercase tracking-widest cursor-pointer shadow-md shadow-[#8a1c36]/10 hover:shadow-lg hover:shadow-[#8a1c36]/20 active:scale-95 flex items-center gap-2"
           >
-            <Send className="w-4 h-4" /> Submit
+            <Send className="w-4 h-4" /> <span className="hidden sm:inline">Submit</span>
           </button>
         </div>
       </header>
