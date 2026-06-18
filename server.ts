@@ -47,6 +47,15 @@ async function startServer() {
                         (!process.env.npm_lifecycle_event?.includes('dev') && 
                          fs.existsSync(path.join(distPath, 'index.html')));
 
+  // In-memory cache for index.html — eliminates disk I/O on every request (reduces TTFB)
+  let cachedIndexHtml: string | null = null;
+  const getIndexHtml = (): string => {
+    if (!cachedIndexHtml) {
+      cachedIndexHtml = fs.readFileSync(path.join(distPath, 'index.html'), 'utf8');
+    }
+    return cachedIndexHtml;
+  };
+
   app.use(express.json({
     verify: (req: any, res, buf) => {
       req.rawBody = buf;
@@ -1428,7 +1437,8 @@ async function startServer() {
     }));
     app.get('*', (req, res) => {
       res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-      res.sendFile(path.join(distPath, 'index.html'));
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(getIndexHtml());
     });
   }
 
