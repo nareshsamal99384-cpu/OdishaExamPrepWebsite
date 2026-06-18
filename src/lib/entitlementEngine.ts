@@ -202,12 +202,9 @@ export const runEntitlementAudit = async (
     const finalProductIds = Array.from(new Set([...deduplicatedProductIds, ...missingInMeta]));
 
     // 6. Apply self-healing sync if out-of-sync
-    const setsAreEqual = (s1: Set<any>, s2: Set<any>) =>
-      s1.size === s2.size && Array.from(s1).every(v => s2.has(v));
-
-    const currentMetaSet = new Set(metaProductIds);
-    const finalMetaSet = new Set(finalProductIds);
-    const needsUpdate = !setsAreEqual(currentMetaSet, finalMetaSet);
+    // Only write to Supabase Auth user metadata if there are actual missing items from the DB ledger.
+    // We do not execute updateUser write calls just to remove redundant items, as this can trigger rate limits.
+    const needsUpdate = missingInMeta.length > 0;
 
     if (needsUpdate) {
       console.log(`[Entitlement Audit] Self-Healing User Metadata. Redundant removed: ${redundantIds.length}, DB added: ${missingInMeta.length}`);
@@ -232,7 +229,7 @@ export const runEntitlementAudit = async (
 
     // Console logs in development to proactively monitor integrity
     console.log(
-      `%c[Entitlement Audit] Status: HEALTHY · Active Entitlements: ${finalMetaSet.size} · Redundant: ${redundantIds.length} · Inherited verified`,
+      `%c[Entitlement Audit] Status: HEALTHY · Active Entitlements: ${finalProductIds.length} · Redundant: ${redundantIds.length} · Inherited verified`,
       'color: #059669; font-weight: bold; background: #ecfdf5; padding: 2px 6px; border-radius: 4px;'
     );
 
