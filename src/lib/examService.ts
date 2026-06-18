@@ -687,11 +687,47 @@ export const examService = {
       console.log(`Question bank ${id} has active user purchases. Archiving to protect access.`);
       await callAdminDbProxy('questionBanks', 'update', { is_archived: true }, id);
     } else {
+      try {
+        // Fetch bank to get its title
+        const { data: bank } = await supabase
+          .from('questionBanks')
+          .select('title, examId')
+          .eq('id', id)
+          .single();
+        if (bank && bank.title) {
+          // Delete all questions associated with this bank
+          await callAdminDbProxy('questions', 'delete', undefined, undefined, {
+            topic: { op: 'eq', val: bank.title },
+            examId: { op: 'eq', val: bank.examId }
+          });
+        }
+      } catch (err) {
+        console.error("Failed to delete questions associated with deleted bank:", err);
+      }
       await callAdminDbProxy('questionBanks', 'delete', undefined, id);
     }
   },
 
   async updateQuestionBank(id: string, updates: Partial<QuestionBank>) {
+    // If the title is being updated, we should also update the topic of all associated questions
+    if (updates.title) {
+      try {
+        const { data: oldBank } = await supabase
+          .from('questionBanks')
+          .select('title, examId')
+          .eq('id', id)
+          .single();
+        
+        if (oldBank && oldBank.title && oldBank.title !== updates.title) {
+          await callAdminDbProxy('questions', 'update', { topic: updates.title }, undefined, {
+            topic: { op: 'eq', val: oldBank.title },
+            examId: { op: 'eq', val: oldBank.examId }
+          });
+        }
+      } catch (err) {
+        console.error("Failed to cascade question bank title update to questions:", err);
+      }
+    }
     const data = await callAdminDbProxy('questionBanks', 'update', updates, id);
     return data?.[0] || data;
   }

@@ -65,7 +65,7 @@ import { activityTracker } from './lib/activityTracker';
 import { MathTextRenderer, DiagramRenderer } from './components/MathTextRenderer';
 
 const AdminPanel = React.lazy(() => import('./AdminPanel'));
-const MockTestSystem = React.lazy(() => import('./MockTestSystem'));
+import MockTestSystem from './MockTestSystem';
 const TestResultsView = React.lazy(() => import('./TestResultsView'));
 import AnalyticsView from './AnalyticsView';
 const AdminLoginPage = React.lazy(() => import('./pages/AdminLoginPage'));
@@ -4159,10 +4159,6 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       timeLimit: '30'
     };
   });
-
-
-
-
   const handleSaveOnboarding = async (exam: string, timeline: string, prepLevel: string) => {
     try {
       const { error } = await supabase.auth.updateUser({
@@ -4224,10 +4220,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       const { data } = await supabase.from('questions').select('topic').eq('examId', activeExamId);
       let matchedQs = data || [];
       if (bankTopicName) {
-        matchedQs = matchedQs.filter((q: any) => 
-           (q.topic && q.topic.toLowerCase().includes(bankTopicName.toLowerCase())) || 
-           (bankTopicName.toLowerCase().includes((q.topic || '').toLowerCase()))
-        );
+        const normBank = bankTopicName.toLowerCase().replace(/[\s\-_—–:()]+/g, '').trim();
+        matchedQs = matchedQs.filter((q: any) => {
+           if (!q.topic) return false;
+           const normQ = q.topic.toLowerCase().replace(/[\s\-_—–:()]+/g, '').trim();
+           return normQ.includes(normBank) || normBank.includes(normQ);
+        });
       }
       setTopicMaxQuestions(matchedQs.length);
       
@@ -4631,10 +4629,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       
       let matchedQs = data || [];
       if (bankTopicName) {
-        matchedQs = matchedQs.filter((q: any) => 
-           (q.topic && q.topic.toLowerCase().includes(bankTopicName.toLowerCase())) || 
-           (bankTopicName.toLowerCase().includes((q.topic || '').toLowerCase()))
-        );
+        const normBank = bankTopicName.toLowerCase().replace(/[\s\-_—–:()]+/g, '').trim();
+        matchedQs = matchedQs.filter((q: any) => {
+           if (!q.topic) return false;
+           const normQ = q.topic.toLowerCase().replace(/[\s\-_—–:()]+/g, '').trim();
+           return normQ.includes(normBank) || normBank.includes(normQ);
+        });
       }
       
       if (matchedQs.length === 0) {
