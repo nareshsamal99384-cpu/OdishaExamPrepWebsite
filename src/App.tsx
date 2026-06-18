@@ -62,12 +62,10 @@ import { sectionReveal, sectionRevealSimple, sectionRevealScale, fadeSlideRight,
 import { ErrorBoundary } from './ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
 import { activityTracker } from './lib/activityTracker';
-import { MathTextRenderer, DiagramRenderer } from './components/MathTextRenderer';
-
 const AdminPanel = React.lazy(() => import('./AdminPanel'));
 const MockTestSystem = React.lazy(() => import('./MockTestSystem'));
 const TestResultsView = React.lazy(() => import('./TestResultsView'));
-import AnalyticsView from './AnalyticsView';
+const AnalyticsView = React.lazy(() => import('./AnalyticsView'));
 const AdminLoginPage = React.lazy(() => import('./pages/AdminLoginPage'));
 const AdminDashboardPage = React.lazy(() => import('./pages/AdminDashboardPage'));
 const PrivacyPolicy = React.lazy(() => import('./PrivacyPolicy'));
@@ -78,7 +76,7 @@ const YouTubeCarousel = React.lazy(() => import('./components/YouTubeCarousel'))
 const BlogList = React.lazy(() => import('./pages/BlogList'));
 const BlogPost = React.lazy(() => import('./pages/BlogPost'));
 const AiMentor = React.lazy(() => import('./pages/AiMentor'));
-import StickyAICompanion from './components/StickyAICompanion';
+const StickyAICompanion = React.lazy(() => import('./components/StickyAICompanion'));
 import LoadingPortal from './components/LoadingPortal';
 
 const HistoryView = ({ 
@@ -4918,7 +4916,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   }
 
   if (mainTab === 'analytics') {
-    return <AnalyticsView user={user} activities={activities} onNavigate={onNavigate} />;
+    return (
+      <React.Suspense fallback={
+        <div className="flex flex-col items-center justify-center p-12 text-slate-400">
+          <div className="w-10 h-10 border-4 border-[#8A1C36] border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-xs font-bold uppercase tracking-widest animate-pulse">Loading Analytics Dashboard...</p>
+        </div>
+      }>
+        <AnalyticsView user={user} activities={activities} onNavigate={onNavigate} />
+      </React.Suspense>
+    );
   }
 
   if (mainTab === 'history') {
@@ -7153,10 +7160,12 @@ function AppContent() {
         <WhatsAppButton />
       )}
       {!(location.pathname.startsWith('/admin') || location.pathname.startsWith('/admin-login')) && (
-        <StickyAICompanion 
-          isBottomNavVisible={isBottomNavVisible} 
-          activeTab={location.pathname.startsWith('/blog') ? 'blog' : mainTab} 
-        />
+        <React.Suspense fallback={null}>
+          <StickyAICompanion 
+            isBottomNavVisible={isBottomNavVisible} 
+            activeTab={location.pathname.startsWith('/blog') ? 'blog' : mainTab} 
+          />
+        </React.Suspense>
       )}
 
       <AnimatePresence>

@@ -1,4 +1,5 @@
 import express from "express";
+import compression from "compression";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import fs from "fs";
@@ -33,6 +34,7 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
 
 async function startServer() {
   const app = express();
+  app.use(compression());
   app.set('trust proxy', true);
   const PORT = process.env.PORT || "3000";
 
@@ -1411,8 +1413,21 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, {
+      maxAge: '1y',
+      setHeaders: (res, filePath) => {
+        const basename = path.basename(filePath);
+        if (basename === 'index.html' || basename === 'sitemap.xml' || basename === 'robots.txt' || filePath.endsWith('.html')) {
+          res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+        } else if (filePath.includes('assets' + path.sep) || filePath.includes('assets/')) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        } else {
+          res.setHeader('Cache-Control', 'public, max-age=86400, must-revalidate');
+        }
+      }
+    }));
     app.get('*', (req, res) => {
+      res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
