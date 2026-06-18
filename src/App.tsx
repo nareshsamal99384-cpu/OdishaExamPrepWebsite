@@ -4826,9 +4826,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
   if (activeTest) {
     return (
+      <ErrorBoundary>
       <React.Suspense fallback={<LoadingPortal />}>
         <MockTestSystem 
           test={activeTest} 
+          mode={activeTest?.id?.startsWith('practice-') ? 'practice' : 'mock'}
           initialState={activeTestState}
           onExit={(progressState) => {
             sessionStorage.removeItem('oep_activeTestState');
@@ -4902,6 +4904,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           }} 
         />
       </React.Suspense>
+      </ErrorBoundary>
     );
   }
 

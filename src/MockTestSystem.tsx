@@ -32,6 +32,7 @@ import { fadeSlideUp, modalContent } from './lib/animations';
 
 /** Count math [bracket] blocks in a question string */
 const countMathBlocks = (text: string): number => {
+  if (!text) return 0;
   const matches = text.match(/\[[^\[\]\n]{2,120}\]/g) || [];
   return matches.filter(m => /[=^_\\+\-*/]/.test(m) && /[a-zA-Z0-9]/.test(m)).length;
 };
@@ -91,6 +92,7 @@ const isAsciiDiagram = (para: string): boolean => {
 
 /** True when a question needs the full-width stacked layout */
 const isMathHeavyQuestion = (text: string): boolean => {
+  if (!text) return false;
   const blocks = countMathBlocks(text);
   // Also trigger stacked layout if question contains a diagram
   const hasDiagram = text.split('\n\n').some(p => isAsciiDiagram(p));
@@ -393,7 +395,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
     let general = 0;
 
     test.questions.forEach(q => {
-      const txt = q.questionText.toLowerCase();
+      const txt = (q.questionText || '').toLowerCase();
       if (txt.includes('article') || txt.includes('president') || txt.includes('governor') || txt.includes('amendment') || txt.includes('constitution') || txt.includes('legislature') || txt.includes('parliament') || txt.includes('court') || txt.includes('high court')) {
         polity++;
       } else if (txt.includes('river') || txt.includes('lake') || txt.includes('soil') || txt.includes('district') || txt.includes('forest') || txt.includes('dam') || txt.includes('national park') || txt.includes('climate') || txt.includes('geography') || txt.includes('mineral')) {
@@ -531,7 +533,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
     }
   }, [currentQuestionIndex]);
 
-  const currentQuestion = test.questions[currentQuestionIndex];
+  const currentQuestion = test.questions[currentQuestionIndex] || { id: '', questionText: '', options: [], correctAnswerIndex: 0, explanation: '' };
 
   // Keyboard Shortcuts for CBT Usability (30% Modern Usability Improvements)
   useEffect(() => {
@@ -1030,7 +1032,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
             const mathHeavy = isMathHeavyQuestion(currentQuestion.questionText) || !!currentQuestion.diagram;
             const mathBlockCount = countMathBlocks(currentQuestion.questionText);
             const useCompactBlocks = mathBlockCount >= 2;
-            const paragraphs = currentQuestion.questionText.split('\n\n').filter(Boolean);
+            const paragraphs = (currentQuestion.questionText || '').split('\n\n').filter(Boolean);
 
             return (
               <main className={cn(
@@ -1117,7 +1119,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                           "grid gap-2 lg:gap-2.5",
                           mathHeavy ? "sm:grid-cols-2" : "max-w-3xl"
                         )}>
-                          {currentQuestion.options.map((option, idx) => {
+                          {(Array.isArray(currentQuestion.options) ? currentQuestion.options : []).map((option, idx) => {
                             const isSelected = answers[currentQuestionIndex] === idx;
                             const isCorrect = idx === currentQuestion.correctAnswerIndex;
                             const showResult = currentMode === 'practice' && answers[currentQuestionIndex] !== undefined;
