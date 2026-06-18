@@ -160,12 +160,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       let dbPurchasedIds: string[] = [];
       if (navigator.onLine) {
         try {
-          const dbPromise = supabase
-            .from('user_purchases')
-            .select('product_id')
-            .eq('user_id', activeUser.id)
-            .eq('status', 'active');
-          const dbResult = await withTimeout(dbPromise, 3000, { data: null, error: null });
+          const dbPromise = Promise.resolve(
+            supabase
+              .from('user_purchases')
+              .select('product_id')
+              .eq('user_id', activeUser.id)
+              .eq('status', 'active')
+          );
+          const dbResult = await withTimeout(dbPromise, 3000, { data: null, error: null } as any);
           if (dbResult && dbResult.data) {
             dbPurchasedIds = dbResult.data.map((p: any) => p.product_id);
           }

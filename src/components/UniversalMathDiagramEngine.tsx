@@ -1626,7 +1626,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
 
     if (activePointers.current.size === 2) {
       // Initialize pinch distance
-      const pointers = Array.from(activePointers.current.values());
+      const pointers = Array.from(activePointers.current.values()) as any[];
       const dx = pointers[0].clientX - pointers[1].clientX;
       const dy = pointers[0].clientY - pointers[1].clientY;
       prevPinchDistance.current = Math.sqrt(dx * dx + dy * dy);
@@ -1657,7 +1657,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
 
     // 1. Pinch-to-zoom behavior on mobile
     if (activePointers.current.size === 2) {
-      const pointers = Array.from(activePointers.current.values());
+      const pointers = Array.from(activePointers.current.values()) as any[];
       const dx = pointers[0].clientX - pointers[1].clientX;
       const dy = pointers[0].clientY - pointers[1].clientY;
       const distance = Math.sqrt(dx * dx + dy * dy);
