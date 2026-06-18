@@ -4187,27 +4187,18 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       setTopicMaxQuestions(0);
       return;
     }
-    const fetchMaxQuestions = async () => {
-      const topicBank = Object.values(dynamicQuestionBanks).flat().find((b: any) => b.id === practiceSettings.topic) as any;
-      const bankTopicName = topicBank ? topicBank.title : practiceSettings.topic;
-
-      const { data } = await supabase.from('questions').select('topic').eq('examId', activeExamId);
-      let matchedQs = data || [];
-      if (bankTopicName) {
-        matchedQs = matchedQs.filter((q: any) => 
-           (q.topic && q.topic.toLowerCase().includes(bankTopicName.toLowerCase())) || 
-           (bankTopicName.toLowerCase().includes((q.topic || '').toLowerCase()))
-        );
-      }
-      setTopicMaxQuestions(matchedQs.length);
-      
+    const topicBank = Object.values(dynamicQuestionBanks).flat().find((b: any) => b.id === practiceSettings.topic) as any;
+    if (topicBank) {
+      const qCount = Number(topicBank.questions) || 0;
+      setTopicMaxQuestions(qCount);
       setPracticeSettings(prev => {
          const currentVal = Number(prev.questions) || 20;
-         const safeVal = Math.min(currentVal, matchedQs.length);
+         const safeVal = Math.min(currentVal, qCount);
          return { ...prev, questions: safeVal > 0 ? safeVal.toString() : '0' };
       });
-    };
-    fetchMaxQuestions();
+    } else {
+      setTopicMaxQuestions(0);
+    }
   }, [practiceSettings.topic, practiceSettings.examId, selectedExam, dynamicQuestionBanks]);
 
   useEffect(() => {
