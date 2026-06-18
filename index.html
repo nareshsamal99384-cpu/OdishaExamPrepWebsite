@@ -7,6 +7,35 @@
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <meta name="theme-color" content="#8B1A2F" />
     <title>OdishaExamPrep - Best Platform for Odisha Exam Preparation</title>
+    <script>
+      // Automatically reload the page when dynamic chunk imports fail (e.g. flaky network on mobile app switches)
+      (function() {
+        function reloadPage() {
+          var lastReload = sessionStorage.getItem('oep_last_chunk_reload');
+          var now = Date.now();
+          if (!lastReload || (now - parseInt(lastReload) > 15000)) {
+            sessionStorage.setItem('oep_last_chunk_reload', now.toString());
+            window.location.reload();
+          }
+        }
+        window.addEventListener('error', function(e) {
+          var msg = e.message || '';
+          if (msg.indexOf('Failed to fetch dynamically') !== -1 || 
+              msg.indexOf('loading chunk') !== -1 || 
+              msg.indexOf('Failed to fetch') !== -1) {
+            reloadPage();
+          }
+        }, true);
+        window.addEventListener('unhandledrejection', function(e) {
+          var reason = e.reason && (e.reason.message || e.reason.toString()) || '';
+          if (reason.indexOf('Failed to fetch dynamically') !== -1 || 
+              reason.indexOf('loading chunk') !== -1 || 
+              reason.indexOf('Failed to fetch') !== -1) {
+            reloadPage();
+          }
+        });
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
