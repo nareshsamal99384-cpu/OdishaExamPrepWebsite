@@ -165,7 +165,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             .select('product_id')
             .eq('user_id', activeUser.id)
             .eq('status', 'active');
-          const dbResult = await withTimeout(dbPromise, 3000, { data: null, error: null });
+          const dbResult = await withTimeout(dbPromise as any, 3000, { data: null, error: null });
           if (dbResult && dbResult.data) {
             dbPurchasedIds = dbResult.data.map((p: any) => p.product_id);
           }

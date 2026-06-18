@@ -2,7 +2,7 @@ import React, { useState, useRef, useLayoutEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, XCircle, Clock, Flag, AlertCircle, ChevronLeft, ChevronRight, ChevronDown, BarChart } from 'lucide-react';
 import { cn } from './lib/utils';
-import { Button } from './App';
+import { Button } from './components/ui';
 import { fadeSlideUpSm } from './lib/animations';
 import { MathTextRenderer, DiagramRenderer } from './components/MathTextRenderer';
 

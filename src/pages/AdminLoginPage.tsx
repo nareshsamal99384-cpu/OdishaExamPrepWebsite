@@ -3,7 +3,7 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
-import { Button, Card } from '../App';
+import { Button, Card } from '../components/ui';
 import { Lock, Mail, AlertCircle, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import { fadeSlideUp } from '../lib/animations';
 import PageLayout from '../components/PageLayout';
