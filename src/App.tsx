@@ -73,8 +73,8 @@ const AdminDashboardPage = React.lazy(() => import('./pages/AdminDashboardPage')
 const PrivacyPolicy = React.lazy(() => import('./PrivacyPolicy'));
 const TermsOfService = React.lazy(() => import('./TermsOfService'));
 const RefundPolicy = React.lazy(() => import('./RefundPolicy'));
-const SearchableSelect = React.lazy(() => import('./components/SearchableSelect'));
-const YouTubeCarousel = React.lazy(() => import('./components/YouTubeCarousel'));
+import SearchableSelect from './components/SearchableSelect';
+import YouTubeCarousel from './components/YouTubeCarousel';
 const BlogList = React.lazy(() => import('./pages/BlogList'));
 const BlogPost = React.lazy(() => import('./pages/BlogPost'));
 const AiMentor = React.lazy(() => import('./pages/AiMentor'));
