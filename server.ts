@@ -1,5 +1,4 @@
 import express from "express";
-import compression from "compression";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import fs from "fs";
@@ -34,13 +33,6 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
 
 async function startServer() {
   const app = express();
-  // Skip compression for Server-Sent Events (SSE) so chunks are sent immediately (not buffered)
-  app.use(compression({
-    filter: (req, res) => {
-      if (req.path === '/api/chat/completions') return false;
-      return compression.filter(req, res);
-    }
-  }));
   app.set('trust proxy', true);
   const PORT = process.env.PORT || "3000";
 
@@ -52,15 +44,6 @@ async function startServer() {
                         process.env.NODE_ENV === "prod" || 
                         (!process.env.npm_lifecycle_event?.includes('dev') && 
                          fs.existsSync(path.join(distPath, 'index.html')));
-
-  // In-memory cache for index.html — eliminates disk I/O on every request (reduces TTFB)
-  let cachedIndexHtml: string | null = null;
-  const getIndexHtml = (): string => {
-    if (!cachedIndexHtml) {
-      cachedIndexHtml = fs.readFileSync(path.join(distPath, 'index.html'), 'utf8');
-    }
-    return cachedIndexHtml;
-  };
 
   app.use(express.json({
     verify: (req: any, res, buf) => {
@@ -1217,11 +1200,8 @@ async function startServer() {
 
         if (stream) {
           res.setHeader("Content-Type", "text/event-stream");
-          res.setHeader("Cache-Control", "no-cache, no-transform");
+          res.setHeader("Cache-Control", "no-cache");
           res.setHeader("Connection", "keep-alive");
-          res.setHeader("X-Accel-Buffering", "no"); // Disable Nginx/proxy buffering
-          // Flush headers immediately so the client knows streaming has started
-          res.flushHeaders();
 
           const reader = response.body?.getReader();
 
@@ -1230,8 +1210,6 @@ async function startServer() {
               const { value, done } = await reader.read();
               if (done) break;
               res.write(value);
-              // Flush each chunk to the client immediately
-              if ((res as any).flush) (res as any).flush();
             }
           }
           res.end();
@@ -1433,23 +1411,9 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(distPath, {
-      maxAge: '1y',
-      setHeaders: (res, filePath) => {
-        const basename = path.basename(filePath);
-        if (basename === 'index.html' || basename === 'sitemap.xml' || basename === 'robots.txt' || filePath.endsWith('.html')) {
-          res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-        } else if (filePath.includes('assets' + path.sep) || filePath.includes('assets/')) {
-          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-        } else {
-          res.setHeader('Cache-Control', 'public, max-age=86400, must-revalidate');
-        }
-      }
-    }));
+    app.use(express.static(distPath));
     app.get('*', (req, res) => {
-      res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-      res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.send(getIndexHtml());
+      res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
