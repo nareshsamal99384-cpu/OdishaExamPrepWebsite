@@ -1252,6 +1252,11 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
   const [isPanning, setIsPanning] = useState(false);
   const panStart = useRef({ x: 0, y: 0, offsetX: 0, offsetY: 0 });
 
+  // Pinch-to-zoom and wheel tracking refs
+  const activePointers = useRef<Map<number, any>>(new Map());
+  const prevPinchDistance = useRef<number | null>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
+
   // Hover and Click selections
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -1597,10 +1602,45 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
     return instances;
   }, [showLabels, dynamicShapes, mx, my, vWidth, vHeight, isDark]);
   // 4. Interactive Events (Panning & Zooming)
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    // Handle mouse wheel zooming on desktop
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const zoomFactor = 0.08;
+      const direction = e.deltaY < 0 ? 1 : -1;
+      setZoom(prev => Math.min(3.0, Math.max(0.5, prev + direction * zoomFactor)));
+    };
+
+    viewport.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      viewport.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
+
   const handleCanvasPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0 || draggedId) return; // Only trigger pan if not dragging a shape
+    // Track pointer for pinch gestures
+    activePointers.current.set(e.pointerId, e.nativeEvent);
+
+    if (activePointers.current.size === 2) {
+      // Initialize pinch distance
+      const pointers = Array.from(activePointers.current.values());
+      const dx = pointers[0].clientX - pointers[1].clientX;
+      const dy = pointers[0].clientY - pointers[1].clientY;
+      prevPinchDistance.current = Math.sqrt(dx * dx + dy * dy);
+      setIsPanning(false); // Disable normal panning when pinching
+      return;
+    }
+
+    if (e.button !== 0 || draggedId || activePointers.current.size > 1) return;
+    
     const target = e.currentTarget;
-    target.setPointerCapture(e.pointerId);
+    try {
+      target.setPointerCapture(e.pointerId);
+    } catch (err) {}
+    
     panStart.current = {
       x: e.clientX,
       y: e.clientY,
@@ -1612,6 +1652,26 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
   };
 
   const handleCanvasPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Update active pointer details
+    activePointers.current.set(e.pointerId, e.nativeEvent);
+
+    // 1. Pinch-to-zoom behavior on mobile
+    if (activePointers.current.size === 2) {
+      const pointers = Array.from(activePointers.current.values());
+      const dx = pointers[0].clientX - pointers[1].clientX;
+      const dy = pointers[0].clientY - pointers[1].clientY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (prevPinchDistance.current !== null && prevPinchDistance.current > 0) {
+        const factor = distance / prevPinchDistance.current;
+        // Dampen scale change for smooth zooming
+        const scaleChange = (factor - 1) * 0.45;
+        setZoom(prev => Math.min(3.0, Math.max(0.5, prev * (1 + scaleChange))));
+      }
+      prevPinchDistance.current = distance;
+      return; // Skip standard panning and cursor coordinate tracking during pinch
+    }
+
     // Track cursor Cartesian coordinates
     if (svgRef.current) {
       const rect = svgRef.current.getBoundingClientRect();
@@ -1641,7 +1701,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
       });
     }
 
-    if (isPanning) {
+    if (isPanning && activePointers.current.size === 1) {
       const dx = e.clientX - panStart.current.x;
       const dy = e.clientY - panStart.current.y;
       setOffset({
@@ -1652,6 +1712,14 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
   };
 
   const handleCanvasPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    activePointers.current.delete(e.pointerId);
+    if (activePointers.current.size === 0) {
+      activePointers.current.clear();
+      prevPinchDistance.current = null;
+    } else if (activePointers.current.size < 2) {
+      prevPinchDistance.current = null;
+    }
+
     if (isPanning) {
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
@@ -2022,12 +2090,13 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
  
       {/* 2. Interactive SVG Canvas wrapper */}
       <div 
+        ref={viewportRef}
         onPointerDown={handleCanvasPointerDown}
         onPointerMove={handleCanvasPointerMove}
         onPointerUp={handleCanvasPointerUp}
         onPointerCancel={handleCanvasPointerUp}
+        onPointerLeave={(e) => { handleCanvasPointerUp(e); setIsMouseOverCanvas(false); }}
         onPointerEnter={() => setIsMouseOverCanvas(true)}
-        onPointerLeave={() => setIsMouseOverCanvas(false)}
         className="canvas-viewport p-3.5 sm:p-10 flex justify-center items-center bg-slate-50/50 dark:bg-[#070b12] overflow-hidden w-full select-none relative min-h-[260px] sm:min-h-[420px]"
         style={{ 
           cursor: isPanning ? 'grabbing' : (draggedId ? 'grabbing' : 'grab'),
