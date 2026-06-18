@@ -78,6 +78,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, fallbackValue: T): Prom
 }
 
 const supabaseAdmin = supabase;
+const auditedUsers = new Set<string>();
 
 interface AuthContextType {
   user: User | null;
@@ -197,10 +198,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } else {
           // Check if there are database purchases that are not yet reflected in user metadata
           const hasMissingMetadata = dbPurchasedIds.some(id => !metaPurchased.includes(id));
-          if (hasMissingMetadata) {
+          const userId = activeUser.id;
+          if (hasMissingMetadata && !auditedUsers.has(userId)) {
+            auditedUsers.add(userId);
             console.log('[AuthContext] Discrepancy detected between DB ledger and auth metadata. Triggering background self-healing...');
-            runEntitlementAudit(supabase, activeUser.id, tempProfile).catch(e => {
+            runEntitlementAudit(supabase, userId, tempProfile).catch(e => {
               console.error('[Background Entitlement Audit] Failed:', e);
+              auditedUsers.delete(userId); // Allow retry on failure
             });
           }
         }
