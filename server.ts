@@ -34,7 +34,13 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
 
 async function startServer() {
   const app = express();
-  app.use(compression());
+  // Skip compression for Server-Sent Events (SSE) so chunks are sent immediately (not buffered)
+  app.use(compression({
+    filter: (req, res) => {
+      if (req.path === '/api/chat/completions') return false;
+      return compression.filter(req, res);
+    }
+  }));
   app.set('trust proxy', true);
   const PORT = process.env.PORT || "3000";
 
@@ -1211,8 +1217,11 @@ async function startServer() {
 
         if (stream) {
           res.setHeader("Content-Type", "text/event-stream");
-          res.setHeader("Cache-Control", "no-cache");
+          res.setHeader("Cache-Control", "no-cache, no-transform");
           res.setHeader("Connection", "keep-alive");
+          res.setHeader("X-Accel-Buffering", "no"); // Disable Nginx/proxy buffering
+          // Flush headers immediately so the client knows streaming has started
+          res.flushHeaders();
 
           const reader = response.body?.getReader();
 
@@ -1221,6 +1230,8 @@ async function startServer() {
               const { value, done } = await reader.read();
               if (done) break;
               res.write(value);
+              // Flush each chunk to the client immediately
+              if ((res as any).flush) (res as any).flush();
             }
           }
           res.end();
