@@ -3785,6 +3785,13 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                 throw new Error('Server did not return a valid order ID. Please verify your Razorpay API key configurations in .env and restart your dev server.');
                               }
 
+                              // Track pending payment state in localStorage (essential for auto-recovery on page reloads/switches)
+                              localStorage.setItem('oep_pending_payment', JSON.stringify({
+                                orderId: orderData.orderId,
+                                productId: paywallItemId || 'full_access',
+                                timestamp: Date.now()
+                              }));
+
                               // 2. Open Razorpay checkout with the orderId
                               const options = {
                                 key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_StcJAJY1MgRGmJ',
@@ -3859,6 +3866,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                 modal: {
                                   ondismiss: function () {
                                     console.log('Payment checkout closed');
+                                    localStorage.removeItem('oep_pending_payment');
                                   }
                                 }
                               };
@@ -4708,6 +4716,13 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         throw new Error('Server did not return a valid order ID. Please verify your Razorpay API key configurations in .env and restart your dev server.');
       }
 
+      // Track pending payment state in localStorage (essential for auto-recovery on page reloads/switches)
+      localStorage.setItem('oep_pending_payment', JSON.stringify({
+        orderId: orderData.orderId,
+        productId: test.id,
+        timestamp: Date.now()
+      }));
+
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_StcJAJY1MgRGmJ',
         amount: orderData.amount,
@@ -4762,6 +4777,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         },
         theme: {
           color: '#4f46e5'
+        },
+        modal: {
+          ondismiss: function () {
+            console.log('Payment checkout closed');
+            localStorage.removeItem('oep_pending_payment');
+          }
         }
       };
 

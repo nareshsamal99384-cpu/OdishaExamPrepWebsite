@@ -216,12 +216,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       setProfile(finalProfile);
       cacheOfflineAccess(activeUser.id, finalProfile);
+      return finalProfile;
     } catch (error) {
       console.error('fetchProfile error:', error);
       if (sessionUser) {
         const offlineVault = loadOfflineAccess(sessionUser.id);
         if (offlineVault) {
-          setProfile({
+          const fallbackProfile = {
             uid: sessionUser.id,
             email: sessionUser.email,
             displayName: sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.displayName || sessionUser.email?.split('@')[0],
@@ -230,10 +231,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             hasFullAccess: offlineVault.hasFullAccess,
             purchasedSeries: offlineVault.purchasedSeries,
             isOfflineFallback: true
-          });
+          };
+          setProfile(fallbackProfile);
           toast.error("Offline Mode: Using cached entitlements from your device.", { id: 'offline-fallback' });
+          return fallbackProfile;
         }
       }
+      return null;
     }
   };
 
@@ -311,6 +315,68 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       window.removeEventListener('offline', handleOffline);
     };
   }, [user]);
+
+  // Check for pending payments on app load (critical for old mobile devices where browser gets killed/refreshed)
+  useEffect(() => {
+    if (!user || !profile) return;
+
+    const rawPending = localStorage.getItem('oep_pending_payment');
+    if (!rawPending) return;
+
+    try {
+      const pending = JSON.parse(rawPending);
+      const now = Date.now();
+
+      // Only track pending payments initiated in the last 10 minutes
+      if (pending && pending.productId && now - pending.timestamp < 10 * 60 * 1000) {
+        // If the item is already unlocked in profile, clear the pending state immediately
+        if (profile.purchasedSeries?.includes(pending.productId) || profile.hasFullAccess) {
+          localStorage.removeItem('oep_pending_payment');
+          return;
+        }
+
+        console.log(`[Pending Payment] Found pending payment for: ${pending.productId}. Starting DB ledger sync polling...`);
+        
+        let attempts = 0;
+        const maxAttempts = 12; // Poll for 36 seconds (12 * 3s)
+        
+        const interval = setInterval(async () => {
+          attempts++;
+          
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            // We fetch the profile with forceRefresh = true to hit the database user_purchases
+            const freshProfile = await fetchProfile(session.user, true);
+            const isUnlocked = freshProfile?.purchasedSeries?.includes(pending.productId) || freshProfile?.hasFullAccess;
+            
+            if (isUnlocked) {
+              console.log(`[Pending Payment] Payment verified! Product ${pending.productId} is now unlocked.`);
+              localStorage.removeItem('oep_pending_payment');
+              toast.success("Payment verified! Your bundle has been unlocked successfully.", { 
+                id: 'pending-payment-success',
+                duration: 6000 
+              });
+              clearInterval(interval);
+              return;
+            }
+          }
+
+          if (attempts >= maxAttempts) {
+            console.log(`[Pending Payment] Polling finished. Product not yet unlocked in DB.`);
+            clearInterval(interval);
+            localStorage.removeItem('oep_pending_payment');
+          }
+        }, 3000);
+
+        return () => clearInterval(interval);
+      } else {
+        localStorage.removeItem('oep_pending_payment');
+      }
+    } catch (e) {
+      console.error('Error handling pending payment polling:', e);
+      localStorage.removeItem('oep_pending_payment');
+    }
+  }, [user, profile?.uid]);
 
   const incrementGuestUsage = (type: 'questions' | 'tests') => {
     const newUsage = { ...guestUsage, [type]: guestUsage[type] + 1 };
