@@ -816,7 +816,7 @@ const AchieversJournalSection = () => {
 
   return (
     <section id="achievers-journal" className="py-12 md:py-16 bg-slate-50 border-y border-slate-200/60 scroll-mt-24">
-      <div className="max-w-6xl mx-auto px-6 space-y-10">
+      <div className="max-w-6xl mx-auto px-6 space-y-6 md:space-y-10">
         <div className="flex flex-col items-center space-y-4 text-center">
           <span className="section-chip">
             🏆 VERIFIED SUCCESS STORIES
@@ -825,7 +825,12 @@ const AchieversJournalSection = () => {
             Join Hundreds of Aspirants <span className="premium-text-gradient font-serif font-extrabold">Who Cracked Their Target Exams</span>
           </h2>
           {!isMobile && <div className="section-divider" />}
-          <p className="text-slate-500 text-sm sm:text-base md:text-lg font-normal max-w-2xl mx-auto leading-relaxed">
+          {/* Mobile Version (Shorter) */}
+          <p className="block md:hidden text-base leading-relaxed text-gray-600 font-medium max-w-2xl mx-auto">
+            Explore real preparation strategies and test scores from students who conquered OPSC, OSSC, and OSSSC.
+          </p>
+          {/* Desktop Version (Original) */}
+          <p className="hidden md:block text-slate-500 text-sm sm:text-base md:text-lg font-normal max-w-2xl mx-auto leading-relaxed">
             Don't just take our word for it. Explore detailed preparation strategies, actual test scores, and accuracy timelines from real students who conquered OPSC, OSSC, and OSSSC using our platform.
           </p>
         </div>
