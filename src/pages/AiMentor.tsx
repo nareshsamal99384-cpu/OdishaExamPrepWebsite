@@ -1301,16 +1301,15 @@ export default function AiMentor({ user }: { user: any }) {
   }, [quizSubject, quizDifficulty, quizSize, quizMode, quizTargetExam, activeQuiz, selectedAnswers, quizSubmitted]);
 
   useEffect(() => {
-    localStorage.setItem('study_coach_timer_seconds', String(timerSeconds));
+    // timerSeconds is intentionally excluded — it's written inside the interval
+    // at a throttled rate (every 10s) and on pause/unmount to avoid per-second
+    // synchronous localStorage calls that block the main thread during scroll.
     localStorage.setItem('study_coach_timer_mode', timerMode);
     localStorage.setItem('study_coach_timer_max_seconds', String(timerMaxSeconds));
     localStorage.setItem('study_coach_break_max_seconds', String(breakMaxSeconds));
     localStorage.setItem('study_coach_timer_active', String(timerActive));
     localStorage.setItem('study_coach_timer_goal', timerGoal);
-    if (timerActive) {
-      localStorage.setItem('study_coach_timer_last_timestamp', String(Date.now()));
-    }
-  }, [timerSeconds, timerMode, timerMaxSeconds, breakMaxSeconds, timerActive, timerGoal]);
+  }, [timerMode, timerMaxSeconds, breakMaxSeconds, timerActive, timerGoal]);
 
   // Save AI Session Planner states
   useEffect(() => {
@@ -1829,6 +1828,11 @@ EXAM-ORIENTED DIRECTIVES:
 
   // Pomodoro Timer Effect
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Ref to throttle localStorage writes — save timerSeconds every 10 ticks, not every tick
+  const timerTickCountRef = useRef(0);
+  // Ref mirror of timerSeconds for use inside interval without stale closure
+  const timerSecondsRef = useRef(timerSeconds);
+  useEffect(() => { timerSecondsRef.current = timerSeconds; }, [timerSeconds]);
 
   useEffect(() => {
     if (timerActive) {
@@ -1840,15 +1844,28 @@ EXAM-ORIENTED DIRECTIVES:
         if (timerMode === 'study') {
           setStudySecondsAccumulator(prev => prev + 1);
         }
+
+        // 3. Throttled localStorage write — only every 10 seconds to avoid main-thread blocking on every tick
+        timerTickCountRef.current += 1;
+        if (timerTickCountRef.current % 10 === 0) {
+          localStorage.setItem('study_coach_timer_seconds', String(timerSecondsRef.current));
+          localStorage.setItem('study_coach_timer_last_timestamp', String(Date.now()));
+        }
       }, 1000);
     } else {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
       }
+      // Save accurate position when paused/stopped
+      localStorage.setItem('study_coach_timer_seconds', String(timerSecondsRef.current));
+      localStorage.setItem('study_coach_timer_last_timestamp', String(Date.now()));
+      timerTickCountRef.current = 0;
     }
     return () => {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
+        // Save on cleanup (tab switch / unmount)
+        localStorage.setItem('study_coach_timer_seconds', String(timerSecondsRef.current));
       }
     };
   }, [timerActive, timerMode]);
@@ -3448,7 +3465,7 @@ JSON structure:
           </div>
 
           {/* Scrollable content pane */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3.5 pb-8 no-scrollbar relative z-10 flex flex-col">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3.5 pb-8 no-scrollbar relative z-10 flex flex-col" style={{ contain: 'layout paint', willChange: 'transform' }}>
             <AnimatePresence mode="wait">
               {activeRightTab === 'planner' && (
                 <motion.div
