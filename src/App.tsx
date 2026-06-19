@@ -3526,26 +3526,44 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         </AnimatePresence>
 
         {/* Practice Config Modal — also available from Library tab */}
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {showPracticeConfig && (
             <React.Suspense fallback={<LoadingPortal />}>
-              <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 backdrop-blur-xl bg-slate-950/40 pointer-events-auto"
-            >
-              <div className="absolute inset-0" onClick={() => setShowPracticeConfig(false)} />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                transition={{ type: "spring", bounce: 0.3, duration: 0.5 }}
-                className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-slate-200/50 overflow-hidden"
-              >
+              <>
+                {/* Animated backdrop */}
+                <motion.div
+                  key="practice-backdrop"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                  className="fixed inset-0 z-[100] backdrop-blur-xl bg-slate-950/40"
+                  style={{ willChange: 'opacity' }}
+                  onClick={() => setShowPracticeConfig(false)}
+                />
+
+                {/* Modal panel — slides up on mobile, scale+fade on desktop */}
+                <div className="fixed inset-0 z-[101] flex items-end sm:items-center justify-center sm:p-6 pointer-events-none">
+                  <motion.div
+                    key="practice-modal"
+                    initial={{ y: '100%', opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: '100%', opacity: 0 }}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 320,
+                      damping: 32,
+                      mass: 0.9,
+                    }}
+                    className="relative w-full sm:max-w-4xl max-h-[92vh] sm:max-h-[90vh] flex flex-col bg-white rounded-t-[2rem] sm:rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-slate-200/50 overflow-hidden pointer-events-auto"
+                    style={{ willChange: 'transform, opacity' }}
+                  >
                 {/* Background glowing effects */}
                 <div className="absolute -top-40 -left-40 w-96 h-96 bg-brand-500/10 rounded-full blur-[100px] pointer-events-none" />
                 <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
+
+                {/* Drag handle (mobile only) */}
+                <div className="sm:hidden w-10 h-1 bg-slate-200 rounded-full mx-auto mt-3 mb-0 shrink-0" />
 
                 <div className="p-5 sm:p-7 md:p-9 overflow-y-auto no-scrollbar relative z-10 flex flex-col">
                   <div className="flex justify-between items-start mb-6 md:mb-8 border-b border-slate-100 pb-5">
@@ -3821,8 +3839,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     </Button>
                   </div>
                 </div>
-              </motion.div>
-            </motion.div>
+                  </motion.div>
+                </div>
+              </>
             </React.Suspense>
           )}
         </AnimatePresence>
