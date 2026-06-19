@@ -1328,7 +1328,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
     checkModals();
 
     const observer = new MutationObserver(checkModals);
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+    observer.observe(document.body, { childList: true, subtree: true });
 
     return () => observer.disconnect();
   }, []);
@@ -1626,7 +1626,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
             transition={{ type: 'spring', stiffness: 300, damping: 22 }}
             onClick={handleOpen}
             className={cn(
-              "fixed right-4 sm:right-6 z-[80] group focus:outline-none transition-all duration-300",
+              "fixed right-4 sm:right-6 z-[80] group focus:outline-none transition-[bottom] duration-300",
               effectiveBottomNavVisible ? "bottom-24 sm:bottom-28" : "bottom-8 sm:bottom-8"
             )}
             style={{ pointerEvents: hasModalActive ? 'none' : 'auto' }}
@@ -1634,7 +1634,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
             aria-label="Open AI Companion"
           >
             <span className="absolute inset-0 rounded-2xl bg-brand-500 animate-ping opacity-20 group-hover:opacity-30 transition-opacity" />
-            <div className="relative w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl flex items-center justify-center shadow-[0_8px_30px_rgba(138,28,54,0.4)] group-hover:shadow-[0_14px_40px_rgba(138,28,54,0.55)] transition-all duration-300 overflow-hidden">
+            <div className="relative w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl flex items-center justify-center shadow-[0_8px_30px_rgba(138,28,54,0.4)] group-hover:shadow-[0_14px_40px_rgba(138,28,54,0.55)] transition-[box-shadow] duration-300 overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
               <Bot className="w-7 h-7 sm:w-8 sm:h-8 text-white relative z-10 drop-shadow-sm" />
             </div>
