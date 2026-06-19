@@ -199,23 +199,27 @@ function StatCard({ icon, title, value, suffix = "", trend, decimals = 0, sparkl
     <motion.div 
       variants={stagger.itemFadeUp} 
       className={cn(
-        "relative overflow-hidden bg-white/92 p-5 sm:p-6 rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 flex flex-col justify-between group transition-all duration-300 ease-out cursor-default hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.98]",
+        "relative overflow-hidden bg-white/92 p-5 sm:p-6 rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 flex flex-col justify-between group transition-[transform,box-shadow,border-color,background-color] duration-300 ease-out cursor-default hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.98]",
         color === "brand" ? "hover:shadow-[0_20px_40px_rgba(138,28,54,0.065)] hover:border-brand-200/50" :
         color === "success" ? "hover:shadow-[0_20px_40px_rgba(16,185,129,0.065)] hover:border-emerald-200/50" :
         color === "warning" ? "hover:shadow-[0_20px_40px_rgba(217,119,6,0.065)] hover:border-amber-200/50" :
         "hover:shadow-[0_20px_40px_rgba(99,102,241,0.065)] hover:border-indigo-200/50"
       )}
     >
-      <div className={cn(
-        "absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl pointer-events-none opacity-20 group-hover:opacity-30 transition-opacity duration-300 will-change-transform",
-        color === "brand" ? "bg-[#8a1c36]" :
-        color === "success" ? "bg-[#10b981]" :
-        color === "warning" ? "bg-[#d97706]" :
-        "bg-[#6366f1]"
-      )} />
+      <div 
+        className="absolute -top-24 -right-24 w-48 h-48 pointer-events-none opacity-20 group-hover:opacity-30 transition-opacity duration-300" 
+        style={{
+          background: `radial-gradient(circle at center, ${
+            color === "brand" ? "#8a1c36" :
+            color === "success" ? "#10b981" :
+            color === "warning" ? "#d97706" :
+            "#6366f1"
+          } 0%, transparent 70%)`
+        }}
+      />
       
       <div className="relative z-10 flex items-center justify-between mb-5">
-         <div className={cn("p-3 rounded-2xl border shadow-sm transition-all duration-300 group-hover:scale-105 group-hover:rotate-2", iconBg)}>
+         <div className={cn("p-3 rounded-2xl border shadow-sm transition-[transform,background-color,border-color] duration-300 group-hover:scale-105 group-hover:rotate-2", iconBg)}>
             {icon}
          </div>
          {trend !== undefined && trend !== 0 && (
@@ -253,7 +257,7 @@ function AccuracyRow({ label, value, total, color }: { label: string, value: num
   const circleColor = color === "bg-rose-500" ? "bg-rose-500" : color;
 
   return (
-    <div className="flex items-center justify-between p-3.5 bg-white/80 border border-slate-100/50 rounded-[1.25rem] hover:bg-white hover:border-slate-200/50 shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.025)] hover:-translate-y-0.5 transition-all duration-300 group">
+    <div className="flex items-center justify-between p-3.5 bg-white/80 border border-slate-100/50 rounded-[1.25rem] hover:bg-white hover:border-slate-200/50 shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.025)] hover:-translate-y-0.5 transition-[transform,background-color,border-color,box-shadow] duration-300 group">
        <div className="flex items-center gap-3 font-sans">
           <div className={cn("w-2.5 h-2.5 rounded-full border-2 border-white shadow-[0_0_6px_rgba(0,0,0,0.05)]", circleColor)} />
           <span className="text-[10px] font-black text-slate-500 group-hover:text-slate-800 transition-colors uppercase tracking-wider">{label}</span>
@@ -276,7 +280,7 @@ const SubjectRow = ({ subject }: { subject: any; key?: string }) => {
     <div 
       onClick={() => setIsExpanded(!isExpanded)}
       className={cn(
-        "flex flex-col p-4 bg-white/80 rounded-2xl border border-slate-100/70 shadow-[0_2px_8px_rgba(0,0,0,0.005)] hover:bg-white/95 hover:border-brand-200/40 hover:-translate-y-0.5 transition-all duration-300 group cursor-pointer relative overflow-hidden",
+        "flex flex-col p-4 bg-white/80 rounded-2xl border border-slate-100/70 shadow-[0_2px_8px_rgba(0,0,0,0.005)] hover:bg-white/95 hover:border-brand-200/40 hover:-translate-y-0.5 transition-[transform,background-color,border-color,box-shadow] duration-300 group cursor-pointer relative overflow-hidden",
         isExpanded && "bg-white/85 border-brand-200/30 shadow-[0_8px_20px_rgba(138,28,54,0.02)]"
       )}
     >
@@ -302,7 +306,7 @@ const SubjectRow = ({ subject }: { subject: any; key?: string }) => {
             )}>
                {subject.status}
             </span>
-            <ChevronDown className={cn("w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-all duration-300", isExpanded && "rotate-180")} />
+            <ChevronDown className={cn("w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-transform duration-300", isExpanded && "rotate-180")} />
           </div>
        </div>
        
@@ -1177,7 +1181,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
   };
 
   if (loading) return (
-    <div className="relative w-full min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(138,28,54,0.05),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.04),transparent_50%)]">
+    <div className="relative w-full min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_left,rgba(138,28,54,0.05),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.04),transparent_50%)]">
       <AnalyticsSkeleton />
     </div>
   );
@@ -1206,7 +1210,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
   );
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden">
+    <div className="relative w-full min-h-screen overflow-x-hidden">
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(138,28,54,0.06),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.04),transparent_50%)] -z-10 pointer-events-none" />
 
       <motion.div 
@@ -1259,8 +1263,14 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
           className="relative overflow-hidden bg-white text-slate-800 rounded-[2.5rem] border border-slate-200/60 shadow-xl p-6 sm:p-8"
         >
           {/* Subtle Glow Orbs */}
-          <div className="absolute top-[-100px] right-[-100px] w-80 h-80 rounded-full bg-[#8A1C36]/5 blur-[100px] pointer-events-none will-change-transform" />
-          <div className="absolute bottom-[-100px] left-[-100px] w-80 h-80 rounded-full bg-indigo-500/5 blur-[100px] pointer-events-none will-change-transform" />
+          <div 
+            className="absolute top-[-100px] right-[-100px] w-80 h-80 pointer-events-none" 
+            style={{ background: 'radial-gradient(circle at center, rgba(138, 28, 54, 0.05) 0%, transparent 70%)' }} 
+          />
+          <div 
+            className="absolute bottom-[-100px] left-[-100px] w-80 h-80 pointer-events-none" 
+            style={{ background: 'radial-gradient(circle at center, rgba(99, 102, 241, 0.05) 0%, transparent 70%)' }} 
+          />
 
           {/* Faint grid pattern background */}
           <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.008)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.008)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none opacity-40" />
@@ -1289,7 +1299,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                 </div>
                 <button
                   onClick={() => runAiAnalysis()}
-                  className="w-full md:w-auto px-8 h-[52px] rounded-2xl bg-gradient-to-r from-[#8A1C36] via-[#a32240] to-indigo-600 hover:from-[#76142c] hover:to-indigo-700 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 hover:scale-[1.02] active:scale-98 transition-all flex items-center justify-center gap-2 group cursor-pointer border-none"
+                  className="w-full md:w-auto px-8 h-[52px] rounded-2xl bg-gradient-to-r from-[#8A1C36] via-[#a32240] to-indigo-600 hover:from-[#76142c] hover:to-indigo-700 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 hover:scale-[1.02] active:scale-98 transition-[transform,box-shadow] flex items-center justify-center gap-2 group cursor-pointer border-none"
                 >
                   <Sparkles className="w-4 h-4 fill-white/10 group-hover:scale-110 transition-transform" />
                   Initialize AI Scan
@@ -1636,10 +1646,16 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
            {/* Performance Trend Card */}
            <motion.div 
              variants={stagger.itemFadeUp} 
-             className="lg:col-span-8 relative overflow-hidden bg-white/92 rounded-[2.5rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-all duration-500 group"
+             className="lg:col-span-8 relative overflow-hidden bg-white/92 rounded-[2.5rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-[border-color,box-shadow] duration-500 group"
            >
-              <div className="absolute -top-32 -right-32 w-72 h-72 bg-brand-500/5 rounded-full blur-[80px] group-hover:bg-brand-500/8 group-hover:scale-110 transition-all duration-700 pointer-events-none will-change-transform" />
-              <div className="absolute -bottom-32 -left-32 w-72 h-72 bg-indigo-500/3 rounded-full blur-[80px] group-hover:bg-indigo-500/5 transition-all duration-700 pointer-events-none will-change-transform" />
+              <div 
+                className="absolute -top-32 -right-32 w-72 h-72 pointer-events-none transition-transform duration-700 group-hover:scale-110" 
+                style={{ background: 'radial-gradient(circle at center, rgba(138, 28, 54, 0.05) 0%, transparent 70%)' }} 
+              />
+              <div 
+                className="absolute -bottom-32 -left-32 w-72 h-72 pointer-events-none" 
+                style={{ background: 'radial-gradient(circle at center, rgba(99, 102, 241, 0.03) 0%, transparent 70%)' }} 
+              />
               
               <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                  <div className="flex flex-col gap-1">
@@ -1690,10 +1706,16 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
            {/* Accuracy Breakdown Card */}
            <motion.div 
              variants={stagger.itemFadeUp} 
-             className="lg:col-span-4 relative overflow-hidden bg-white/92 rounded-[2.5rem] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-all duration-500 group"
+             className="lg:col-span-4 relative overflow-hidden bg-white/92 rounded-[2.5rem] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-[border-color,box-shadow] duration-500 group"
            >
-              <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-slate-100/50 rounded-full blur-3xl pointer-events-none will-change-transform" />
-              <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand-500/3 rounded-full blur-3xl group-hover:bg-brand-500/5 transition-colors duration-500 pointer-events-none will-change-transform" />
+              <div 
+                className="absolute -bottom-24 -left-24 w-48 h-48 pointer-events-none" 
+                style={{ background: 'radial-gradient(circle at center, rgba(203, 213, 225, 0.5) 0%, transparent 70%)' }} 
+              />
+              <div 
+                className="absolute -top-24 -right-24 w-48 h-48 pointer-events-none" 
+                style={{ background: 'radial-gradient(circle at center, rgba(138, 28, 54, 0.03) 0%, transparent 70%)' }} 
+              />
               
               <div className="flex items-center gap-2.5 mb-8 justify-center">
                 <div className="w-1 h-5 bg-[#8a1c36] rounded-full shrink-0" />
@@ -1731,10 +1753,16 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
             {/* Skill Radar Card */}
             <motion.div 
               variants={stagger.itemFadeUp} 
-              className="lg:col-span-12 relative overflow-hidden bg-white/92 rounded-[2.5rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-all duration-500 group"
+              className="lg:col-span-12 relative overflow-hidden bg-white/92 rounded-[2.5rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-[border-color,box-shadow] duration-500 group"
             >
-               <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-slate-50 rounded-full pointer-events-none will-change-transform" />
-               <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/3 rounded-full transition-colors duration-500 pointer-events-none will-change-transform" />
+               <div 
+                 className="absolute -bottom-24 -left-24 w-48 h-48 pointer-events-none" 
+                 style={{ background: 'radial-gradient(circle at center, rgba(248, 250, 252, 1) 0%, transparent 70%)' }} 
+               />
+               <div 
+                 className="absolute -top-24 -right-24 w-48 h-48 pointer-events-none" 
+                 style={{ background: 'radial-gradient(circle at center, rgba(99, 102, 241, 0.03) 0%, transparent 70%)' }} 
+               />
                
                <div className="flex flex-col gap-1.5 mb-6 text-center">
                  <div className="flex justify-center">
@@ -1874,7 +1902,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                  const uniqueSubjects = Array.from(uniqueMap.values());
 
                  return (
-                   <motion.div key={idx} variants={stagger.itemFadeUp} className="bg-white/92 rounded-[2.5rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-all duration-500 relative overflow-hidden flex flex-col shrink-0">
+                   <motion.div key={idx} variants={stagger.itemFadeUp} className="bg-white/92 rounded-[2.5rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-[border-color,box-shadow] duration-500 relative overflow-hidden flex flex-col shrink-0">
                      <div className="mb-6 relative z-10 flex flex-col gap-3">
                         <div>
                            <span className="px-3 py-1.5 bg-[#8a1c36]/8 text-[#8a1c36] text-[9px] font-sans font-black rounded-xl uppercase tracking-widest border border-[#8a1c36]/15 shadow-sm leading-none">
@@ -1949,7 +1977,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                            )}
                         </div>
                      </div>
-                  </motion.div>
+                   </motion.div>
                  );
                })}
              </div>
@@ -1981,7 +2009,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
            <motion.div 
              variants={stagger.itemFadeUp} 
              whileHover={{ y: -3 }}
-             className="lg:col-span-5 relative bg-gradient-to-br from-slate-900 via-slate-950 to-indigo-950 rounded-[2rem] p-6 sm:p-8 flex flex-col justify-between shadow-xl border border-slate-800 gap-6 overflow-hidden transition-all duration-500 min-h-[160px]"
+             className="lg:col-span-5 relative bg-gradient-to-br from-slate-900 via-slate-950 to-indigo-950 rounded-[2rem] p-6 sm:p-8 flex flex-col justify-between shadow-xl border border-slate-800 gap-6 overflow-hidden min-h-[160px]"
            >
              <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-500/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3 pointer-events-none animate-pulse-soft" />
              <div className="text-left relative z-10">
