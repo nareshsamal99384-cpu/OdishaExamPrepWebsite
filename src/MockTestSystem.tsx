@@ -579,7 +579,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
           </div>
           <button 
             onClick={() => onExit(undefined)} 
-            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-500 hover:text-slate-800 transition-all duration-200 cursor-pointer"
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-500 hover:text-slate-800 transition-all duration-200 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -963,7 +963,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
         <div className="flex items-center gap-2 sm:gap-4 relative z-10 min-w-0 flex-1 mr-3">
           <button 
             onClick={() => setShowExitConfirm(true)} 
-            className="p-2 sm:p-2.5 bg-slate-50 hover:bg-rose-50 border border-slate-200 hover:border-rose-100 rounded-xl transition-all duration-200 cursor-pointer text-slate-500 hover:text-[#8a1c36] shrink-0"
+            className="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center bg-slate-50 hover:bg-rose-50 border border-slate-200 hover:border-rose-100 rounded-xl transition-all duration-200 cursor-pointer text-slate-500 hover:text-[#8a1c36] shrink-0"
             title="Exit Assessment"
           >
             <X className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
@@ -977,7 +977,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
         {/* Central Official Timer */}
         <div className="flex items-center gap-1.5 sm:gap-4 relative z-10 shrink-0">
           <div className={cn(
-            "flex items-center gap-1 sm:gap-2 px-2 py-1.5 sm:px-4 sm:py-2 rounded-xl font-mono font-black text-xs sm:text-base border transition-all duration-300 shadow-sm shrink-0",
+            "h-10 sm:h-11 flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 rounded-xl font-mono font-black text-xs sm:text-base border transition-all duration-300 shadow-sm shrink-0",
             currentMode === 'practice' && untimedPractice
               ? "bg-emerald-50 text-emerald-700 border-emerald-250"
               : timeLeft < 60
@@ -999,9 +999,9 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
 
           <button 
             onClick={() => setShowSubmitConfirm(true)}
-            className="bg-[#8a1c36] hover:bg-[#76142c] text-white p-2 sm:px-6 sm:py-2.5 rounded-xl font-bold transition-all duration-300 text-xs sm:text-sm uppercase tracking-widest cursor-pointer shadow-md shadow-[#8a1c36]/10 hover:shadow-lg hover:shadow-[#8a1c36]/20 active:scale-95 flex items-center gap-1.5 sm:gap-2 shrink-0"
+            className="bg-[#8a1c36] hover:bg-[#76142c] text-white w-10 h-10 sm:w-auto sm:h-11 flex items-center justify-center sm:px-6 rounded-xl font-bold transition-all duration-300 text-xs sm:text-sm uppercase tracking-widest cursor-pointer shadow-md shadow-[#8a1c36]/10 hover:shadow-lg hover:shadow-[#8a1c36]/20 active:scale-95 gap-1.5 sm:gap-2 shrink-0"
           >
-            <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Submit</span>
+            <Send className="w-4 h-4 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Submit</span>
           </button>
         </div>
       </header>
