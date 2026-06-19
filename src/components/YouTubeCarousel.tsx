@@ -4,9 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { modalBackdrop, modalContent } from '../lib/animations';
 import { cn } from '../lib/utils';
 
-const CARD_WIDTH = 320;  // px — card + gap
-const CARD_GAP   = 24;   // px
-const ITEM_STEP  = CARD_WIDTH + CARD_GAP;
 const AUTO_SPEED = 0.6;  // px per animation frame (~36px/s at 60fps)
 const RESUME_DELAY_MS = 2000; // ms after last user interaction before auto-scroll resumes
 
@@ -47,6 +44,10 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const cardWidth = isMobile ? 276 : 320;
+  const cardGap   = isMobile ? 16 : 24;
+  const itemStep  = cardWidth + cardGap;
+
   // Map dynamic videos to their academic titles and categories
   const sourceVideos = videoIds && videoIds.length > 0
     ? videoIds.map(id => {
@@ -57,7 +58,7 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
 
   // Triple the array so we always have items on both sides for seamless looping
   const items = [...sourceVideos, ...sourceVideos, ...sourceVideos];
-  const totalWidth = items.length * ITEM_STEP;
+  const totalWidth = items.length * itemStep;
 
   // Refs
   const trackRef  = useRef<HTMLDivElement>(null);
@@ -176,12 +177,12 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
   if (sourceVideos.length === 0) return null;
 
   return (
-    <div className="w-full relative py-10 sm:py-12 overflow-hidden bg-[#F2EFE9] border-2 border-slate-900 rounded-[2.5rem] shadow-[8px_8px_0px_rgba(0,0,0,1)] select-none">
+    <div className="w-full relative py-6 sm:py-12 overflow-hidden bg-[#F2EFE9] border-2 border-slate-900 rounded-[2.5rem] shadow-[8px_8px_0px_rgba(0,0,0,1)] select-none">
       {/* Editorial Decorative Grid overlay */}
       {!isMobile && <div className="absolute inset-0 grid-bg opacity-[0.02] pointer-events-none" />}
 
       {/* Header */}
-      <div className="flex flex-row items-center justify-between gap-4 px-6 sm:px-10 mb-12 sm:mb-8 relative z-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 sm:px-10 mb-6 sm:mb-8 relative z-10">
         <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#8A1C36] text-white rounded-xl flex items-center justify-center border-2 border-slate-900 shrink-0 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
             <Youtube className="w-5.5 h-5.5 sm:w-6 sm:h-6 text-white" />
@@ -197,7 +198,7 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
           href="https://www.youtube.com/@OdishaExamPrep365?sub_confirmation=1"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3.5 bg-[#FF0000] border-2 border-slate-900 text-white font-black uppercase text-[10px] sm:text-xs tracking-widest rounded-xl shadow-[4px_4px_0px_rgba(0,0,0,1)] md:hover:shadow-none md:hover:translate-x-0.5 md:hover:translate-y-0.5 transition-all select-none cursor-pointer duration-200 shrink-0"
+          className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 sm:px-6 sm:py-3.5 bg-[#FF0000] border-2 border-slate-900 text-white font-black uppercase text-[10px] sm:text-xs tracking-widest rounded-xl shadow-[4px_4px_0px_rgba(0,0,0,1)] md:hover:shadow-none md:hover:translate-x-0.5 md:hover:translate-y-0.5 transition-all select-none cursor-pointer duration-200 shrink-0"
         >
           <Youtube className="w-4 h-4 text-white" />
           <span className="sm:hidden">Subscribe</span>
@@ -225,60 +226,62 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
         {/* Scrolling track */}
         <div
           ref={trackRef}
-          className="flex gap-6 pl-6 will-change-transform"
+          className={cn("flex will-change-transform", isMobile ? "gap-4 pl-4" : "gap-6 pl-6")}
           style={{ width: `${totalWidth}px` }}
         >
           {items.map((video, idx) => (
-            <div
-              key={`${video.id}-${idx}`}
-              onClick={() => {
-                if (!isDragging.current) setActiveVideo(video.id);
-              }}
-              className="relative shrink-0 rounded-2xl overflow-hidden border-2 border-slate-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] bg-[#FAF8F5] group/video md:hover:-translate-x-0.5 md:hover:-translate-y-0.5 md:hover:shadow-[6px_6px_0px_rgba(138,28,54,0.15)] transition-all cursor-pointer flex flex-col"
-              style={{ width: CARD_WIDTH }}
-            >
-              {/* Thumbnail area with Aspect ratio */}
-              <div className="relative w-full h-[160px] border-b-2 border-slate-900 overflow-hidden shrink-0">
-                <img
-                  src={`https://i.ytimg.com/vi_webp/${video.id}/maxresdefault.webp`}
-                  alt={`Odisha Exam Prep Strategy Video: ${video.title}`}
-                  draggable={false}
-                  className="w-full h-full object-cover transition-transform duration-700 md:group-hover/video:scale-105"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      `https://i.ytimg.com/vi_webp/${video.id}/hqdefault.webp`;
-                  }}
-                />
-                
-                {/* Category tag */}
-                <span className="absolute top-3 left-3 bg-[#FAF8F5] border border-slate-900 text-slate-900 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded shadow-[1px_1px_0px_rgba(0,0,0,1)] z-10">
-                  {video.category}
-                </span>
+              <div
+                key={`${video.id}-${idx}`}
+                onClick={() => {
+                  if (!isDragging.current) setActiveVideo(video.id);
+                }}
+                className="relative shrink-0 rounded-2xl overflow-hidden border-2 border-slate-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] bg-[#FAF8F5] group/video md:hover:-translate-x-0.5 md:hover:-translate-y-0.5 md:hover:shadow-[6px_6px_0px_rgba(138,28,54,0.15)] transition-all cursor-pointer flex flex-col"
+                style={{ width: cardWidth }}
+              >
+                {/* Thumbnail area with Aspect ratio */}
+                <div className="relative w-full h-[160px] border-b-2 border-slate-900 overflow-hidden shrink-0">
+                  <img
+                    src={`https://i.ytimg.com/vi_webp/${video.id}/maxresdefault.webp`}
+                    alt={`Odisha Exam Prep Strategy Video: ${video.title}`}
+                    draggable={false}
+                    className="w-full h-full object-cover transition-transform duration-700 md:group-hover/video:scale-105"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        `https://i.ytimg.com/vi_webp/${video.id}/hqdefault.webp`;
+                    }}
+                  />
 
-                {/* Darken on hover */}
-                <div className="absolute inset-0 bg-slate-950/20 opacity-0 md:group-hover/video:opacity-100 transition-opacity duration-300" />
-                
-                {/* Play Button */}
-                <div className="absolute inset-0 flex items-center justify-center z-10">
-                  <div className="w-11 h-11 bg-[#8A1C36] text-white rounded-full border-2 border-slate-900 flex items-center justify-center shadow-lg md:group-hover/video:scale-110 transition-transform duration-300">
-                    <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                  {/* Darken on hover */}
+                  <div className="absolute inset-0 bg-slate-950/20 opacity-0 md:group-hover/video:opacity-100 transition-opacity duration-300" />
+                  
+                  {/* Play Button */}
+                  <div className="absolute inset-0 flex items-center justify-center z-10">
+                    <div className="w-11 h-11 bg-[#8A1C36] text-white rounded-full border-2 border-slate-900 flex items-center justify-center shadow-lg md:group-hover/video:scale-110 transition-transform duration-300">
+                      <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Text Meta section */}
+                <div className="p-4 flex-1 flex flex-col justify-between bg-white">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="bg-slate-100 border border-slate-200 text-slate-700 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded leading-none">
+                        {video.category}
+                      </span>
+                    </div>
+                    <h3 className="text-slate-900 font-serif font-extrabold text-sm sm:text-base line-clamp-2 leading-snug md:group-hover/video:text-[#8A1C36] transition-colors">
+                      {video.title}
+                    </h3>
+                  </div>
+                  <div className="flex items-center justify-between pt-3 mt-4 border-t border-slate-100 text-[9px] font-black uppercase tracking-widest text-slate-400 font-mono">
+                    <span>Free Lecture</span>
+                    <span className="text-[#8A1C36] flex items-center gap-1 font-bold">
+                      Watch Now <Play className="w-3.5 h-3.5 fill-[#8A1C36] stroke-none" />
+                    </span>
                   </div>
                 </div>
               </div>
-
-              {/* Text Meta section */}
-              <div className="p-4 flex-1 flex flex-col justify-between bg-white">
-                <h3 className="text-slate-900 font-serif font-extrabold text-sm sm:text-base line-clamp-2 leading-snug md:group-hover/video:text-[#8A1C36] transition-colors">
-                  {video.title}
-                </h3>
-                <div className="flex items-center justify-between pt-3 mt-4 border-t border-slate-100 text-[9px] font-black uppercase tracking-widest text-slate-400 font-mono">
-                  <span>Free Lecture</span>
-                  <span className="text-[#8A1C36] flex items-center gap-1 font-bold">
-                    Watch Now <Play className="w-3.5 h-3.5 fill-[#8A1C36] stroke-none" />
-                  </span>
-                </div>
-              </div>
-            </div>
           ))}
         </div>
       </div>
