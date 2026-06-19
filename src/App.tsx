@@ -698,28 +698,49 @@ const SYLLABUS_ROADMAPS_DEFAULT = [
 
         {/* Pathway List */}
         {activeTab && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-4 max-w-4xl mx-auto">
-            {(activeTab.topics || []).map((topic: any, i: number) => (
-              <div
-                key={i}
-                className="bg-white border-2 border-slate-900/80 rounded-2xl p-5 sm:p-6 shadow-[4px_4px_0px_rgba(0,0,0,1)] flex items-start justify-between gap-4"
-              >
-                <div className="space-y-1.5">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-[#8A1C36]">
-                    {topic.label}
-                  </p>
-                  <h3 className="text-base sm:text-lg font-serif font-extrabold text-slate-900 leading-tight">
-                    {topic.name}
-                  </h3>
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="inline-flex px-2.5 py-1 bg-brand-50 text-[#8A1C36] rounded font-mono text-xs font-black uppercase border border-brand-100">
-                    {topic.count} Sets
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab.id || activeTabIdx}
+              initial="hidden"
+              animate="show"
+              exit="hidden"
+              variants={{
+                hidden: { opacity: 0 },
+                show: {
+                  opacity: 1,
+                  transition: {
+                    staggerChildren: 0.05
+                  }
+                }
+              }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-4 max-w-4xl mx-auto"
+            >
+              {(activeTab.topics || []).map((topic: any, i: number) => (
+                <motion.div
+                  key={i}
+                  variants={{
+                    hidden: { opacity: 0, y: 12 },
+                    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 25 } }
+                  }}
+                  className="bg-white border-2 border-slate-900/80 rounded-2xl p-5 sm:p-6 shadow-[4px_4px_0px_rgba(0,0,0,1)] flex items-start justify-between gap-4"
+                >
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-[#8A1C36]">
+                      {topic.label}
+                    </p>
+                    <h3 className="text-base sm:text-lg font-serif font-extrabold text-slate-900 leading-tight">
+                      {topic.name}
+                    </h3>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="inline-flex px-2.5 py-1 bg-brand-50 text-[#8A1C36] rounded font-mono text-xs font-black uppercase border border-brand-100">
+                      {topic.count} Sets
+                    </span>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
         )}
       </div>
     </section>
