@@ -1798,6 +1798,16 @@ const LandingPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showGuideToast, setShowGuideToast] = useState(false);
   const [authMessage, setAuthMessage] = useState<{ type: 'error' | 'info' | 'success', text: string } | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
 
   useEffect(() => {
@@ -2084,7 +2094,7 @@ const LandingPage = () => {
 
         {/* 2. Practice Core (Explore Exams) */}
         <section id="exams" className="py-12 md:py-16 scroll-mt-24 border-b border-slate-200/50">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
+          <div className="max-w-6xl mx-auto px-6 space-y-12 sm:space-y-10">
             <div className="flex flex-col items-center space-y-4 text-center">
               <span className="section-chip">
                 <Zap className="w-3.5 h-3.5" />
@@ -2093,7 +2103,7 @@ const LandingPage = () => {
               <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-950 tracking-tight leading-tight">
                 Crack <span className="premium-text-gradient font-serif font-extrabold">Odisha Exams</span>
               </h2>
-              <div className="section-divider" />
+              {!isMobile && <div className="section-divider" />}
               <p className="text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed">
                 Practice with verified PYQs and full-length mock tests for OPSC, OSSC, and OSSSC.
               </p>
@@ -2894,6 +2904,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   const [isBannerDescExpanded, setIsBannerDescExpanded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Refs and scroll handlers for horizontal lists
   const continuePracticeRef = useRef<HTMLDivElement>(null);
@@ -5355,7 +5375,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               }}
             >
               <motion.div 
-                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 px-1"
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-4 md:gap-6 px-1"
               >
                 <AnimatePresence mode="wait">
                   {loadingExams ? (
@@ -5431,14 +5451,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           }}
                           className="cursor-pointer h-full group/card"
                         >
-                          <div className="p-4 sm:p-5 md:p-6 h-full bg-white border-2 border-slate-900 rounded-3xl flex flex-col items-center text-center justify-center space-y-3 sm:space-y-4 md:space-y-5 relative shadow-[4px_4px_0px_#8A1C36] group-hover/card:shadow-[8px_8px_0px_#8A1C36] group-hover/card:-translate-y-1 group-hover/card:-translate-x-1 transition-all duration-300">
+                          <div className="p-4 sm:p-5 md:p-6 h-full bg-white border-2 border-slate-900 rounded-3xl flex flex-col items-center text-center justify-center space-y-3 sm:space-y-4 md:space-y-5 relative shadow-[4px_4px_0px_#8A1C36] md:group-hover/card:shadow-[8px_8px_0px_#8A1C36] md:group-hover/card:-translate-y-1 md:group-hover/card:-translate-x-1 transition-all duration-300">
                             {/* Corner arrow - structured circle */}
-                            <div className="absolute top-2 right-2 sm:top-4 sm:right-4 md:top-5 md:right-5 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full border-2 border-slate-900 bg-white hidden sm:flex items-center justify-center transition-all duration-300 shadow-[2px_2px_0px_#8A1C36] group-hover/card:bg-[#8A1C36] group-hover/card:shadow-none group-hover/card:translate-x-0.5 group-hover/card:translate-y-0.5">
-                              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-slate-900 group-hover/card:text-white transition-colors" />
-                            </div>
+                            {!isMobile && (
+                              <div className="absolute top-2 right-2 sm:top-4 sm:right-4 md:top-5 md:right-5 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full border-2 border-slate-900 bg-white flex items-center justify-center transition-all duration-300 shadow-[2px_2px_0px_#8A1C36] group-hover/card:bg-[#8A1C36] group-hover/card:shadow-none group-hover/card:translate-x-0.5 group-hover/card:translate-y-0.5">
+                                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-slate-900 group-hover/card:text-white transition-colors" />
+                              </div>
+                            )}
 
                             {/* Icon Container */}
-                            <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl border-2 border-slate-900 bg-[#FAF8F5] flex justify-center items-center shrink-0 shadow-[3px_3px_0px_rgba(138,28,54,0.15)] group-hover/card:shadow-[4px_4px_0px_#8A1C36] transition-all duration-300 relative overflow-hidden">
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl border-2 border-slate-900 bg-[#FAF8F5] flex justify-center items-center shrink-0 shadow-[3px_3px_0px_rgba(138,28,54,0.15)] md:group-hover/card:shadow-[4px_4px_0px_#8A1C36] transition-all duration-300 relative overflow-hidden">
                               {(exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/'))) ? (
                                 <img src={getDirectImageUrl(exam.icon)} alt={`Odisha Exam Prep Icon: ${exam.name}`} className="w-8/12 h-8/12 object-contain relative z-10" referrerPolicy="no-referrer" />
                               ) : (
@@ -5448,7 +5470,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                             
                             <div className="flex-1 w-full flex flex-col justify-start">
                               <h3 
-                                className="text-sm sm:text-base md:text-lg lg:text-xl font-serif font-black text-slate-900 group-hover/card:text-[#8A1C36] transition-all duration-300 leading-tight tracking-tight uppercase"
+                                className="text-sm sm:text-base md:text-lg lg:text-xl font-serif font-black text-slate-900 md:group-hover/card:text-[#8A1C36] transition-all duration-300 leading-tight tracking-tight uppercase"
                                 style={{
                                   display: '-webkit-box',
                                   WebkitLineClamp: 2,
@@ -5459,9 +5481,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                               >
                                 {exam.name}
                               </h3>
-                              <div className="hidden md:block w-full mt-2.5">
+                              <div className="w-full mt-2.5">
                                 <p 
-                                  className="text-slate-500 text-xs font-bold leading-relaxed opacity-85 group-hover/card:opacity-100 transition-opacity"
+                                  className="text-slate-500 text-[11px] sm:text-xs font-bold leading-relaxed opacity-85 md:group-hover/card:opacity-100 transition-opacity"
                                   style={{
                                     display: '-webkit-box',
                                     WebkitLineClamp: 2,

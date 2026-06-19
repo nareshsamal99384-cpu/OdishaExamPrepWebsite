@@ -36,6 +36,16 @@ const getVideoTitle = (id: string) => {
 
 export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Map dynamic videos to their academic titles and categories
   const sourceVideos = videoIds && videoIds.length > 0
@@ -168,10 +178,10 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
   return (
     <div className="w-full relative py-10 sm:py-12 overflow-hidden bg-[#F2EFE9] border-2 border-slate-900 rounded-[2.5rem] shadow-[8px_8px_0px_rgba(0,0,0,1)] select-none">
       {/* Editorial Decorative Grid overlay */}
-      <div className="absolute inset-0 grid-bg opacity-[0.02] pointer-events-none" />
+      {!isMobile && <div className="absolute inset-0 grid-bg opacity-[0.02] pointer-events-none" />}
 
       {/* Header */}
-      <div className="flex flex-row items-center justify-between gap-4 px-6 sm:px-10 mb-8 relative z-10">
+      <div className="flex flex-row items-center justify-between gap-4 px-6 sm:px-10 mb-12 sm:mb-8 relative z-10">
         <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#8A1C36] text-white rounded-xl flex items-center justify-center border-2 border-slate-900 shrink-0 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
             <Youtube className="w-5.5 h-5.5 sm:w-6 sm:h-6 text-white" />
@@ -187,7 +197,7 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
           href="https://www.youtube.com/@OdishaExamPrep365?sub_confirmation=1"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3.5 bg-[#FF0000] border-2 border-slate-900 text-white font-black uppercase text-[10px] sm:text-xs tracking-widest rounded-xl shadow-[4px_4px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all select-none cursor-pointer duration-200 shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3.5 bg-[#FF0000] border-2 border-slate-900 text-white font-black uppercase text-[10px] sm:text-xs tracking-widest rounded-xl shadow-[4px_4px_0px_rgba(0,0,0,1)] md:hover:shadow-none md:hover:translate-x-0.5 md:hover:translate-y-0.5 transition-all select-none cursor-pointer duration-200 shrink-0"
         >
           <Youtube className="w-4 h-4 text-white" />
           <span className="sm:hidden">Subscribe</span>
@@ -203,10 +213,14 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
         onTouchStart={onTouchStart}
       >
         {/* Edge fade masks */}
-        <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
-          style={{ background: 'linear-gradient(to right, #F2EFE9, transparent)' }} />
-        <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
-          style={{ background: 'linear-gradient(to left, #F2EFE9, transparent)' }} />
+        {!isMobile && (
+          <>
+            <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
+              style={{ background: 'linear-gradient(to right, #F2EFE9, transparent)' }} />
+            <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
+              style={{ background: 'linear-gradient(to left, #F2EFE9, transparent)' }} />
+          </>
+        )}
 
         {/* Scrolling track */}
         <div
@@ -220,7 +234,7 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
               onClick={() => {
                 if (!isDragging.current) setActiveVideo(video.id);
               }}
-              className="relative shrink-0 rounded-2xl overflow-hidden border-2 border-slate-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] bg-[#FAF8F5] group/video hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_rgba(138,28,54,0.15)] transition-all cursor-pointer flex flex-col"
+              className="relative shrink-0 rounded-2xl overflow-hidden border-2 border-slate-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] bg-[#FAF8F5] group/video md:hover:-translate-x-0.5 md:hover:-translate-y-0.5 md:hover:shadow-[6px_6px_0px_rgba(138,28,54,0.15)] transition-all cursor-pointer flex flex-col"
               style={{ width: CARD_WIDTH }}
             >
               {/* Thumbnail area with Aspect ratio */}
@@ -229,7 +243,7 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
                   src={`https://i.ytimg.com/vi_webp/${video.id}/maxresdefault.webp`}
                   alt={`Odisha Exam Prep Strategy Video: ${video.title}`}
                   draggable={false}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover/video:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-700 md:group-hover/video:scale-105"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src =
                       `https://i.ytimg.com/vi_webp/${video.id}/hqdefault.webp`;
@@ -242,11 +256,11 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
                 </span>
 
                 {/* Darken on hover */}
-                <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover/video:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-slate-950/20 opacity-0 md:group-hover/video:opacity-100 transition-opacity duration-300" />
                 
                 {/* Play Button */}
                 <div className="absolute inset-0 flex items-center justify-center z-10">
-                  <div className="w-11 h-11 bg-[#8A1C36] text-white rounded-full border-2 border-slate-900 flex items-center justify-center shadow-lg group-hover/video:scale-110 transition-transform duration-300">
+                  <div className="w-11 h-11 bg-[#8A1C36] text-white rounded-full border-2 border-slate-900 flex items-center justify-center shadow-lg md:group-hover/video:scale-110 transition-transform duration-300">
                     <Play className="w-5 h-5 text-white fill-white ml-0.5" />
                   </div>
                 </div>
@@ -254,7 +268,7 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
 
               {/* Text Meta section */}
               <div className="p-4 flex-1 flex flex-col justify-between bg-white">
-                <h3 className="text-slate-900 font-serif font-extrabold text-sm sm:text-base line-clamp-2 leading-snug group-hover/video:text-[#8A1C36] transition-colors">
+                <h3 className="text-slate-900 font-serif font-extrabold text-sm sm:text-base line-clamp-2 leading-snug md:group-hover/video:text-[#8A1C36] transition-colors">
                   {video.title}
                 </h3>
                 <div className="flex items-center justify-between pt-3 mt-4 border-t border-slate-100 text-[9px] font-black uppercase tracking-widest text-slate-400 font-mono">
