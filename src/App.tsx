@@ -669,21 +669,31 @@ const SYLLABUS_ROADMAPS_DEFAULT = [
         </div>
 
         {/* Tab switcher */}
-        <div className="flex justify-center gap-2 sm:gap-4 p-1.5 bg-slate-100/60 rounded-2xl max-w-2xl mx-auto border border-slate-200/50 flex-wrap">
-          {tabs.map((tab, i) => (
-            <button
-              key={tab.id || i}
-              onClick={() => setActiveTabIdx(i)}
-              className={cn(
-                "flex-1 min-w-[100px] py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
-                activeTabIdx === i
-                  ? "bg-white text-slate-900 shadow-sm border border-slate-200"
-                  : "text-slate-400 hover:text-slate-700"
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex justify-center gap-2 sm:gap-4 p-1.5 bg-slate-100/60 rounded-2xl max-w-2xl mx-auto border border-slate-200/50 flex-wrap relative z-10">
+          {tabs.map((tab, i) => {
+            const isTabActive = activeTabIdx === i;
+            return (
+              <button
+                key={tab.id || i}
+                onClick={() => setActiveTabIdx(i)}
+                className={cn(
+                  "flex-1 min-w-[100px] py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer relative focus:outline-none",
+                  isTabActive
+                    ? "text-slate-900"
+                    : "text-slate-400 hover:text-slate-700"
+                )}
+              >
+                {isTabActive && (
+                  <motion.div
+                    layoutId="activeSyllabusTabBg"
+                    className="absolute inset-0 bg-white rounded-xl shadow-sm border border-slate-200 z-0"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10">{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Pathway List */}
