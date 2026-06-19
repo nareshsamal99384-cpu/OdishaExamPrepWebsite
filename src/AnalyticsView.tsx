@@ -1278,13 +1278,13 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
           <div className="relative z-10">
             {scanningPhase === 0 && (
               <div className="flex flex-col md:flex-row items-center justify-between gap-6 py-4">
-                <div className="flex items-center gap-5">
-                  <div className="w-16 h-16 rounded-2xl bg-[#8A1C36]/5 border border-[#8A1C36]/15 flex items-center justify-center relative shadow-sm">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5 w-full">
+                  <div className="w-16 h-16 rounded-2xl bg-[#8A1C36]/5 border border-[#8A1C36]/15 flex items-center justify-center relative shadow-sm shrink-0">
                     <Brain className="w-9 h-9 text-[#8A1C36] animate-pulse" />
                     <div className="absolute inset-0 rounded-2xl border-2 border-[#8A1C36]/10 animate-ping" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1.5">
                       <span className="px-2.5 py-0.5 bg-[#8A1C36]/10 border border-[#8A1C36]/20 text-[#8A1C36] text-[9px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1 shadow-sm leading-none">
                         <Cpu className="w-2.5 h-2.5" /> OdishaExamPrep AI
                       </span>
