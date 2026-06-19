@@ -526,15 +526,14 @@ const ExamRegistrySection = ({
       <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-12">
         <div className="flex flex-col items-center space-y-4 text-center">
           <span className="section-chip">
-            <Clock3 className="w-3.5 h-3.5" />
-            Odisha Recruitment Bulletin
+            ⏰ ODISHA RECRUITMENT BULLETIN
           </span>
-          <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-900 tracking-tight">
-            Live Exam <span className="premium-text-gradient font-serif font-extrabold">Registry</span>
+          <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-950 tracking-tight leading-tight">
+            Official Exam Notifications <span className="premium-text-gradient font-serif font-extrabold">& Targeted Mock Tests</span>
           </h2>
           <div className="section-divider" />
           <p className="text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed">
-            Stay updated with real-time official notification timelines and jump straight into dedicated preparation sets.
+            Never miss a crucial deadline. Track real-time updates for OPSC, OSSC, and OSSSC, and instantly start practicing with syllabus-specific test series.
           </p>
         </div>
 
@@ -632,15 +631,14 @@ const SyllabusPathsSection = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-12">
         <div className="flex flex-col items-center space-y-4 text-center">
           <span className="section-chip">
-            <BookOpen className="w-3.5 h-3.5" />
-            Curriculum Roadmap
+            🎯 SYLLABUS-MAPPED PREPARATION
           </span>
-          <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-900 tracking-tight">
-            Syllabus <span className="premium-text-gradient font-serif font-extrabold">Roadmaps</span>
+          <h2 className="text-3xl md:text-4xl font-serif font-extrabold text-slate-950 tracking-tight leading-tight max-w-3xl">
+            Master Every Topic with <span className="premium-text-gradient font-serif font-extrabold">Targeted Chapter-Wise Tests</span>
           </h2>
           <div className="section-divider" />
-          <p className="text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed">
-            Choose a subject pillar and review the curriculum chapters, mapped directly to practice quiz availability.
+          <p className="text-slate-500 text-sm sm:text-base md:text-lg font-normal max-w-2xl mx-auto leading-relaxed">
+            Stop blindly studying. Select a subject pillar—from Odisha History to Indian Polity—and unlock specific full-length mock tests and PYQs designed exactly for the latest OPSC and OSSC curriculum.
           </p>
         </div>
 
@@ -674,9 +672,9 @@ const SyllabusPathsSection = () => {
                   <p className="text-[10px] font-black uppercase tracking-wider text-[#8A1C36]">
                     {topic.label}
                   </p>
-                  <h4 className="text-base sm:text-lg font-serif font-extrabold text-slate-900 leading-tight">
+                  <h3 className="text-base sm:text-lg font-serif font-extrabold text-slate-900 leading-tight">
                     {topic.name}
-                  </h4>
+                  </h3>
                 </div>
                 <div className="text-right shrink-0">
                   <span className="inline-flex px-2.5 py-1 bg-brand-50 text-[#8A1C36] rounded font-mono text-xs font-black uppercase border border-brand-100">
@@ -740,15 +738,14 @@ const AchieversJournalSection = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
         <div className="flex flex-col items-center space-y-4 text-center">
           <span className="section-chip">
-            <Award className="w-3.5 h-3.5" />
-            Achievers' Journal
+            🏆 VERIFIED SUCCESS STORIES
           </span>
-          <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-900 tracking-tight">
-            Preparation <span className="premium-text-gradient font-serif font-extrabold">Journeys</span>
+          <h2 className="text-3xl md:text-4xl font-serif font-extrabold text-slate-955 tracking-tight leading-tight max-w-3xl">
+            Join Hundreds of Aspirants <span className="premium-text-gradient font-serif font-extrabold">Who Cracked Their Target Exams</span>
           </h2>
           <div className="section-divider" />
-          <p className="text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed">
-            Read verified preparation reports and exam statistics from real candidates clearing Odisha recruitment exams.
+          <p className="text-slate-500 text-sm sm:text-base md:text-lg font-normal max-w-2xl mx-auto leading-relaxed">
+            Don't just take our word for it. Explore detailed preparation strategies, actual test scores, and accuracy timelines from real students who conquered OPSC, OSSC, and OSSSC using our platform.
           </p>
         </div>
 
@@ -814,12 +811,18 @@ const AchieversJournalSection = () => {
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <img 
-                          src={item.avatar} 
-                          alt={item.name} 
+                          src={item.avatar?.includes('dicebear.com') ? item.avatar : item.avatar?.replace(/\.(png|jpg|jpeg)$/i, '.webp')} 
+                          alt={`${item.name} ${item.rank} Achiever Profile`} 
                           className="w-12 h-12 rounded-full border border-slate-200 object-cover shrink-0" 
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            if (target.src !== item.avatar) {
+                              target.src = item.avatar;
+                            }
+                          }}
                         />
                         <div>
-                          <h4 className="font-serif font-extrabold text-slate-900 text-base leading-none">{item.name}</h4>
+                          <h3 className="font-serif font-extrabold text-slate-900 text-base leading-none">{item.name}</h3>
                           <p className="text-[10px] font-black uppercase text-[#8A1C36] tracking-widest mt-1.5">{item.rank}</p>
                         </div>
                       </div>
@@ -943,7 +946,7 @@ export const Footer = () => {
                 <div className={`p-2 rounded-lg ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
                   <stat.icon className="w-4 h-4" />
                 </div>
-                <span className="text-xs font-black uppercase tracking-wider text-slate-500">{stat.label}</span>
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">{stat.label}</h3>
               </div>
               <h5 className="font-serif font-black text-xl sm:text-2xl text-white tracking-tight leading-none mb-1">
                 {stat.value}
@@ -961,7 +964,7 @@ export const Footer = () => {
           {/* Logo & Tagline column */}
           <div className="col-span-1 md:col-span-2 space-y-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 premium-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-[#8a1c36]/10 animate-float-sm">
+              <div role="img" aria-label="OdishaExamPrep Platform Logo" className="w-12 h-12 premium-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-[#8a1c36]/10 animate-float-sm">
                 <BookOpen className="text-white w-6 h-6" />
               </div>
               <span className="font-serif font-black text-3xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
@@ -969,12 +972,12 @@ export const Footer = () => {
               </span>
             </div>
             <p className="text-slate-400 font-medium leading-relaxed max-w-sm text-sm sm:text-base">
-              Empowering aspirants with high-quality mock tests and real-time analytics to master competitive exams confidently.
+              The ultimate state-level civil service exam prep platform. Master the OPSC, OSSC, and OSSSC with our verified PYQs, real-time analytics, and 24/7 AI Mentor.
             </p>
             
             {/* Newsletter update form */}
-            <div className="space-y-3 pt-2">
-              <h5 className="text-xs font-black uppercase tracking-wider text-slate-400">Subscribe for Exam Notifications</h5>
+            <div className="space-y-3 pt-4">
+              <h2 className="text-xs font-black uppercase tracking-wider text-slate-200">Never Miss an Odisha Exam Update</h2>
               <form onSubmit={handleSubscribe} className="flex gap-2 max-w-md">
                 <input 
                   type="email" 
@@ -996,7 +999,7 @@ export const Footer = () => {
                   )}
                 </button>
               </form>
-              <p className="text-[10px] text-slate-500 font-medium">Get real-time notification alerts for OPSC, OSSC & OSSSC exams.</p>
+              <p className="text-[10px] text-slate-500 font-medium">Join our mailing list to get instant alerts for OPSC, OSSC, and OSSSC notification drops and admit card releases.</p>
             </div>
           </div>
           
@@ -1068,7 +1071,7 @@ export const Footer = () => {
                   rel="noopener noreferrer" 
                   className="w-11 h-11 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center hover:bg-[#FF0000] hover:border-[#FF0000] hover:-translate-y-1 transition-all duration-300 text-slate-400 hover:text-white shadow-lg hover:shadow-red-600/10 group"
                 >
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 group-hover:scale-110 transition-transform">
+                  <svg role="img" aria-label="OdishaExamPrep YouTube Channel" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 group-hover:scale-110 transition-transform">
                     <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                   </svg>
                 </a>
@@ -1078,7 +1081,7 @@ export const Footer = () => {
                   rel="noopener noreferrer" 
                   className="w-11 h-11 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center hover:bg-[#25D366] hover:border-[#25D366] hover:-translate-y-1 transition-all duration-300 text-slate-400 hover:text-white shadow-lg hover:shadow-[#25D366]/10 group"
                 >
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 group-hover:scale-110 transition-transform">
+                  <svg role="img" aria-label="OdishaExamPrep WhatsApp Contact" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 group-hover:scale-110 transition-transform">
                     <path d="M12.031 0C5.385 0 0 5.385 0 12.029a12.022 12.022 0 001.6 6.02L0 24l6.15-1.611a12.012 12.012 0 005.881 1.523h.004c6.645 0 12.03-5.386 12.03-12.031S18.675 0 12.031 0zm0 21.936a9.988 9.988 0 01-5.086-1.385l-.364-.216-3.774.99.998-3.682-.236-.376A9.957 9.957 0 012.064 12.03c0-5.497 4.475-9.972 9.972-9.972 5.497 0 9.97 4.475 9.97 9.972s-4.473 9.97-9.97 9.97z"/>
                     <path d="M17.481 14.159c-.297-.149-1.758-.868-2.03-.968-.27-.099-.467-.149-.665.149-.198.298-.767.967-.94 1.165-.173.198-.346.223-.644.074a8.214 8.214 0 01-4.041-2.518c-.282-.326.319-.314.901-1.479.098-.198.05-.371-.025-.52-.075-.149-.665-1.605-.91-2.196-.241-.578-.485-.5-.665-.509-.174-.01-.371-.01-.57-.01-.198 0-.52.074-.792.371C6.822 7.027 6 7.82 6 9.381c0 1.56 1.015 3.07 1.164 3.268.149.198 2.228 3.4 5.397 4.76 2.656 1.139 3.554 1.259 4.314 1.05.76-.208 2.03-.896 2.316-1.761.286-.865.286-1.605.2-1.76-.086-.15-.286-.24-.584-.388z"/>
                   </svg>
@@ -1980,7 +1983,7 @@ const LandingPage = () => {
                 initial={{ opacity: 0, x: -40 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
-                className="flex-1 text-center lg:text-left space-y-8 lg:space-y-10"
+                className="flex-1 text-center lg:text-left space-y-8 lg:space-y-10 max-w-2xl lg:max-w-[600px] xl:max-w-[640px] mx-auto lg:mx-0"
               >
                 <div className="space-y-6">
                   {/* Premium Badge */}
@@ -1992,21 +1995,23 @@ const LandingPage = () => {
                         </div>
                       ))}
                     </div>
-                    <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Trusted by 10K+ Aspirants</span>
+                    <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">🎯 TRUSTED BY 10K+ ODISHA ASPIRANTS</span>
                   </div>
 
-                  <h1 className="text-5xl sm:text-6xl md:text-7xl xl:text-8xl font-serif font-extrabold text-slate-950 tracking-tight leading-[1.1] sm:leading-[1.05]">
-                    Excellence in <br className="hidden sm:block" /> 
-                    <span className="premium-text-gradient font-serif font-extrabold">Odisha Exams</span>
-                  </h1>
-                  <p className="text-slate-600 text-base sm:text-lg md:text-xl max-w-2xl mx-auto lg:mx-0 font-medium leading-relaxed">
-                    Master the OPSC, OSSC, and OSSSC syllabus with precision-crafted test series, verified PYQs, and real-time performance analytics. Your journey to success starts here.
-                  </p>
+                  <div className="space-y-4 md:space-y-5">
+                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-extrabold text-slate-950 tracking-tight leading-tight">
+                      Crack Your Odisha Govt Exams <br className="hidden sm:block" /> with{" "}
+                      <span className="premium-text-gradient font-serif font-extrabold">Realistic Mock Tests</span>
+                    </h1>
+                    <h2 className="text-slate-500 text-sm sm:text-base md:text-lg max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
+                      Stop guessing your rank. Master the OPSC, OSSC, and OSSSC syllabus with timed test series, verified PYQs, and a 24/7 AI mentor.
+                    </h2>
+                  </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 justify-center lg:justify-start pt-2">
+                <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 justify-center lg:justify-start pt-4 lg:pt-6">
                   <Button 
-                    className="h-14 sm:h-16 px-8 sm:px-12 text-lg sm:text-xl rounded-2xl shadow-2xl shadow-brand-500/30 group relative overflow-hidden" 
+                    className="w-full sm:w-auto h-14 sm:h-16 px-8 sm:px-12 text-lg sm:text-xl rounded-2xl shadow-2xl shadow-brand-500/30 group relative overflow-hidden" 
                     onClick={() => {
                       setShowGuideToast(true);
                       setTimeout(() => setShowGuideToast(false), 6000);
@@ -2018,7 +2023,7 @@ const LandingPage = () => {
                   </Button>
                   <Button 
                     variant="outline" 
-                    className="h-14 sm:h-16 px-8 sm:px-12 text-lg sm:text-xl rounded-2xl border-slate-200 bg-white hover:bg-slate-50 transition-all font-bold"
+                    className="w-full sm:w-auto h-14 sm:h-16 px-8 sm:px-12 text-lg sm:text-xl rounded-2xl border-slate-200 bg-white hover:bg-slate-50 transition-all font-bold"
                     onClick={() => {
                       setShowGuideToast(true);
                       setTimeout(() => setShowGuideToast(false), 6000);
@@ -2026,7 +2031,7 @@ const LandingPage = () => {
                       if (target) scrollToElement(target);
                     }}
                   >
-                    View Test Series
+                    Unlock Premium Tests
                   </Button>
                 </div>
 
@@ -2067,10 +2072,12 @@ const LandingPage = () => {
                 <Zap className="w-3.5 h-3.5" />
                 Your Exam Gateway
               </span>
-              <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-900 tracking-tight">Explore <span className="premium-text-gradient font-serif font-extrabold">Exams</span></h2>
+              <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-950 tracking-tight leading-tight">
+                Crack <span className="premium-text-gradient font-serif font-extrabold">Odisha Exams</span>
+              </h2>
               <div className="section-divider" />
               <p className="text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed">
-                Practice with our curated question banks and full-length mock tests designed for official patterns.
+                Practice with verified PYQs and full-length mock tests for OPSC, OSSC, and OSSSC.
               </p>
             </div>
             <DashboardContent 
@@ -5415,7 +5422,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                             {/* Icon Container */}
                             <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl border-2 border-slate-900 bg-[#FAF8F5] flex justify-center items-center shrink-0 shadow-[3px_3px_0px_rgba(138,28,54,0.15)] group-hover/card:shadow-[4px_4px_0px_#8A1C36] transition-all duration-300 relative overflow-hidden">
                               {(exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/'))) ? (
-                                <img src={getDirectImageUrl(exam.icon)} alt={exam.name} className="w-8/12 h-8/12 object-contain relative z-10" referrerPolicy="no-referrer" />
+                                <img src={getDirectImageUrl(exam.icon)} alt={`Odisha Exam Prep Icon: ${exam.name}`} className="w-8/12 h-8/12 object-contain relative z-10" referrerPolicy="no-referrer" />
                               ) : (
                                 <span className="text-xl sm:text-2xl md:text-4xl relative z-10">{exam.icon || '📚'}</span>
                               )}

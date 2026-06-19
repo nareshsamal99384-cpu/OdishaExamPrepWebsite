@@ -177,8 +177,8 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
             <Youtube className="w-5.5 h-5.5 sm:w-6 sm:h-6 text-white" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-base sm:text-2xl font-serif font-extrabold text-slate-900 tracking-tight leading-tight">Latest Video Lectures</h2>
-            <p className="text-slate-600 font-medium text-[10px] sm:text-sm mt-0.5 line-clamp-1 sm:line-clamp-none">Watch free preparation tips and exam strategies from our channel.</p>
+            <h3 className="text-base sm:text-2xl font-serif font-extrabold text-slate-900 tracking-tight leading-tight">Free Strategy Videos</h3>
+            <p className="text-slate-600 font-medium text-[10px] sm:text-sm mt-0.5 line-clamp-1 sm:line-clamp-none">Watch free masterclasses and proven exam tips from our channel.</p>
           </div>
         </div>
 
@@ -226,13 +226,13 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
               {/* Thumbnail area with Aspect ratio */}
               <div className="relative w-full h-[160px] border-b-2 border-slate-900 overflow-hidden shrink-0">
                 <img
-                  src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`}
-                  alt={video.title}
+                  src={`https://i.ytimg.com/vi_webp/${video.id}/maxresdefault.webp`}
+                  alt={`Odisha Exam Prep Strategy Video: ${video.title}`}
                   draggable={false}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover/video:scale-105"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src =
-                      `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`;
+                      `https://i.ytimg.com/vi_webp/${video.id}/hqdefault.webp`;
                   }}
                 />
                 
