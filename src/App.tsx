@@ -7107,7 +7107,7 @@ function AppContent() {
                   initial={false}
                   animate={{ y: isBottomNavVisible ? 0 : '100%' }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="glass border-t border-slate-200/50 px-2 sm:px-8 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:py-4 flex justify-around items-center fixed bottom-0 left-0 right-0 z-30 rounded-t-[2rem]"
+                  className="bg-white/95 sm:glass border-t border-slate-200/50 px-2 sm:px-8 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:py-4 flex justify-around items-center fixed bottom-0 left-0 right-0 z-30 rounded-t-[2rem] shadow-[0_-8px_30px_rgba(0,0,0,0.05)]"
                 >
                   {/* Hide Navigation Toggle Tab */}
                   <button 

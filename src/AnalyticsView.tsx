@@ -1336,15 +1336,15 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
             {scanningPhase === 2 && (
               <div className="space-y-6">
                 {/* AI Panel Header */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200/60 pb-5 gap-4">
-                  <div className="flex items-center justify-between w-full sm:w-auto">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center">
-                        <Cpu className="w-5.5 h-5.5 text-[#8A1C36]" />
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200/60 pb-4 sm:pb-5 gap-4">
+                  <div className="flex items-center justify-between w-full sm:w-auto min-w-0">
+                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center shrink-0">
+                        <Cpu className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-[#8A1C36]" />
                       </div>
-                      <div>
-                        <h3 className="text-lg font-sans font-black tracking-tight leading-none text-slate-900">AI Diagnostics Center</h3>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1.5">Synthesized via OdishaExamPrep AI Engine</p>
+                      <div className="min-w-0">
+                        <h3 className="text-base sm:text-lg font-sans font-black tracking-tight leading-snug text-slate-900">AI Diagnostics Center</h3>
+                        <p className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1 sm:mt-1.5 leading-normal">Synthesized via OdishaExamPrep AI Engine</p>
                       </div>
                     </div>
                     {/* Mobile Close Button */}
@@ -1363,15 +1363,15 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                     </button>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
                     {/* Tab Navigation */}
-                    <div className="flex bg-slate-100 border border-slate-200/60 p-1 rounded-xl w-full sm:w-auto">
+                    <div className="flex bg-slate-100 border border-slate-200/60 p-0.5 sm:p-1 rounded-xl w-full sm:w-auto">
                       {(['diagnostic', 'actionPlan', 'chat'] as const).map((tab) => (
                         <button
                           key={tab}
                           onClick={() => setAiPanelTab(tab)}
                           className={cn(
-                            "px-4 py-2 text-xs font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex-1 sm:flex-initial border-none",
+                            "px-2 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex-1 sm:flex-initial border-none whitespace-nowrap",
                             aiPanelTab === tab 
                               ? "bg-white text-[#8A1C36] shadow-sm border border-slate-200/40" 
                               : "text-slate-500 hover:text-slate-800"
@@ -1386,7 +1386,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                       onClick={() => runAiAnalysis(true)}
                       disabled={loadingAi}
                       className={cn(
-                        "flex items-center justify-center gap-2 px-4 py-2.5 sm:p-2.5 rounded-xl transition-all cursor-pointer font-bold text-xs uppercase tracking-wider shrink-0 disabled:opacity-50 border active:scale-95",
+                        "flex items-center justify-center gap-2 px-4 py-2 sm:py-2.5 sm:px-2.5 rounded-xl transition-all cursor-pointer font-bold text-xs uppercase tracking-wider shrink-0 disabled:opacity-50 border active:scale-95",
                         loadingAi
                           ? "bg-slate-50 border-slate-200/60 text-slate-400"
                           : "bg-[#8A1C36]/5 hover:bg-[#8A1C36]/10 border-[#8A1C36]/10 text-[#8A1C36] hover:text-[#8A1C36]"
@@ -1425,9 +1425,9 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                       className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center"
                     >
                       <div className="lg:col-span-8 space-y-4">
-                        <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 bg-[#8A1C36]/10 border border-[#8A1C36]/20 text-[#8A1C36] text-[9px] font-black uppercase tracking-widest rounded-lg">Performance Report</span>
-                          <span className="text-[10px] font-bold text-slate-500">Targeting Odisha Competitive Exams</span>
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                          <span className="px-2 py-0.5 bg-[#8A1C36]/10 border border-[#8A1C36]/20 text-[#8A1C36] text-[9px] font-black uppercase tracking-widest rounded-lg whitespace-nowrap">Performance Report</span>
+                          <span className="text-[10px] font-bold text-slate-500 leading-normal">Targeting Odisha Competitive Exams</span>
                         </div>
                         <p className="text-slate-700 text-sm sm:text-base font-medium leading-relaxed max-w-3xl">
                           {aiInsight}
@@ -1469,9 +1469,9 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                       animate={{ opacity: 1, y: 0 }}
                       className="space-y-4"
                     >
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="px-2 py-0.5 bg-[#8A1C36]/10 border border-[#8A1C36]/20 text-[#8A1C36] text-[9px] font-black uppercase tracking-widest rounded-lg">Study Checklist</span>
-                        <span className="text-[10px] font-bold text-slate-500">Check off items as you complete them to lift your score</span>
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
+                        <span className="px-2 py-0.5 bg-[#8A1C36]/10 border border-[#8A1C36]/20 text-[#8A1C36] text-[9px] font-black uppercase tracking-widest rounded-lg whitespace-nowrap">Study Checklist</span>
+                        <span className="text-[10px] font-bold text-slate-500 leading-normal">Check off items as you complete them to lift your score</span>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1594,7 +1594,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                             onChange={(e) => setChatInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                             disabled={chatLoading}
-                            placeholder="Type a query about your statistics (e.g. 'How can I fix speed?')..."
+                            placeholder="Ask about speed, scores, accuracy..."
                             className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#8A1C36]/50 focus:bg-white disabled:opacity-50 transition-all font-sans"
                           />
                           <button
