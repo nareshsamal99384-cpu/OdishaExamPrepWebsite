@@ -443,10 +443,10 @@ export const UserAvatar = ({
 
 const VisualEffects = () => (
   <div className="absolute inset-0 pointer-events-none overflow-hidden">
-    <div className="absolute top-1/4 left-1/4 w-1.5 h-1.5 bg-brand-400/20 rounded-full animate-float-slow" />
-    <div className="absolute top-3/4 left-1/2 w-2 h-2 bg-indigo-400/20 rounded-full animate-float-delayed" />
-    <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-purple-400/20 rounded-full animate-float-slow" style={{ animationDelay: '-4s' }} />
-    <div className="absolute bottom-1/4 right-1/3 w-2.5 h-2.5 bg-brand-400/10 rounded-full animate-float-delayed" style={{ animationDelay: '-1s' }} />
+    <div className="absolute top-1/4 left-1/4 w-1.5 h-1.5 bg-brand-400/20 rounded-full animate-float-slow transform-gpu" />
+    <div className="absolute top-3/4 left-1/2 w-2 h-2 bg-indigo-400/20 rounded-full animate-float-delayed transform-gpu" />
+    <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-purple-400/20 rounded-full animate-float-slow transform-gpu" style={{ animationDelay: '-4s' }} />
+    <div className="absolute bottom-1/4 right-1/3 w-2.5 h-2.5 bg-brand-400/10 rounded-full animate-float-delayed transform-gpu" style={{ animationDelay: '-1s' }} />
     <div className="absolute inset-0 grid-bg opacity-[0.03]" />
   </div>
 );
@@ -2963,6 +2963,17 @@ const OnboardingModal = ({
     </div>
   );
 };
+
+const SPARKLE_POSITIONS = [
+  { left: '12%', top: '25%', x: [-15, 15], y: [-10, 20], duration: 4.5, delay: 0.2 },
+  { left: '78%', top: '18%', x: [20, -15], y: [15, -10], duration: 5.2, delay: 1.5 },
+  { left: '33%', top: '65%', x: [-10, 25], y: [20, -15], duration: 4.8, delay: 0.7 },
+  { left: '88%', top: '75%', x: [-25, 10], y: [-15, 15], duration: 6.0, delay: 2.1 },
+  { left: '22%', top: '45%', x: [15, -20], y: [-20, 10], duration: 5.5, delay: 1.1 },
+  { left: '60%', top: '30%', x: [10, -15], y: [18, -12], duration: 4.2, delay: 0.5 },
+  { left: '48%', top: '85%', x: [-15, 15], y: [-12, 18], duration: 5.8, delay: 1.8 },
+  { left: '92%', top: '40%', x: [12, -22], y: [-18, 12], duration: 4.9, delay: 0.9 },
+];
 
 const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activities = [], onNavigate, onActivityLogged, selectedExam: propsSelectedExam, setSelectedExam: propsSetSelectedExam }: { isGuest?: boolean, onSignIn?: () => void, mainTab?: string, user?: any, activities?: any[], onNavigate?: (tab: any) => void, onActivityLogged?: () => void, selectedExam?: string | null, setSelectedExam?: (val: string | null) => void }) => {
   const { profile, isAdmin, hasFullAccess, grantFullAccess, hasAccessTo, unlockItem, guestUsage, incrementGuestUsage } = useAuth();
@@ -5892,74 +5903,42 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               {/* Dynamic Glowing Ambient Mesh / Orbs */}
               {hasAccessTo(`exam_bundle_${selectedExam}`) ? (
                 <>
-                  <motion.div 
-                    animate={{ 
-                      x: [0, 20, 0],
-                      y: [0, -20, 0],
-                      scale: [1, 1.15, 1],
-                    }}
-                    transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-emerald-500/10 blur-[100px] pointer-events-none"
-                  />
-                  <motion.div 
-                    animate={{ 
-                      x: [0, -30, 0],
-                      y: [0, 30, 0],
-                      scale: [1.1, 0.9, 1.1],
-                    }}
-                    transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-teal-500/10 blur-[120px] pointer-events-none"
-                  />
-                  <div className="absolute top-1/2 left-2/3 -translate-y-1/2 w-80 h-80 rounded-full bg-emerald-500/[0.04] blur-[80px] pointer-events-none" />
+                  <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-emerald-500/10 blur-[100px] pointer-events-none transform-gpu" />
+                  <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-teal-500/10 blur-[120px] pointer-events-none transform-gpu" />
+                  <div className="absolute top-1/2 left-2/3 -translate-y-1/2 w-80 h-80 rounded-full bg-emerald-500/[0.04] blur-[80px] pointer-events-none transform-gpu" />
                 </>
               ) : (
                 <>
-                  <motion.div 
-                    animate={{ 
-                      x: [0, 20, 0],
-                      y: [0, -20, 0],
-                      scale: [1, 1.15, 1],
-                    }}
-                    transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-brand-500/10 blur-[100px] pointer-events-none"
-                  />
-                  <motion.div 
-                    animate={{ 
-                      x: [0, -30, 0],
-                      y: [0, 30, 0],
-                      scale: [1.1, 0.9, 1.1],
-                    }}
-                    transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none"
-                  />
-                  <div className="absolute top-1/2 left-2/3 -translate-y-1/2 w-80 h-80 rounded-full bg-amber-500/[0.03] blur-[80px] pointer-events-none" />
+                  <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-brand-500/10 blur-[100px] pointer-events-none transform-gpu" />
+                  <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none transform-gpu" />
+                  <div className="absolute top-1/2 left-2/3 -translate-y-1/2 w-80 h-80 rounded-full bg-amber-500/[0.03] blur-[80px] pointer-events-none transform-gpu" />
                 </>
               )}
 
               {/* Sparkle Particles */}
               <div className="absolute inset-0 pointer-events-none">
-                {[...Array(8)].map((_, i) => (
+                {SPARKLE_POSITIONS.map((sparkle, i) => (
                   <motion.div
                     key={i}
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{ 
                       opacity: [0, 0.8, 0], 
                       scale: [0, 1.3, 0],
-                      x: [Math.random() * 80 - 40, Math.random() * 80 - 40],
-                      y: [Math.random() * 80 - 40, Math.random() * 80 - 40]
+                      x: sparkle.x,
+                      y: sparkle.y
                     }}
                     transition={{ 
-                      duration: 4 + Math.random() * 3, 
+                      duration: sparkle.duration, 
                       repeat: Infinity, 
-                      delay: Math.random() * 6 
+                      delay: sparkle.delay 
                     }}
                     className={cn(
-                      "absolute w-1 h-1 rounded-full blur-[0.5px]",
+                      "absolute w-1 h-1 rounded-full blur-[0.5px] transform-gpu",
                       hasAccessTo(`exam_bundle_${selectedExam}`) ? "bg-emerald-300" : "bg-brand-300"
                     )}
                     style={{ 
-                      left: `${Math.random() * 100}%`, 
-                      top: `${Math.random() * 100}%` 
+                      left: sparkle.left, 
+                      top: sparkle.top 
                     }}
                   />
                 ))}
@@ -5991,19 +5970,19 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   >
                     {/* Rotating Dashed Orbit 1 */}
                     <div className={cn(
-                      "absolute inset-0 rounded-full border border-dashed animate-[spin_35s_linear_infinite] opacity-40",
+                      "absolute inset-0 rounded-full border border-dashed animate-[spin_35s_linear_infinite] opacity-40 transform-gpu will-change-transform",
                       hasAccessTo(`exam_bundle_${selectedExam}`) ? "border-emerald-400" : "border-brand-400"
                     )} />
                     
                     {/* Rotating Dashed Orbit 2 (Counter-rotated) */}
                     <div className={cn(
-                      "absolute inset-2 rounded-full border border-dashed animate-[spin_20s_linear_infinite_reverse] opacity-20",
+                      "absolute inset-2 rounded-full border border-dashed animate-[spin_20s_linear_infinite_reverse] opacity-20 transform-gpu will-change-transform",
                       hasAccessTo(`exam_bundle_${selectedExam}`) ? "border-teal-300" : "border-indigo-400"
                     )} />
 
                     {/* Ring Pulse Glow */}
                     <div className={cn(
-                      "absolute inset-4 rounded-full border animate-[ping_4s_ease-in-out_infinite] opacity-15",
+                      "absolute inset-4 rounded-full border animate-[ping_4s_ease-in-out_infinite] opacity-15 transform-gpu",
                       hasAccessTo(`exam_bundle_${selectedExam}`) ? "border-emerald-400" : "border-brand-400"
                     )} />
 
@@ -6214,7 +6193,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             >
               <Card 
                 onClick={() => { setSelectedBankType(item.id); scrollToElement('exams', { block: 'start', delay: 50 }); }}
-                className="p-5 sm:p-6 lg:p-8 flex flex-col justify-between bg-gradient-to-br from-white to-slate-50/50 backdrop-blur-md border border-white/20 shadow-sm hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 rounded-[1.5rem] cursor-pointer group relative overflow-hidden h-full premium-shine-container"
+                className="p-5 sm:p-6 lg:p-8 flex flex-col justify-between bg-gradient-to-br from-white to-slate-50/50 border border-white/20 shadow-sm hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 rounded-[1.5rem] cursor-pointer group relative overflow-hidden h-full premium-shine-container"
               >
                 <div className="absolute -right-6 -top-6 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-colors" />
                 
@@ -6290,7 +6269,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               <h2 className="text-3xl sm:text-4xl font-black text-slate-950 tracking-tight">Mock Tests</h2>
               <p className="text-slate-500 text-sm sm:text-lg font-medium mt-1 sm:mt-2 leading-relaxed">Simulate the real exam environment with our expert-curated test series.</p>
             </div>
-            <div className="flex items-center gap-3 bg-white/50 px-4 py-2 rounded-full border border-slate-200/50 backdrop-blur-sm">
+            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-slate-200/50 shadow-sm">
               <Sparkles className="w-4 h-4 text-brand-500" />
               <span className="text-sm font-bold text-slate-700">
               Updated for {new Date().getFullYear()} Exam Pattern
