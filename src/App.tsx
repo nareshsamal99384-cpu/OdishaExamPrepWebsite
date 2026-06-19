@@ -2624,7 +2624,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
           style={{ background: 'linear-gradient(135deg, #0f0a28 0%, #1e1151 50%, #0f172a 100%)' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-brand-500/20 to-purple-500/20 pointer-events-none" />
           <div className="relative z-10 flex items-center gap-6">
-            <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center shrink-0">
+            <div className="w-16 h-16 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
               <ShieldCheck className="w-8 h-8 text-emerald-400" />
             </div>
             <div>
@@ -2683,7 +2683,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                     style={{ background: 'radial-gradient(circle, #818cf8 0%, transparent 70%)' }} />
                   <div className="relative z-10 flex items-center gap-5">
                     {/* Exam icon */}
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
                       {isUrl(exam.icon)
                         ? <img src={getDirectImageUrl(exam.icon)} alt={exam.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={(e: any) => { e.target.style.display='none'; e.target.parentNode.textContent='📚'; }} />
                         : <span className="text-3xl sm:text-4xl">{exam.icon || '📚'}</span>}
@@ -2721,7 +2721,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
 
                 {/* Content Items Grid */}
                 {totalItems > 0 && (
-                  <div className="bg-white/80 backdrop-blur-xl border-x border-b border-slate-100 p-6 rounded-b-[2rem]">
+                  <div className="bg-white/95 border-x border-b border-slate-100 p-6 rounded-b-[2rem]">
                     <div className="max-h-[380px] overflow-y-auto custom-scrollbar pr-2 -mr-2">
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-2">
                         {/* Mock Tests */}
@@ -2732,7 +2732,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                             transition={{ ...scaleIn.transition, delay: 0.1 + (i * 0.05) }}
                             whileHover={whileHover.liftTap}
                             whileTap={whileTap.press}
-                            className="group premium-shine-container relative bg-white/60 backdrop-blur-md rounded-2xl border border-slate-200/60 p-5 hover:bg-white hover:border-brand-300 hover:shadow-2xl hover:shadow-brand-500/20 transition-[background-color,border-color,box-shadow] duration-500 cursor-pointer flex flex-col gap-4 overflow-hidden"
+                            className="group premium-shine-container relative bg-white rounded-2xl border border-slate-200/60 p-5 hover:bg-white hover:border-brand-300 hover:shadow-2xl hover:shadow-brand-500/20 transition-[background-color,border-color,box-shadow] duration-500 cursor-pointer flex flex-col gap-4 overflow-hidden"
                             onClick={() => onLaunchMockTest(test)}
                           >
                             <div className="flex items-start gap-4 relative z-10">
@@ -2772,7 +2772,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                             transition={{ ...scaleIn.transition, delay: 0.15 + (i * 0.05) }}
                             whileHover={whileHover.liftTap}
                             whileTap={whileTap.press}
-                            className="group premium-shine-container relative bg-white/60 backdrop-blur-md rounded-2xl border border-slate-200/60 p-5 hover:bg-white hover:border-emerald-300 hover:shadow-2xl hover:shadow-emerald-500/20 transition-[background-color,border-color,box-shadow] duration-500 cursor-pointer flex flex-col gap-4 overflow-hidden"
+                            className="group premium-shine-container relative bg-white rounded-2xl border border-slate-200/60 p-5 hover:bg-white hover:border-emerald-300 hover:shadow-2xl hover:shadow-emerald-500/20 transition-[background-color,border-color,box-shadow] duration-500 cursor-pointer flex flex-col gap-4 overflow-hidden"
                             onClick={() => onLaunchBank(bank)}
                           >
                             <div className="flex items-start gap-4 relative z-10">
