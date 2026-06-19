@@ -3183,14 +3183,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.15 }}
+              style={{ willChange: 'opacity' }}
               className={cn("fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4", !isMobile && "backdrop-blur-sm")}
             >
               <motion.div 
-                initial={isMobile ? { opacity: 0, y: 15, scale: 0.98 } : { opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={isMobile ? { opacity: 0, y: 15, scale: 0.98 } : { opacity: 0, scale: 0.95, y: 20 }}
-                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 12 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+                style={{ willChange: 'transform, opacity' }}
                 className="bg-[#FAF8F5] rounded-[2rem] w-[95%] sm:w-[90%] md:w-full max-w-sm md:max-w-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] flex flex-col md:flex-row border border-slate-200/50 relative max-h-[90vh] md:max-h-[85vh]"
               >
                 {/* Unified Close Button (Adaptive theme based on viewport layout context) */}
@@ -3213,6 +3215,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       src={getDirectImageUrl(selectedBankItem.image)} 
                       alt="" 
                       loading="lazy"
+                      decoding="async"
                       className="absolute inset-0 w-full h-full object-cover opacity-90 pointer-events-none select-none z-0"
                       referrerPolicy="no-referrer"
                     />
