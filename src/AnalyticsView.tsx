@@ -201,7 +201,7 @@ function StatCard({ icon, title, value, suffix = "", trend, decimals = 0, sparkl
       whileHover={{ y: -6, scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       className={cn(
-        "relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-white/80 flex flex-col justify-between group transition-all duration-500 cursor-default",
+        "relative overflow-hidden bg-white/92 p-5 sm:p-6 rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 flex flex-col justify-between group transition-all duration-500 cursor-default",
         color === "brand" ? "hover:shadow-[0_20px_40px_rgba(138,28,54,0.065)] hover:border-brand-200/50" :
         color === "success" ? "hover:shadow-[0_20px_40px_rgba(16,185,129,0.065)] hover:border-emerald-200/50" :
         color === "warning" ? "hover:shadow-[0_20px_40px_rgba(217,119,6,0.065)] hover:border-amber-200/50" :
@@ -209,7 +209,7 @@ function StatCard({ icon, title, value, suffix = "", trend, decimals = 0, sparkl
       )}
     >
       <div className={cn(
-        "absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl pointer-events-none opacity-20 group-hover:opacity-30 transition-all duration-500",
+        "absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl pointer-events-none opacity-20 group-hover:opacity-30 transition-all duration-500 will-change-transform",
         color === "brand" ? "bg-[#8a1c36]" :
         color === "success" ? "bg-[#10b981]" :
         color === "warning" ? "bg-[#d97706]" :
@@ -255,7 +255,7 @@ function AccuracyRow({ label, value, total, color }: { label: string, value: num
   const circleColor = color === "bg-rose-500" ? "bg-rose-500" : color;
 
   return (
-    <div className="flex items-center justify-between p-3.5 bg-white/40 border border-white/60 backdrop-blur-md rounded-[1.25rem] hover:bg-white/80 hover:border-slate-200/50 shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.025)] hover:-translate-y-0.5 transition-all duration-300 group">
+    <div className="flex items-center justify-between p-3.5 bg-white/80 border border-slate-100/50 rounded-[1.25rem] hover:bg-white hover:border-slate-200/50 shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.025)] hover:-translate-y-0.5 transition-all duration-300 group">
        <div className="flex items-center gap-3 font-sans">
           <div className={cn("w-2.5 h-2.5 rounded-full border-2 border-white shadow-[0_0_6px_rgba(0,0,0,0.05)]", circleColor)} />
           <span className="text-[10px] font-black text-slate-500 group-hover:text-slate-800 transition-colors uppercase tracking-wider">{label}</span>
@@ -278,7 +278,7 @@ const SubjectRow = ({ subject }: { subject: any; key?: string }) => {
     <div 
       onClick={() => setIsExpanded(!isExpanded)}
       className={cn(
-        "flex flex-col p-4 bg-white/45 backdrop-blur-md rounded-2xl border border-white/60 shadow-[0_2px_8px_rgba(0,0,0,0.005)] hover:bg-white/80 hover:border-brand-200/40 hover:-translate-y-0.5 transition-all duration-300 group cursor-pointer relative overflow-hidden",
+        "flex flex-col p-4 bg-white/80 rounded-2xl border border-slate-100/70 shadow-[0_2px_8px_rgba(0,0,0,0.005)] hover:bg-white/95 hover:border-brand-200/40 hover:-translate-y-0.5 transition-all duration-300 group cursor-pointer relative overflow-hidden",
         isExpanded && "bg-white/85 border-brand-200/30 shadow-[0_8px_20px_rgba(138,28,54,0.02)]"
       )}
     >
@@ -365,7 +365,7 @@ const SubjectRow = ({ subject }: { subject: any; key?: string }) => {
 
 function SkeletonStatCard() {
   return (
-    <div className="relative overflow-hidden bg-white/60 backdrop-blur-xl p-5 sm:p-6 rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-white/80 flex flex-col justify-between min-h-[142px] animate-pulse">
+    <div className="relative overflow-hidden bg-white/85 p-5 sm:p-6 rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 flex flex-col justify-between min-h-[142px] animate-pulse">
       <div className="absolute -top-24 -right-24 w-48 h-48 bg-slate-150/40 rounded-full blur-3xl pointer-events-none" />
       <div className="relative z-10 flex items-center justify-between mb-4">
         <div className="p-3 bg-slate-200/50 rounded-2xl border border-slate-150/60 w-11 h-11" />
@@ -394,7 +394,7 @@ function AnalyticsSkeleton() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
         {/* Trend skeleton */}
-        <div className="lg:col-span-8 relative bg-white/60 backdrop-blur-xl rounded-[2.0rem] p-6 sm:p-8 border border-white animate-pulse overflow-hidden">
+        <div className="lg:col-span-8 relative bg-white/85 rounded-[2.0rem] p-6 sm:p-8 border border-slate-100/70 animate-pulse overflow-hidden">
            <div className="absolute -top-32 -right-32 w-64 h-64 bg-slate-100 rounded-full blur-3xl pointer-events-none" />
            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
               <div className="space-y-2">
@@ -407,7 +407,7 @@ function AnalyticsSkeleton() {
         </div>
 
         {/* Pie skeleton */}
-        <div className="lg:col-span-4 bg-white/66 backdrop-blur-xl rounded-[2.0rem] p-6 border border-white animate-pulse flex flex-col items-center overflow-hidden">
+        <div className="lg:col-span-4 bg-white/85 rounded-[2.0rem] p-6 border border-slate-100/70 animate-pulse flex flex-col items-center overflow-hidden">
            <div className="h-6 w-40 bg-slate-200 rounded-md mb-8" />
            <div className="w-44 h-44 rounded-full border-[12px] border-slate-100 flex items-center justify-center mb-8 relative">
               <div className="flex flex-col items-center gap-1.5">
@@ -1179,9 +1179,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
   };
 
   if (loading) return (
-    <div className="relative w-full min-h-screen overflow-hidden">
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] bg-gradient-to-br from-brand-100/20 via-purple-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" />
-      <div className="fixed bottom-0 right-0 w-[800px] h-[600px] bg-gradient-to-tl from-indigo-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" />
+    <div className="relative w-full min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(138,28,54,0.05),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.04),transparent_50%)]">
       <AnalyticsSkeleton />
     </div>
   );
@@ -1211,8 +1209,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
 
   return (
     <div className="relative w-full min-h-screen overflow-hidden">
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] bg-gradient-to-br from-brand-100/20 via-purple-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" />
-      <div className="fixed bottom-0 right-0 w-[800px] h-[600px] bg-gradient-to-tl from-indigo-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" />
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(138,28,54,0.06),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.04),transparent_50%)] -z-10 pointer-events-none" />
 
       <motion.div 
         variants={stagger.containerDelay(0.1, 0.1)}
@@ -1264,8 +1261,8 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
           className="relative overflow-hidden bg-white text-slate-800 rounded-[2.5rem] border border-slate-200/60 shadow-xl p-6 sm:p-8"
         >
           {/* Subtle Glow Orbs */}
-          <div className="absolute top-[-100px] right-[-100px] w-80 h-80 rounded-full bg-[#8A1C36]/5 blur-[100px] pointer-events-none" />
-          <div className="absolute bottom-[-100px] left-[-100px] w-80 h-80 rounded-full bg-indigo-500/5 blur-[100px] pointer-events-none" />
+          <div className="absolute top-[-100px] right-[-100px] w-80 h-80 rounded-full bg-[#8A1C36]/5 blur-[100px] pointer-events-none will-change-transform" />
+          <div className="absolute bottom-[-100px] left-[-100px] w-80 h-80 rounded-full bg-indigo-500/5 blur-[100px] pointer-events-none will-change-transform" />
 
           {/* Faint grid pattern background */}
           <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.008)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.008)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none opacity-40" />
@@ -1641,10 +1638,10 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
            {/* Performance Trend Card */}
            <motion.div 
              variants={stagger.itemFadeUp} 
-             className="lg:col-span-8 relative overflow-hidden bg-white/65 backdrop-blur-xl rounded-[2.5rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-white/80 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-all duration-500 group"
+             className="lg:col-span-8 relative overflow-hidden bg-white/92 rounded-[2.5rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-all duration-500 group"
            >
-              <div className="absolute -top-32 -right-32 w-72 h-72 bg-brand-500/5 rounded-full blur-[80px] group-hover:bg-brand-500/8 group-hover:scale-110 transition-all duration-700 pointer-events-none" />
-              <div className="absolute -bottom-32 -left-32 w-72 h-72 bg-indigo-500/3 rounded-full blur-[80px] group-hover:bg-indigo-500/5 transition-all duration-700 pointer-events-none" />
+              <div className="absolute -top-32 -right-32 w-72 h-72 bg-brand-500/5 rounded-full blur-[80px] group-hover:bg-brand-500/8 group-hover:scale-110 transition-all duration-700 pointer-events-none will-change-transform" />
+              <div className="absolute -bottom-32 -left-32 w-72 h-72 bg-indigo-500/3 rounded-full blur-[80px] group-hover:bg-indigo-500/5 transition-all duration-700 pointer-events-none will-change-transform" />
               
               <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                  <div className="flex flex-col gap-1">
@@ -1672,9 +1669,6 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                    <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={stats.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                          <defs>
-                            <filter id="areaLineShadow" x="-5%" y="-5%" width="110%" height="115%">
-                              <feDropShadow dx="0" dy="5" stdDeviation="4" floodColor="#8a1c36" floodOpacity="0.15" />
-                            </filter>
                             <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
                                <stop offset="0%" stopColor="#8a1c36" stopOpacity={0.22}/>
                                <stop offset="100%" stopColor="#8a1c36" stopOpacity={0}/>
@@ -1684,7 +1678,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                          <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-sans)', letterSpacing: '0.05em' }} dy={10} />
                          <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-sans)' }} domain={[0, 100]} />
                          <Tooltip content={<CustomTooltip />} />
-                         <Area type="monotone" dataKey="score" name="Score" stroke="#8a1c36" strokeWidth={3.5} fillOpacity={1} fill="url(#scoreGrad)" activeDot={{ r: 6, stroke: '#ffffff', strokeWidth: 2, fill: '#8a1c36', style: { filter: 'drop-shadow(0px 4px 8px rgba(138,28,54,0.4))' } }} isAnimationActive={true} animationDuration={850} animationEasing="ease-out" style={{ filter: 'url(#areaLineShadow)' }} />
+                         <Area type="monotone" dataKey="score" name="Score" stroke="#8a1c36" strokeWidth={3.5} fillOpacity={1} fill="url(#scoreGrad)" activeDot={{ r: 6, stroke: '#ffffff', strokeWidth: 2, fill: '#8a1c36' }} isAnimationActive={true} animationDuration={850} animationEasing="ease-out" />
                       </AreaChart>
                    </ResponsiveContainer>
                 </div>
@@ -1698,10 +1692,10 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
            {/* Accuracy Breakdown Card */}
            <motion.div 
              variants={stagger.itemFadeUp} 
-             className="lg:col-span-4 relative overflow-hidden bg-white/65 backdrop-blur-xl rounded-[2.5rem] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-white/80 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-all duration-500 group"
+             className="lg:col-span-4 relative overflow-hidden bg-white/92 rounded-[2.5rem] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-all duration-500 group"
            >
-              <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-slate-100/50 rounded-full blur-3xl pointer-events-none" />
-              <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand-500/3 rounded-full blur-3xl group-hover:bg-brand-500/5 transition-colors duration-500 pointer-events-none" />
+              <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-slate-100/50 rounded-full blur-3xl pointer-events-none will-change-transform" />
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand-500/3 rounded-full blur-3xl group-hover:bg-brand-500/5 transition-colors duration-500 pointer-events-none will-change-transform" />
               
               <div className="flex items-center gap-2.5 mb-8 justify-center">
                 <div className="w-1 h-5 bg-[#8a1c36] rounded-full shrink-0" />
@@ -1739,10 +1733,10 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
             {/* Skill Radar Card */}
             <motion.div 
               variants={stagger.itemFadeUp} 
-              className="lg:col-span-12 relative overflow-hidden bg-white/70 backdrop-blur-2xl rounded-[2.5rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-white/80 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-all duration-500 group"
+              className="lg:col-span-12 relative overflow-hidden bg-white/92 rounded-[2.5rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-all duration-500 group"
             >
-               <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-slate-50 rounded-full blur-3xl pointer-events-none" />
-               <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/3 rounded-full blur-3xl group-hover:bg-indigo-500/5 transition-colors duration-500 pointer-events-none" />
+               <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-slate-50 rounded-full pointer-events-none will-change-transform" />
+               <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/3 rounded-full transition-colors duration-500 pointer-events-none will-change-transform" />
                
                <div className="flex flex-col gap-1.5 mb-6 text-center">
                  <div className="flex justify-center">
@@ -1761,9 +1755,6 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                        <ResponsiveContainer width="100%" height="100%">
                           <RadarChart cx="50%" cy="50%" outerRadius="58%" data={stats.skillProfile} margin={{ top: 10, right: 40, bottom: 10, left: 40 }}>
                              <defs>
-                                <filter id="radarShadow" x="-10%" y="-10%" width="120%" height="120%">
-                                  <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#8a1c36" floodOpacity="0.12" />
-                                </filter>
                                 <linearGradient id="overallRadarGrad" x1="0" y1="0" x2="0" y2="1">
                                    <stop offset="0%" stopColor="#8a1c36" stopOpacity={0.65}/>
                                    <stop offset="100%" stopColor="#6366f1" stopOpacity={0.10}/>
@@ -1778,11 +1769,10 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                                stroke="#8a1c36" 
                                strokeWidth={2.5} 
                                fill="url(#overallRadarGrad)" 
-                               activeDot={{ r: 5, fill: '#8a1c36', strokeWidth: 2, stroke: '#ffffff', style: { filter: 'drop-shadow(0px 2px 4px rgba(138,28,54,0.4))' } }} 
+                               activeDot={{ r: 5, fill: '#8a1c36', strokeWidth: 2, stroke: '#ffffff' }} 
                                isAnimationActive={true}
                                animationDuration={850}
                                animationEasing="ease-out"
-                               style={{ filter: 'url(#radarShadow)' }}
                              />
                              <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '3 3' }} />
                           </RadarChart>
@@ -1886,7 +1876,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                  const uniqueSubjects = Array.from(uniqueMap.values());
 
                  return (
-                   <motion.div key={idx} variants={stagger.itemFadeUp} className="bg-white/70 backdrop-blur-2xl rounded-[2.5rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-white/80 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-all duration-500 relative overflow-hidden flex flex-col shrink-0">
+                   <motion.div key={idx} variants={stagger.itemFadeUp} className="bg-white/92 rounded-[2.5rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-all duration-500 relative overflow-hidden flex flex-col shrink-0">
                      <div className="mb-6 relative z-10 flex flex-col gap-3">
                         <div>
                            <span className="px-3 py-1.5 bg-[#8a1c36]/8 text-[#8a1c36] text-[9px] font-sans font-black rounded-xl uppercase tracking-widest border border-[#8a1c36]/15 shadow-sm leading-none">
@@ -1969,7 +1959,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
 
            {/* Visual Action cards */}
            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-               <motion.div variants={stagger.itemFadeUp} whileHover={{ y: -3 }} className="bg-white/80 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(15,23,42,0.015)] border border-slate-200/50 hover:border-slate-200 flex gap-5 items-start">
+               <motion.div variants={stagger.itemFadeUp} whileHover={{ y: -3 }} className="bg-white/92 rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(15,23,42,0.015)] border border-slate-100/70 hover:border-slate-200 flex gap-5 items-start">
                   <div className={cn("p-3 rounded-2xl shrink-0 shadow-sm border border-slate-100", stats.impScore >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600")}>
                      {stats.impScore >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
                  </div>
@@ -1978,7 +1968,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                     <p className="text-xs sm:text-sm font-medium text-slate-400 leading-relaxed">{stats.impScore >= 0 ? "Your latest test scores show positive momentum. Keep up the good work!" : "Review your recent mistakes to get back on track."}</p>
                  </div>
               </motion.div>
-               <motion.div variants={stagger.itemFadeUp} whileHover={{ y: -3 }} className="bg-white/80 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(15,23,42,0.015)] border border-slate-200/50 hover:border-slate-200 flex gap-5 items-start">
+               <motion.div variants={stagger.itemFadeUp} whileHover={{ y: -3 }} className="bg-white/92 rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(15,23,42,0.015)] border border-slate-100/70 hover:border-slate-200 flex gap-5 items-start">
                   <div className={cn("p-3 rounded-2xl shrink-0 shadow-sm border border-slate-100", stats.avgTimePerQuestion > 60 ? "bg-amber-50 text-amber-600" : "bg-brand-50 text-brand-600")}>
                     <Timer className="w-5 h-5" />
                  </div>
