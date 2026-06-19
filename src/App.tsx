@@ -478,6 +478,16 @@ const ExamRegistrySection = ({
   exams: any[] 
 }) => {
   const [announcements, setAnnouncements] = useState<any[]>(EXAM_REGISTRY_DEFAULT);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     examService.getAllExams().then((allExams: any[]) => {
@@ -520,7 +530,6 @@ const ExamRegistrySection = ({
     else if (key === 'opsc' || (item.exam || '').toLowerCase().includes('opsc')) setSelectedExam('opsc-aio');
     scrollToElement('exams', { block: 'start' });
   };
-
   return (
     <section id="exam-registry" className="py-12 md:py-16 bg-[#FAF8F5] border-y border-slate-200/50 scroll-mt-24">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-12">
@@ -528,23 +537,29 @@ const ExamRegistrySection = ({
           <span className="section-chip">
             ⏰ ODISHA RECRUITMENT BULLETIN
           </span>
-          <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-950 tracking-tight leading-tight">
+          <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-955 tracking-tight leading-tight">
             Official Exam Notifications <span className="premium-text-gradient font-serif font-extrabold">& Targeted Mock Tests</span>
           </h2>
-          <div className="section-divider" />
+          {isMobile ? null : <div className="section-divider" />}
           <p className="text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed">
             Never miss a crucial deadline. Track real-time updates for OPSC, OSSC, and OSSSC, and instantly start practicing with syllabus-specific test series.
           </p>
         </div>
 
-        <div className="bg-white border-2 border-slate-900/80 rounded-[2.5rem] overflow-hidden shadow-[6px_6px_0px_rgba(138,28,54,0.15)] divide-y-2 divide-slate-100">
+        <div className="flex flex-col gap-6 md:gap-0 md:bg-white md:border-2 md:border-slate-900/80 md:rounded-[2.5rem] md:overflow-hidden md:shadow-[6px_6px_0px_rgba(138,28,54,0.15)] md:divide-y-2 md:divide-slate-100">
           {announcements.map((item, idx) => {
             const statusMeta = EXAM_REGISTRY_STATUS_MAP[item.status] || {
               label: item.status,
               color: 'bg-slate-50 text-slate-600 border-slate-200'
             };
             return (
-              <div key={idx} className="p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-slate-50/50 transition-colors">
+              <div 
+                key={idx} 
+                className={cn(
+                  "p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white border-2 border-slate-900/80 rounded-3xl md:rounded-none md:border-none shadow-[4px_4px_0px_rgba(138,28,54,0.15)] md:shadow-none",
+                  !isMobile && "hover:bg-slate-50/50 transition-colors"
+                )}
+              >
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2.5">
                     <span className={cn("px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider border", statusMeta.color)}>
@@ -560,10 +575,13 @@ const ExamRegistrySection = ({
                 </div>
                 <button 
                   onClick={() => handlePracticeClick(item)}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-slate-900 text-xs font-black uppercase tracking-widest text-slate-900 hover:bg-slate-900 hover:text-white transition-all cursor-pointer self-start md:self-auto shadow-[4px_4px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5"
+                  className={cn(
+                    "inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-slate-900 text-xs font-black uppercase tracking-widest text-slate-900 transition-all cursor-pointer self-start md:self-auto shadow-[4px_4px_0px_rgba(0,0,0,1)]",
+                    !isMobile && "hover:bg-slate-900 hover:text-white hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5"
+                  )}
                 >
                   {item.actionLabel}
-                  <ArrowRight className="w-4 h-4" />
+                  {isMobile ? null : <ArrowRight className="w-4 h-4" />}
                 </button>
               </div>
             );
