@@ -3,28 +3,36 @@ const isBrowser = typeof window !== 'undefined';
 /** Premium eased window scroll to a target Y position.
  *  Uses easeInOutCubic curve so the animation decelerates naturally.
  *  Duration scales with distance: short hops feel snappy, long jumps feel cinematic. */
-function smoothScrollWindow(targetY: number, duration = 700): Promise<void> {
+function smoothScrollWindow(targetY: number, duration = 400): Promise<void> {
   return new Promise((resolve) => {
     const startY = window.scrollY;
     const distance = targetY - startY;
     if (Math.abs(distance) < 2) { resolve(); return; }
 
-    // Scale duration: ~600ms for short, up to 900ms for very long scrolls
-    const scaledDuration = Math.min(Math.max(Math.abs(distance) * 0.35, 500), 900);
+    // Temporarily disable pointer events to prevent hover recalculations during programmatic scrolling
+    if (document.body) {
+      document.body.style.pointerEvents = 'none';
+    }
+
+    // Scale duration: snappy 300ms (short hops) to 450ms (long jumps)
+    const scaledDuration = Math.min(Math.max(Math.abs(distance) * 0.15, 300), 450);
 
     const t0 = performance.now();
 
-    const easeInOutCubic = (t: number) =>
-      t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    // Snappier ease-out curve for section jumps
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
     const tick = (now: number) => {
       const elapsed = now - t0;
       const progress = Math.min(elapsed / scaledDuration, 1);
-      const eased = easeInOutCubic(progress);
+      const eased = easeOutCubic(progress);
       window.scrollTo(0, startY + distance * eased);
       if (progress < 1) {
         requestAnimationFrame(tick);
       } else {
+        if (document.body) {
+          document.body.style.pointerEvents = '';
+        }
         resolve();
       }
     };
