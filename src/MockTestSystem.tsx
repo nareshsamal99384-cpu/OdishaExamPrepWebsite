@@ -1012,14 +1012,23 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
         {/* Left Side: Question Pane */}
         <div className="flex-1 flex flex-col min-w-0 bg-transparent border-r border-slate-200/60">
           {/* Question Scoring Info Bar */}
-          <div className="h-10 sm:h-12 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between px-6 sm:px-8 text-xs font-bold text-slate-500 shrink-0">
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#8A1C36]" />
-              <span>Multiple Choice Question (MCQ)</span>
+          <div className="h-10 sm:h-12 bg-slate-50/50 border-b border-slate-200/60 flex items-center justify-between px-4 sm:px-8 text-xs font-bold text-slate-500 shrink-0 select-none">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#8A1C36] shrink-0" />
+              <span className="leading-tight truncate">
+                <span className="hidden sm:inline">Multiple Choice Question (MCQ)</span>
+                <span className="sm:hidden text-[10px] text-slate-600 font-extrabold uppercase tracking-wider">MCQ</span>
+              </span>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-100">Correct: +{marksPerQ.toFixed(2)}</span>
-              {negMarkVal > 0 && <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider text-rose-700 bg-rose-50 border border-rose-100">Negative: -{negMarkVal.toFixed(2)}</span>}
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-100/80">
+                Correct: +{marksPerQ.toFixed(2)}
+              </span>
+              {negMarkVal > 0 && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-rose-700 bg-rose-50 border border-rose-100/80">
+                  Negative: -{negMarkVal.toFixed(2)}
+                </span>
+              )}
             </div>
           </div>
 
