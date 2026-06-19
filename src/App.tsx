@@ -720,8 +720,18 @@ const AchieversJournalSection = () => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'opsc' | 'ossc' | 'osssc'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(4);
+  const [isMobile, setIsMobile] = useState(false);
 
   const [stories, setStories] = useState<any[]>(DEFAULT_ACHIEVERS_JOURNAL);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const fetchStories = async () => {
@@ -761,7 +771,7 @@ const AchieversJournalSection = () => {
 
   return (
     <section id="achievers-journal" className="py-12 md:py-16 bg-slate-50 border-y border-slate-200/60 scroll-mt-24">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
+      <div className="max-w-6xl mx-auto px-6 space-y-10">
         <div className="flex flex-col items-center space-y-4 text-center">
           <span className="section-chip">
             🏆 VERIFIED SUCCESS STORIES
@@ -769,7 +779,7 @@ const AchieversJournalSection = () => {
           <h2 className="text-3xl md:text-4xl font-serif font-extrabold text-slate-955 tracking-tight leading-tight max-w-3xl">
             Join Hundreds of Aspirants <span className="premium-text-gradient font-serif font-extrabold">Who Cracked Their Target Exams</span>
           </h2>
-          <div className="section-divider" />
+          {!isMobile && <div className="section-divider" />}
           <p className="text-slate-500 text-sm sm:text-base md:text-lg font-normal max-w-2xl mx-auto leading-relaxed">
             Don't just take our word for it. Explore detailed preparation strategies, actual test scores, and accuracy timelines from real students who conquered OPSC, OSSC, and OSSSC using our platform.
           </p>
@@ -831,7 +841,7 @@ const AchieversJournalSection = () => {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.3 }}
-                  className="bg-white border-2 border-slate-900 rounded-[2rem] p-6 sm:p-8 shadow-[6px_6px_0px_rgba(138,28,54,0.1)] hover:shadow-[8px_8px_0px_#8A1C36] hover:-translate-y-1 hover:-translate-x-1 transition-all duration-300 flex flex-col justify-between"
+                  className="bg-white border-2 border-slate-900 rounded-[2rem] p-6 sm:p-8 shadow-[6px_6px_0px_rgba(138,28,54,0.1)] md:hover:shadow-[8px_8px_0px_#8A1C36] md:hover:-translate-y-1 md:hover:-translate-x-1 transition-all duration-300 flex flex-col justify-between"
                 >
                   <div className="space-y-4">
                     <div className="flex items-center justify-between gap-3">
