@@ -198,10 +198,8 @@ function StatCard({ icon, title, value, suffix = "", trend, decimals = 0, sparkl
   return (
     <motion.div 
       variants={stagger.itemFadeUp} 
-      whileHover={{ y: -6, scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
       className={cn(
-        "relative overflow-hidden bg-white/92 p-5 sm:p-6 rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 flex flex-col justify-between group transition-all duration-500 cursor-default",
+        "relative overflow-hidden bg-white/92 p-5 sm:p-6 rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 flex flex-col justify-between group transition-all duration-300 ease-out cursor-default hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.98]",
         color === "brand" ? "hover:shadow-[0_20px_40px_rgba(138,28,54,0.065)] hover:border-brand-200/50" :
         color === "success" ? "hover:shadow-[0_20px_40px_rgba(16,185,129,0.065)] hover:border-emerald-200/50" :
         color === "warning" ? "hover:shadow-[0_20px_40px_rgba(217,119,6,0.065)] hover:border-amber-200/50" :
@@ -209,7 +207,7 @@ function StatCard({ icon, title, value, suffix = "", trend, decimals = 0, sparkl
       )}
     >
       <div className={cn(
-        "absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl pointer-events-none opacity-20 group-hover:opacity-30 transition-all duration-500 will-change-transform",
+        "absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl pointer-events-none opacity-20 group-hover:opacity-30 transition-opacity duration-300 will-change-transform",
         color === "brand" ? "bg-[#8a1c36]" :
         color === "success" ? "bg-[#10b981]" :
         color === "warning" ? "bg-[#d97706]" :
