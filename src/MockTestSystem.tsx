@@ -1365,21 +1365,24 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                 }
 
                 return (
-                  <button
+                  <motion.button
                     key={idx}
                     data-qidx={idx}
                     onClick={() => {
                       setCurrentQuestionIndex(idx);
                       setShowExplanation(false);
                     }}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.92 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
                     className={cn(
-                      "w-11 h-11 text-xs transition-all relative flex items-center justify-center cursor-pointer",
+                      "w-11 h-11 text-xs transition-[background-color,border-color,box-shadow] duration-200 relative flex items-center justify-center cursor-pointer",
                       btnStyle
                     )}
                   >
                     {badgeElement}
                     <span>{idx + 1}</span>
-                  </button>
+                  </motion.button>
                 );
               })}
             </div>
@@ -1421,12 +1424,23 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
       {/* Mobile Palette Bottom Sheet */}
       <AnimatePresence>
         {showMobilePalette && (
-          <div className="fixed inset-0 bg-slate-950/40 z-[100] flex flex-col justify-end lg:hidden backdrop-blur-sm">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowMobilePalette(false);
+              }
+            }}
+            className="fixed inset-0 bg-slate-950/40 z-[100] flex flex-col justify-end lg:hidden backdrop-blur-sm"
+          >
             <motion.div 
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 220 }}
+              onClick={(e) => e.stopPropagation()}
               className="bg-white rounded-t-[2rem] shadow-2xl border-t border-slate-200/60 flex flex-col max-h-[85vh]"
             >
               {/* Drag handle */}
@@ -1480,7 +1494,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                     }
 
                     return (
-                      <button
+                      <motion.button
                         key={idx}
                         data-qidx={idx}
                         onClick={() => {
@@ -1488,14 +1502,17 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                           setShowExplanation(false);
                           setShowMobilePalette(false);
                         }}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.92 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
                         className={cn(
-                          "w-11 h-11 text-xs relative flex items-center justify-center cursor-pointer mx-auto transition-all",
+                          "w-11 h-11 text-xs relative flex items-center justify-center cursor-pointer mx-auto transition-[background-color,border-color,box-shadow] duration-200",
                           btnStyle
                         )}
                       >
                         {badgeElement}
                         <span>{idx + 1}</span>
-                      </button>
+                      </motion.button>
                     );
                   })}
                 </div>
@@ -1525,7 +1542,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                 </div>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
