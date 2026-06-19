@@ -4252,35 +4252,61 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       </AnimatePresence>
 
         {/* Login Prompt Popup */}
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {showLoginPrompt && (
-            <div className="fixed inset-0 bg-black/60 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm">
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 20, opacity: 0 }}
-                className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 space-y-6 shadow-2xl relative overflow-y-auto no-scrollbar smooth-scroll-gpu max-h-[90vh] sm:max-h-[85vh] flex flex-col"
-              >
-                {/* Decorative background orbs */}
-                <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
-                <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-brand-500/5 rounded-full blur-3xl pointer-events-none" />
+            <>
+              {/* Animated backdrop */}
+              <motion.div
+                key="login-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                className="fixed inset-0 bg-black/50 z-[200] backdrop-blur-sm"
+                style={{ willChange: 'opacity' }}
+                onClick={() => setShowLoginPrompt(false)}
+              />
 
-                <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto relative">
-                  <User className="w-8 h-8 text-indigo-600" />
-                  <div className="absolute inset-0 border-2 border-indigo-200 rounded-2xl animate-ping opacity-20" />
-                </div>
-                <div className="text-center space-y-2">
-                  <h3 className="text-2xl font-bold text-slate-900">Sign in Required</h3>
-                  <p className="text-slate-500">Please sign in to access mock tests, question banks, or Practice Mode.</p>
-                </div>
-                <Button className="w-full py-4" onClick={() => { setShowLoginPrompt(false); if (onSignIn) onSignIn(); }}>
-                  Sign In Now
-                </Button>
-                <button onClick={() => setShowLoginPrompt(false)} className="w-full text-slate-500 text-sm font-medium">
-                  Maybe Later
-                </button>
-              </motion.div>
-            </div>
+              {/* Modal panel — slides up from bottom on mobile, scales in on desktop */}
+              <div className="fixed inset-0 z-[201] flex items-end sm:items-center justify-center pointer-events-none">
+                <motion.div
+                  key="login-modal"
+                  initial={{ y: '100%', opacity: 0, scale: 1 }}
+                  animate={{ y: 0, opacity: 1, scale: 1 }}
+                  exit={{ y: '100%', opacity: 0, scale: 1 }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 320,
+                    damping: 32,
+                    mass: 0.9,
+                  }}
+                  className="bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] w-full sm:max-w-sm p-8 space-y-6 shadow-2xl relative overflow-hidden max-h-[92vh] sm:max-h-[85vh] flex flex-col pointer-events-auto"
+                  style={{ willChange: 'transform, opacity' }}
+                >
+                  {/* Decorative background orbs */}
+                  <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+                  <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-brand-500/5 rounded-full blur-3xl pointer-events-none" />
+
+                  {/* Drag handle (mobile) */}
+                  <div className="sm:hidden w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-2" />
+
+                  <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto relative">
+                    <User className="w-8 h-8 text-indigo-600" />
+                    <div className="absolute inset-0 border-2 border-indigo-200 rounded-2xl animate-ping opacity-20" />
+                  </div>
+                  <div className="text-center space-y-2">
+                    <h3 className="text-2xl font-bold text-slate-900">Sign in Required</h3>
+                    <p className="text-slate-500">Please sign in to access mock tests, question banks, or Practice Mode.</p>
+                  </div>
+                  <Button className="w-full py-4" onClick={() => { setShowLoginPrompt(false); if (onSignIn) onSignIn(); }}>
+                    Sign In Now
+                  </Button>
+                  <button onClick={() => setShowLoginPrompt(false)} className="w-full text-slate-500 text-sm font-medium pb-1">
+                    Maybe Later
+                  </button>
+                </motion.div>
+              </div>
+            </>
           )}
         </AnimatePresence>
     </>
