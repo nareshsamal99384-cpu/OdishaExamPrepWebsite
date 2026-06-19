@@ -2100,7 +2100,7 @@ const LandingPage = () => {
                 initial={{ opacity: 0, x: -40 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
-                className="flex-1 text-center lg:text-left space-y-8 lg:space-y-10 max-w-2xl lg:max-w-[600px] xl:max-w-[640px] mx-auto lg:mx-0"
+                className="flex-1 text-center lg:text-left space-y-6 md:space-y-8 lg:space-y-10 max-w-2xl lg:max-w-[600px] xl:max-w-[640px] mx-auto lg:mx-0"
               >
                 <div className="space-y-6">
                   {/* Premium Badge */}
@@ -2116,17 +2116,22 @@ const LandingPage = () => {
                   </div>
 
                   <div className="space-y-4 md:space-y-5">
-                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-extrabold text-slate-950 tracking-tight leading-tight">
+                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-extrabold text-slate-955 tracking-tight leading-tight">
                       Crack Your Odisha Govt Exams <br className="hidden sm:block" /> with{" "}
                       <span className="premium-text-gradient font-serif font-extrabold">Realistic Mock Tests</span>
                     </h1>
-                    <h2 className="text-slate-500 text-sm sm:text-base md:text-lg max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
+                    {/* Mobile Version (Shorter) */}
+                    <h2 className="block md:hidden text-lg leading-relaxed text-slate-500 max-w-xl mx-auto lg:mx-0 font-normal">
+                      Master OPSC, OSSC, and OSSSC with verified PYQs and a 24/7 AI mentor.
+                    </h2>
+                    {/* Desktop Version (Original) */}
+                    <h2 className="hidden md:block text-slate-500 text-sm sm:text-base md:text-lg max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
                       Stop guessing your rank. Master the OPSC, OSSC, and OSSSC syllabus with timed test series, verified PYQs, and a 24/7 AI mentor.
                     </h2>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 justify-center lg:justify-start pt-4 lg:pt-6">
+                <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 justify-center lg:justify-start pt-2 sm:pt-4 lg:pt-6">
                   <Button 
                     className="w-full sm:w-auto h-14 sm:h-16 px-8 sm:px-12 text-lg sm:text-xl rounded-2xl shadow-2xl shadow-brand-500/30 group relative overflow-hidden" 
                     onClick={() => {
