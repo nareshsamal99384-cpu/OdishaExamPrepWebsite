@@ -939,59 +939,114 @@ async function startServer() {
       }
     }
   });
-  app.get(["/blog", "/blog/:id"], async (req, res, next) => {
+  app.get(["/", "/blog", "/blog/:id", "/privacy-policy", "/terms-of-service", "/refund-policy", "/admin-login"], async (req, res, next) => {
     if (!isProduction) {
       return next();
     }
     try {
-      const blogId = req.params.id;
-      let title = "OEP Knowledge Base & Prep Blog | OdishaExamPrep";
-      let description = "Expert strategy guides, syllabus breakdowns, recruitment updates, current affairs, and comprehensive preparation strategies for OPSC, OSSC, and OSSSC aspirants in Odisha.";
-      let keywords = "odisha exam preparation, opsc cse blog, ossc cgl tips, osssc ri amin prep, current affairs odisha, exam syllabus, how to crack opsc";
-      let imageUrl = "https://odishaexamprep.com/og-image.jpg";
-      const canonicalUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+      const host = req.get("host") || "odishaexamprep.com";
+      const protocol = req.protocol || "https";
+      const baseUrl = `${protocol}://${host}`;
+      const canonicalUrl = `${baseUrl}${req.originalUrl}`;
+      const pathName = req.path;
+      let title = "OdishaExamPrep - Best Platform for Odisha Exam Preparation";
+      let description = "Excel in OPSC, OSSC, OSSSC, and other Odisha government competitive exams. Practice with expert-crafted mock tests, real-time rank analytics, and detailed syllabus roadmaps.";
+      let keywords = "Odisha Exam Prep, OPSC, OSSC, OSSSC, Odisha Government Exams, Mock Tests, Odisha GK, Competitive Exams Odisha";
+      let imageUrl = `${baseUrl}/student.webp`;
       let schemaJson = "";
-      if (blogId) {
-        const { data: blog, error } = await supabaseAdmin.from("exams").select("*").eq("id", blogId).eq("category", "blog").single();
-        if (blog && !error) {
-          title = blog.metaTitle || `${blog.name} | OdishaExamPrep`;
-          description = blog.metaDescription || blog.description.replace(/<[^>]*>/g, "").substring(0, 155).trim() + "...";
-          keywords = blog.keywords || `${blog.name.toLowerCase()}, odisha exams, prep`;
-          if (blog.icon) {
-            imageUrl = blog.icon.startsWith("http") ? blog.icon : `https://nareshsamal99384-cpu.supabase.co/storage/v1/object/public/exams/${blog.icon}`;
-          }
-          const schemaObj = {
-            "@context": "https://schema.org",
-            "@type": "BlogPosting",
-            "mainEntityOfPage": {
-              "@type": "WebPage",
-              "@id": canonicalUrl
-            },
-            "headline": blog.name,
-            "description": description,
-            "image": imageUrl,
-            "datePublished": blog.examDate || blog.createdAt,
-            "dateModified": blog.createdAt,
-            "author": {
-              "@type": "Organization",
-              "name": "OdishaExamPrep Editorial Team",
-              "url": "https://odishaexamprep.com"
-            },
-            "publisher": {
-              "@type": "Organization",
-              "name": "OdishaExamPrep"
+      let ogType = "website";
+      if (pathName.startsWith("/blog")) {
+        const blogId = req.params.id;
+        title = "OEP Knowledge Base & Prep Blog | OdishaExamPrep";
+        description = "Expert strategy guides, syllabus breakdowns, recruitment updates, current affairs, and comprehensive preparation strategies for OPSC, OSSC, and OSSSC aspirants in Odisha.";
+        keywords = "odisha exam preparation, opsc cse blog, ossc cgl tips, osssc ri amin prep, current affairs odisha, exam syllabus, how to crack opsc";
+        imageUrl = `${baseUrl}/student.webp`;
+        ogType = "article";
+        if (blogId) {
+          const { data: blog, error } = await supabaseAdmin.from("exams").select("*").eq("id", blogId).eq("category", "blog").single();
+          if (blog && !error) {
+            title = blog.metaTitle || `${blog.name} | OdishaExamPrep`;
+            description = blog.metaDescription || blog.description.replace(/<[^>]*>/g, "").substring(0, 155).trim() + "...";
+            keywords = blog.keywords || `${blog.name.toLowerCase()}, odisha exams, prep`;
+            if (blog.icon) {
+              imageUrl = blog.icon.startsWith("http") ? blog.icon : `https://nareshsamal99384-cpu.supabase.co/storage/v1/object/public/exams/${blog.icon}`;
             }
-          };
-          schemaJson = `<script type="application/ld+json" id="json-ld-schema">${JSON.stringify(schemaObj)}</script>`;
+            const schemaObj = {
+              "@context": "https://schema.org",
+              "@type": "BlogPosting",
+              "mainEntityOfPage": {
+                "@type": "WebPage",
+                "@id": canonicalUrl
+              },
+              "headline": blog.name,
+              "description": description,
+              "image": imageUrl,
+              "datePublished": blog.examDate || blog.createdAt,
+              "dateModified": blog.createdAt,
+              "author": {
+                "@type": "Organization",
+                "name": "OdishaExamPrep Editorial Team",
+                "url": baseUrl
+              },
+              "publisher": {
+                "@type": "Organization",
+                "name": "OdishaExamPrep"
+              }
+            };
+            schemaJson = `<script type="application/ld+json" id="json-ld-schema">${JSON.stringify(schemaObj)}</script>`;
+          }
         }
+      } else if (pathName === "/privacy-policy") {
+        title = "Privacy Policy | OdishaExamPrep";
+        description = "Read the Privacy Policy of OdishaExamPrep. Learn how we collect, protect, and use your personal information securely.";
+        keywords = "privacy policy, odishaexamprep privacy, user data safety";
+        imageUrl = `${baseUrl}/apple-touch-icon.png`;
+      } else if (pathName === "/terms-of-service") {
+        title = "Terms of Service | OdishaExamPrep";
+        description = "Read the Terms of Service for OdishaExamPrep. Understand the rules, guidelines, and terms governing your use of our preparation platform.";
+        keywords = "terms of service, odishaexamprep terms, platform rules";
+        imageUrl = `${baseUrl}/apple-touch-icon.png`;
+      } else if (pathName === "/refund-policy") {
+        title = "Refund & Cancellation Policy | OdishaExamPrep";
+        description = "Read the Refund & Cancellation Policy of OdishaExamPrep. Learn about our refund guidelines for mock test purchases.";
+        keywords = "refund policy, cancellation policy, odishaexamprep refund";
+        imageUrl = `${baseUrl}/apple-touch-icon.png`;
+      } else if (pathName === "/admin-login") {
+        title = "Admin Login | OdishaExamPrep";
+        description = "Secure portal for OdishaExamPrep administrators to manage courses, exams, subscribers, and analytics.";
+        keywords = "admin login, odishaexamprep portal";
+        imageUrl = `${baseUrl}/apple-touch-icon.png`;
+      } else if (pathName === "/") {
+        const schemaObj = {
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "OdishaExamPrep",
+          "url": baseUrl,
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": `${baseUrl}/?search={search_term_string}`,
+            "query-input": "required name=search_term_string"
+          }
+        };
+        schemaJson = `<script type="application/ld+json" id="json-ld-schema">${JSON.stringify(schemaObj)}</script>`;
       }
       const htmlPath = path.join(distPath, "index.html");
       if (!fs.existsSync(htmlPath)) {
         return next();
       }
       let html = fs.readFileSync(htmlPath, "utf8");
+      html = html.replace(/<title>.*?<\/title>/gi, "");
+      html = html.replace(/<meta[^>]*name="description"[^>]*>/gi, "");
+      html = html.replace(/<meta[^>]*name="title"[^>]*>/gi, "");
+      html = html.replace(/<meta[^>]*name="keywords"[^>]*>/gi, "");
+      html = html.replace(/<link[^>]*rel="canonical"[^>]*>/gi, "");
+      html = html.replace(/<meta[^>]*property="og:[^>]*>/gi, "");
+      html = html.replace(/<meta[^>]*name="twitter:[^>]*>/gi, "");
+      html = html.replace(/<meta[^>]*property="twitter:[^>]*>/gi, "");
+      html = html.replace(/<script[^>]*id="json-ld-schema"[^>]*>.*?<\/script>/gi, "");
       const ogMetaTags = `
     <title>${title}</title>
+    <meta name="title" content="${title.replace(/"/g, "&quot;")}" />
     <meta name="description" content="${description.replace(/"/g, "&quot;")}" />
     <meta name="keywords" content="${keywords.replace(/"/g, "&quot;")}" />
     <link rel="canonical" href="${canonicalUrl}" />
@@ -999,7 +1054,7 @@ async function startServer() {
     <meta property="og:description" content="${description.replace(/"/g, "&quot;")}" />
     <meta property="og:image" content="${imageUrl}" />
     <meta property="og:url" content="${canonicalUrl}" />
-    <meta property="og:type" content="article" />
+    <meta property="og:type" content="${ogType}" />
     <meta property="og:site_name" content="OdishaExamPrep" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${title.replace(/"/g, "&quot;")}" />
@@ -1007,7 +1062,6 @@ async function startServer() {
     <meta name="twitter:image" content="${imageUrl}" />
     ${schemaJson}
   `;
-      html = html.replace(/<title>.*?<\/title>/gi, "");
       html = html.replace("<head>", `<head>${ogMetaTags}`);
       res.setHeader("Content-Type", "text/html");
       return res.send(html);
