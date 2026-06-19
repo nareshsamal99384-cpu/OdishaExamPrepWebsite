@@ -663,16 +663,21 @@ const SYLLABUS_ROADMAPS_DEFAULT = [
 
   return (
     <section id="syllabus-paths" className="py-12 md:py-16 scroll-mt-24 border-b border-slate-200/50">
-      <div className="max-w-6xl mx-auto px-6 space-y-12">
+      <div className="max-w-6xl mx-auto px-6 space-y-6 md:space-y-12">
         <div className="flex flex-col items-center space-y-4 text-center">
           <span className="section-chip">
             🎯 SYLLABUS-MAPPED PREPARATION
           </span>
-          <h2 className="text-3xl md:text-4xl font-serif font-extrabold text-slate-950 tracking-tight leading-tight max-w-3xl">
+          <h2 className="text-3xl md:text-4xl font-serif font-extrabold text-slate-955 tracking-tight leading-tight max-w-3xl">
             Master Every Topic with <span className="premium-text-gradient font-serif font-extrabold">Targeted Chapter-Wise Tests</span>
           </h2>
           {!isMobile && <div className="section-divider" />}
-          <p className="text-slate-500 text-sm sm:text-base md:text-lg font-normal max-w-2xl mx-auto leading-loose sm:leading-relaxed">
+          {/* Mobile Version (Shorter) */}
+          <p className="block md:hidden text-base leading-relaxed text-gray-600 font-medium max-w-2xl mx-auto">
+            Stop blindly studying. Unlock full-length mock tests and PYQs designed exactly for the OPSC and OSSC curriculum.
+          </p>
+          {/* Desktop Version (Original) */}
+          <p className="hidden md:block text-slate-500 text-sm sm:text-base md:text-lg font-normal max-w-2xl mx-auto leading-loose sm:leading-relaxed">
             Stop blindly studying. Select a subject pillar—from Odisha History to Indian Polity—and unlock specific full-length mock tests and PYQs designed exactly for the latest OPSC and OSSC curriculum.
           </p>
         </div>
