@@ -442,7 +442,7 @@ export const UserAvatar = ({
 };
 
 const VisualEffects = () => (
-  <div className="absolute inset-0 pointer-events-none overflow-hidden">
+  <div className="absolute inset-0 pointer-events-none overflow-hidden hidden md:block">
     <div className="absolute top-1/4 left-1/4 w-1.5 h-1.5 bg-brand-400/20 rounded-full animate-float-slow transform-gpu" />
     <div className="absolute top-3/4 left-1/2 w-2 h-2 bg-indigo-400/20 rounded-full animate-float-delayed transform-gpu" />
     <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-purple-400/20 rounded-full animate-float-slow transform-gpu" style={{ animationDelay: '-4s' }} />
@@ -5880,13 +5880,14 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         {/* Full Exam Access Banner - Refined for Laptop & Mobile */}
         {hasBundle && !hasAccessTo(`exam_bundle_${selectedExam}`) && (
           <motion.div 
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={isMobile ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.98 }}
+            animate={isMobile ? undefined : { opacity: 1, scale: 1 }}
             className="group relative overflow-hidden rounded-[2rem] lg:rounded-[3rem] p-[1px] premium-shine-container mb-10"
           >
             {/* Animated Outer Gradient Border */}
             <div className={cn(
-              "absolute inset-0 animate-gradient-x opacity-90 transition-all duration-500",
+              "absolute inset-0 opacity-90 transition-all duration-500",
+              isMobile ? "" : "animate-gradient-x",
               hasAccessTo(`exam_bundle_${selectedExam}`) 
                 ? "bg-gradient-to-r from-emerald-500/60 via-teal-400/40 to-emerald-600/60" 
                 : "bg-gradient-to-r from-brand-500/60 via-amber-400/40 to-indigo-600/60"
@@ -5916,7 +5917,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               )}
 
               {/* Sparkle Particles */}
-              <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute inset-0 pointer-events-none hidden md:block">
                 {SPARKLE_POSITIONS.map((sparkle, i) => (
                   <motion.div
                     key={i}
@@ -5946,10 +5947,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
               <div className="relative z-10 px-6 py-8 sm:p-10 lg:p-14 flex flex-col lg:flex-row items-center justify-between gap-10">
                 <motion.div 
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true }}
-                  variants={{
+                  initial={isMobile ? "show" : "hidden"}
+                  whileInView={isMobile ? undefined : "show"}
+                  viewport={isMobile ? undefined : { once: true }}
+                  variants={isMobile ? undefined : {
                     hidden: { opacity: 0 },
                     show: {
                       opacity: 1,
@@ -5962,7 +5963,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 >
                   {/* Rotating Orbital Emblem */}
                   <motion.div 
-                    variants={{
+                    variants={isMobile ? undefined : {
                       hidden: { scale: 0.8, opacity: 0 },
                       show: { scale: 1, opacity: 1 }
                     }}
@@ -5970,19 +5971,22 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   >
                     {/* Rotating Dashed Orbit 1 */}
                     <div className={cn(
-                      "absolute inset-0 rounded-full border border-dashed animate-[spin_35s_linear_infinite] opacity-40 transform-gpu will-change-transform",
+                      "absolute inset-0 rounded-full border border-dashed opacity-40 transform-gpu will-change-transform",
+                      isMobile ? "" : "animate-[spin_35s_linear_infinite]",
                       hasAccessTo(`exam_bundle_${selectedExam}`) ? "border-emerald-400" : "border-brand-400"
                     )} />
                     
                     {/* Rotating Dashed Orbit 2 (Counter-rotated) */}
                     <div className={cn(
-                      "absolute inset-2 rounded-full border border-dashed animate-[spin_20s_linear_infinite_reverse] opacity-20 transform-gpu will-change-transform",
+                      "absolute inset-2 rounded-full border border-dashed opacity-20 transform-gpu will-change-transform",
+                      isMobile ? "" : "animate-[spin_20s_linear_infinite_reverse]",
                       hasAccessTo(`exam_bundle_${selectedExam}`) ? "border-teal-300" : "border-indigo-400"
                     )} />
 
                     {/* Ring Pulse Glow */}
                     <div className={cn(
-                      "absolute inset-4 rounded-full border animate-[ping_4s_ease-in-out_infinite] opacity-15 transform-gpu",
+                      "absolute inset-4 rounded-full border opacity-15 transform-gpu",
+                      isMobile ? "" : "animate-[ping_4s_ease-in-out_infinite]",
                       hasAccessTo(`exam_bundle_${selectedExam}`) ? "border-emerald-400" : "border-brand-400"
                     )} />
 
@@ -6164,10 +6168,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         </div>
         
         <motion.div 
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true }}
-          variants={{
+          initial={isMobile ? "show" : "hidden"}
+          whileInView={isMobile ? undefined : "show"}
+          viewport={isMobile ? undefined : { once: true }}
+          variants={isMobile ? undefined : {
             hidden: { opacity: 0 },
             show: {
               opacity: 1,
@@ -6184,11 +6188,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           ].map((item, i) => (
             <motion.div
               key={i}
-              variants={{
+              variants={isMobile ? undefined : {
                 hidden: { y: 20, opacity: 0 },
                 show: { y: 0, opacity: 1 }
               }}
-              whileHover={whileHover.liftTap}
+              whileHover={isMobile ? undefined : whileHover.liftTap}
               whileTap={whileTap.press}
             >
               <Card 
@@ -6296,10 +6300,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
             return (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                whileHover={whileHover.liftTap}
+                initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+                animate={isMobile ? undefined : { opacity: 1, y: 0 }}
+                exit={isMobile ? undefined : { opacity: 0, scale: 0.95 }}
+                whileHover={isMobile ? undefined : whileHover.liftTap}
                 whileTap={whileTap.press}
               >
                 <Card 
@@ -6371,9 +6375,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
           if (!selectedMockCategory) return (
               <motion.div 
-                initial="hidden"
-                animate="show"
-                variants={{
+                initial={isMobile ? "show" : "hidden"}
+                animate={isMobile ? undefined : "show"}
+                variants={isMobile ? undefined : {
                   hidden: { opacity: 0 },
                   show: {
                     opacity: 1,
@@ -6390,11 +6394,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 ].map((test, i) => (
                   <motion.div
                     key={i}
-                    variants={{
+                    variants={isMobile ? undefined : {
                       hidden: { opacity: 0, scale: 0.95, y: 10 },
                       show: { opacity: 1, scale: 1, y: 0 }
                     }}
-                    whileHover={whileHover.liftTap}
+                    whileHover={isMobile ? undefined : whileHover.liftTap}
                     whileTap={whileTap.press}
                   >
                     <Card 
