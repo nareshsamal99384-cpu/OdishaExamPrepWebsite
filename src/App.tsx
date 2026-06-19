@@ -5718,7 +5718,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   show: { opacity: 1, y: 0 }
                 }}
                 whileHover={isMobile ? undefined : whileHover.liftTap}
-                whileTap={whileTap.press}
+                whileTap={isMobile ? undefined : whileTap.press}
               >
                 <Card 
                   onClick={() => setSelectedBankItem(item)}
@@ -5736,6 +5736,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       src={getDirectImageUrl(item.image)} 
                       alt={item.title} 
                       loading="lazy"
+                      decoding="async"
                       className={cn(
                         "w-full h-full object-cover select-none pointer-events-none",
                         !isMobile && "group-hover:scale-105 transition-transform duration-700"
@@ -6225,28 +6226,39 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 show: { y: 0, opacity: 1 }
               }}
               whileHover={isMobile ? undefined : whileHover.liftTap}
-              whileTap={whileTap.press}
+              whileTap={isMobile ? undefined : whileTap.press}
             >
               <Card 
                 onClick={() => { setSelectedBankType(item.id); scrollToElement('exams', { block: 'start', delay: 50 }); }}
-                className="p-5 sm:p-6 lg:p-8 flex flex-col justify-between bg-gradient-to-br from-white to-slate-50/50 border border-white/20 shadow-sm hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 rounded-[1.5rem] cursor-pointer group relative overflow-hidden h-full premium-shine-container"
+                className={cn(
+                  "p-5 sm:p-6 lg:p-8 flex flex-col justify-between bg-gradient-to-br from-white to-slate-50/50 border border-white/20 shadow-sm rounded-[1.5rem] cursor-pointer group relative overflow-hidden h-full",
+                  !isMobile && "hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 premium-shine-container"
+                )}
               >
                 <div className="absolute -right-6 -top-6 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-colors" />
                 
                 <div className="flex-1 pb-6 relative z-10">
                   <div className="flex justify-between items-start mb-4 sm:mb-6">
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 premium-gradient rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-500/20 group-hover:scale-110 group-hover:premium-glow transition-all duration-500 shrink-0 relative">
+                    <div className={cn(
+                      "w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 premium-gradient rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-500/20 shrink-0 relative",
+                      !isMobile && "group-hover:scale-110 group-hover:premium-glow transition-all duration-500"
+                    )}>
                       {item.icon}
                       <div className="absolute inset-0 border-2 border-white/20 rounded-xl sm:rounded-2xl animate-pulse" />
                     </div>
                   </div>
-                  <h4 className="font-extrabold text-base sm:text-lg lg:text-xl text-slate-900 mb-2 group-hover:text-brand-600 transition-colors tracking-tight line-clamp-2 md:line-clamp-none leading-snug">{item.title}</h4>
+                  <h4 className="font-extrabold text-base sm:text-lg lg:text-xl text-slate-900 mb-2 group-hover:text-brand-650 transition-colors tracking-tight line-clamp-2 md:line-clamp-none leading-snug">{item.title}</h4>
                   <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">{item.desc}</p>
                 </div>
                 
-                <Button className="w-full py-3 sm:py-3.5 mt-auto rounded-xl flex items-center justify-center text-xs sm:text-sm font-black premium-gradient border-none shadow-md shadow-brand-500/10 group-hover:shadow-lg group-hover:shadow-brand-500/30 transition-all pointer-events-none relative overflow-hidden">
+                <Button className={cn(
+                  "w-full py-3 sm:py-3.5 mt-auto rounded-xl flex items-center justify-center text-xs sm:text-sm font-black premium-gradient border-none shadow-md shadow-brand-500/10 pointer-events-none relative overflow-hidden",
+                  !isMobile && "group-hover:shadow-lg group-hover:shadow-brand-500/30 transition-all"
+                )}>
                    {/* Button Shine Effect */}
-                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
+                   {!isMobile && (
+                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
+                   )}
                    <span className="relative z-10">View Collection</span>
                 </Button>
               </Card>
