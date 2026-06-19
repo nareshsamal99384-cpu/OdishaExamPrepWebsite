@@ -621,11 +621,19 @@ const SYLLABUS_ROADMAPS_DEFAULT = [
       { name: 'Data Interpretation (DI) Charts', count: 9, label: 'High-level Practice Sets' },
     ],
   },
-];
-
-const SyllabusPathsSection = () => {
+];const SyllabusPathsSection = () => {
   const [tabs, setTabs] = useState<any[]>(SYLLABUS_ROADMAPS_DEFAULT);
   const [activeTabIdx, setActiveTabIdx] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     examService.getAllExams().then((allExams: any[]) => {
@@ -646,7 +654,7 @@ const SyllabusPathsSection = () => {
 
   return (
     <section id="syllabus-paths" className="py-12 md:py-16 scroll-mt-24 border-b border-slate-200/50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-12">
+      <div className="max-w-6xl mx-auto px-6 space-y-12">
         <div className="flex flex-col items-center space-y-4 text-center">
           <span className="section-chip">
             🎯 SYLLABUS-MAPPED PREPARATION
@@ -654,8 +662,8 @@ const SyllabusPathsSection = () => {
           <h2 className="text-3xl md:text-4xl font-serif font-extrabold text-slate-950 tracking-tight leading-tight max-w-3xl">
             Master Every Topic with <span className="premium-text-gradient font-serif font-extrabold">Targeted Chapter-Wise Tests</span>
           </h2>
-          <div className="section-divider" />
-          <p className="text-slate-500 text-sm sm:text-base md:text-lg font-normal max-w-2xl mx-auto leading-relaxed">
+          {!isMobile && <div className="section-divider" />}
+          <p className="text-slate-500 text-sm sm:text-base md:text-lg font-normal max-w-2xl mx-auto leading-loose sm:leading-relaxed">
             Stop blindly studying. Select a subject pillar—from Odisha History to Indian Polity—and unlock specific full-length mock tests and PYQs designed exactly for the latest OPSC and OSSC curriculum.
           </p>
         </div>
@@ -680,7 +688,7 @@ const SyllabusPathsSection = () => {
 
         {/* Pathway List */}
         {activeTab && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-4 max-w-4xl mx-auto">
             {(activeTab.topics || []).map((topic: any, i: number) => (
               <div
                 key={i}
