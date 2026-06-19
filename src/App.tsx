@@ -3179,17 +3179,17 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         {/* Detail View Modal */}
         <AnimatePresence>
           {selectedBankItem && (
-            <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className={cn("fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4", !isMobile && "backdrop-blur-sm")}>
               <motion.div 
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                initial={isMobile ? { opacity: 0, y: 10 } : { opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                exit={isMobile ? { opacity: 0, y: 10 } : { opacity: 0, scale: 0.95, y: 20 }}
                 className="bg-[#FAF8F5] rounded-[2rem] w-[95%] sm:w-[90%] md:w-full max-w-sm md:max-w-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] flex flex-col md:flex-row border border-slate-200/50 relative max-h-[90vh] md:max-h-[85vh]"
               >
                 {/* Unified Close Button (Adaptive theme based on viewport layout context) */}
                 <button 
                   onClick={() => setSelectedBankItem(null)}
-                  className="absolute top-5 right-5 p-2 bg-white/10 hover:bg-white/20 text-white md:bg-slate-100 md:hover:bg-slate-200 md:text-slate-500 rounded-xl backdrop-blur-md md:backdrop-blur-none transition-all z-50 hover:scale-105 active:scale-95 border-none cursor-pointer"
+                  className="absolute top-5 right-5 p-2 bg-white/15 hover:bg-white/25 text-white md:bg-slate-100 md:hover:bg-slate-200 md:text-slate-500 rounded-xl transition-all z-50 hover:scale-105 active:scale-95 border-none cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -3217,9 +3217,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   {/* Interactive Orbital Study Seal */}
                   <div className="relative flex flex-col items-center justify-center space-y-3 md:space-y-4 w-full md:my-auto z-10">
                     <div className="relative w-20 h-20 md:w-24 md:h-24 flex items-center justify-center shrink-0">
-                      <div className="absolute inset-0 rounded-full border border-dashed border-brand-500/30 animate-[spin_20s_linear_infinite]" />
-                      <div className="absolute inset-2 rounded-full border border-brand-500/10 border-t-brand-500/40 animate-[spin_5s_linear_infinite_reverse]" />
-                      <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl shadow-brand-500/20 backdrop-blur-md">
+                      <div className={cn("absolute inset-0 rounded-full border border-dashed border-brand-500/30", !isMobile && "animate-[spin_20s_linear_infinite]")} />
+                      <div className={cn("absolute inset-2 rounded-full border border-brand-500/10 border-t-brand-500/40", !isMobile && "animate-[spin_5s_linear_infinite_reverse]")} />
+                      <div className={cn("w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl shadow-brand-500/20", !isMobile && "backdrop-blur-md")}>
                         <BookOpen className="w-5.5 h-5.5 md:w-6 md:h-6 text-brand-400" />
                       </div>
                     </div>
@@ -3263,7 +3263,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 </div>
                 
                 {/* Right Column: Metadata, List & Actions */}
-                <div className="relative md:w-[62%] p-6 md:p-8 flex flex-col relative overflow-y-auto no-scrollbar smooth-scroll-gpu max-h-full flex-1">
+                <div className={cn("relative md:w-[62%] p-6 md:p-8 flex flex-col overflow-y-auto no-scrollbar max-h-full flex-1", !isMobile && "smooth-scroll-gpu")}>
                   {/* Subtle grid background */}
                   <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" />
 
@@ -3319,9 +3319,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       </div>
                       
                       <motion.div 
-                        initial="hidden"
+                        initial={isMobile ? "show" : "hidden"}
                         animate="show"
-                        variants={{
+                        variants={isMobile ? undefined : {
                           hidden: { opacity: 0 },
                           show: {
                             opacity: 1,
@@ -3334,11 +3334,14 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           selectedBankItem.pdfLinks.map((link: any, idx: number) => (
                             <motion.button 
                               key={idx}
-                              variants={{
+                              variants={isMobile ? undefined : {
                                 hidden: { opacity: 0, x: -10 },
                                 show: { opacity: 1, x: 0 }
                               }}
-                              className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white hover:bg-brand-50/50 border border-slate-200/60 hover:border-brand-200/60 transition-all group relative overflow-hidden shadow-sm cursor-pointer"
+                              className={cn(
+                                "w-full flex items-center justify-between p-3.5 rounded-2xl bg-white border border-slate-200/60 shadow-sm cursor-pointer",
+                                !isMobile && "hover:bg-brand-50/50 hover:border-brand-200/60 transition-all group relative overflow-hidden"
+                              )}
                               onClick={() => {
                                 if (isGuest) {
                                   setShowLoginPrompt(true);
@@ -3381,11 +3384,14 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                               }}
                             >
                               <div className="flex items-center gap-3 relative z-10">
-                                <div className="w-8.5 h-8.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[#8A1C36] group-hover:scale-110 group-hover:bg-[#8A1C36] group-hover:text-white transition-all shadow-sm">
+                                <div className={cn(
+                                  "w-8.5 h-8.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[#8A1C36] shadow-sm",
+                                  !isMobile && "group-hover:scale-110 group-hover:bg-[#8A1C36] group-hover:text-white transition-all"
+                                )}>
                                   <Download className="w-4 h-4" />
                                 </div>
                                 <div className="text-left">
-                                  <p className="text-xs font-bold text-slate-800 group-hover:text-slate-950 truncate max-w-[140px] sm:max-w-[220px] md:max-w-[280px] lg:max-w-[340px]">
+                                  <p className="text-xs font-bold text-slate-800 truncate max-w-[140px] sm:max-w-[220px] md:max-w-[280px] lg:max-w-[340px]">
                                     {link.title || 'Download PDF'}
                                   </p>
                                   <p className="text-[9px] font-bold text-slate-400">PDF Document</p>
@@ -3393,9 +3399,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                               </div>
                               
                               {selectedBankItem.isPremium && !hasAccessTo(selectedBankItem) ? (
-                                <Lock className="w-4 h-4 text-slate-400 group-hover:text-[#8A1C36] transition-colors" />
+                                <Lock className={cn("w-4 h-4 text-slate-400", !isMobile && "group-hover:text-[#8A1C36] transition-colors")} />
                               ) : (
-                                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#8A1C36] group-hover:translate-x-1 transition-all" />
+                                <ChevronRight className={cn("w-4 h-4 text-slate-400", !isMobile && "group-hover:text-[#8A1C36] group-hover:translate-x-1 transition-all")} />
                               )}
                             </motion.button>
                           ))
@@ -3413,7 +3419,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       <Button 
                         variant="primary" 
                         className={cn(
-                          "w-full h-13 rounded-2xl text-xs font-black uppercase tracking-widest premium-gradient text-white shadow-lg shadow-brand-500/20 hover:premium-glow",
+                          "w-full h-13 rounded-2xl text-xs font-black uppercase tracking-widest premium-gradient text-white shadow-lg shadow-brand-500/20",
+                          !isMobile && "hover:premium-glow",
                           selectedBankItem.hasPracticeMode === false && "opacity-60 cursor-not-allowed"
                         )}
                         onClick={() => {
@@ -5679,9 +5686,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           <div className="relative">
             <div className="pb-12 pt-4">
             <motion.div 
-              initial="hidden"
-              animate="show"
-              variants={{
+              initial={isMobile ? "show" : "hidden"}
+              whileInView={isMobile ? undefined : "show"}
+              viewport={isMobile ? undefined : { once: true }}
+              variants={isMobile ? undefined : {
                 hidden: { opacity: 0 },
                 show: {
                   opacity: 1,
@@ -5695,19 +5703,22 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             return (
               <motion.div
                 key={item.id}
-                variants={{
+                variants={isMobile ? undefined : {
                   hidden: { opacity: 0, y: 20 },
                   show: { opacity: 1, y: 0 }
                 }}
-                whileHover={whileHover.liftTap}
+                whileHover={isMobile ? undefined : whileHover.liftTap}
                 whileTap={whileTap.press}
               >
                 <Card 
                   onClick={() => { setSelectedBankItem(item); scrollToElement('exams', { block: 'start', delay: 50 }); }}
-                  className="group cursor-pointer hover:border-brand-300/80 relative overflow-hidden rounded-[2rem] hover:-translate-y-1.5 transition-all duration-500 h-full border-slate-200/50 bg-white shadow-sm hover:shadow-xl hover:shadow-brand-500/5 flex flex-col premium-shine-container"
+                  className={cn(
+                    "group cursor-pointer relative overflow-hidden rounded-[2rem] h-full border-slate-200/50 bg-white shadow-sm flex flex-col",
+                    !isMobile && "hover:border-brand-300/80 hover:-translate-y-1.5 transition-all duration-500 hover:shadow-xl hover:shadow-brand-500/5 premium-shine-container"
+                  )}
                 >
                   {/* Ambient grid-bg inside the card */}
-                  <div className="absolute inset-0 grid-bg opacity-[0.02] group-hover:opacity-[0.04] pointer-events-none transition-opacity duration-500" />
+                  <div className={cn("absolute inset-0 grid-bg opacity-[0.02] pointer-events-none", !isMobile && "group-hover:opacity-[0.04] transition-opacity duration-500")} />
                   
                   {/* Hero Image Section */}
                   <div className={cn("h-44 overflow-hidden relative shrink-0 border-b border-slate-100", isLocked && "blur-[1px]")}>
@@ -5715,7 +5726,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       src={getDirectImageUrl(item.image)} 
                       alt={item.title} 
                       loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 select-none pointer-events-none"
+                      className={cn(
+                        "w-full h-full object-cover select-none pointer-events-none",
+                        !isMobile && "group-hover:scale-105 transition-transform duration-700"
+                      )}
                       referrerPolicy="no-referrer"
                     />
                     
@@ -5723,18 +5737,18 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none opacity-60" />
                     
                     {isLocked && (
-                      <div className="absolute inset-0 bg-slate-950/20 backdrop-blur-[2px] flex items-center justify-center">
+                      <div className={cn("absolute inset-0 bg-slate-950/20 flex items-center justify-center", !isMobile && "backdrop-blur-[2px]")}>
                         <div className="w-12 h-12 bg-white/95 rounded-2xl flex items-center justify-center shadow-lg border border-slate-200/50">
-                          <Lock className="w-5 h-5 text-[#8A1C36]" />
+                           <Lock className="w-5 h-5 text-[#8A1C36]" />
                         </div>
                       </div>
                     )}
                   </div>
                   
                   {/* Card Content Body */}
-                  <div className={cn("p-6 flex flex-col flex-1 relative z-10 bg-white/50 backdrop-blur-sm", isLocked && "opacity-60")}>
+                  <div className={cn("p-6 flex flex-col flex-1 relative z-10 bg-white/90", !isMobile && "bg-white/50 backdrop-blur-sm", isLocked && "opacity-60")}>
                     <div className="flex justify-between items-start mb-3">
-                      <h3 className="text-lg font-serif font-extrabold text-slate-900 group-hover:text-brand-650 transition-colors capitalize tracking-tight leading-snug line-clamp-1">
+                      <h3 className={cn("text-lg font-serif font-extrabold text-slate-900 capitalize tracking-tight leading-snug line-clamp-1", !isMobile && "group-hover:text-brand-650 transition-colors")}>
                         {item.title.toLowerCase()}
                       </h3>
                       {isLocked ? (
@@ -5749,10 +5763,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     {/* Stats and Highlights */}
                     <div className="space-y-3.5 mb-6">
                       <div className="flex items-center gap-2 text-slate-500">
-                        <div className="w-6.5 h-6.5 rounded-lg bg-slate-50 border border-slate-100/60 flex items-center justify-center text-slate-400 group-hover:text-brand-500 group-hover:bg-brand-50/50 transition-all shadow-sm">
+                        <div className={cn("w-6.5 h-6.5 rounded-lg bg-slate-50 border border-slate-100/60 flex items-center justify-center text-slate-400 shadow-sm", !isMobile && "group-hover:text-brand-500 group-hover:bg-brand-50/50 transition-all")}>
                           <FileText className="w-3.5 h-3.5" />
                         </div>
-                        <span className="text-xs font-bold text-slate-500 group-hover:text-slate-700 transition-colors">
+                        <span className={cn("text-xs font-bold text-slate-500", !isMobile && "group-hover:text-slate-700 transition-colors")}>
                           {item.questions} Practice Questions
                         </span>
                       </div>
@@ -5768,13 +5782,18 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     {/* View Details Button */}
                     <div className="mt-auto pt-2">
                       <button 
-                        className="w-full py-3 px-6 rounded-xl font-black text-xs uppercase tracking-wider relative overflow-hidden flex items-center justify-center gap-2 transition-all duration-500 border border-brand-100 bg-brand-50/40 text-brand-600 shadow-sm hover:scale-[1.02] active:scale-95 group-hover:bg-gradient-to-r group-hover:from-brand-600 group-hover:to-brand-500 group-hover:text-white group-hover:border-transparent group-hover:shadow-lg group-hover:shadow-brand-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={cn(
+                          "w-full py-3 px-6 rounded-xl font-black text-xs uppercase tracking-wider relative overflow-hidden flex items-center justify-center gap-2 border border-brand-100 bg-brand-50/40 text-brand-600 shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
+                          !isMobile && "transition-all duration-500 hover:scale-[1.02] active:scale-95 group-hover:bg-gradient-to-r group-hover:from-brand-600 group-hover:to-brand-500 group-hover:text-white group-hover:border-transparent group-hover:shadow-lg group-hover:shadow-brand-500/20"
+                        )}
                       >
                         {/* Button Shine Effect */}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
+                        {!isMobile && (
+                          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
+                        )}
                         <span className="relative z-10 flex items-center justify-center gap-1.5">
                           {isLocked ? 'Unlock to View' : 'View Details'}
-                          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform relative -top-[0.5px]" />
+                          <ArrowRight className={cn("w-3.5 h-3.5 relative -top-[0.5px]", !isMobile && "group-hover:translate-x-1 transition-transform")} />
                         </span>
                       </button>
                     </div>
