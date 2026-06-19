@@ -536,7 +536,7 @@ const ExamRegistrySection = ({
   };
   return (
     <section id="exam-registry" className="py-12 md:py-16 bg-[#FAF8F5] border-y border-slate-200/50 scroll-mt-24">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6 md:space-y-12">
         <div className="flex flex-col items-center space-y-4 text-center">
           <span className="section-chip">
             ⏰ ODISHA RECRUITMENT BULLETIN
@@ -545,7 +545,12 @@ const ExamRegistrySection = ({
             Official Exam Notifications <span className="premium-text-gradient font-serif font-extrabold">& Targeted Mock Tests</span>
           </h2>
           {isMobile ? null : <div className="section-divider" />}
-          <p className="text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed">
+          {/* Mobile Version (Shorter & Punchier) */}
+          <p className="block md:hidden text-base leading-relaxed text-gray-600 font-medium max-w-xl mx-auto">
+            Never miss an OPSC, OSSC, or OSSSC deadline. Get real-time updates and syllabus-specific tests.
+          </p>
+          {/* Desktop Version (Original) */}
+          <p className="hidden md:block text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed">
             Never miss a crucial deadline. Track real-time updates for OPSC, OSSC, and OSSSC, and instantly start practicing with syllabus-specific test series.
           </p>
         </div>
