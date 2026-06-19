@@ -2606,7 +2606,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 font-bold rounded-xl text-xs transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed select-none"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 font-bold rounded-xl text-xs transition-[background-color,border-color,transform,box-shadow] shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed select-none"
           >
             <RotateCw className={cn("w-3.5 h-3.5 text-brand-600", refreshing && "animate-spin")} />
             {refreshing ? 'Syncing Library...' : 'Sync Library'}
@@ -2654,7 +2654,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
           </p>
           <button
             onClick={() => onViewExam(null)}
-            className="group relative px-8 py-4 bg-slate-900 text-white font-bold rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all overflow-hidden flex items-center gap-3 mx-auto"
+            className="group relative px-8 py-4 bg-slate-900 text-white font-bold rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-[transform,box-shadow] overflow-hidden flex items-center gap-3 mx-auto"
           >
             <span className="absolute inset-0 bg-gradient-to-r from-brand-600 to-brand-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <span className="relative z-10">Explore Exams</span>
@@ -2711,7 +2711,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                     {isBundle && (
                       <button
                         onClick={() => onViewExam(exam.id)}
-                        className="group shrink-0 px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white text-sm font-bold rounded-2xl transition-all duration-300 flex items-center gap-2 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+                        className="group shrink-0 px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white text-sm font-bold rounded-2xl transition-[transform,border-color,background-color,box-shadow] duration-300 flex items-center gap-2 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
                       >
                         Open <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </button>
@@ -2732,7 +2732,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                             transition={{ ...scaleIn.transition, delay: 0.1 + (i * 0.05) }}
                             whileHover={whileHover.liftTap}
                             whileTap={whileTap.press}
-                            className="group premium-shine-container relative bg-white/60 backdrop-blur-md rounded-2xl border border-slate-200/60 p-5 hover:bg-white hover:border-brand-300 hover:shadow-2xl hover:shadow-brand-500/20 transition-all duration-500 cursor-pointer flex flex-col gap-4 overflow-hidden"
+                            className="group premium-shine-container relative bg-white/60 backdrop-blur-md rounded-2xl border border-slate-200/60 p-5 hover:bg-white hover:border-brand-300 hover:shadow-2xl hover:shadow-brand-500/20 transition-[background-color,border-color,box-shadow] duration-500 cursor-pointer flex flex-col gap-4 overflow-hidden"
                             onClick={() => onLaunchMockTest(test)}
                           >
                             <div className="flex items-start gap-4 relative z-10">
@@ -2755,7 +2755,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                                 <CheckCircle2 className="w-3.5 h-3.5" /> Unlocked
                               </span>
                             </div>
-                            <button className="w-full mt-2 py-2.5 text-sm font-bold text-white rounded-xl shadow-md group-hover:shadow-brand-500/25 transition-all duration-300 relative overflow-hidden"
+                            <button className="w-full mt-2 py-2.5 text-sm font-bold text-white rounded-xl shadow-md group-hover:shadow-brand-500/25 transition-[box-shadow] duration-300 relative overflow-hidden"
                               style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)' }}>
                               <span className="relative z-10 flex items-center justify-center gap-2">
                                 Start Test <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -2772,7 +2772,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                             transition={{ ...scaleIn.transition, delay: 0.15 + (i * 0.05) }}
                             whileHover={whileHover.liftTap}
                             whileTap={whileTap.press}
-                            className="group premium-shine-container relative bg-white/60 backdrop-blur-md rounded-2xl border border-slate-200/60 p-5 hover:bg-white hover:border-emerald-300 hover:shadow-2xl hover:shadow-emerald-500/20 transition-all duration-500 cursor-pointer flex flex-col gap-4 overflow-hidden"
+                            className="group premium-shine-container relative bg-white/60 backdrop-blur-md rounded-2xl border border-slate-200/60 p-5 hover:bg-white hover:border-emerald-300 hover:shadow-2xl hover:shadow-emerald-500/20 transition-[background-color,border-color,box-shadow] duration-500 cursor-pointer flex flex-col gap-4 overflow-hidden"
                             onClick={() => onLaunchBank(bank)}
                           >
                             <div className="flex items-start gap-4 relative z-10">
@@ -2795,7 +2795,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                                 <CheckCircle2 className="w-3.5 h-3.5" /> Unlocked
                               </span>
                             </div>
-                            <button className="w-full mt-2 py-2.5 text-sm font-bold text-white rounded-xl shadow-md group-hover:shadow-emerald-500/25 transition-all duration-300 relative overflow-hidden"
+                            <button className="w-full mt-2 py-2.5 text-sm font-bold text-white rounded-xl shadow-md group-hover:shadow-emerald-500/25 transition-[box-shadow] duration-300 relative overflow-hidden"
                               style={{ background: 'linear-gradient(135deg, #059669, #047857)' }}>
                               <span className="relative z-10 flex items-center justify-center gap-2">
                                 Practice Now <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
