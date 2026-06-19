@@ -3231,7 +3231,7 @@ JSON structure:
             </div>
 
             {/* Chat Messages Console */}
-            <div ref={chatConsoleRef} className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
+            <div ref={chatConsoleRef} className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar smooth-scroll-gpu">
               {messages.map((m, idx) => (
                 <div 
                   key={idx} 
@@ -3465,7 +3465,7 @@ JSON structure:
           </div>
 
           {/* Scrollable content pane */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3.5 pb-8 no-scrollbar relative z-10 flex flex-col" style={{ contain: 'layout paint', willChange: 'transform' }}>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-3.5 pb-8 no-scrollbar relative z-10 flex flex-col smooth-scroll-gpu" style={{ contain: 'layout paint' }}>
             <AnimatePresence mode="wait">
               {activeRightTab === 'planner' && (
                 <motion.div
@@ -3556,7 +3556,7 @@ JSON structure:
               /* MANUAL POMODORO MODE */
               <div className="space-y-3 animate-scale-in flex-1 flex flex-col">
                 {/* Completed session counter */}
-                <div className="flex justify-between items-center bg-white/60 backdrop-blur-md border border-slate-200/50 px-3 py-1.5 rounded-xl premium-shadow">
+                <div className="flex justify-between items-center bg-white border border-slate-200/50 px-3 py-1.5 rounded-xl premium-shadow">
                   <span className="text-[10px] font-bold text-slate-500">Completed Focus Sessions</span>
                   <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-amber-700 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full shadow-2xs">
                     <Trophy className="w-3.5 h-3.5 text-amber-600 animate-trophy-bounce shrink-0" />
@@ -3581,7 +3581,7 @@ JSON structure:
                 </div>
 
                 {/* Circular Timer & Controls */}
-                <div className="flex flex-col sm:flex-row items-center gap-4 bg-white/60 backdrop-blur-md border border-slate-200/50 p-3.5 rounded-2xl premium-shadow relative overflow-hidden">
+                <div className="flex flex-col sm:flex-row items-center gap-4 bg-white border border-slate-200/50 p-3.5 rounded-2xl premium-shadow relative overflow-hidden">
                   {/* Subtle decorative background pattern */}
                   <div className="absolute inset-0 grid-bg-fine opacity-20 pointer-events-none" />
                   
@@ -4191,7 +4191,7 @@ JSON structure:
                       <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">Study Roadmap & Timeline</span>
                       <div 
                         ref={roadmapContainerRef}
-                        className="bg-slate-50 border border-slate-200/50 rounded-2xl p-4 max-h-[320px] overflow-y-auto no-scrollbar scroll-smooth relative"
+                        className="bg-slate-50 border border-slate-200/50 rounded-2xl p-4 max-h-[320px] overflow-y-auto no-scrollbar scroll-smooth relative smooth-scroll-gpu"
                       >
                         <div className="relative border-l border-slate-200/60 ml-2.5 pl-4 space-y-4 pr-1">
                           {plannerBlocks.map((b, idx) => {
