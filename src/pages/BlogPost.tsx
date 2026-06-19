@@ -176,7 +176,7 @@ export default function BlogPost() {
 
     const seoTitle = blog.metaTitle || `${blog.name} | OdishaExamPrep`;
     const seoDesc = blog.metaDescription || (blog.description.replace(/<[^>]*>/g, '').substring(0, 155).trim() + '...');
-    const canonicalUrl = window.location.href;
+    const canonicalUrl = `${window.location.origin}${window.location.pathname}`;
     const imageUrl = blog.icon ? getDirectImageUrl(blog.icon) : '';
 
     document.title = seoTitle;

@@ -150,6 +150,101 @@ try {
     console.error(`[-] Failed to fetch /site.webmanifest`);
     failed = true;
   }
+  
+  // Test query parameter stripping on canonical URLs
+  console.log('\nTesting query parameter canonical stripping on: /?ref=newsletter');
+  const queryRes = await fetch(`${url}/?ref=newsletter`);
+  if (queryRes.status === 200) {
+    const queryHtml = await queryRes.text();
+    if (!queryHtml.includes(`<link rel="canonical" href="http://localhost:${PORT}/" />`)) {
+      console.error(`[-] Query parameter URL failed canonical check: preserved query parameter`);
+      failed = true;
+    } else {
+      console.log(`[+] Query parameter URL canonical link stripped parameter successfully`);
+    }
+  } else {
+    console.error(`[-] Failed to fetch homepage with query parameters`);
+    failed = true;
+  }
+
+  // Test sitemap.xml content and exclusions
+  console.log('\nTesting /sitemap.xml validity and exclusions...');
+  const sitemapRes = await fetch(`${url}/sitemap.xml`);
+  if (sitemapRes.status === 200) {
+    const xml = await sitemapRes.text();
+    const expectedRoutes = [
+      `/privacy-policy`,
+      `/terms-of-service`,
+      `/refund-policy`,
+      `/blog`
+    ];
+    const excludedRoutes = [
+      `/admin`,
+      `/admin-login`,
+      `?ref=`
+    ];
+
+    for (const r of expectedRoutes) {
+      if (!xml.includes(`<loc>http://localhost:${PORT}${r}</loc>`)) {
+        console.error(`[-] Sitemap missing expected route: ${r}`);
+        failed = true;
+      }
+    }
+
+    for (const r of excludedRoutes) {
+      if (xml.includes(r)) {
+        console.error(`[-] Sitemap contains disallowed route/pattern: ${r}`);
+        failed = true;
+      }
+    }
+
+    // Check specifically for query parameters inside <loc> tags in sitemap to prevent false positive on XML declaration
+    const queryLocs = xml.match(/<loc>[^<]*\?[^<]*<\/loc>/gi);
+    if (queryLocs) {
+      console.error(`[-] Sitemap contains query parameters in URLs:`, queryLocs);
+      failed = true;
+    }
+
+    if (!failed) {
+      console.log(`[+] /sitemap.xml verified successfully (included policy pages, excluded admin/query parameters)`);
+    }
+  } else {
+    console.error(`[-] Failed to fetch /sitemap.xml`);
+    failed = true;
+  }
+
+  // Test robots.txt content
+  console.log('\nTesting /robots.txt dynamic output...');
+  const robotsRes = await fetch(`${url}/robots.txt`);
+  if (robotsRes.status === 200) {
+    const txt = await robotsRes.text();
+    if (txt.includes('Disallow: /admin') && txt.includes('Disallow: /admin-login')) {
+      console.log(`[+] /robots.txt disallow rules verified successfully`);
+    } else {
+      console.error(`[-] /robots.txt missing disallow rules for admin sections`);
+      failed = true;
+    }
+  } else {
+    console.error(`[-] Failed to fetch /robots.txt`);
+    failed = true;
+  }
+
+  // Test invalid route (404 status and noindex meta check)
+  console.log('\nTesting invalid route /non-existent-page-test-404...');
+  const invalidRes = await fetch(`${url}/non-existent-page-test-404`);
+  if (invalidRes.status === 404) {
+    console.log(`[+] Invalid route returned 404 status successfully`);
+    const invalidHtml = await invalidRes.text();
+    if (invalidHtml.includes('<meta name="robots" content="noindex, nofollow" />')) {
+      console.log(`[+] Invalid route response contains noindex, nofollow robots meta tag`);
+    } else {
+      console.error(`[-] Invalid route response missing noindex, nofollow robots meta tag`);
+      failed = true;
+    }
+  } else {
+    console.error(`[-] Invalid route returned status ${invalidRes.status} (expected 404)`);
+    failed = true;
+  }
 
 } catch (err) {
   console.error('Test run failed with error:', err);

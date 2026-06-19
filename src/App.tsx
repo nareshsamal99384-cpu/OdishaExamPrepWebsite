@@ -78,6 +78,8 @@ const YouTubeCarousel = React.lazy(() => import('./components/YouTubeCarousel'))
 const BlogList = React.lazy(() => import('./pages/BlogList'));
 const BlogPost = React.lazy(() => import('./pages/BlogPost'));
 const AiMentor = React.lazy(() => import('./pages/AiMentor'));
+import { ROUTE_PATHS } from './lib/routes-config';
+const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 import StickyAICompanion from './components/StickyAICompanion';
 import LoadingPortal from './components/LoadingPortal';
 
@@ -881,7 +883,7 @@ const AchieversJournalSection = () => {
   );
 };
 
-const Footer = () => {
+export const Footer = () => {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -1106,7 +1108,7 @@ const Footer = () => {
   );
 };
 
-const Navbar = ({ 
+export const Navbar = ({ 
   user, 
   isAdmin, 
   onSignIn, 
@@ -4984,7 +4986,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   }
 
   if (mainTab === 'ai_mentor') {
-    return <AiMentor user={user} />;
+    return (
+      <React.Suspense fallback={<LoadingPortal />}>
+        <AiMentor user={user} />
+      </React.Suspense>
+    );
   }
 
   if (!selectedExam) {
@@ -6735,14 +6741,14 @@ function AppContent() {
   return (
     <div className="min-h-screen min-h-[100dvh] bg-[#F8FAFC] font-sans text-slate-900">
       <AnimatedRoutes>
-        <Route path="/admin-login" element={<AdminLoginPage />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        <Route path="/terms-of-service" element={<TermsOfService />} />
-        <Route path="/refund-policy" element={<RefundPolicy />} />
-        <Route path="/blog" element={<BlogList />} />
-        <Route path="/blog/:id" element={<BlogPost />} />
+        <Route path={ROUTE_PATHS.ADMIN_LOGIN} element={<AdminLoginPage />} />
+        <Route path={ROUTE_PATHS.PRIVACY_POLICY} element={<PrivacyPolicy />} />
+        <Route path={ROUTE_PATHS.TERMS_OF_SERVICE} element={<TermsOfService />} />
+        <Route path={ROUTE_PATHS.REFUND_POLICY} element={<RefundPolicy />} />
+        <Route path={ROUTE_PATHS.BLOG} element={<BlogList />} />
+        <Route path={ROUTE_PATHS.BLOG_DETAIL} element={<BlogPost />} />
         <Route 
-          path="/admin" 
+          path={ROUTE_PATHS.ADMIN} 
           element={
             <ProtectedRoute requireAdmin>
               <AdminDashboardPage />
@@ -6750,7 +6756,7 @@ function AppContent() {
           } 
         />
         <Route 
-          path="/" 
+          path={ROUTE_PATHS.HOME} 
           element={
             !user ? (
               <LandingPage />
@@ -6854,7 +6860,8 @@ function AppContent() {
             )
           } 
         />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path={ROUTE_PATHS.NOT_FOUND} element={<NotFoundPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </AnimatedRoutes>
       {!(location.pathname.startsWith('/admin') || location.pathname.startsWith('/admin-login')) && (
         <WhatsAppButton />

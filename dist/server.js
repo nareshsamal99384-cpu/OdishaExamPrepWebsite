@@ -7,6 +7,22 @@ import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
+
+// src/lib/routes-config.ts
+var ROUTE_PATHS = {
+  HOME: "/",
+  ADMIN_LOGIN: "/admin-login",
+  PRIVACY_POLICY: "/privacy-policy",
+  TERMS_OF_SERVICE: "/terms-of-service",
+  REFUND_POLICY: "/refund-policy",
+  BLOG: "/blog",
+  BLOG_DETAIL: "/blog/:id",
+  ADMIN: "/admin",
+  NOT_FOUND: "/404"
+};
+var ROUTE_LIST = Object.values(ROUTE_PATHS);
+
+// server.ts
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = path.dirname(__filename);
 var envPaths = [
@@ -25,6 +41,11 @@ var supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VI
 var supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: { autoRefreshToken: false, persistSession: false }
 });
+function routeToRegex(route) {
+  const escaped = route.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+  const paramPattern = escaped.replace(/:[A-Za-z0-9_]+/g, "([^/]+)");
+  return new RegExp(`^${paramPattern}$`, "i");
+}
 async function startServer() {
   const app = express();
   app.set("trust proxy", true);
@@ -947,7 +968,7 @@ async function startServer() {
       const host = req.get("host") || "odishaexamprep.com";
       const protocol = req.protocol || "https";
       const baseUrl = `${protocol}://${host}`;
-      const canonicalUrl = `${baseUrl}${req.originalUrl}`;
+      const canonicalUrl = `${baseUrl}${req.path}`;
       const pathName = req.path;
       let title = "OdishaExamPrep - Best Platform for Odisha Exam Preparation";
       let description = "Excel in OPSC, OSSC, OSSSC, and other Odisha government competitive exams. Practice with expert-crafted mock tests, real-time rank analytics, and detailed syllabus roadmaps.";
@@ -1077,7 +1098,10 @@ async function startServer() {
       const baseUrl = `${protocol}://${host}`;
       const staticRoutes = [
         "",
-        "/blog"
+        "/blog",
+        "/privacy-policy",
+        "/terms-of-service",
+        "/refund-policy"
       ];
       const { data: blogs } = await supabaseAdmin.from("exams").select("id, createdAt").eq("category", "blog").order("createdAt", { ascending: false });
       let xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -1129,6 +1153,8 @@ async function startServer() {
 Allow: /
 Allow: /blog
 Allow: /blog/*
+Disallow: /admin
+Disallow: /admin-login
 Sitemap: ${sitemapUrl}
 `;
     res.setHeader("Content-Type", "text/plain");
@@ -1143,7 +1169,21 @@ Sitemap: ${sitemapUrl}
   } else {
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+      const matches = ROUTE_LIST.some((route) => {
+        const regex = routeToRegex(route);
+        return regex.test(req.path);
+      });
+      const htmlPath = path.join(distPath, "index.html");
+      if (fs.existsSync(htmlPath)) {
+        if (!matches) {
+          res.status(404);
+          let html = fs.readFileSync(htmlPath, "utf8");
+          html = html.replace("<head>", '<head><meta name="robots" content="noindex, nofollow" />');
+          return res.send(html);
+        }
+        return res.sendFile(htmlPath);
+      }
+      res.status(404).send("Not Found");
     });
   }
   if (isNaN(Number(PORT))) {

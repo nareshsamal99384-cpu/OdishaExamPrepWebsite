@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
+import { ROUTE_LIST } from "./src/lib/routes-config";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,6 +31,12 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: { autoRefreshToken: false, persistSession: false }
 });
+
+function routeToRegex(route: string): RegExp {
+  const escaped = route.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+  const paramPattern = escaped.replace(/:[A-Za-z0-9_]+/g, '([^/]+)');
+  return new RegExp(`^${paramPattern}$`, 'i');
+}
 
 async function startServer() {
   const app = express();
@@ -1247,7 +1254,7 @@ async function startServer() {
       const host = req.get('host') || 'odishaexamprep.com';
       const protocol = req.protocol || 'https';
       const baseUrl = `${protocol}://${host}`;
-      const canonicalUrl = `${baseUrl}${req.originalUrl}`;
+      const canonicalUrl = `${baseUrl}${req.path}`;
       const pathName = req.path;
 
       let title = "OdishaExamPrep - Best Platform for Odisha Exam Preparation";
@@ -1400,10 +1407,13 @@ async function startServer() {
       const protocol = req.protocol || 'https';
       const baseUrl = `${protocol}://${host}`;
 
-      // Static routes
+      // Static routes (Only include indexable pages, excluding admin and private pages)
       const staticRoutes = [
         '',
-        '/blog'
+        '/blog',
+        '/privacy-policy',
+        '/terms-of-service',
+        '/refund-policy'
       ];
 
       // Fetch dynamic blog routes from Supabase database
@@ -1454,7 +1464,7 @@ async function startServer() {
     const protocol = req.protocol || 'https';
     const sitemapUrl = `${protocol}://${host}/sitemap.xml`;
 
-    const txt = `User-agent: *\nAllow: /\nAllow: /blog\nAllow: /blog/*\nSitemap: ${sitemapUrl}\n`;
+    const txt = `User-agent: *\nAllow: /\nAllow: /blog\nAllow: /blog/*\nDisallow: /admin\nDisallow: /admin-login\nSitemap: ${sitemapUrl}\n`;
     res.setHeader('Content-Type', 'text/plain');
     res.send(txt);
   });
@@ -1469,7 +1479,22 @@ async function startServer() {
   } else {
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      const matches = ROUTE_LIST.some(route => {
+        const regex = routeToRegex(route);
+        return regex.test(req.path);
+      });
+
+      const htmlPath = path.join(distPath, 'index.html');
+      if (fs.existsSync(htmlPath)) {
+        if (!matches) {
+          res.status(404);
+          let html = fs.readFileSync(htmlPath, 'utf8');
+          html = html.replace('<head>', '<head><meta name="robots" content="noindex, nofollow" />');
+          return res.send(html);
+        }
+        return res.sendFile(htmlPath);
+      }
+      res.status(404).send('Not Found');
     });
   }
 
