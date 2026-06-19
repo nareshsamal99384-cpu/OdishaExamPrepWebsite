@@ -1254,7 +1254,7 @@ export const Navbar = ({
       if (!ticking) {
         window.requestAnimationFrame(() => {
           // Pause spy while a programmatic smooth-scroll is animating
-          if (isScrollingRef.current) {
+          if (isScrollingRef.current || (window as any).isProgrammaticScrolling) {
             ticking = false;
             return;
           }

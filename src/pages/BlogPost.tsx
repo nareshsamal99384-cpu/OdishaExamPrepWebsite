@@ -59,6 +59,10 @@ export default function BlogPost() {
     const handleScroll = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
+          if ((window as any).isProgrammaticScrolling) {
+            ticking = false;
+            return;
+          }
           const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
           if (totalHeight > 0) {
             setScrollProgress((window.scrollY / totalHeight) * 100);

@@ -3,35 +3,50 @@ const isBrowser = typeof window !== 'undefined';
 /** Premium eased window scroll to a target Y position.
  *  Uses easeInOutCubic curve so the animation decelerates naturally.
  *  Duration scales with distance: short hops feel snappy, long jumps feel cinematic. */
-function smoothScrollWindow(targetY: number, duration = 400): Promise<void> {
+function smoothScrollWindow(targetY: number, duration = 1200): Promise<void> {
   return new Promise((resolve) => {
     const startY = window.scrollY;
     const distance = targetY - startY;
     if (Math.abs(distance) < 2) { resolve(); return; }
 
-    // Temporarily disable pointer events to prevent hover recalculations during programmatic scrolling
-    if (document.body) {
-      document.body.style.pointerEvents = 'none';
+    // Temporarily disable pointer events on root element to prevent hover recalculations during programmatic scrolling
+    if (document.documentElement) {
+      document.documentElement.style.pointerEvents = 'none';
     }
 
-    // Scale duration: snappy 300ms (short hops) to 450ms (long jumps)
-    const scaledDuration = Math.min(Math.max(Math.abs(distance) * 0.15, 300), 450);
+    // Set global programmatic scroll flag to bypass scrollspy layout updates
+    if (typeof window !== 'undefined') {
+      (window as any).isProgrammaticScrolling = true;
+    }
+
+    // Scale duration to a slow, majestic, cinematic smooth range: 1100ms to 1600ms
+    const scaledDuration = Math.min(Math.max(1000 + Math.abs(distance) * 0.25, 1100), 1600);
 
     const t0 = performance.now();
 
-    // Snappier ease-out curve for section jumps
-    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+    // Elegant easeInOutQuart curve for a slow, luxurious deceleration feel
+    const easeInOutQuart = (t: number) =>
+      t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;
 
     const tick = (now: number) => {
       const elapsed = now - t0;
       const progress = Math.min(elapsed / scaledDuration, 1);
-      const eased = easeOutCubic(progress);
-      window.scrollTo(0, startY + distance * eased);
+      const eased = easeInOutQuart(progress);
+      
+      // Round scroll position to integer pixel to prevent browser layout subpixel jitter
+      window.scrollTo(0, Math.round(startY + distance * eased));
+      
       if (progress < 1) {
         requestAnimationFrame(tick);
       } else {
-        if (document.body) {
-          document.body.style.pointerEvents = '';
+        // Ensure we land exactly on targetY
+        window.scrollTo(0, targetY);
+
+        if (document.documentElement) {
+          document.documentElement.style.pointerEvents = '';
+        }
+        if (typeof window !== 'undefined') {
+          (window as any).isProgrammaticScrolling = false;
         }
         resolve();
       }
