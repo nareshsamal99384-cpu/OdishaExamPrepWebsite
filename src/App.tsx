@@ -819,21 +819,31 @@ const AchieversJournalSection = () => {
         {/* Search and Filters bar */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 max-w-5xl mx-auto pt-2">
           {/* Category Filter */}
-          <div className="border-2 border-slate-900 bg-white p-1 rounded-2xl flex flex-wrap gap-1 shrink-0 shadow-[4px_4px_0px_rgba(138,28,54,0.15)]">
-            {(['all', 'opsc', 'ossc', 'osssc'] as const).map(filter => (
-              <button
-                key={filter}
-                onClick={() => setActiveFilter(filter)}
-                className={cn(
-                  "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-200 cursor-pointer",
-                  activeFilter === filter 
-                    ? "bg-[#8A1C36] text-white shadow-[2px_2px_0px_#0f172a] -translate-y-0.5" 
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                )}
-              >
-                {filter === 'all' ? 'All Journeys' : filter.toUpperCase()}
-              </button>
-            ))}
+          <div className="border-2 border-slate-900 bg-white p-1 rounded-2xl flex flex-wrap gap-1 shrink-0 shadow-[4px_4px_0px_rgba(138,28,54,0.15)] relative z-10">
+            {(['all', 'opsc', 'ossc', 'osssc'] as const).map(filter => {
+              const isFilterActive = activeFilter === filter;
+              return (
+                <button
+                  key={filter}
+                  onClick={() => setActiveFilter(filter)}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-200 cursor-pointer relative focus:outline-none",
+                    isFilterActive 
+                      ? "text-white" 
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  )}
+                >
+                  {isFilterActive && (
+                    <motion.div
+                      layoutId="activeAchieverFilterBg"
+                      className="absolute inset-0 bg-[#8A1C36] rounded-xl shadow-[2px_2px_0px_#0f172a] z-0"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10">{filter === 'all' ? 'All Journeys' : filter.toUpperCase()}</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* Search Box */}
@@ -849,91 +859,108 @@ const AchieversJournalSection = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto pt-4">
-          <AnimatePresence mode="popLayout">
-            {filteredStories.length === 0 ? (
-              <motion.div
-                key="empty-achievers"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="col-span-1 md:col-span-2 text-center py-12 bg-white border-2 border-slate-900 rounded-3xl p-6 shadow-[4px_4px_0px_rgba(138,28,54,0.15)] flex flex-col items-center justify-center gap-2"
-              >
-                <div className="text-3xl">📝</div>
-                <h4 className="font-serif font-bold text-slate-900 text-lg">No Achiever Logs Found</h4>
-                <p className="text-slate-500 text-xs sm:text-sm">Try searching for another candidate, district or exam category.</p>
-              </motion.div>
-            ) : (
-              filteredStories.slice(0, visibleCount).map((item, idx) => (
-                <motion.div 
-                  key={item.name}
-                  layout
-                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.3 }}
-                  className="bg-white border-2 border-slate-900 rounded-[2rem] p-6 sm:p-8 shadow-[6px_6px_0px_rgba(138,28,54,0.1)] md:hover:shadow-[8px_8px_0px_#8A1C36] md:hover:-translate-y-1 md:hover:-translate-x-1 transition-all duration-300 flex flex-col justify-between"
+        <div className="max-w-5xl mx-auto pt-4">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeFilter}
+              initial="hidden"
+              animate="show"
+              exit="hidden"
+              variants={{
+                hidden: { opacity: 0 },
+                show: {
+                  opacity: 1,
+                  transition: {
+                    staggerChildren: 0.05
+                  }
+                }
+              }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8"
+            >
+              {filteredStories.length === 0 ? (
+                <motion.div
+                  key="empty-achievers"
+                  variants={{
+                    hidden: { opacity: 0, y: 10 },
+                    show: { opacity: 1, y: 0 }
+                  }}
+                  className="col-span-1 md:col-span-2 text-center py-12 bg-white border-2 border-slate-900 rounded-3xl p-6 shadow-[4px_4px_0px_rgba(138,28,54,0.15)] flex flex-col items-center justify-center gap-2"
                 >
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <img 
-                          src={item.avatar?.includes('dicebear.com') ? item.avatar : item.avatar?.replace(/\.(png|jpg|jpeg)$/i, '.webp')} 
-                          alt={`${item.name} ${item.rank} Achiever Profile`} 
-                          className="w-12 h-12 rounded-full border border-slate-200 object-cover shrink-0" 
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            if (target.src !== item.avatar) {
-                              target.src = item.avatar;
-                            }
-                          }}
-                        />
-                        <div>
-                          <h3 className="font-serif font-extrabold text-slate-900 text-base leading-none">{item.name}</h3>
-                          <p className="text-[10px] font-black uppercase text-[#8A1C36] tracking-widest mt-1.5">{item.rank}</p>
+                  <div className="text-3xl">📝</div>
+                  <h4 className="font-serif font-bold text-slate-900 text-lg">No Achiever Logs Found</h4>
+                  <p className="text-slate-500 text-xs sm:text-sm">Try searching for another candidate, district or exam category.</p>
+                </motion.div>
+              ) : (
+                filteredStories.slice(0, visibleCount).map((item, idx) => (
+                  <motion.div 
+                    key={item.name}
+                    variants={{
+                      hidden: { opacity: 0, y: 12 },
+                      show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 25 } }
+                    }}
+                    className="bg-white border-2 border-slate-900 rounded-[2rem] p-6 sm:p-8 shadow-[6px_6px_0px_rgba(138,28,54,0.1)] md:hover:shadow-[8px_8px_0px_#8A1C36] md:hover:-translate-y-1 md:hover:-translate-x-1 transition-all duration-300 flex flex-col justify-between"
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <img 
+                            src={item.avatar?.includes('dicebear.com') ? item.avatar : item.avatar?.replace(/\.(png|jpg|jpeg)$/i, '.webp')} 
+                            alt={`${item.name} ${item.rank} Achiever Profile`} 
+                            className="w-12 h-12 rounded-full border border-slate-200 object-cover shrink-0" 
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              if (target.src !== item.avatar) {
+                                target.src = item.avatar;
+                              }
+                            }}
+                          />
+                          <div>
+                            <h3 className="font-serif font-extrabold text-slate-900 text-base leading-none">{item.name}</h3>
+                            <p className="text-[10px] font-black uppercase text-[#8A1C36] tracking-widest mt-1.5">{item.rank}</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 shrink-0 text-right">
+                          <span className="text-[10px] font-mono font-black text-slate-500 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-md uppercase tracking-tight">
+                            📍 {item.district}
+                          </span>
+                          <span className="text-[9px] font-extrabold text-slate-400 flex items-center gap-1 select-none">
+                            <Clock className="w-2.5 h-2.5 text-slate-400" />
+                            {(() => {
+                              try {
+                                if (!item.date) return 'Recent';
+                                const d = new Date(item.date);
+                                if (isNaN(d.getTime())) return item.date;
+                                return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                              } catch (e) {
+                                return item.date || 'Recent';
+                              }
+                            })()}
+                          </span>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0 text-right">
-                        <span className="text-[10px] font-mono font-black text-slate-500 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-md uppercase tracking-tight">
-                          📍 {item.district}
-                        </span>
-                        <span className="text-[9px] font-extrabold text-slate-400 flex items-center gap-1 select-none">
-                          <Clock className="w-2.5 h-2.5 text-slate-400" />
-                          {(() => {
-                            try {
-                              if (!item.date) return 'Recent';
-                              const d = new Date(item.date);
-                              if (isNaN(d.getTime())) return item.date;
-                              return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-                            } catch (e) {
-                              return item.date || 'Recent';
-                            }
-                          })()}
-                        </span>
+                      <p className="text-slate-600 font-serif text-sm leading-relaxed italic">
+                        "{item.story}"
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2.5 pt-4 mt-6 border-t border-slate-100 text-center text-slate-800">
+                      <div className="p-2 bg-slate-50 rounded-xl border border-slate-100">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Score</p>
+                        <p className="text-xs font-black text-slate-900">{item.stats.score}</p>
+                      </div>
+                      <div className="p-2 bg-slate-50 rounded-xl border border-slate-100">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Accuracy</p>
+                        <p className="text-xs font-black text-slate-900">{item.stats.accuracy}</p>
+                      </div>
+                      <div className="p-2 bg-slate-50 rounded-xl border border-slate-100">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Timeline</p>
+                        <p className="text-xs font-black text-slate-900">{item.stats.time}</p>
                       </div>
                     </div>
-                    <p className="text-slate-600 font-serif text-sm leading-relaxed italic">
-                      "{item.story}"
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2.5 pt-4 mt-6 border-t border-slate-100 text-center text-slate-800">
-                    <div className="p-2 bg-slate-50 rounded-xl border border-slate-100">
-                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Score</p>
-                      <p className="text-xs font-black text-slate-900">{item.stats.score}</p>
-                    </div>
-                    <div className="p-2 bg-slate-50 rounded-xl border border-slate-100">
-                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Accuracy</p>
-                      <p className="text-xs font-black text-slate-900">{item.stats.accuracy}</p>
-                    </div>
-                    <div className="p-2 bg-slate-50 rounded-xl border border-slate-100">
-                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Timeline</p>
-                      <p className="text-xs font-black text-slate-900">{item.stats.time}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))
-            )}
+                  </motion.div>
+                ))
+              )}
+            </motion.div>
           </AnimatePresence>
         </div>
 
