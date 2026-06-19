@@ -230,7 +230,7 @@ const HistoryView = ({
                 }
               }}
               className={cn(
-                "relative bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/50 flex items-center justify-between transition-all group overflow-hidden history-card",
+                "relative bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 transition-all group overflow-hidden history-card",
                 isInteractive ? "cursor-pointer hover:border-brand-500 hover:shadow-lg hover:shadow-brand-500/10" : ""
               )}
             >
@@ -260,7 +260,7 @@ const HistoryView = ({
                 </div>
               )}
 
-              <div className="flex-1 min-w-0 pr-4">
+              <div className="flex-1 min-w-0 pr-0 sm:pr-4 w-full">
                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
                    {a.metadata?.testCategory && (
                      <span className="inline-flex items-center px-2 py-0.5 bg-brand-50 text-brand-600 rounded text-[10px] font-black uppercase tracking-wider">
@@ -288,9 +288,9 @@ const HistoryView = ({
                  )}
               </div>
               
-              <div className="flex items-center gap-3 sm:gap-6 shrink-0">
+              <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 border-t border-slate-100/60 pt-3 sm:pt-0 sm:border-none shrink-0 w-full sm:w-auto">
                  {a.type === 'test_incomplete' && (
-                   <div className="flex flex-col items-end">
+                   <div className="flex flex-col items-start sm:items-end">
                       <span className="text-[10px] font-black uppercase text-brand-600 mb-1">In Progress</span>
                       <div className="flex items-center gap-1.5 text-slate-400">
                         <Clock className="w-3.5 h-3.5" />
@@ -300,31 +300,33 @@ const HistoryView = ({
                  )}
                  
                  {a.score !== undefined && (
-                   <div className="text-right">
+                   <div className="text-left sm:text-right">
                       <span className="font-bold text-brand-600 text-lg sm:text-xl">{typeof a.score === 'number' ? Number(a.score.toFixed(2)) : a.score}/{a.totalMarks}</span>
                       <p className="text-[10px] sm:text-xs font-semibold text-slate-400">{Math.round(a.accuracy || 0)}% Accuracy</p>
                    </div>
                  )}
                 
-                 {(isTestResult || a.type === 'test_incomplete') && (
-                   <div className={cn(
-                     "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all bg-brand-50 text-brand-600 group-hover:scale-110 group-hover:bg-brand-600 group-hover:text-white"
-                   )}>
-                     {a.type === 'test_incomplete' ? <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-0.5" /> : <ChevronRight className="w-4.5 h-4.5 sm:w-5 sm:h-5 ml-0.5" />}
-                   </div>
-                 )}
+                 <div className="flex items-center gap-2 sm:gap-3 ml-auto sm:ml-0">
+                   {(isTestResult || a.type === 'test_incomplete') && (
+                     <div className={cn(
+                       "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all bg-brand-50 text-brand-600 group-hover:scale-110 group-hover:bg-brand-600 group-hover:text-white shrink-0"
+                     )}>
+                       {a.type === 'test_incomplete' ? <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-0.5" /> : <ChevronRight className="w-4.5 h-4.5 sm:w-5 sm:h-5 ml-0.5" />}
+                     </div>
+                   )}
 
-                 {/* Delete Button */}
-                 <button
-                   onClick={(e) => {
-                     e.stopPropagation();
-                     setConfirmDeleteId(a.id);
-                   }}
-                   className="delete-btn p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50/50 transition-all cursor-pointer border-none bg-transparent"
-                   title="Delete from history"
-                 >
-                   <Trash2 className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
-                 </button>
+                   {/* Delete Button */}
+                   <button
+                     onClick={(e) => {
+                       e.stopPropagation();
+                       setConfirmDeleteId(a.id);
+                     }}
+                     className="delete-btn p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50/50 transition-all cursor-pointer border-none bg-transparent shrink-0"
+                     title="Delete from history"
+                   >
+                     <Trash2 className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+                   </button>
+                 </div>
               </div>
             </div>
           );
