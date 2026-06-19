@@ -166,16 +166,16 @@ const HistoryView = ({
   return (
     <div className="space-y-6">
       <div className="border-b border-slate-100 pb-4 space-y-3">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <div className="flex items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200/50 flex items-center justify-center shrink-0">
               <History className="w-5.5 h-5.5 text-[#8A1C36]" />
             </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-none">Your Activity History</h2>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight sm:leading-none mt-0.5 sm:mt-0">Your Activity History</h2>
           </div>
 
           {activities.length > 0 && (
-            <div className="shrink-0">
+            <div className="shrink-0 mt-0.5 sm:mt-0">
               {confirmClearAll ? (
                 <div className="flex items-center gap-1.5 sm:gap-2 animate-in fade-in duration-200">
                   <span className="text-[10px] sm:text-xs font-semibold text-slate-500 hidden xs:inline">Clear all?</span>
@@ -206,7 +206,7 @@ const HistoryView = ({
             </div>
           )}
         </div>
-        <p className="text-[10px] sm:text-xs font-semibold text-slate-400 pl-0 sm:pl-[52px]">
+        <p className="text-[10px] sm:text-xs font-semibold text-slate-400 pl-[52px]">
           Manage and track your exam mock tests and practice sessions
         </p>
       </div>
