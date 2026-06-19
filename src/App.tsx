@@ -5711,7 +5711,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 whileTap={whileTap.press}
               >
                 <Card 
-                  onClick={() => { setSelectedBankItem(item); scrollToElement('exams', { block: 'start', delay: 50 }); }}
+                  onClick={() => setSelectedBankItem(item)}
                   className={cn(
                     "group cursor-pointer relative overflow-hidden rounded-[2rem] h-full border-slate-200/50 bg-white shadow-sm flex flex-col",
                     !isMobile && "hover:border-brand-300/80 hover:-translate-y-1.5 transition-all duration-500 hover:shadow-xl hover:shadow-brand-500/5 premium-shine-container"
