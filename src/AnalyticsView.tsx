@@ -1365,19 +1365,26 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
 
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
                     {/* Tab Navigation */}
-                    <div className="flex bg-slate-100 border border-slate-200/60 p-0.5 sm:p-1 rounded-xl w-full sm:w-auto">
+                    <div className="flex bg-slate-100 border border-slate-200/60 p-0.5 sm:p-1 rounded-xl w-full sm:w-auto relative">
                       {(['diagnostic', 'actionPlan', 'chat'] as const).map((tab) => (
                         <button
                           key={tab}
                           onClick={() => setAiPanelTab(tab)}
                           className={cn(
-                            "px-2 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex-1 sm:flex-initial border-none whitespace-nowrap",
-                            aiPanelTab === tab 
-                              ? "bg-white text-[#8A1C36] shadow-sm border border-slate-200/40" 
-                              : "text-slate-500 hover:text-slate-800"
+                            "relative px-2 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-lg transition-colors duration-300 cursor-pointer flex-1 sm:flex-initial border-none whitespace-nowrap focus:outline-none bg-transparent",
+                            aiPanelTab === tab ? "text-[#8A1C36]" : "text-slate-500 hover:text-slate-800"
                           )}
                         >
-                          {tab === 'diagnostic' ? 'Insights' : tab === 'actionPlan' ? 'Action Plan' : 'AI Coach'}
+                          {aiPanelTab === tab && (
+                            <motion.div
+                              layoutId="activeDiagnosticTab"
+                              className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-200/40 z-0"
+                              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                            />
+                          )}
+                          <span className="relative z-10">
+                            {tab === 'diagnostic' ? 'Insights' : tab === 'actionPlan' ? 'Action Plan' : 'AI Coach'}
+                          </span>
                         </button>
                       ))}
                     </div>
