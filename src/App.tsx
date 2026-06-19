@@ -2199,11 +2199,16 @@ const LandingPage = () => {
                 <Zap className="w-3.5 h-3.5" />
                 Your Exam Gateway
               </span>
-              <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-950 tracking-tight leading-tight">
+              <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-955 tracking-tight leading-tight">
                 Crack <span className="premium-text-gradient font-serif font-extrabold">Odisha Exams</span>
               </h2>
               {!isMobile && <div className="section-divider" />}
-              <p className="text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed">
+              {/* Mobile Version (Ultra-Short) */}
+              <p className="block md:hidden text-base leading-relaxed text-slate-500 font-medium max-w-xl mx-auto">
+                Verified PYQs & mock tests for OPSC, OSSC, and OSSSC.
+              </p>
+              {/* Desktop Version (Original) */}
+              <p className="hidden md:block text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed">
                 Practice with verified PYQs and full-length mock tests for OPSC, OSSC, and OSSSC.
               </p>
             </div>
@@ -3302,7 +3307,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   {selectedBankItem.image && (
                     <img 
                       src={getDirectImageUrl(selectedBankItem.image)} 
-                      alt="" 
+                      alt={`${selectedBankItem.title || 'Odisha Exam Prep'} Category abstract background`} 
                       loading="lazy"
                       decoding="async"
                       className="absolute inset-0 w-full h-full object-cover opacity-90 pointer-events-none select-none z-0"
