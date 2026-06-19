@@ -6447,7 +6447,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   >
                     <Card 
                       className="p-5 sm:p-6 lg:p-8 bg-white border-slate-200/60 shadow-lg shadow-slate-200/30 rounded-[2rem] hover:-translate-y-2 hover:shadow-2xl hover:shadow-brand-500/10 hover:border-brand-200 group transition-all duration-500 cursor-pointer flex flex-col gap-4 sm:gap-6 relative overflow-hidden h-full premium-shine-container"
-                      onClick={() => setSelectedMockCategory(test.id)}
+                      onClick={() => {
+                        setSelectedMockCategory(test.id);
+                        scrollToElement('test-series', { block: 'start', delay: 50 });
+                      }}
                     >
                       <div className="flex items-center gap-3 sm:gap-4 relative z-10">
                         <div className={cn(
@@ -6486,7 +6489,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           return (
             <div className="space-y-8">
               <div className="flex items-center gap-4 border-b border-slate-200 pb-6">
-                <Button variant="ghost" onClick={() => setSelectedMockCategory(null)} className="p-3 rounded-2xl hover:bg-brand-50">
+                <Button variant="ghost" onClick={() => {
+                  setSelectedMockCategory(null);
+                  scrollToElement('test-series', { block: 'start', delay: 50 });
+                }} className="p-3 rounded-2xl hover:bg-brand-50">
                   <ChevronRight className="w-6 h-6 rotate-180 text-brand-600" />
                 </Button>
                 <div className="flex items-center gap-4">
