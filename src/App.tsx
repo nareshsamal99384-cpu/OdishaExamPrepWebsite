@@ -2252,12 +2252,40 @@ const LandingPage = () => {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showAuthModal && (
-          <div className="fixed inset-0 bg-slate-950/40 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 backdrop-blur-md">
-            <motion.div {...slideUpPanel}
-              className="glass rounded-t-[2rem] sm:rounded-3xl w-full max-w-md p-6 sm:p-10 pb-10 sm:pb-10 space-y-6 sm:space-y-8 shadow-2xl border-x-0 border-b-0 sm:border border-white/40 max-h-[90vh] overflow-y-auto no-scrollbar"
-            >
+          <>
+            {/* Animated backdrop */}
+            <motion.div
+              key="auth-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+              className="fixed inset-0 bg-slate-950/50 z-[100] backdrop-blur-md"
+              style={{ willChange: 'opacity' }}
+              onClick={() => setShowAuthModal(false)}
+            />
+
+            {/* Modal panel */}
+            <div className="fixed inset-0 z-[101] flex items-end sm:items-center justify-center pointer-events-none">
+              <motion.div
+                key="auth-modal"
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 320,
+                  damping: 32,
+                  mass: 0.9,
+                }}
+                className="glass rounded-t-[2rem] sm:rounded-3xl w-full max-w-md p-6 sm:p-10 pb-10 sm:pb-10 space-y-6 sm:space-y-8 shadow-2xl border-x-0 border-b-0 sm:border border-white/40 max-h-[92vh] overflow-y-auto no-scrollbar pointer-events-auto"
+                style={{ willChange: 'transform, opacity' }}
+              >
+              {/* Drag handle (mobile only) */}
+              <div className="sm:hidden w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-2" />
+
               <div className="flex justify-between items-center sticky top-0 bg-white/0 z-10">
                 <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                   {authMode === 'login' && 'Welcome Back'}
@@ -2419,8 +2447,9 @@ const LandingPage = () => {
                   </button>
                 </p>
               )}
-            </motion.div>
-          </div>
+              </motion.div>
+            </div>
+          </>
         )}
       </AnimatePresence>
     </div>
