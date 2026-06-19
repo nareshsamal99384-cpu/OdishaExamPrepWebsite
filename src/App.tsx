@@ -2877,119 +2877,144 @@ const OnboardingModal = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/60 z-[100] flex items-center justify-center p-4 backdrop-blur-md">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95, y: 15 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        className="bg-[#FAF8F5] border-2 border-slate-900 rounded-[2.5rem] p-6 sm:p-10 max-w-lg w-full shadow-[8px_8px_0px_rgba(0,0,0,1)] relative overflow-hidden max-h-[90vh] flex flex-col"
-      >
-        <div className="absolute inset-0 pointer-events-none border-[12px] border-slate-900/5 rounded-[2.5rem]" />
-        
-        <form onSubmit={handleSubmit} className="space-y-8 relative z-10 flex-1 overflow-y-auto no-scrollbar smooth-scroll-gpu pr-1 py-1">
-          <div className="text-center space-y-3">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#8A1C36]/10 text-[#8A1C36] rounded-full text-xs font-black uppercase tracking-wider border border-[#8A1C36]/20">
-              <Target className="w-3.5 h-3.5" />
-              Set Your Target Goal
-            </span>
-            <h3 className="text-2xl sm:text-3xl font-serif font-extrabold text-slate-950 tracking-tight">
-              Personalize Your Prep
-            </h3>
-            <p className="text-slate-500 text-xs sm:text-sm font-medium max-w-sm mx-auto">
-              Tell us your target exam, timeline, and current level to customize your dashboard layout and recommendation tracks.
-            </p>
-          </div>
+    <>
+      {/* Animated backdrop */}
+      <motion.div
+        key="onboarding-backdrop"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+        className="fixed inset-0 bg-slate-950/50 z-[100] backdrop-blur-md"
+        style={{ willChange: 'opacity' }}
+      />
 
-          <div className="space-y-6">
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block font-mono">
-                1. Target Exam
-              </label>
-              <div className="grid grid-cols-3 gap-3">
-                {(['OPSC', 'OSSC', 'OSSSC'] as const).map((exam) => (
-                  <button
-                    key={exam}
-                    type="button"
-                    onClick={() => setTargetExam(exam)}
-                    className={cn(
-                      "py-3.5 sm:py-4 px-2.5 rounded-2xl border-2 text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
-                      targetExam === exam
-                        ? "bg-[#8A1C36] text-white border-slate-900 shadow-[2px_2px_0px_rgba(0,0,0,1)]"
-                        : "bg-white text-slate-700 border-slate-200/80 hover:border-slate-400 hover:bg-slate-50/50"
-                    )}
-                  >
-                    {exam}
-                  </button>
-                ))}
+      {/* Modal panel wrapper */}
+      <div className="fixed inset-0 z-[101] flex items-end sm:items-center justify-center pointer-events-none p-0 sm:p-4">
+        <motion.div 
+          key="onboarding-modal"
+          initial={{ y: '100%', opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: '100%', opacity: 0 }}
+          transition={{
+            type: 'spring',
+            stiffness: 320,
+            damping: 32,
+            mass: 0.9,
+          }}
+          className="bg-[#FAF8F5] border-x-0 border-b-0 sm:border-2 border-slate-900 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 sm:p-10 max-w-lg w-full shadow-2xl sm:shadow-[8px_8px_0px_rgba(0,0,0,1)] relative overflow-hidden max-h-[92vh] sm:max-h-[90vh] flex flex-col pointer-events-auto"
+          style={{ willChange: 'transform, opacity' }}
+        >
+          {/* Drag handle (mobile only) */}
+          <div className="sm:hidden w-10 h-1 bg-slate-350 rounded-full mx-auto -mt-2 mb-4 shrink-0" />
+          
+          <div className="absolute inset-0 pointer-events-none border-[12px] border-slate-900/5 rounded-t-[2.5rem] sm:rounded-[2.5rem]" />
+          
+          <form onSubmit={handleSubmit} className="space-y-8 relative z-10 flex-1 overflow-y-auto no-scrollbar smooth-scroll-gpu pr-1 py-1">
+            <div className="text-center space-y-3">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#8A1C36]/10 text-[#8A1C36] rounded-full text-xs font-black uppercase tracking-wider border border-[#8A1C36]/20">
+                <Target className="w-3.5 h-3.5" />
+                Set Your Target Goal
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-serif font-extrabold text-slate-950 tracking-tight">
+                Personalize Your Prep
+              </h3>
+              <p className="text-slate-500 text-xs sm:text-sm font-medium max-w-sm mx-auto">
+                Tell us your target exam, timeline, and current level to customize your dashboard layout and recommendation tracks.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block font-mono">
+                  1. Target Exam
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {(['OPSC', 'OSSC', 'OSSSC'] as const).map((exam) => (
+                    <button
+                      key={exam}
+                      type="button"
+                      onClick={() => setTargetExam(exam)}
+                      className={cn(
+                        "py-3.5 sm:py-4 px-2.5 rounded-2xl border-2 text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
+                        targetExam === exam
+                          ? "bg-[#8A1C36] text-white border-slate-900 shadow-[2px_2px_0px_rgba(0,0,0,1)]"
+                          : "bg-white text-slate-700 border-slate-200/80 hover:border-slate-400 hover:bg-slate-50/50"
+                      )}
+                    >
+                      {exam}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block font-mono">
+                  2. Target Timeline
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { value: '3m', label: '3 Months' },
+                    { value: '6m', label: '6 Months' },
+                    { value: '1y', label: '1 Year' }
+                  ].map((time) => (
+                    <button
+                      key={time.value}
+                      type="button"
+                      onClick={() => setTargetTimeline(time.value as any)}
+                      className={cn(
+                        "py-3.5 sm:py-4 px-2 rounded-2xl border-2 text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
+                        targetTimeline === time.value
+                          ? "bg-slate-900 text-white border-slate-900 shadow-[2px_2px_0px_rgba(0,0,0,1)]"
+                          : "bg-white text-slate-700 border-slate-200/80 hover:border-slate-400 hover:bg-slate-50/50"
+                      )}
+                    >
+                      {time.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block font-mono">
+                  3. Preparation Level
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { value: 'beginner', label: 'Beginner' },
+                    { value: 'intermediate', label: 'Intermediate' },
+                    { value: 'advanced', label: 'Advanced' }
+                  ].map((lvl) => (
+                    <button
+                      key={lvl.value}
+                      type="button"
+                      onClick={() => setCurrentPrepLevel(lvl.value as any)}
+                      className={cn(
+                        "py-3.5 sm:py-4 px-1 rounded-2xl border-2 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
+                        currentPrepLevel === lvl.value
+                          ? "bg-slate-900 text-white border-slate-900 shadow-[2px_2px_0px_rgba(0,0,0,1)]"
+                          : "bg-white text-slate-700 border-slate-200/80 hover:border-slate-400 hover:bg-slate-50/50"
+                      )}
+                    >
+                      {lvl.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block font-mono">
-                2. Target Timeline
-              </label>
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { value: '3m', label: '3 Months' },
-                  { value: '6m', label: '6 Months' },
-                  { value: '1y', label: '1 Year' }
-                ].map((time) => (
-                  <button
-                    key={time.value}
-                    type="button"
-                    onClick={() => setTargetTimeline(time.value as any)}
-                    className={cn(
-                      "py-3.5 sm:py-4 px-2 rounded-2xl border-2 text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
-                      targetTimeline === time.value
-                        ? "bg-slate-900 text-white border-slate-900 shadow-[2px_2px_0px_rgba(0,0,0,1)]"
-                        : "bg-white text-slate-700 border-slate-200/80 hover:border-slate-400 hover:bg-slate-50/50"
-                    )}
-                  >
-                    {time.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block font-mono">
-                3. Preparation Level
-              </label>
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { value: 'beginner', label: 'Beginner' },
-                  { value: 'intermediate', label: 'Intermediate' },
-                  { value: 'advanced', label: 'Advanced' }
-                ].map((lvl) => (
-                  <button
-                    key={lvl.value}
-                    type="button"
-                    onClick={() => setCurrentPrepLevel(lvl.value as any)}
-                    className={cn(
-                      "py-3.5 sm:py-4 px-1 rounded-2xl border-2 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
-                      currentPrepLevel === lvl.value
-                        ? "bg-slate-900 text-white border-slate-900 shadow-[2px_2px_0px_rgba(0,0,0,1)]"
-                        : "bg-white text-slate-700 border-slate-200/80 hover:border-slate-400 hover:bg-slate-50/50"
-                    )}
-                  >
-                    {lvl.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full inline-flex items-center justify-center gap-2 py-4.5 rounded-[1.25rem] border-2 border-slate-900 text-xs font-black uppercase tracking-widest text-white bg-[#8A1C36] hover:bg-[#72142a] transition-all cursor-pointer shadow-[4px_4px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {submitting ? 'Saving Goals...' : 'Save & Personalize Dashboard'}
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </form>
-      </motion.div>
-    </div>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full inline-flex items-center justify-center gap-2 py-4.5 rounded-[1.25rem] border-2 border-slate-900 text-xs font-black uppercase tracking-widest text-white bg-[#8A1C36] hover:bg-[#72142a] transition-all cursor-pointer shadow-[4px_4px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submitting ? 'Saving Goals...' : 'Save & Personalize Dashboard'}
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </form>
+        </motion.div>
+      </div>
+    </>
   );
 };
 
@@ -3200,30 +3225,49 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   // --- Common UI Components (Defined early, rendered at bottom) ---
   const renderCommonModals = () => (
     <>
-        <OnboardingModal 
-          isOpen={showOnboarding} 
-          onSave={handleSaveOnboarding} 
-          user={user} 
-        />
+        <AnimatePresence mode="wait">
+          {showOnboarding && (
+            <OnboardingModal 
+              isOpen={showOnboarding} 
+              onSave={handleSaveOnboarding} 
+              user={user} 
+            />
+          )}
+        </AnimatePresence>
         {/* Detail View Modal */}
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {selectedBankItem && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              style={{ willChange: 'opacity' }}
-              className={cn("fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4", !isMobile && "backdrop-blur-sm")}
-            >
-              <motion.div 
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 12 }}
-                transition={{ duration: 0.18, ease: "easeOut" }}
-                style={{ willChange: 'transform, opacity' }}
-                className="bg-[#FAF8F5] rounded-[2rem] w-[95%] sm:w-[90%] md:w-full max-w-sm md:max-w-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] flex flex-col md:flex-row border border-slate-200/50 relative max-h-[90vh] md:max-h-[85vh]"
-              >
+            <>
+              {/* Animated backdrop */}
+              <motion.div
+                key="detail-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                className="fixed inset-0 bg-black/50 z-[100] backdrop-blur-sm"
+                style={{ willChange: 'opacity' }}
+                onClick={() => setSelectedBankItem(null)}
+              />
+
+              {/* Modal panel wrapper */}
+              <div className="fixed inset-0 z-[101] flex items-end md:items-center justify-center pointer-events-none p-0 sm:p-4">
+                <motion.div 
+                  key="detail-modal"
+                  initial={{ y: '100%', opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: '100%', opacity: 0 }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 320,
+                    damping: 32,
+                    mass: 0.9,
+                  }}
+                  className="bg-[#FAF8F5] rounded-t-[2rem] md:rounded-[2rem] w-full md:w-full max-w-md md:max-w-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] flex flex-col md:flex-row border-x-0 border-b-0 md:border border-slate-200/50 relative max-h-[92vh] md:max-h-[85vh] pointer-events-auto"
+                  style={{ willChange: 'transform, opacity' }}
+                >
+                  {/* Drag handle (mobile only) */}
+                  <div className="md:hidden w-10 h-1 bg-slate-300 rounded-full mx-auto mt-3 shrink-0" />
                 {/* Unified Close Button (Adaptive theme based on viewport layout context) */}
                 <button 
                   onClick={() => setSelectedBankItem(null)}
@@ -3520,8 +3564,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     </div>
                   </div>
                 </div>
-              </motion.div>
-            </motion.div>
+                </motion.div>
+              </div>
+            </>
           )}
         </AnimatePresence>
 
@@ -3847,23 +3892,54 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         </AnimatePresence>
 
         {/* Paywall Modal */}
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {showPaywall && (
-            <div className="fixed inset-0 bg-slate-950/75 z-[250] flex items-center justify-center p-4 backdrop-blur-md">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95, y: 15 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                transition={{ type: 'spring', stiffness: 350, damping: 28 }}
-                className="relative overflow-hidden rounded-[2.5rem] p-[1px] bg-gradient-to-b from-white/15 via-white/5 to-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] w-full max-w-md max-h-[90vh] flex flex-col"
-              >
-                {/* Background ambient light */}
-                <div className="absolute top-0 left-1/4 w-[180px] h-[180px] bg-brand-500/10 rounded-full blur-[50px] pointer-events-none" />
-                <div className="absolute bottom-0 right-1/4 w-[180px] h-[180px] bg-indigo-500/10 rounded-full blur-[50px] pointer-events-none" />
+            <>
+              {/* Animated backdrop */}
+              <motion.div
+                key="paywall-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                className="fixed inset-0 bg-slate-950/60 z-[250] backdrop-blur-md"
+                style={{ willChange: 'opacity' }}
+                onClick={() => {
+                  if (paymentState === 'idle') {
+                    setShowPaywall(false);
+                    setPaywallItemId(null);
+                    setPaymentState('idle');
+                    setPaymentError(null);
+                  }
+                }}
+              />
 
-                <div className="bg-[#0B0F19] rounded-[2.45rem] p-6 sm:p-8 relative overflow-hidden flex flex-col max-h-full flex-1">
-                  {/* Close button with subtle outline */}
-                  {paymentState === 'idle' && (
+              {/* Modal panel wrapper */}
+              <div className="fixed inset-0 z-[251] flex items-end sm:items-center justify-center pointer-events-none p-0 sm:p-4">
+                <motion.div 
+                  key="paywall-modal"
+                  initial={{ y: '100%', opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: '100%', opacity: 0 }}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 320,
+                    damping: 32,
+                    mass: 0.9,
+                  }}
+                  className="relative overflow-hidden rounded-t-[2.5rem] sm:rounded-[2.5rem] p-[1px] bg-gradient-to-b from-white/15 via-white/5 to-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] w-full max-w-md max-h-[92vh] sm:max-h-[90vh] flex flex-col pointer-events-auto"
+                  style={{ willChange: 'transform, opacity' }}
+                >
+                  {/* Drag handle (mobile only) */}
+                  <div className="sm:hidden w-10 h-1 bg-slate-700/50 rounded-full mx-auto mt-3 shrink-0" />
+
+                  {/* Background ambient light */}
+                  <div className="absolute top-0 left-1/4 w-[180px] h-[180px] bg-brand-500/10 rounded-full blur-[50px] pointer-events-none" />
+                  <div className="absolute bottom-0 right-1/4 w-[180px] h-[180px] bg-indigo-500/10 rounded-full blur-[50px] pointer-events-none" />
+
+                  <div className="bg-[#0B0F19] rounded-t-[2.45rem] sm:rounded-[2.45rem] p-6 sm:p-8 relative overflow-hidden flex flex-col max-h-full flex-1">
+                    {/* Close button with subtle outline */}
+                    {paymentState === 'idle' && (
                     <button 
                       onClick={() => { 
                         setShowPaywall(false); 
@@ -4296,8 +4372,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               </div>
             </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        </>
+      )}
+    </AnimatePresence>
 
         {/* Login Prompt Popup */}
         <AnimatePresence mode="wait">
@@ -7112,96 +7189,125 @@ function AppContent() {
         />
       )}
 
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {showResetModal && (
-          <div className="fixed inset-0 bg-slate-950/40 z-[999] flex items-end sm:items-center justify-center p-0 sm:p-6 backdrop-blur-md">
-            <motion.div {...slideUpPanel}
-              className="glass rounded-t-[2rem] sm:rounded-3xl w-full max-w-md p-6 sm:p-10 pb-10 sm:pb-10 space-y-6 sm:space-y-8 shadow-2xl border-x-0 border-b-0 sm:border border-white/40 max-h-[90vh] overflow-y-auto no-scrollbar"
-            >
-              <div className="flex justify-between items-center sticky top-0 bg-white/0 z-10">
-                <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
-                  Create New Password
-                </h3>
-                <button 
-                  onClick={() => setShowResetModal(false)} 
-                  className="p-2 -mr-2 bg-slate-100/50 hover:bg-slate-200/50 rounded-full transition-colors backdrop-blur-md cursor-pointer"
-                >
-                  <X className="w-6 h-6 text-slate-400" />
-                </button>
-              </div>
+          <>
+            {/* Animated backdrop */}
+            <motion.div
+              key="reset-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+              className="fixed inset-0 bg-slate-950/50 z-[999] backdrop-blur-md"
+              style={{ willChange: 'opacity' }}
+              onClick={() => setShowResetModal(false)}
+            />
 
-              {resetMessage && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={cn(
-                    "p-4 border rounded-2xl flex items-start gap-3 text-xs font-semibold leading-relaxed shadow-sm",
-                    resetMessage.type === 'error' && "bg-rose-50 border-rose-100/80 text-rose-700",
-                    resetMessage.type === 'success' && "bg-emerald-50 border-emerald-100/80 text-emerald-700"
-                  )}
-                >
-                  {resetMessage.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />}
-                  {resetMessage.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />}
-                  <div className="flex-1">
-                    {resetMessage.text}
-                  </div>
-                </motion.div>
-              )}
+            {/* Modal panel wrapper */}
+            <div className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center pointer-events-none p-0 sm:p-6">
+              <motion.div 
+                key="reset-modal"
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 320,
+                  damping: 32,
+                  mass: 0.9,
+                }}
+                className="glass rounded-t-[2rem] sm:rounded-3xl w-full max-w-md p-6 sm:p-10 pb-10 sm:pb-10 space-y-6 sm:space-y-8 shadow-2xl border-x-0 border-b-0 sm:border border-white/40 max-h-[92vh] overflow-y-auto no-scrollbar pointer-events-auto"
+                style={{ willChange: 'transform, opacity' }}
+              >
+                {/* Drag handle (mobile only) */}
+                <div className="sm:hidden w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-2 shrink-0" />
 
-              <form onSubmit={handleResetSubmit} className="space-y-5">
-                <div className="space-y-4">
-                  {/* New Password field */}
-                  <div className="space-y-1.5 text-left">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider pl-1">
-                      New Password
-                    </label>
-                    <div className="relative">
-                      <input 
-                        type={showNewPassword ? "text" : "password"} 
-                        placeholder="••••••••" 
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        required
-                        className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base pr-12" 
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNewPassword(!showNewPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors cursor-pointer"
-                      >
-                        {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Confirm New Password field */}
-                  <div className="space-y-1.5 text-left">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider pl-1">
-                      Confirm New Password
-                    </label>
-                    <div className="relative">
-                      <input 
-                        type={showNewPassword ? "text" : "password"} 
-                        placeholder="••••••••" 
-                        value={confirmNewPassword}
-                        onChange={(e) => setConfirmNewPassword(e.target.value)}
-                        required
-                        className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base pr-12" 
-                      />
-                    </div>
-                  </div>
+                <div className="flex justify-between items-center sticky top-0 bg-white/0 z-10">
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
+                    Create New Password
+                  </h3>
+                  <button 
+                    onClick={() => setShowResetModal(false)} 
+                    className="p-2 -mr-2 bg-slate-100/50 hover:bg-slate-200/50 rounded-full transition-colors backdrop-blur-md cursor-pointer"
+                  >
+                    <X className="w-6 h-6 text-slate-400" />
+                  </button>
                 </div>
 
-                <Button 
-                  type="submit" 
-                  disabled={isResetting}
-                  className="w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl text-base sm:text-lg"
-                >
-                  {isResetting ? 'Updating Password...' : 'Update Password'}
-                </Button>
-              </form>
-            </motion.div>
-          </div>
+                {resetMessage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={cn(
+                      "p-4 border rounded-2xl flex items-start gap-3 text-xs font-semibold leading-relaxed shadow-sm",
+                      resetMessage.type === 'error' && "bg-rose-50 border-rose-100/80 text-rose-700",
+                      resetMessage.type === 'success' && "bg-emerald-50 border-emerald-100/80 text-emerald-700"
+                    )}
+                  >
+                    {resetMessage.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />}
+                    {resetMessage.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />}
+                    <div className="flex-1">
+                      {resetMessage.text}
+                    </div>
+                  </motion.div>
+                )}
+
+                <form onSubmit={handleResetSubmit} className="space-y-5">
+                  <div className="space-y-4">
+                    {/* New Password field */}
+                    <div className="space-y-1.5 text-left">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider pl-1">
+                        New Password
+                      </label>
+                      <div className="relative">
+                        <input 
+                          type={showNewPassword ? "text" : "password"} 
+                          placeholder="••••••••" 
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          required
+                          className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base pr-12" 
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors cursor-pointer"
+                        >
+                          {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Confirm New Password field */}
+                    <div className="space-y-1.5 text-left">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider pl-1">
+                        Confirm New Password
+                      </label>
+                      <div className="relative">
+                        <input 
+                          type={showNewPassword ? "text" : "password"} 
+                          placeholder="••••••••" 
+                          value={confirmNewPassword}
+                          onChange={(e) => setConfirmNewPassword(e.target.value)}
+                          required
+                          className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base pr-12" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    disabled={isResetting}
+                    className="w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl text-base sm:text-lg"
+                  >
+                    {isResetting ? 'Updating Password...' : 'Update Password'}
+                  </Button>
+                </form>
+              </motion.div>
+            </div>
+          </>
         )}
       </AnimatePresence>
     </div>
