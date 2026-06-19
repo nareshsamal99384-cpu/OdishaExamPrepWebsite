@@ -819,7 +819,7 @@ const AchieversJournalSection = () => {
         {/* Search and Filters bar */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 max-w-5xl mx-auto pt-2">
           {/* Category Filter */}
-          <div className="border-2 border-slate-900 bg-white p-1 rounded-2xl flex flex-wrap gap-1 shrink-0 shadow-[4px_4px_0px_rgba(138,28,54,0.15)] relative z-10">
+          <div className="border-2 border-slate-900 bg-white p-1 rounded-2xl flex flex-nowrap w-full sm:w-auto justify-between gap-1 shrink-0 shadow-[4px_4px_0px_rgba(138,28,54,0.15)] relative z-10">
             {(['all', 'opsc', 'ossc', 'osssc'] as const).map(filter => {
               const isFilterActive = activeFilter === filter;
               return (
@@ -827,7 +827,7 @@ const AchieversJournalSection = () => {
                   key={filter}
                   onClick={() => setActiveFilter(filter)}
                   className={cn(
-                    "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-200 cursor-pointer relative focus:outline-none",
+                    "flex-1 sm:flex-initial text-center px-1.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider sm:tracking-widest transition-all duration-200 cursor-pointer relative focus:outline-none",
                     isFilterActive 
                       ? "text-white" 
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
@@ -840,7 +840,16 @@ const AchieversJournalSection = () => {
                       transition={{ type: "spring", stiffness: 380, damping: 30 }}
                     />
                   )}
-                  <span className="relative z-10">{filter === 'all' ? 'All Journeys' : filter.toUpperCase()}</span>
+                  <span className="relative z-10">
+                    {filter === 'all' ? (
+                      <>
+                        <span className="hidden sm:inline">All Journeys</span>
+                        <span className="inline sm:hidden">All</span>
+                      </>
+                    ) : (
+                      filter.toUpperCase()
+                    )}
+                  </span>
                 </button>
               );
             })}
