@@ -1093,7 +1093,12 @@ export const Footer = () => {
                 Odisha<span className="text-brand-400 font-serif font-black">Exam</span>Prep
               </span>
             </div>
-            <p className="text-slate-400 font-medium leading-relaxed max-w-sm text-sm sm:text-base">
+            {/* Mobile Version (Shorter) */}
+            <p className="block md:hidden text-sm leading-relaxed text-gray-400 font-medium max-w-sm">
+              Master OPSC, OSSC, and OSSSC exams with verified PYQs and a 24/7 AI Mentor.
+            </p>
+            {/* Desktop Version (Original) */}
+            <p className="hidden md:block text-slate-400 font-medium leading-relaxed max-w-sm text-sm sm:text-base">
               The ultimate state-level civil service exam prep platform. Master the OPSC, OSSC, and OSSSC with our verified PYQs, real-time analytics, and 24/7 AI Mentor.
             </p>
             
@@ -1121,7 +1126,14 @@ export const Footer = () => {
                   )}
                 </button>
               </form>
-              <p className="text-[10px] text-slate-500 font-medium">Join our mailing list to get instant alerts for OPSC, OSSC, and OSSSC notification drops and admit card releases.</p>
+              {/* Mobile Version (Shorter) */}
+              <p className="block md:hidden text-sm leading-relaxed text-gray-400 font-medium">
+                Get instant alerts for OPSC, OSSC, and OSSSC notifications and admit card drops.
+              </p>
+              {/* Desktop Version (Original) */}
+              <p className="hidden md:block text-[10px] text-slate-500 font-medium">
+                Join our mailing list to get instant alerts for OPSC, OSSC, and OSSSC notification drops and admit card releases.
+              </p>
             </div>
           </div>
           
@@ -1130,7 +1142,7 @@ export const Footer = () => {
             <h4 className="text-white font-black tracking-widest uppercase text-xs mb-6 relative after:content-[''] after:absolute after:-bottom-2.5 after:left-0 after:w-8 after:h-[2px] after:bg-[#8a1c36]">
               Platform
             </h4>
-            <ul className="space-y-3.5 font-semibold text-slate-400">
+            <ul className="space-y-4 font-semibold text-slate-400">
               {[
                 { to: "/blog", label: "Official Blog", icon: BookOpen },
                 { to: "/privacy-policy", label: "Privacy Policy", icon: ShieldCheck },
