@@ -5902,18 +5902,20 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               <VisualEffects />
               
               {/* Dynamic Glowing Ambient Mesh / Orbs */}
-              {hasAccessTo(`exam_bundle_${selectedExam}`) ? (
-                <>
-                  <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-emerald-500/10 blur-[100px] pointer-events-none transform-gpu" />
-                  <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-teal-500/10 blur-[120px] pointer-events-none transform-gpu" />
-                  <div className="absolute top-1/2 left-2/3 -translate-y-1/2 w-80 h-80 rounded-full bg-emerald-500/[0.04] blur-[80px] pointer-events-none transform-gpu" />
-                </>
-              ) : (
-                <>
-                  <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-brand-500/10 blur-[100px] pointer-events-none transform-gpu" />
-                  <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none transform-gpu" />
-                  <div className="absolute top-1/2 left-2/3 -translate-y-1/2 w-80 h-80 rounded-full bg-amber-500/[0.03] blur-[80px] pointer-events-none transform-gpu" />
-                </>
+              {!isMobile && (
+                hasAccessTo(`exam_bundle_${selectedExam}`) ? (
+                  <>
+                    <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-emerald-500/10 blur-[100px] pointer-events-none transform-gpu" />
+                    <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-teal-500/10 blur-[120px] pointer-events-none transform-gpu" />
+                    <div className="absolute top-1/2 left-2/3 -translate-y-1/2 w-80 h-80 rounded-full bg-emerald-500/[0.04] blur-[80px] pointer-events-none transform-gpu" />
+                  </>
+                ) : (
+                  <>
+                    <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-brand-500/10 blur-[100px] pointer-events-none transform-gpu" />
+                    <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none transform-gpu" />
+                    <div className="absolute top-1/2 left-2/3 -translate-y-1/2 w-80 h-80 rounded-full bg-amber-500/[0.03] blur-[80px] pointer-events-none transform-gpu" />
+                  </>
+                )
               )}
 
               {/* Sparkle Particles */}
@@ -5992,7 +5994,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
                     {/* Core Glass Sphere */}
                     <div className={cn(
-                      "absolute inset-4 backdrop-blur-xl rounded-full flex items-center justify-center shadow-2xl transition-transform duration-700 hover:scale-105",
+                      "absolute inset-4 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-700 hover:scale-105",
+                      isMobile ? "" : "backdrop-blur-xl",
                       hasAccessTo(`exam_bundle_${selectedExam}`)
                         ? "bg-emerald-950/45 border border-emerald-400/30 text-emerald-400 shadow-emerald-900/30"
                         : "bg-brand-950/45 border border-brand-400/30 text-brand-300 shadow-brand-950/50"
