@@ -64,43 +64,104 @@ export function scrollToElement(
     delay?: number;
   }
 ): Promise<void> {
-  const { block = 'start', delay = 0 } = options || {};
-
-  const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
-  if (!el) return Promise.resolve();
+  const { block = 'start', behavior = 'smooth', delay = 0 } = options || {};
 
   return new Promise((resolve) => {
-    const doScroll = () => {
-      const rect = el.getBoundingClientRect();
-      const NAVBAR_OFFSET = 96; // matches scroll-mt-24 on sections
-      let targetY: number;
+    let attempts = 0;
+    const maxAttempts = 40; // up to 2 seconds (40 * 50ms)
 
-      if (block === 'start') {
-        targetY = window.scrollY + rect.top - NAVBAR_OFFSET;
-      } else if (block === 'center') {
-        targetY = window.scrollY + rect.top - window.innerHeight / 2 + rect.height / 2;
-      } else {
-        targetY = window.scrollY + rect.top - NAVBAR_OFFSET;
+    const tryScroll = () => {
+      const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
+      if (!el) {
+        if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(tryScroll, 50);
+        } else {
+          console.warn(`[ScrollManager] Element not found after ${maxAttempts} attempts:`, idOrEl);
+          resolve();
+        }
+        return;
       }
 
-      targetY = Math.max(0, Math.min(targetY, document.documentElement.scrollHeight - window.innerHeight));
-      smoothScrollWindow(targetY).then(resolve);
+      const NAVBAR_OFFSET = 96; // matches scroll-mt-24 on sections
+      
+      const getTargetY = () => {
+        const rect = el.getBoundingClientRect();
+        let targetY: number;
+
+        if (block === 'start') {
+          targetY = window.scrollY + rect.top - NAVBAR_OFFSET;
+        } else if (block === 'center') {
+          targetY = window.scrollY + rect.top - window.innerHeight / 2 + rect.height / 2;
+        } else {
+          targetY = window.scrollY + rect.top - NAVBAR_OFFSET;
+        }
+
+        return Math.max(0, Math.min(targetY, document.documentElement.scrollHeight - window.innerHeight));
+      };
+
+      // Perform initial scroll
+      let lastTargetY = getTargetY();
+      if (behavior === 'instant' || behavior === 'auto') {
+        if (typeof window !== 'undefined') {
+          window.scrollTo(0, lastTargetY);
+          document.documentElement.scrollTop = lastTargetY;
+          document.body.scrollTop = lastTargetY;
+        }
+      } else {
+        smoothScrollWindow(lastTargetY);
+      }
+
+      // Continuously adjust scroll for layout shifts / animations for 1.2s
+      const startTime = performance.now();
+      const trackShifts = () => {
+        const currentTargetY = getTargetY();
+        if (Math.abs(currentTargetY - lastTargetY) > 4) {
+          lastTargetY = currentTargetY;
+          if (behavior === 'instant' || behavior === 'auto') {
+            if (typeof window !== 'undefined') {
+              window.scrollTo(0, currentTargetY);
+              document.documentElement.scrollTop = currentTargetY;
+              document.body.scrollTop = currentTargetY;
+            }
+          } else {
+            smoothScrollWindow(currentTargetY);
+          }
+        }
+
+        if (performance.now() - startTime < 1200) {
+          requestAnimationFrame(trackShifts);
+        } else {
+          resolve();
+        }
+      };
+
+      requestAnimationFrame(trackShifts);
     };
 
     if (delay > 0) {
-      setTimeout(doScroll, delay);
+      setTimeout(tryScroll, delay);
     } else {
-      doScroll();
+      tryScroll();
     }
   });
 }
 
 export function scrollToTop(options?: { behavior?: ScrollBehavior; delay?: number }): Promise<void> {
-  const { delay = 0 } = options || {};
+  const { behavior = 'smooth', delay = 0 } = options || {};
 
   return new Promise((resolve) => {
     const doScroll = () => {
-      smoothScrollWindow(0).then(resolve);
+      if (behavior === 'instant' || behavior === 'auto') {
+        if (typeof window !== 'undefined') {
+          window.scrollTo(0, 0);
+          document.documentElement.scrollTop = 0;
+          document.body.scrollTop = 0;
+        }
+        resolve();
+      } else {
+        smoothScrollWindow(0).then(resolve);
+      }
     };
 
     if (delay > 0) {

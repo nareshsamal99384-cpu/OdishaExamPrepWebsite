@@ -7,7 +7,8 @@ export const ROUTE_PATHS = {
   BLOG: '/blog',
   BLOG_DETAIL: '/blog/:id',
   ADMIN: '/admin',
-  NOT_FOUND: '/404'
+  NOT_FOUND: '/404',
+  EXAM_DETAIL: '/exams/:examId'
 } as const;
 
 export const ROUTE_LIST = Object.values(ROUTE_PATHS) as string[];

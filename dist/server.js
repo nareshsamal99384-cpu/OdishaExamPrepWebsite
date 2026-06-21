@@ -18,7 +18,8 @@ var ROUTE_PATHS = {
   BLOG: "/blog",
   BLOG_DETAIL: "/blog/:id",
   ADMIN: "/admin",
-  NOT_FOUND: "/404"
+  NOT_FOUND: "/404",
+  EXAM_DETAIL: "/exams/:examId"
 };
 var ROUTE_LIST = Object.values(ROUTE_PATHS);
 

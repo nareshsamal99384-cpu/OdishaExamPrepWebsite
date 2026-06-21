@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BrowserRouter, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Route, Navigate, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { 
   BookOpen, 
   LayoutDashboard, 
@@ -532,7 +533,6 @@ const ExamRegistrySection = ({
 
     if (matched) setSelectedExam(matched.id);
     else if (key === 'opsc' || (item.exam || '').toLowerCase().includes('opsc')) setSelectedExam('opsc-aio');
-    scrollToElement('exams', { block: 'start' });
   };
   return (
     <section id="exam-registry" className="py-12 md:py-16 bg-[#FAF8F5] border-y border-slate-200/50 scroll-mt-24">
@@ -542,20 +542,20 @@ const ExamRegistrySection = ({
             ⏰ ODISHA RECRUITMENT BULLETIN
           </span>
           <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-955 tracking-tight leading-tight">
-            Official Exam Notifications <span className="premium-text-gradient font-serif font-extrabold">& Targeted Mock Tests</span>
+            Official Exam Notifications <span className="premium-text-gradient font-serif font-extrabold">& Targeted <span className="whitespace-nowrap">Mock Tests</span></span>
           </h2>
           {isMobile ? null : <div className="section-divider" />}
           {/* Mobile Version (Shorter & Punchier) */}
           <p className="block md:hidden text-base leading-relaxed text-gray-600 font-medium max-w-xl mx-auto">
-            Never miss an OPSC, OSSC, or OSSSC deadline. Get real-time updates and syllabus-specific tests.
+            Never miss an OPSC, OSSC, or OSSSC deadline. Get real-time updates and <span className="whitespace-nowrap">syllabus-specific</span> tests.
           </p>
-          {/* Desktop Version (Original) */}
-          <p className="hidden md:block text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed">
-            Never miss a crucial deadline. Track real-time updates for OPSC, OSSC, and OSSSC, and instantly start practicing with syllabus-specific test series.
+          {/* Desktop Version (Optimized) */}
+          <p className="max-w-2xl mx-auto md:text-lg md:leading-relaxed text-slate-600 hidden md:block">
+            Never miss a crucial deadline. Track real-time OPSC, OSSC, and OSSSC updates and instantly unlock <span className="whitespace-nowrap">syllabus-specific</span> test series.
           </p>
         </div>
 
-        <div className="flex flex-col gap-6 md:gap-0 md:bg-white md:border-2 md:border-slate-900/80 md:rounded-[2.5rem] md:overflow-hidden md:shadow-[6px_6px_0px_rgba(138,28,54,0.15)] md:divide-y-2 md:divide-slate-100">
+        <div className="flex flex-col items-center gap-6 md:items-stretch md:gap-0 md:bg-white md:border-2 md:border-slate-900/80 md:rounded-[2.5rem] md:overflow-hidden md:shadow-[6px_6px_0px_rgba(138,28,54,0.15)] md:divide-y-2 md:divide-slate-100">
           {announcements.map((item, idx) => {
             const statusMeta = EXAM_REGISTRY_STATUS_MAP[item.status] || {
               label: item.status,
@@ -565,12 +565,12 @@ const ExamRegistrySection = ({
               <div 
                 key={idx} 
                 className={cn(
-                  "p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white border-2 border-slate-900/80 rounded-3xl md:rounded-none md:border-none shadow-[4px_4px_0px_rgba(138,28,54,0.15)] md:shadow-none",
+                  "w-full p-6 sm:p-8 flex flex-col items-center text-center md:flex-row md:items-center md:text-left md:justify-between gap-6 bg-white border-2 border-slate-900/80 rounded-3xl md:rounded-none md:border-none shadow-[4px_4px_0px_rgba(138,28,54,0.15)] md:shadow-none",
                   !isMobile && "hover:bg-slate-50/50 transition-colors"
                 )}
               >
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-2.5">
+                <div className="space-y-3 w-full">
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
                     <span className={cn("px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider border", statusMeta.color)}>
                       {statusMeta.label}
                     </span>
@@ -578,14 +578,14 @@ const ExamRegistrySection = ({
                       {item.date}
                     </span>
                   </div>
-                  <h3 className="text-lg sm:text-xl font-serif font-extrabold text-slate-900">
+                  <h3 className="text-lg sm:text-xl font-serif font-extrabold text-slate-900 text-center md:text-left">
                     {item.exam}
                   </h3>
                 </div>
                 <button 
                   onClick={() => handlePracticeClick(item)}
                   className={cn(
-                    "inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-slate-900 text-xs font-black uppercase tracking-widest text-slate-900 transition-all cursor-pointer self-start md:self-auto shadow-[4px_4px_0px_rgba(0,0,0,1)]",
+                    "inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-slate-900 text-xs font-black uppercase tracking-widest text-slate-900 transition-all cursor-pointer w-full md:w-auto shadow-[4px_4px_0px_rgba(0,0,0,1)]",
                     !isMobile && "hover:bg-slate-900 hover:text-white hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5"
                   )}
                 >
@@ -668,17 +668,17 @@ const SYLLABUS_ROADMAPS_DEFAULT = [
           <span className="section-chip">
             🎯 SYLLABUS-MAPPED PREPARATION
           </span>
-          <h2 className="text-3xl md:text-4xl font-serif font-extrabold text-slate-955 tracking-tight leading-tight max-w-3xl">
-            Master Every Topic with <span className="premium-text-gradient font-serif font-extrabold">Targeted Chapter-Wise Tests</span>
+          <h2 className="text-3xl md:text-4xl font-serif font-extrabold text-slate-955 tracking-tight leading-tight max-w-5xl">
+            Master Every Topic with <span className="premium-text-gradient font-serif font-extrabold">Targeted <span className="whitespace-nowrap">Chapter-Wise</span> Tests</span>
           </h2>
           {!isMobile && <div className="section-divider" />}
           {/* Mobile Version (Shorter) */}
           <p className="block md:hidden text-base leading-relaxed text-gray-600 font-medium max-w-2xl mx-auto">
             Stop blindly studying. Unlock full-length mock tests and PYQs designed exactly for the OPSC and OSSC curriculum.
           </p>
-          {/* Desktop Version (Original) */}
-          <p className="hidden md:block text-slate-500 text-sm sm:text-base md:text-lg font-normal max-w-2xl mx-auto leading-loose sm:leading-relaxed">
-            Stop blindly studying. Select a subject pillar—from Odisha History to Indian Polity—and unlock specific full-length mock tests and PYQs designed exactly for the latest OPSC and OSSC curriculum.
+          {/* Desktop Version (Optimized) */}
+          <p className="max-w-2xl mx-auto md:text-lg md:leading-relaxed text-slate-600 hidden md:block">
+            Stop blindly studying. Master Odisha History to Indian Polity with full-length mock tests and PYQs mapped exactly to the OPSC and OSSC curriculum.
           </p>
         </div>
 
@@ -821,7 +821,7 @@ const AchieversJournalSection = () => {
           <span className="section-chip">
             🏆 VERIFIED SUCCESS STORIES
           </span>
-          <h2 className="text-3xl md:text-4xl font-serif font-extrabold text-slate-955 tracking-tight leading-tight max-w-3xl">
+          <h2 className="text-3xl md:text-4xl font-serif font-extrabold text-slate-955 tracking-tight leading-tight max-w-5xl">
             Join Hundreds of Aspirants <span className="premium-text-gradient font-serif font-extrabold">Who Cracked Their Target Exams</span>
           </h2>
           {!isMobile && <div className="section-divider" />}
@@ -829,9 +829,9 @@ const AchieversJournalSection = () => {
           <p className="block md:hidden text-base leading-relaxed text-gray-600 font-medium max-w-2xl mx-auto">
             Explore real preparation strategies and test scores from students who conquered OPSC, OSSC, and OSSSC.
           </p>
-          {/* Desktop Version (Original) */}
-          <p className="hidden md:block text-slate-500 text-sm sm:text-base md:text-lg font-normal max-w-2xl mx-auto leading-relaxed">
-            Don't just take our word for it. Explore detailed preparation strategies, actual test scores, and accuracy timelines from real students who conquered OPSC, OSSC, and OSSSC using our platform.
+          {/* Desktop Version (Optimized) */}
+          <p className="max-w-2xl mx-auto md:text-lg md:leading-relaxed text-slate-600 hidden md:block">
+            Explore detailed preparation strategies and actual test scores from real students who conquered OPSC, OSSC, and OSSSC.
           </p>
         </div>
 
@@ -1290,7 +1290,7 @@ export const Navbar = ({
             return;
           }
 
-          const sectionIds = ['exam-registry', 'exams', 'syllabus-paths', 'achievers-journal'];
+          const sectionIds = ['exams', 'syllabus-paths', 'exam-registry', 'achievers-journal'];
 
           // If we are at the very top of the page, clear active section
           if (window.scrollY < 100) {
@@ -1334,8 +1334,9 @@ export const Navbar = ({
     e.preventDefault();
     setMobileMenuOpen(false);
 
-    if (window.location.pathname !== '/') {
-      window.location.assign('/#' + id);
+    if (location.pathname !== '/') {
+      sessionStorage.setItem('oep_scroll_target', id);
+      navigate('/');
       return;
     }
 
@@ -1388,24 +1389,7 @@ export const Navbar = ({
           <div className="flex items-center border-2 border-slate-900 bg-white rounded-xl p-0.5 shadow-[3px_3px_0px_#0f172a] relative">
             {!user && (
               <>
-                 {/* Registry */}
-                 <a 
-                   href="#exam-registry"
-                   onClick={(e) => scrollToSection(e, 'exam-registry')}
-                   className="relative flex items-center gap-1.5 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-lg group cursor-pointer"
-                 >
-                   {activeSection === 'exam-registry' && (
-                     <motion.div
-                       layoutId="nav-active-pill"
-                       className="absolute inset-0 rounded-lg bg-[#fce7eb]"
-                       transition={{ type: 'spring', stiffness: 420, damping: 38, mass: 0.8 }}
-                     />
-                   )}
-                   <Clock3 className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", activeSection === 'exam-registry' ? "text-[#8A1C36]" : "text-slate-400 group-hover:text-[#8A1C36]")} />
-                   <span className={cn("relative z-10 transition-colors duration-150", activeSection === 'exam-registry' ? "text-[#8A1C36]" : "text-slate-600 group-hover:text-[#8A1C36]")}>Registry</span>
-                 </a>
-                 <div className="w-0.5 h-4 bg-slate-200 mx-0.5 shrink-0"></div>
-                 {/* Practice */}
+                 {/* Exams */}
                  <a 
                    href="#exams"
                    onClick={(e) => scrollToSection(e, 'exams')}
@@ -1419,7 +1403,7 @@ export const Navbar = ({
                      />
                    )}
                    <Target className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", activeSection === 'exams' ? "text-[#8A1C36]" : "text-slate-400 group-hover:text-[#8A1C36]")} />
-                   <span className={cn("relative z-10 transition-colors duration-150", activeSection === 'exams' ? "text-[#8A1C36]" : "text-slate-600 group-hover:text-[#8A1C36]")}>Practice</span>
+                   <span className={cn("relative z-10 transition-colors duration-150", activeSection === 'exams' ? "text-[#8A1C36]" : "text-slate-600 group-hover:text-[#8A1C36]")}>Exams</span>
                  </a>
                  <div className="w-0.5 h-4 bg-slate-200 mx-0.5 shrink-0"></div>
                  {/* Syllabus */}
@@ -1437,6 +1421,23 @@ export const Navbar = ({
                    )}
                    <BookOpen className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", activeSection === 'syllabus-paths' ? "text-[#8A1C36]" : "text-slate-400 group-hover:text-[#8A1C36]")} />
                    <span className={cn("relative z-10 transition-colors duration-150", activeSection === 'syllabus-paths' ? "text-[#8A1C36]" : "text-slate-600 group-hover:text-[#8A1C36]")}>Syllabus</span>
+                 </a>
+                 <div className="w-0.5 h-4 bg-slate-200 mx-0.5 shrink-0"></div>
+                 {/* Registry */}
+                 <a 
+                   href="#exam-registry"
+                   onClick={(e) => scrollToSection(e, 'exam-registry')}
+                   className="relative flex items-center gap-1.5 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-lg group cursor-pointer"
+                 >
+                   {activeSection === 'exam-registry' && (
+                     <motion.div
+                       layoutId="nav-active-pill"
+                       className="absolute inset-0 rounded-lg bg-[#fce7eb]"
+                       transition={{ type: 'spring', stiffness: 420, damping: 38, mass: 0.8 }}
+                     />
+                   )}
+                   <Clock3 className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", activeSection === 'exam-registry' ? "text-[#8A1C36]" : "text-slate-400 group-hover:text-[#8A1C36]")} />
+                   <span className={cn("relative z-10 transition-colors duration-150", activeSection === 'exam-registry' ? "text-[#8A1C36]" : "text-slate-600 group-hover:text-[#8A1C36]")}>Notifications</span>
                  </a>
                  <div className="w-0.5 h-4 bg-slate-200 mx-0.5 shrink-0"></div>
                  {/* Achievers */}
@@ -1585,21 +1586,6 @@ export const Navbar = ({
               {!user && (
                 <>
                   <a 
-                    href="#exam-registry" 
-                    onClick={(e) => scrollToSection(e, 'exam-registry')} 
-                    className={cn(
-                      "flex items-center gap-4 text-lg font-bold p-4 rounded-2xl transition-all border-l-4",
-                      activeSection === 'exam-registry'
-                        ? "bg-[#fce7eb] text-[#8A1C36] font-extrabold border-[#8A1C36] pl-3"
-                        : "text-slate-700 hover:bg-[#fce7eb] hover:text-[#8A1C36] border-transparent hover:border-[#8A1C36]/30"
-                    )}
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-[#fce7eb] flex items-center justify-center text-[#8A1C36] shrink-0 shadow-sm">
-                       <Clock3 className="w-5 h-5" />
-                    </div>
-                    <span>Registry</span>
-                  </a>
-                  <a 
                     href="#exams" 
                     onClick={(e) => scrollToSection(e, 'exams')} 
                     className={cn(
@@ -1612,7 +1598,7 @@ export const Navbar = ({
                     <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0 shadow-sm">
                        <Target className="w-5 h-5" />
                     </div>
-                    <span>Practice</span>
+                    <span>Exams</span>
                   </a>
                   <a 
                     href="#syllabus-paths" 
@@ -1628,6 +1614,21 @@ export const Navbar = ({
                        <BookOpen className="w-5 h-5" />
                     </div>
                     <span>Syllabus</span>
+                  </a>
+                  <a 
+                    href="#exam-registry" 
+                    onClick={(e) => scrollToSection(e, 'exam-registry')} 
+                    className={cn(
+                      "flex items-center gap-4 text-lg font-bold p-4 rounded-2xl transition-all border-l-4",
+                      activeSection === 'exam-registry'
+                        ? "bg-[#fce7eb] text-[#8A1C36] font-extrabold border-[#8A1C36] pl-3"
+                        : "text-slate-700 hover:bg-[#fce7eb] hover:text-[#8A1C36] border-transparent hover:border-[#8A1C36]/30"
+                    )}
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-[#fce7eb] flex items-center justify-center text-[#8A1C36] shrink-0 shadow-sm">
+                       <Clock3 className="w-5 h-5" />
+                    </div>
+                    <span>Notifications</span>
                   </a>
                   <a 
                     href="#achievers-journal" 
@@ -1903,28 +1904,14 @@ const InteractiveHeroPreview = () => {
 
 // --- Pages ---
 
-const LandingPage = () => {
-  const { loading, user } = useAuth();
-  const [showAuthModal, setShowAuthModal] = useState(false);
+const AuthModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
   const [authMode, setAuthMode] = useState<'login' | 'signup' | 'forgotPassword' | 'resetPassword'>('login');
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showGuideToast, setShowGuideToast] = useState(false);
   const [authMessage, setAuthMessage] = useState<{ type: 'error' | 'info' | 'success', text: string } | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
 
   useEffect(() => {
     setEmail('');
@@ -1933,56 +1920,28 @@ const LandingPage = () => {
     setConfirmPassword('');
     setShowPassword(false);
     setAuthMessage(null);
-  }, [showAuthModal, authMode]);
+  }, [isOpen, authMode]);
 
   useEffect(() => {
     setAuthMessage(null);
   }, [email, password, fullName, confirmPassword]);
 
-  const [announcements, setAnnouncements] = useState<string[]>([
-    `🚀 New Mock Test Series released for OSSC CGL ${new Date().getFullYear()}`,
-    "📅 OPSC Prelims exam dates announced - Check latest schedule",
-    "⭐ 500+ New PYQs added for OSSSC recruitment exams",
-    "🔥 Weekly Current Affairs PDF now available for download",
-    "✅ Real-time rank analysis enabled for all premium mock tests"
-  ]);
-
-  const [selectedExam, setSelectedExam] = useState<string | null>(() => sessionStorage.getItem('oep_selectedExam') || null);
-  const [exams, setExams] = useState<any[]>([]);
-
   useEffect(() => {
-    const fetchUpdates = async () => {
-      try {
-        const fetchedExams = await examService.getAllExams();
-        setExams(fetchedExams);
-        const newsSettings = fetchedExams.find(e => e.name === 'SYSTEM_SETTINGS_NEWS_TICKER');
-        if (newsSettings && newsSettings.description) {
-          const parsed = JSON.parse(newsSettings.description);
-          if (parsed.updates && parsed.updates.length > 0) {
-            setAnnouncements(parsed.updates);
-          }
-        }
-      } catch(e) {}
-    };
-    fetchUpdates();
-  }, []);
-
-  useEffect(() => {
-    document.title = 'OdishaExamPrep - Best Mock Tests for OPSC, OSSC & OSSSC';
-    let metaDesc = document.querySelector('meta[name="description"]');
-    if (!metaDesc) {
-      metaDesc = document.createElement('meta');
-      metaDesc.setAttribute('name', 'description');
-      document.head.appendChild(metaDesc);
+    if (window.innerWidth < 768) {
+      if (isOpen) {
+        document.body.setAttribute('data-modal-open', 'true');
+      } else {
+        document.body.removeAttribute('data-modal-open');
+      }
     }
-    metaDesc.setAttribute('content', 'OdishaExamPrep is Odisha\'s leading platform for competitive exam preparation. Practice with topic-wise quizzes, full-length mock tests, and previous year questions for OPSC, OSSC, OSSSC, and Police exams.');
-  }, []);
-  
+    return () => { document.body.removeAttribute('data-modal-open'); };
+  }, [isOpen]);
+
   const handleGoogleLogin = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
       if (error) throw error;
-      setShowAuthModal(false);
+      onClose();
     } catch (error) {
       console.error('Login failed', error);
     }
@@ -1995,7 +1954,7 @@ const LandingPage = () => {
       if (authMode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        setShowAuthModal(false);
+        onClose();
       } else {
         const { data, error } = await supabase.auth.signUp({ 
           email, 
@@ -2015,7 +1974,7 @@ const LandingPage = () => {
             setAuthMode('login');
             return;
         }
-        setShowAuthModal(false);
+        onClose();
       }
     } catch (error: any) {
       setAuthMessage({
@@ -2063,7 +2022,7 @@ const LandingPage = () => {
         text: 'Password updated successfully! You are now logged in. Redirecting...'
       });
       setTimeout(() => {
-        setShowAuthModal(false);
+        onClose();
         window.location.reload();
       }, 2000);
     } catch (error: any) {
@@ -2073,6 +2032,271 @@ const LandingPage = () => {
       });
     }
   };
+
+  return (
+    <AnimatePresence mode="wait">
+      {isOpen && (
+        <>
+          {/* Animated backdrop */}
+          <motion.div
+            key="auth-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+            className="fixed inset-0 bg-slate-950/50 z-[100] backdrop-blur-md"
+            style={{ willChange: 'opacity' }}
+            onClick={onClose}
+          />
+
+          {/* Modal panel */}
+          <div className="fixed inset-0 z-[101] flex items-end sm:items-center justify-center pointer-events-none">
+            <motion.div
+              key="auth-modal"
+              initial={{ y: '100%', opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0 }}
+              transition={{
+                type: 'spring',
+                stiffness: 320,
+                damping: 32,
+                mass: 0.9,
+              }}
+              className="glass rounded-t-[2rem] sm:rounded-3xl w-full max-w-md p-6 sm:p-10 pb-10 sm:pb-10 space-y-6 sm:space-y-8 shadow-2xl border-x-0 border-b-0 sm:border border-white/40 max-h-[92vh] overflow-y-auto no-scrollbar pointer-events-auto"
+              style={{ willChange: 'transform, opacity' }}
+            >
+            {/* Drag handle (mobile only) */}
+            <div className="sm:hidden w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-2" />
+
+            <div className="flex justify-between items-center sticky top-0 bg-white/0 z-10">
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                {authMode === 'login' && 'Welcome Back'}
+                {authMode === 'signup' && 'Join OdishaExamPrep'}
+                {authMode === 'forgotPassword' && 'Reset Password'}
+                {authMode === 'resetPassword' && 'Create New Password'}
+              </h3>
+              <button onClick={onClose} className="p-2 -mr-2 bg-slate-100/50 hover:bg-slate-200/50 rounded-full transition-colors backdrop-blur-md border-none cursor-pointer">
+                <X className="w-6 h-6 text-slate-400" />
+              </button>
+            </div>
+
+            {authMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={cn(
+                  "p-4 border rounded-2xl flex items-start gap-3 text-xs font-semibold leading-relaxed shadow-sm",
+                  authMessage.type === 'error' && "bg-rose-50 border-rose-100/80 text-rose-700",
+                  authMessage.type === 'info' && "bg-blue-50 border-blue-100/80 text-blue-700",
+                  authMessage.type === 'success' && "bg-emerald-50 border-emerald-100/80 text-emerald-700"
+                )}
+              >
+                {authMessage.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />}
+                {authMessage.type === 'info' && <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />}
+                {authMessage.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />}
+                <div className="flex-1">
+                  {authMessage.text}
+                </div>
+              </motion.div>
+            )}
+
+            <form onSubmit={
+               authMode === 'forgotPassword'
+                 ? handleForgotPasswordSubmit
+                 : authMode === 'resetPassword'
+                   ? handleResetPasswordSubmit
+                   : handleEmailAuth
+             } className="space-y-5">
+               <div className="space-y-4">
+                {/* Full Name field (Signup only) */}
+                {authMode === 'signup' && (
+                  <div className="space-y-1.5 text-left">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider pl-1">
+                      Full Name
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="John Doe" 
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required
+                      className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base" 
+                    />
+                  </div>
+                )}
+
+                {/* Email field (Login, Signup, Forgot Password) */}
+                {authMode !== 'resetPassword' && (
+                  <div className="space-y-1.5 text-left">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider pl-1">
+                      Email Address
+                    </label>
+                    <input 
+                      type="email" 
+                      placeholder="email@example.com" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base" 
+                    />
+                  </div>
+                )}
+
+                {/* Password field (Login, Signup, Reset Password) */}
+                {authMode !== 'forgotPassword' && (
+                  <div className="space-y-1.5 text-left">
+                    <div className="flex justify-between items-center pl-1">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                        {authMode === 'resetPassword' ? "New Password" : "Password"}
+                      </label>
+                      {authMode === 'login' && (
+                        <button
+                          type="button"
+                          onClick={() => setAuthMode('forgotPassword')}
+                          className="text-[11px] font-extrabold text-brand-650 hover:text-brand-700 hover:underline transition-all focus:outline-none border-none bg-transparent cursor-pointer"
+                        >
+                          Forgot Password?
+                        </button>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <input 
+                        type={showPassword ? "text" : "password"} 
+                        placeholder="••••••••" 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base pr-12" 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-650 focus:outline-none transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Confirm Password field (Reset Password only) */}
+                {authMode === 'resetPassword' && (
+                  <div className="space-y-1.5 text-left">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider pl-1">
+                      Confirm New Password
+                    </label>
+                    <div className="relative">
+                      <input 
+                        type={showPassword ? "text" : "password"} 
+                        placeholder="••••••••" 
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base pr-12" 
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <Button type="submit" className="w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl text-base sm:text-lg">
+                {authMode === 'login' && 'Sign In'}
+                {authMode === 'signup' && 'Create Account'}
+                {authMode === 'forgotPassword' && 'Send Reset Link'}
+                {authMode === 'resetPassword' && 'Update Password'}
+              </Button>
+            </form>
+
+            {(authMode === 'login' || authMode === 'signup') && (
+              <p className="text-center text-sm text-slate-500 font-medium">
+                {authMode === 'login' ? "New to OdishaExamPrep? " : "Already a member? "}
+                <button 
+                  onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                  className="text-brand-600 font-extrabold hover:underline transition-all border-none bg-transparent cursor-pointer"
+                >
+                  {authMode === 'login' ? 'Register' : 'Login'}
+                </button>
+              </p>
+            )}
+
+            {authMode === 'forgotPassword' && (
+              <p className="text-center text-sm text-slate-500 font-medium">
+                Remember your password?{" "}
+                <button 
+                  onClick={() => setAuthMode('login')}
+                  className="text-brand-600 font-extrabold hover:underline transition-all border-none bg-transparent cursor-pointer"
+                >
+                  Login
+                </button>
+              </p>
+            )}
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};
+
+const LandingPage = () => {
+  const { loading, user } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showGuideToast, setShowGuideToast] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Hide WhatsApp button on mobile when auth modal is open
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      if (showAuthModal) {
+        document.body.setAttribute('data-modal-open', 'true');
+      } else {
+        document.body.removeAttribute('data-modal-open');
+      }
+    }
+    return () => { document.body.removeAttribute('data-modal-open'); };
+  }, [showAuthModal]);
+
+  const [announcements, setAnnouncements] = useState<string[]>([
+    `🚀 New Mock Test Series released for OSSC CGL ${new Date().getFullYear()}`,
+    "📅 OPSC Prelims exam dates announced - Check latest schedule",
+    "⭐ 500+ New PYQs added for OSSSC recruitment exams",
+    "🔥 Weekly Current Affairs PDF now available for download",
+    "✅ Real-time rank analysis enabled for all premium mock tests"
+  ]);
+
+  const navigate = useNavigate();
+  const selectedExam = null;
+  const setSelectedExam = (val: string | null) => {
+    if (val) {
+      navigate(`/exams/${val}`);
+    }
+  };
+  const [exams, setExams] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchUpdates = async () => {
+      try {
+        const fetchedExams = await examService.getAllExams();
+        setExams(fetchedExams);
+        const newsSettings = fetchedExams.find(e => e.name === 'SYSTEM_SETTINGS_NEWS_TICKER');
+        if (newsSettings && newsSettings.description) {
+          const parsed = JSON.parse(newsSettings.description);
+          if (parsed.updates && parsed.updates.length > 0) {
+            setAnnouncements(parsed.updates);
+          }
+        }
+      } catch(e) {}
+    };
+    fetchUpdates();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
@@ -2121,7 +2345,7 @@ const LandingPage = () => {
           <div className="absolute bottom-0 -left-40 w-[500px] h-[500px] rounded-full -z-10 animate-orb" style={{background: 'radial-gradient(circle, rgba(0,0,0,0.02) 0%, transparent 70%)', filter: 'blur(50px)', animationDelay: '2.5s'}} />
           
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-16">
+            <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-12 lg:gap-16">
               {/* Specialized Content Column */}
               <motion.div 
                 initial={{ opacity: 0, x: -40 }}
@@ -2143,8 +2367,8 @@ const LandingPage = () => {
                   </div>
 
                   <div className="space-y-4 md:space-y-5">
-                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-extrabold text-slate-955 tracking-tight leading-tight">
-                      Crack Your Odisha Govt Exams <br className="hidden sm:block" /> with{" "}
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-serif font-extrabold text-slate-955 tracking-tight leading-tight">
+                      Crack Your Odisha Govt Exams with{" "}
                       <span className="premium-text-gradient font-serif font-extrabold">Realistic Mock Tests</span>
                     </h1>
                     {/* Mobile Version (Shorter) */}
@@ -2167,29 +2391,29 @@ const LandingPage = () => {
                       scrollToElement('exams');
                     }}
                   >
-                    <span className="relative z-10">Start Free Practice</span>
+                    <span className="relative z-10">Explore Free Mock Tests</span>
                     <div className="absolute inset-0 bg-white/20 translate-y-20 group-hover:translate-y-0 transition-transform" />
                   </Button>
                   <Button 
                     variant="outline" 
                     className="w-full sm:w-auto h-14 sm:h-16 px-8 sm:px-12 text-lg sm:text-xl rounded-2xl border-slate-200 bg-white hover:bg-slate-50 transition-all font-bold"
                     onClick={() => {
-                      setShowGuideToast(true);
-                      setTimeout(() => setShowGuideToast(false), 6000);
-                      const target = document.getElementById('test-series') || document.getElementById('exams');
-                      if (target) scrollToElement(target);
+                      scrollToElement('syllabus-paths');
                     }}
                   >
-                    Unlock Premium Tests
+                    View Syllabus Paths
                   </Button>
                 </div>
 
                 {/* Localized Exam Categories */}
                 <div className="pt-6 sm:pt-10 space-y-4">
-                  <p className="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] lg:text-left">Focused Preparation For:</p>
+                  <p className="text-[10px] sm:text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] lg:text-left">Focused Preparation For:</p>
                   <div className="flex flex-wrap justify-center lg:justify-start gap-2 sm:gap-3">
                     {['OPSC CGL', 'OSSC LSI', 'OSSSC RI/ARI', 'Police SI', 'Forest Guard'].map((exam) => (
-                      <span key={exam} className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-slate-50 border border-slate-100 text-xs sm:text-sm font-bold text-slate-700 hover:bg-brand-50 hover:border-brand-100 transition-colors cursor-default whitespace-nowrap">
+                      <span 
+                        key={exam} 
+                        className="px-3.5 py-1.5 rounded-xl bg-brand-50/50 border border-brand-100/80 text-[10px] sm:text-xs font-black uppercase tracking-wider text-brand-800 hover:bg-brand-100 hover:text-brand-900 transition-all duration-300 cursor-default whitespace-nowrap shadow-sm hover:scale-[1.03]"
+                      >
                         {exam}
                       </span>
                     ))}
@@ -2210,10 +2434,7 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* 1. Exam Registry Section */}
-        <ExamRegistrySection setSelectedExam={setSelectedExam} exams={exams} />
-
-        {/* 2. Practice Core (Explore Exams) */}
+        {/* 1. Practice Core (Explore Exams) */}
         <section id="exams" className="py-12 md:py-16 scroll-mt-24 border-b border-slate-200/50">
           <div className="max-w-6xl mx-auto px-6 space-y-12 sm:space-y-10">
             <div className="flex flex-col items-center space-y-4 text-center">
@@ -2243,8 +2464,11 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* 3. Syllabus Paths Section */}
+        {/* 2. Syllabus Paths Section */}
         <SyllabusPathsSection />
+
+        {/* 3. Exam Registry Section */}
+        <ExamRegistrySection setSelectedExam={setSelectedExam} exams={exams} />
 
         {/* 4. Achievers' Journal Section */}
         <AchieversJournalSection />
@@ -2293,206 +2517,7 @@ const LandingPage = () => {
         )}
       </AnimatePresence>
 
-      <AnimatePresence mode="wait">
-        {showAuthModal && (
-          <>
-            {/* Animated backdrop */}
-            <motion.div
-              key="auth-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-              className="fixed inset-0 bg-slate-950/50 z-[100] backdrop-blur-md"
-              style={{ willChange: 'opacity' }}
-              onClick={() => setShowAuthModal(false)}
-            />
-
-            {/* Modal panel */}
-            <div className="fixed inset-0 z-[101] flex items-end sm:items-center justify-center pointer-events-none">
-              <motion.div
-                key="auth-modal"
-                initial={{ y: '100%', opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: '100%', opacity: 0 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 320,
-                  damping: 32,
-                  mass: 0.9,
-                }}
-                className="glass rounded-t-[2rem] sm:rounded-3xl w-full max-w-md p-6 sm:p-10 pb-10 sm:pb-10 space-y-6 sm:space-y-8 shadow-2xl border-x-0 border-b-0 sm:border border-white/40 max-h-[92vh] overflow-y-auto no-scrollbar pointer-events-auto"
-                style={{ willChange: 'transform, opacity' }}
-              >
-              {/* Drag handle (mobile only) */}
-              <div className="sm:hidden w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-2" />
-
-              <div className="flex justify-between items-center sticky top-0 bg-white/0 z-10">
-                <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                  {authMode === 'login' && 'Welcome Back'}
-                  {authMode === 'signup' && 'Join OdishaExamPrep'}
-                  {authMode === 'forgotPassword' && 'Reset Password'}
-                  {authMode === 'resetPassword' && 'Create New Password'}
-                </h3>
-                <button onClick={() => setShowAuthModal(false)} className="p-2 -mr-2 bg-slate-100/50 hover:bg-slate-200/50 rounded-full transition-colors backdrop-blur-md">
-                  <X className="w-6 h-6 text-slate-400" />
-                </button>
-              </div>
-
-              {authMessage && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={cn(
-                    "p-4 border rounded-2xl flex items-start gap-3 text-xs font-semibold leading-relaxed shadow-sm",
-                    authMessage.type === 'error' && "bg-rose-50 border-rose-100/80 text-rose-700",
-                    authMessage.type === 'info' && "bg-blue-50 border-blue-100/80 text-blue-700",
-                    authMessage.type === 'success' && "bg-emerald-50 border-emerald-100/80 text-emerald-700"
-                  )}
-                >
-                  {authMessage.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />}
-                  {authMessage.type === 'info' && <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />}
-                  {authMessage.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />}
-                  <div className="flex-1">
-                    {authMessage.text}
-                  </div>
-                </motion.div>
-              )}
-
-              <form onSubmit={
-                 authMode === 'forgotPassword'
-                   ? handleForgotPasswordSubmit
-                   : authMode === 'resetPassword'
-                     ? handleResetPasswordSubmit
-                     : handleEmailAuth
-               } className="space-y-5">
-                 <div className="space-y-4">
-                  {/* Full Name field (Signup only) */}
-                  {authMode === 'signup' && (
-                    <div className="space-y-1.5 text-left">
-                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider pl-1">
-                        Full Name
-                      </label>
-                      <input 
-                        type="text" 
-                        placeholder="John Doe" 
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        required
-                        className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base" 
-                      />
-                    </div>
-                  )}
-
-                  {/* Email field (Login, Signup, Forgot Password) */}
-                  {authMode !== 'resetPassword' && (
-                    <div className="space-y-1.5 text-left">
-                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider pl-1">
-                        Email Address
-                      </label>
-                      <input 
-                        type="email" 
-                        placeholder="email@example.com" 
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base" 
-                      />
-                    </div>
-                  )}
-
-                  {/* Password field (Login, Signup, Reset Password) */}
-                  {authMode !== 'forgotPassword' && (
-                    <div className="space-y-1.5 text-left">
-                      <div className="flex justify-between items-center pl-1">
-                        <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
-                          {authMode === 'resetPassword' ? "New Password" : "Password"}
-                        </label>
-                        {authMode === 'login' && (
-                          <button
-                            type="button"
-                            onClick={() => setAuthMode('forgotPassword')}
-                            className="text-[11px] font-extrabold text-brand-600 hover:text-brand-700 hover:underline transition-all focus:outline-none border-none bg-transparent cursor-pointer"
-                          >
-                            Forgot Password?
-                          </button>
-                        )}
-                      </div>
-                      <div className="relative">
-                        <input 
-                          type={showPassword ? "text" : "password"} 
-                          placeholder="••••••••" 
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          required
-                          className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base pr-12" 
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
-                        >
-                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Confirm Password field (Reset Password only) */}
-                  {authMode === 'resetPassword' && (
-                    <div className="space-y-1.5 text-left">
-                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider pl-1">
-                        Confirm New Password
-                      </label>
-                      <div className="relative">
-                        <input 
-                          type={showPassword ? "text" : "password"} 
-                          placeholder="••••••••" 
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          required
-                          className="w-full px-4 sm:px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/60 bg-white/50 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none transition-all font-medium text-base pr-12" 
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <Button type="submit" className="w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl text-base sm:text-lg">
-                  {authMode === 'login' && 'Sign In'}
-                  {authMode === 'signup' && 'Create Account'}
-                  {authMode === 'forgotPassword' && 'Send Reset Link'}
-                  {authMode === 'resetPassword' && 'Update Password'}
-                </Button>
-              </form>
-
-              {(authMode === 'login' || authMode === 'signup') && (
-                <p className="text-center text-sm text-slate-500 font-medium">
-                  {authMode === 'login' ? "New to OdishaExamPrep? " : "Already a member? "}
-                  <button 
-                    onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-                    className="text-brand-600 font-extrabold hover:underline transition-all"
-                  >
-                    {authMode === 'login' ? 'Register' : 'Login'}
-                  </button>
-                </p>
-              )}
-
-              {authMode === 'forgotPassword' && (
-                <p className="text-center text-sm text-slate-500 font-medium">
-                  Remember your password?{" "}
-                  <button 
-                    onClick={() => setAuthMode('login')}
-                    className="text-brand-600 font-extrabold hover:underline transition-all"
-                  >
-                    Login
-                  </button>
-                </p>
-              )}
-              </motion.div>
-            </div>
-          </>
-        )}
-      </AnimatePresence>
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </div>
   );
 };
@@ -2890,177 +2915,6 @@ const _dashboardCache: {
   hasFetchedThisSession: false,
 };
 
-// --- Goal Onboarding Modal ---
-const OnboardingModal = ({ 
-  isOpen, 
-  onSave, 
-  user 
-}: { 
-  isOpen: boolean; 
-  onSave: (targetExam: string, targetTimeline: string, currentPrepLevel: string) => Promise<void>; 
-  user: any 
-}) => {
-  const [targetExam, setTargetExam] = useState<'OPSC' | 'OSSC' | 'OSSSC'>('OPSC');
-  const [targetTimeline, setTargetTimeline] = useState<'3m' | '6m' | '1y'>('6m');
-  const [currentPrepLevel, setCurrentPrepLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
-  const [submitting, setSubmitting] = useState(false);
-
-  if (!isOpen) return null;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      await onSave(targetExam, targetTimeline, currentPrepLevel);
-    } catch(err) {
-      console.error(err);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <>
-      {/* Animated backdrop */}
-      <motion.div
-        key="onboarding-backdrop"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-        className="fixed inset-0 bg-slate-950/50 z-[100] backdrop-blur-md"
-        style={{ willChange: 'opacity' }}
-      />
-
-      {/* Modal panel wrapper */}
-      <div className="fixed inset-0 z-[101] flex items-end sm:items-center justify-center pointer-events-none p-0 sm:p-4">
-        <motion.div 
-          key="onboarding-modal"
-          initial={{ y: '100%', opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: '100%', opacity: 0 }}
-          transition={{
-            type: 'spring',
-            stiffness: 320,
-            damping: 32,
-            mass: 0.9,
-          }}
-          className="bg-[#FAF8F5] border-x-0 border-b-0 sm:border-2 border-slate-900 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 sm:p-10 max-w-lg w-full shadow-2xl sm:shadow-[8px_8px_0px_rgba(0,0,0,1)] relative overflow-hidden max-h-[92vh] sm:max-h-[90vh] flex flex-col pointer-events-auto"
-          style={{ willChange: 'transform, opacity' }}
-        >
-          {/* Drag handle (mobile only) */}
-          <div className="sm:hidden w-10 h-1 bg-slate-350 rounded-full mx-auto -mt-2 mb-4 shrink-0" />
-          
-          <div className="absolute inset-0 pointer-events-none border-[12px] border-slate-900/5 rounded-t-[2.5rem] sm:rounded-[2.5rem]" />
-          
-          <form onSubmit={handleSubmit} className="space-y-8 relative z-10 flex-1 overflow-y-auto no-scrollbar smooth-scroll-gpu pr-1 py-1">
-            <div className="text-center space-y-3">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#8A1C36]/10 text-[#8A1C36] rounded-full text-xs font-black uppercase tracking-wider border border-[#8A1C36]/20">
-                <Target className="w-3.5 h-3.5" />
-                Set Your Target Goal
-              </span>
-              <h3 className="text-2xl sm:text-3xl font-serif font-extrabold text-slate-950 tracking-tight">
-                Personalize Your Prep
-              </h3>
-              <p className="text-slate-500 text-xs sm:text-sm font-medium max-w-sm mx-auto">
-                Tell us your target exam, timeline, and current level to customize your dashboard layout and recommendation tracks.
-              </p>
-            </div>
-
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block font-mono">
-                  1. Target Exam
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {(['OPSC', 'OSSC', 'OSSSC'] as const).map((exam) => (
-                    <button
-                      key={exam}
-                      type="button"
-                      onClick={() => setTargetExam(exam)}
-                      className={cn(
-                        "py-3.5 sm:py-4 px-2.5 rounded-2xl border-2 text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
-                        targetExam === exam
-                          ? "bg-[#8A1C36] text-white border-slate-900 shadow-[2px_2px_0px_rgba(0,0,0,1)]"
-                          : "bg-white text-slate-700 border-slate-200/80 hover:border-slate-400 hover:bg-slate-50/50"
-                      )}
-                    >
-                      {exam}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block font-mono">
-                  2. Target Timeline
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { value: '3m', label: '3 Months' },
-                    { value: '6m', label: '6 Months' },
-                    { value: '1y', label: '1 Year' }
-                  ].map((time) => (
-                    <button
-                      key={time.value}
-                      type="button"
-                      onClick={() => setTargetTimeline(time.value as any)}
-                      className={cn(
-                        "py-3.5 sm:py-4 px-2 rounded-2xl border-2 text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
-                        targetTimeline === time.value
-                          ? "bg-slate-900 text-white border-slate-900 shadow-[2px_2px_0px_rgba(0,0,0,1)]"
-                          : "bg-white text-slate-700 border-slate-200/80 hover:border-slate-400 hover:bg-slate-50/50"
-                      )}
-                    >
-                      {time.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block font-mono">
-                  3. Preparation Level
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { value: 'beginner', label: 'Beginner' },
-                    { value: 'intermediate', label: 'Intermediate' },
-                    { value: 'advanced', label: 'Advanced' }
-                  ].map((lvl) => (
-                    <button
-                      key={lvl.value}
-                      type="button"
-                      onClick={() => setCurrentPrepLevel(lvl.value as any)}
-                      className={cn(
-                        "py-3.5 sm:py-4 px-1 rounded-2xl border-2 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all cursor-pointer",
-                        currentPrepLevel === lvl.value
-                          ? "bg-slate-900 text-white border-slate-900 shadow-[2px_2px_0px_rgba(0,0,0,1)]"
-                          : "bg-white text-slate-700 border-slate-200/80 hover:border-slate-400 hover:bg-slate-50/50"
-                      )}
-                    >
-                      {lvl.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full inline-flex items-center justify-center gap-2 py-4.5 rounded-[1.25rem] border-2 border-slate-900 text-xs font-black uppercase tracking-widest text-white bg-[#8A1C36] hover:bg-[#72142a] transition-all cursor-pointer shadow-[4px_4px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {submitting ? 'Saving Goals...' : 'Save & Personalize Dashboard'}
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </form>
-        </motion.div>
-      </div>
-    </>
-  );
-};
-
 const SPARKLE_POSITIONS = [
   { left: '12%', top: '25%', x: [-15, 15], y: [-10, 20], duration: 4.5, delay: 0.2 },
   { left: '78%', top: '18%', x: [20, -15], y: [15, -10], duration: 5.2, delay: 1.5 },
@@ -3094,7 +2948,6 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     }
   };
   const [showAdmin, setShowAdmin] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   const [isBannerDescExpanded, setIsBannerDescExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -3178,19 +3031,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       if (isGuest) {
         scrollToElement('exams', { block: 'start' });
       } else {
-        scrollToTop();
+        scrollToTop({ behavior: 'instant' });
       }
     }
   }, [selectedExam, isGuest]);
 
-  useEffect(() => {
-    if (user && !user.user_metadata?.targetExam) {
-      const dismissed = sessionStorage.getItem('oep_onboarding_dismissed');
-      if (!dismissed) {
-        setShowOnboarding(true);
-      }
-    }
-  }, [user]);
+  // Onboarding modal trigger removed
 
 
 
@@ -3263,20 +3109,17 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   useEffect(() => {
     if (selectedBankItem) sessionStorage.setItem('oep_selectedBankItem', JSON.stringify(selectedBankItem));
     else sessionStorage.removeItem('oep_selectedBankItem');
+    // Hide WhatsApp button on mobile when this modal is open
+    if (window.innerWidth < 768) {
+      if (selectedBankItem) document.body.setAttribute('data-modal-open', 'true');
+      else document.body.removeAttribute('data-modal-open');
+    }
   }, [selectedBankItem]);
 
-  // --- Common UI Components (Defined early, rendered at bottom) ---
-  const renderCommonModals = () => (
-    <>
-        <AnimatePresence mode="wait">
-          {showOnboarding && (
-            <OnboardingModal 
-              isOpen={showOnboarding} 
-              onSave={handleSaveOnboarding} 
-              user={user} 
-            />
-          )}
-        </AnimatePresence>
+  const renderCommonModals = () => {
+    if (typeof document === 'undefined') return null;
+    return createPortal(
+      <>
         {/* Detail View Modal */}
         <AnimatePresence mode="wait">
           {selectedBankItem && (
@@ -3294,7 +3137,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               />
 
               {/* Modal panel wrapper */}
-              <div className="fixed inset-0 z-[101] flex items-end md:items-center justify-center pointer-events-none p-0 sm:p-4">
+              <div className="fixed inset-0 z-[101] flex items-end md:items-center justify-center pointer-events-none px-4 pb-4 pt-16 md:p-4">
                 <motion.div 
                   key="detail-modal"
                   initial={{ y: '100%', opacity: 0 }}
@@ -3306,15 +3149,14 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     damping: 32,
                     mass: 0.9,
                   }}
-                  className="bg-[#FAF8F5] rounded-t-[2rem] md:rounded-[2rem] w-full md:w-full max-w-md md:max-w-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] flex flex-col md:flex-row border-x-0 border-b-0 md:border border-slate-200/50 relative max-h-[92vh] md:max-h-[85vh] pointer-events-auto"
+                  className="bg-[#FAF8F5] rounded-[2rem] w-full md:w-full max-w-xl md:max-w-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] flex flex-col md:flex-row border border-slate-200/50 relative max-h-[92vh] md:max-h-[85vh] pointer-events-auto mx-auto"
                   style={{ willChange: 'transform, opacity' }}
                 >
-                  {/* Drag handle (mobile only) */}
-                  <div className="md:hidden w-10 h-1 bg-slate-300 rounded-full mx-auto mt-3 shrink-0" />
-                {/* Unified Close Button (Adaptive theme based on viewport layout context) */}
+
+                {/* Unified Close Button */}
                 <button 
                   onClick={() => setSelectedBankItem(null)}
-                  className="absolute top-5 right-5 p-2 bg-white/15 hover:bg-white/25 text-white md:bg-slate-100 md:hover:bg-slate-200 md:text-slate-500 rounded-xl transition-all z-50 hover:scale-105 active:scale-95 border-none cursor-pointer"
+                  className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/30 text-white md:bg-slate-100 md:hover:bg-slate-200 md:text-slate-500 rounded-xl transition-all z-50 hover:scale-105 active:scale-95 border-none cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -3342,11 +3184,20 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
                   {/* Interactive Orbital Study Seal */}
                   <div className="relative flex flex-col items-center justify-center space-y-3 md:space-y-4 w-full md:my-auto z-10">
-                    <div className="relative w-20 h-20 md:w-24 md:h-24 flex items-center justify-center shrink-0">
-                      <div className={cn("absolute inset-0 rounded-full border border-dashed border-brand-500/30", !isMobile && "animate-[spin_20s_linear_infinite]")} />
-                      <div className={cn("absolute inset-2 rounded-full border border-brand-500/10 border-t-brand-500/40", !isMobile && "animate-[spin_5s_linear_infinite_reverse]")} />
-                      <div className={cn("w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl shadow-brand-500/20", !isMobile && "backdrop-blur-md")}>
-                        <BookOpen className="w-5.5 h-5.5 md:w-6 md:h-6 text-brand-400" />
+                    <div className="relative w-16 h-16 md:w-28 md:h-28 flex items-center justify-center shrink-0">
+                      {/* Outermost pulsing ambient glow */}
+                      <div className="absolute inset-[-6px] rounded-full bg-brand-500/10 animate-ping opacity-60 pointer-events-none" style={{ animationDuration: '3s' }} />
+                      {/* Outer dashed spinning ring */}
+                      <div className="absolute inset-0 rounded-full border border-dashed border-brand-500/40 animate-[spin_20s_linear_infinite]" />
+                      {/* Inner accent ring spinning in reverse */}
+                      <div className="absolute inset-1 md:inset-2 rounded-full border border-brand-500/15 border-t-brand-500/60 animate-[spin_5s_linear_infinite_reverse]" />
+                      {/* Mid subtle ring */}
+                      <div className="absolute inset-2 md:inset-4 rounded-full border border-white/5 animate-[spin_12s_linear_infinite]" />
+                      {/* Icon container with glow */}
+                      <div className="w-9 h-9 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center shadow-2xl shadow-brand-500/30 backdrop-blur-md relative overflow-hidden">
+                        {/* Shine sweep */}
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent animate-[shimmer_3s_ease-in-out_infinite]" />
+                        <BookOpen className="w-4 h-4 md:w-7 md:h-7 text-brand-400 relative z-10 animate-[pulse_3s_ease-in-out_infinite]" />
                       </div>
                     </div>
                     
@@ -3631,7 +3482,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 />
 
                 {/* Modal panel — slides up on mobile, scale+fade on desktop */}
-                <div className="fixed inset-0 z-[101] flex items-end sm:items-center justify-center sm:p-6 pointer-events-none">
+                <div className="fixed inset-0 z-[101] flex items-end md:items-center justify-center pointer-events-none p-0 md:p-6">
                   <motion.div
                     key="practice-modal"
                     initial={{ y: '100%', opacity: 0 }}
@@ -3643,7 +3494,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       damping: 32,
                       mass: 0.9,
                     }}
-                    className="relative w-full sm:max-w-4xl max-h-[92vh] sm:max-h-[90vh] flex flex-col bg-white rounded-t-[2rem] sm:rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-slate-200/50 overflow-hidden pointer-events-auto"
+                    className="relative w-full md:max-w-4xl max-h-[92vh] md:max-h-[90vh] flex flex-col bg-white rounded-t-[2rem] md:rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.12)] border-x-0 border-b-0 md:border border-slate-200/50 overflow-hidden pointer-events-auto"
                     style={{ willChange: 'transform, opacity' }}
                   >
                 {/* Background glowing effects */}
@@ -3958,7 +3809,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               />
 
               {/* Modal panel wrapper */}
-              <div className="fixed inset-0 z-[251] flex items-end sm:items-center justify-center pointer-events-none p-0 sm:p-4">
+              <div className="fixed inset-0 z-[251] flex items-end md:items-center justify-center pointer-events-none p-0 md:p-4">
                 <motion.div 
                   key="paywall-modal"
                   initial={{ y: '100%', opacity: 0 }}
@@ -3970,7 +3821,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     damping: 32,
                     mass: 0.9,
                   }}
-                  className="relative overflow-hidden rounded-t-[2.5rem] sm:rounded-[2.5rem] p-[1px] bg-gradient-to-b from-white/15 via-white/5 to-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] w-full max-w-md max-h-[92vh] sm:max-h-[90vh] flex flex-col pointer-events-auto"
+                  className="relative overflow-hidden rounded-t-[2.5rem] md:rounded-[2.5rem] p-[1px] bg-gradient-to-b from-white/15 via-white/5 to-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] w-full max-w-md max-h-[92vh] md:max-h-[90vh] flex flex-col pointer-events-auto"
                   style={{ willChange: 'transform, opacity' }}
                 >
                   {/* Drag handle (mobile only) */}
@@ -4436,7 +4287,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               />
 
               {/* Modal panel — slides up from bottom on mobile, scales in on desktop */}
-              <div className="fixed inset-0 z-[201] flex items-end sm:items-center justify-center pointer-events-none">
+              <div className="fixed inset-0 z-[201] flex items-end md:items-center justify-center pointer-events-none p-0 md:p-4">
                 <motion.div
                   key="login-modal"
                   initial={{ y: '100%', opacity: 0, scale: 1 }}
@@ -4448,7 +4299,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     damping: 32,
                     mass: 0.9,
                   }}
-                  className="bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] w-full sm:max-w-sm p-8 space-y-6 shadow-2xl relative overflow-hidden max-h-[92vh] sm:max-h-[85vh] flex flex-col pointer-events-auto"
+                  className="bg-white rounded-t-[2.5rem] md:rounded-[2.5rem] w-full md:max-w-sm p-8 space-y-6 shadow-2xl relative overflow-hidden max-h-[92vh] md:max-h-[85vh] flex flex-col pointer-events-auto"
                   style={{ willChange: 'transform, opacity' }}
                 >
                   {/* Decorative background orbs */}
@@ -4477,8 +4328,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             </>
           )}
         </AnimatePresence>
-    </>
-  );
+      </>,
+      document.body
+    );
+  };
 
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [activeTab, setActiveTab] = useState<'popular' | 'upcoming'>('upcoming');
@@ -4501,6 +4354,18 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   const [paywallItemId, setPaywallItemId] = useState<string | null>(null);
   const [paywallProductType, setPaywallProductType] = useState<string>('full_access');
   const [loadingPractice, setLoadingPractice] = useState(false);
+
+  // Hide WhatsApp button on mobile when any dashboard modal is open
+  useEffect(() => {
+    if (window.innerWidth < 768) {
+      if (showPaywall || showLoginPrompt || showPracticeConfig) {
+        document.body.setAttribute('data-modal-open', 'true');
+      } else {
+        document.body.removeAttribute('data-modal-open');
+      }
+    }
+    return () => { document.body.removeAttribute('data-modal-open'); };
+  }, [showPaywall, showLoginPrompt, showPracticeConfig]);
   const [topicMaxQuestions, setTopicMaxQuestions] = useState<number>(0);
   const [practiceSettings, setPracticeSettings] = useState(() => {
     const saved = sessionStorage.getItem('oep_practiceSettings');
@@ -4515,40 +4380,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       timeLimit: '30'
     };
   });
-  const handleSaveOnboarding = async (exam: string, timeline: string, prepLevel: string) => {
-    try {
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          targetExam: exam,
-          targetTimeline: timeline,
-          currentPrepLevel: prepLevel
-        }
-      });
-      if (error) throw error;
-      
-      let matched = null;
-      if (exam.toLowerCase().includes('opsc')) {
-        matched = exams.find(e => e.name.toLowerCase().includes('opsc'));
-      } else if (exam.toLowerCase().includes('osssc')) {
-        matched = exams.find(e => e.name.toLowerCase().includes('osssc'));
-      } else if (exam.toLowerCase().includes('ossc')) {
-        matched = exams.find(e => e.name.toLowerCase().includes('ossc') && !e.name.toLowerCase().includes('osssc'));
-      }
-      if (matched) {
-        setSelectedExam(matched.id);
-      }
-
-      setShowOnboarding(false);
-      if (onActivityLogged) onActivityLogged();
-    } catch(err: any) {
-      alert('Error updating onboarding settings: ' + err.message);
-    }
-  };
+  // handleSaveOnboarding removed
 
 
   useEffect(() => {
-    if (selectedBankType) sessionStorage.setItem('oep_selectedBankType', selectedBankType);
-    else sessionStorage.removeItem('oep_selectedBankType');
+    if (selectedBankType) {
+      sessionStorage.setItem('oep_selectedBankType', selectedBankType);
+    } else {
+      sessionStorage.removeItem('oep_selectedBankType');
+    }
+    scrollToTop({ behavior: 'instant' });
   }, [selectedBankType]);
 
   useEffect(() => {
@@ -4805,7 +4646,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     fetchDashboardData();
   }, [user?.id]);
 
-  const [examSearchQuery, setExamSearchQuery] = useState('');
+  const [examSearchQuery, setExamSearchQuery] = useState(() => {
+    return (typeof window !== 'undefined' ? sessionStorage.getItem('oep_exam_search_query') : '') || '';
+  });
 
   const filteredExams = exams.filter(exam => {
     if (exam.name && exam.name.startsWith('SYSTEM_SETTINGS_')) return false;
@@ -4813,7 +4656,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     
     if (examSearchQuery) {
       const q = examSearchQuery.toLowerCase();
-      return exam.name.toLowerCase().includes(q) || (exam.description && exam.description.toLowerCase().includes(q));
+      const nameMatch = exam.name ? exam.name.toLowerCase().includes(q) : false;
+      const descMatch = (exam.description && typeof exam.description === 'string') ? exam.description.toLowerCase().includes(q) : false;
+      return nameMatch || descMatch;
     } else {
       return exam.category === activeTab;
     }
@@ -5173,15 +5018,18 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       .filter(a => a.type === 'mock_test_completed' && a.title === testResults.test.title)
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0]; // Most recent from history
 
-    return (
+    if (typeof document === 'undefined') return null;
+    return createPortal(
       <React.Suspense fallback={<LoadingPortal />}>
         <TestResultsView results={testResults} previousResult={previousResult} onClose={() => setTestResults(null)} />
-      </React.Suspense>
+      </React.Suspense>,
+      document.body
     );
   }
 
   if (activeTest) {
-    return (
+    if (typeof document === 'undefined') return null;
+    return createPortal(
       <ErrorBoundary>
       <React.Suspense fallback={<LoadingPortal />}>
         <MockTestSystem 
@@ -5260,7 +5108,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           }} 
         />
       </React.Suspense>
-      </ErrorBoundary>
+      </ErrorBoundary>,
+      document.body
     );
   }
 
@@ -5329,7 +5178,6 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           onViewExam={(examId: string | null) => {
              setSelectedExam(examId);
              if (onNavigate) onNavigate('home');
-             scrollToElement('exams', { block: 'start', delay: 100 });
           }}
         />
         {renderCommonModals()}
@@ -5627,7 +5475,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   <button
                     key={tab}
                     type="button"
-                    onClick={() => { setActiveTab(tab); setExamSearchQuery(''); }}
+                    onClick={() => { 
+                      setActiveTab(tab); 
+                      setExamSearchQuery(''); 
+                      sessionStorage.removeItem('oep_exam_search_query');
+                    }}
                     className={cn(
                       "px-5 sm:px-8 py-2 sm:py-3 rounded-xl font-extrabold text-xs sm:text-sm cursor-pointer relative transition-all duration-300 focus:outline-none select-none flex-1 sm:flex-initial text-center",
                       isTabActive 
@@ -5654,11 +5506,15 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 type="text"
                 placeholder="Search exams..."
                 value={examSearchQuery}
-                onChange={(e) => setExamSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setExamSearchQuery(val);
+                  sessionStorage.setItem('oep_exam_search_query', val);
+                }}
                 className="pl-10 sm:pl-14 pr-12 py-2.5 sm:py-3.5 rounded-2xl font-bold text-sm sm:text-base w-full border-2 border-slate-900 bg-white shadow-[4px_4px_0px_rgba(138,28,54,0.15)] focus:shadow-[6px_6px_0px_#8A1C36] focus:outline-none transition-all duration-200"
               />
               {examSearchQuery && (
-                <button onClick={() => setExamSearchQuery('')} className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-900 transition-colors">
+                <button onClick={() => { setExamSearchQuery(''); sessionStorage.removeItem('oep_exam_search_query'); }} className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-900 transition-colors">
                   <X className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               )}
@@ -5754,7 +5610,6 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                           onClick={() => {
                             setSelectedExam(exam.id);
-                            scrollToElement('exams', { block: 'start', delay: 50 });
                           }}
                           className="cursor-pointer h-full group/card"
                         >
@@ -5957,11 +5812,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         {item.title.toLowerCase()}
                       </h3>
                       {isLocked ? (
-                        <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[8px] font-black uppercase tracking-wider rounded border border-slate-200/40">
-                          Premium
-                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <Lock className="w-3.5 h-3.5 text-[#8A1C36]" />
+                          <span className="px-2 py-0.5 bg-rose-50 text-[#8A1C36] text-[8px] font-black uppercase tracking-wider rounded border border-rose-200/40">
+                            Premium
+                          </span>
+                        </div>
                       ) : (
-                        <Lock className="w-4 h-4 text-slate-200" />
+                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[8px] font-black uppercase tracking-wider rounded border border-emerald-200/40 shrink-0">
+                          Free
+                        </span>
                       )}
                     </div>
                     
@@ -6390,7 +6250,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       <section id="question-bank-section" className="space-y-8 scroll-mt-24">
         <div className="relative pl-4">
           <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-500 rounded-full" />
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Download Question Bank</h2>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Step 1: Learn & Review</h2>
           <p className="text-slate-500 font-medium mt-1">Premium resources for your preparation</p>
         </div>
         
@@ -6423,7 +6283,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               whileTap={isMobile ? undefined : whileTap.press}
             >
               <Card 
-                onClick={() => { setSelectedBankType(item.id); scrollToElement('exams', { block: 'start', delay: 50 }); }}
+                onClick={() => setSelectedBankType(item.id)}
                 className={cn(
                   "p-5 sm:p-6 lg:p-8 flex flex-col justify-between bg-gradient-to-br from-white to-slate-50/50 border border-white/20 shadow-sm rounded-[1.5rem] cursor-pointer group relative overflow-hidden h-full",
                   !isMobile && "hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 premium-shine-container"
@@ -6467,7 +6327,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
             <Dumbbell className="w-5 h-5 text-indigo-600" />
           </div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Practice Mode</h2>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Step 2: Custom Practice</h2>
         </div>
         
           <Card 
@@ -6508,7 +6368,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           </div>
           <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4 sm:gap-6">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-black text-slate-950 tracking-tight">Mock Tests</h2>
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-955 tracking-tight">Step 3: Simulated Exams</h2>
               <p className="text-slate-500 text-sm sm:text-lg font-medium mt-1 sm:mt-2 leading-relaxed">Simulate the real exam environment with our expert-curated test series.</p>
             </div>
             <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-slate-200/50 shadow-sm">
@@ -6759,18 +6619,24 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 const WhatsAppButton = () => {
   const { user } = useAuth();
   const [isTestMode, setIsTestMode] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Listen for body attribute changes set by DashboardContent when a test is active
+  // Also listens for data-modal-open set when any modal is shown on mobile
   useEffect(() => {
-    const observer = new MutationObserver(() => {
+    const update = () => {
       setIsTestMode(document.body.hasAttribute('data-test-mode'));
-    });
-    observer.observe(document.body, { attributes: true, attributeFilter: ['data-test-mode'] });
+      setIsModalOpen(document.body.hasAttribute('data-modal-open'));
+    };
+    const observer = new MutationObserver(update);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-test-mode', 'data-modal-open'] });
+    update(); // sync on mount
     return () => observer.disconnect();
   }, []);
 
   if (isTestMode) return null;
   if (user) return null; // Hide for logged-in users
+  if (isModalOpen) return null; // Hide on mobile when any modal is open
 
 
   const defaultMessage = "Hello! I am reaching out from the OdishaExamPrep website. I have a query.";
@@ -6833,7 +6699,19 @@ const ScrollToTop = () => {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    scrollToTop({ behavior: 'smooth' });
+    const scrollTarget = typeof window !== 'undefined' ? sessionStorage.getItem('oep_scroll_target') : null;
+    if (scrollTarget) {
+      sessionStorage.removeItem('oep_scroll_target');
+      scrollToElement(scrollTarget, { block: 'start', behavior: 'smooth', delay: 100 });
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+    scrollToTop({ behavior: 'instant', delay: 100 });
   }, [pathname]);
 
   return null;
@@ -6891,6 +6769,249 @@ export default function App() {
   );
 }
 
+const ExamDetailPage = () => {
+  const { examId } = useParams<{ examId: string }>();
+  const { user, isAdmin, loading } = useAuth();
+  const navigate = useNavigate();
+
+  const [activities, setActivities] = useState<any[]>([]);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
+  const [mainTab, setMainTab] = useState<'home' | 'courses' | 'analytics' | 'history' | 'library' | 'ai_mentor'>('home');
+
+  const [announcements, setAnnouncements] = useState<string[]>([
+    `🚀 New Mock Test Series released for OSSC CGL ${new Date().getFullYear()}`,
+    "📅 OPSC Prelims exam dates announced - Check latest schedule",
+    "⭐ 500+ New PYQs added for OSSSC recruitment exams",
+    "🔥 Weekly Current Affairs PDF now available for download",
+    "✅ Real-time rank analysis enabled for all premium mock tests"
+  ]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const refreshActivities = () => {
+    if (user?.id) {
+      const updated = activityTracker.getActivities(user.id, user.user_metadata);
+      setActivities(updated);
+    }
+  };
+
+  useEffect(() => {
+    refreshActivities();
+  }, [user?.id]);
+
+  useEffect(() => {
+    const fetchUpdates = async () => {
+      try {
+        const fetchedExams = await examService.getAllExams();
+        const newsSettings = fetchedExams.find(e => e.name === 'SYSTEM_SETTINGS_NEWS_TICKER');
+        if (newsSettings && newsSettings.description) {
+          const parsed = JSON.parse(newsSettings.description);
+          if (parsed.updates && parsed.updates.length > 0) {
+            setAnnouncements(parsed.updates);
+          }
+        }
+      } catch (e) {}
+    };
+    fetchUpdates();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+    scrollToTop({ behavior: 'instant', delay: 50 });
+  }, [examId]);
+
+  if (loading) {
+    return <LoadingPortal />;
+  }
+
+  const handleSetSelectedExam = (val: string | null) => {
+    if (val === null) {
+      sessionStorage.setItem('oep_scroll_target', 'exams');
+      navigate('/');
+    } else {
+      navigate(`/exams/${val}`);
+    }
+  };
+
+  const handleTabClick = (tab: 'home' | 'courses' | 'analytics' | 'history' | 'library' | 'ai_mentor') => {
+    setMainTab(tab);
+    navigate(`/?tab=${tab}`);
+  };
+
+  const handleHomeClick = () => {
+    navigate('/');
+  };
+
+  if (!user) {
+    // Guest view
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
+        {/* Announcement Bar */}
+        <div className="ticker-bar relative z-50 bg-[#0F172A] border-b-2 border-slate-900 overflow-hidden">
+          <div className="max-w-7xl mx-auto flex items-center h-10 relative">
+            <div className="flex items-center gap-2 px-4 h-full bg-[#8A1C36] text-white border-r-2 border-slate-900 shrink-0 relative z-20 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">
+              <span className="flex h-2 w-2 rounded-full bg-white animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-widest leading-none">Exam Updates</span>
+            </div>
+            
+            <div className="flex-1 overflow-hidden relative h-full flex items-center z-10">
+              <div className="flex items-center gap-12 animate-marquee-lr whitespace-nowrap px-6">
+                {announcements.map((text, i) => (
+                  <div key={i} className="flex items-center gap-2 text-[10px] font-bold text-slate-300 uppercase tracking-tight">
+                    <span className="text-[#8A1C36] font-black">•</span>
+                    {text}
+                  </div>
+                ))}
+                {announcements.map((text, i) => (
+                  <div key={`dup-${i}`} className="flex items-center gap-2 text-[10px] font-bold text-slate-300 uppercase tracking-tight">
+                    <span className="text-[#8A1C36] font-black">•</span>
+                    {text}
+                  </div>
+                ))}
+              </div>
+              <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#0F172A] to-transparent z-10" />
+              <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#0F172A] to-transparent z-10" />
+            </div>
+          </div>
+        </div>
+
+        <Navbar user={null} isAdmin={false} onSignIn={() => setShowAuthModal(true)} />
+
+        <main className="flex-1 px-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pt-6 md:pt-10 pb-16" style={{background: 'linear-gradient(160deg, #FAF8F5 0%, #FAF8F5 40%, #FAF8F5 100%)'}}>
+          <DashboardContent 
+            isGuest={true} 
+            onSignIn={() => setShowAuthModal(true)} 
+            selectedExam={examId} 
+            setSelectedExam={handleSetSelectedExam} 
+          />
+        </main>
+        
+        <Footer />
+        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      </div>
+    );
+  }
+
+  // Authenticated user view
+  return (
+    <div className="flex flex-col min-h-screen min-h-[100dvh]">
+      <Navbar user={user} isAdmin={isAdmin} onHomeClick={handleHomeClick} />
+
+      <main className={cn(
+        "flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pt-4 md:pt-8 overflow-x-hidden transition-[padding-bottom] duration-500",
+        isBottomNavVisible 
+          ? "pb-28 sm:pb-24 lg:pb-32" 
+          : "pb-12 sm:pb-16 lg:pb-20"
+      )}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`exam-detail-${examId}`}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.3 }}
+            className="w-full"
+          >
+            <DashboardContent 
+              mainTab={mainTab} 
+              user={user} 
+              activities={activities} 
+              onNavigate={handleTabClick} 
+              onActivityLogged={refreshActivities} 
+              selectedExam={examId} 
+              setSelectedExam={handleSetSelectedExam} 
+            />
+          </motion.div>
+        </AnimatePresence>
+      </main>
+
+      {/* Mobile Bottom Nav */}
+      <motion.nav 
+        initial={false}
+        animate={{ y: isBottomNavVisible ? 0 : '100%' }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className="bg-white/95 sm:glass border-t border-slate-200/50 px-2 sm:px-8 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:py-4 flex justify-around items-center fixed bottom-0 left-0 right-0 z-30 rounded-t-[2rem] shadow-[0_-8px_30px_rgba(0,0,0,0.05)]"
+      >
+        <button 
+          type="button"
+          onClick={() => setIsBottomNavVisible(false)}
+          className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white/95 border-t border-l border-r border-slate-200/50 hover:bg-slate-50 text-slate-400 hover:text-slate-700 rounded-t-xl px-4 py-1 flex items-center justify-center cursor-pointer shadow-[0_-4px_10px_rgba(0,0,0,0.03)] backdrop-blur-md transition-colors z-40 group focus:outline-none"
+          title="Hide Navigation"
+        >
+          <ChevronDown className="w-4 h-4 transition-transform group-hover:translate-y-0.5 duration-200" />
+        </button>
+
+        <button onClick={handleHomeClick} className="flex flex-col items-center gap-1 sm:gap-1.5 group text-slate-400">
+          <div className="p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform hover:bg-slate-50">
+            <LayoutDashboard className="w-5 h-5 sm:w-6 sm:h-6" />
+          </div>
+          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">Home</span>
+        </button>
+        <button onClick={() => handleTabClick('courses')} className="flex flex-col items-center gap-1 sm:gap-1.5 group text-slate-400">
+          <div className="p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform hover:bg-slate-50">
+            <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />
+          </div>
+          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">Courses</span>
+        </button>
+        <button onClick={() => handleTabClick('analytics')} className="flex flex-col items-center gap-1 sm:gap-1.5 group text-slate-400">
+          <div className="p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform hover:bg-slate-50">
+            <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6" />
+          </div>
+          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">Analytics</span>
+        </button>
+        <button onClick={() => handleTabClick('history')} className="flex flex-col items-center gap-1 sm:gap-1.5 group text-slate-400">
+          <div className="p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform hover:bg-slate-50">
+            <History className="w-5 h-5 sm:w-6 sm:h-6" />
+          </div>
+          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">History</span>
+        </button>
+        <button onClick={() => handleTabClick('library')} className="flex flex-col items-center gap-1 sm:gap-1.5 group text-slate-400">
+          <div className="p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform hover:bg-slate-50">
+            <BookMarked className="w-5 h-5 sm:w-6 sm:h-6" />
+          </div>
+          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">Library</span>
+        </button>
+        <button onClick={() => handleTabClick('ai_mentor')} className="flex flex-col items-center gap-1 sm:gap-1.5 group text-slate-400">
+          <div className="p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform hover:bg-slate-50">
+            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
+          </div>
+          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">AI Mentor</span>
+        </button>
+      </motion.nav>
+
+      <AnimatePresence>
+        {!isBottomNavVisible && (
+          <motion.button 
+            initial={{ y: 50, opacity: 0, x: '-50%' }}
+            animate={{ y: 0, opacity: 1, x: '-50%' }}
+            exit={{ y: 50, opacity: 0, x: '-50%' }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            type="button"
+            onClick={() => setIsBottomNavVisible(true)}
+            className="fixed bottom-0 left-1/2 bg-white/95 border-t border-l border-r border-slate-200/50 hover:bg-slate-50 text-slate-500 hover:text-slate-800 rounded-t-xl px-5 py-1.5 flex items-center justify-center cursor-pointer shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur-md z-40 group focus:outline-none"
+            title="Show Navigation"
+          >
+            <ChevronUp className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 duration-200" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 function AppContent() {
   const { user, loading, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
@@ -6904,6 +7025,13 @@ function AppContent() {
     return 'home';
   });
   const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
+
+  const handleTabClick = (tab: 'home' | 'courses' | 'analytics' | 'history' | 'library' | 'ai_mentor') => {
+    setMainTab(tab);
+    if (location.pathname !== '/') {
+      navigate('/');
+    }
+  };
 
   // Reset Password recovery states
   const [showResetModal, setShowResetModal] = useState(false);
@@ -7114,6 +7242,7 @@ function AppContent() {
             </ProtectedRoute>
           } 
         />
+        <Route path={ROUTE_PATHS.EXAM_DETAIL} element={<ExamDetailPage />} />
         <Route 
           path={ROUTE_PATHS.HOME} 
           element={
@@ -7138,7 +7267,17 @@ function AppContent() {
                       transition={{ duration: 0.3 }}
                       className="w-full"
                     >
-                      <DashboardContent mainTab={mainTab} user={user} activities={activities} onNavigate={setMainTab} onActivityLogged={refreshActivities} />
+                      <DashboardContent 
+                        mainTab={mainTab} 
+                        user={user} 
+                        activities={activities} 
+                        onNavigate={setMainTab} 
+                        onActivityLogged={refreshActivities} 
+                        selectedExam={null}
+                        setSelectedExam={(id) => {
+                          if (id) navigate(`/exams/${id}`);
+                        }}
+                      />
                     </motion.div>
                   </AnimatePresence>
                 </main>
@@ -7166,31 +7305,31 @@ function AppContent() {
                     </div>
                     <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">Home</span>
                   </button>
-                  <button onClick={() => setMainTab('courses')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'courses' ? 'text-brand-600' : 'text-slate-400'}`}>
+                  <button onClick={() => handleTabClick('courses')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'courses' ? 'text-brand-600' : 'text-slate-400'}`}>
                     <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform ${mainTab === 'courses' ? 'bg-brand-50' : 'hover:bg-slate-50'}`}>
                       <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
                     <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">Courses</span>
                   </button>
-                  <button onClick={() => setMainTab('analytics')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'analytics' ? 'text-brand-600' : 'text-slate-400'}`}>
+                  <button onClick={() => handleTabClick('analytics')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'analytics' ? 'text-brand-600' : 'text-slate-400'}`}>
                     <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform ${mainTab === 'analytics' ? 'bg-brand-50' : 'hover:bg-slate-50'}`}>
                       <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
                     <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">Analytics</span>
                   </button>
-                  <button onClick={() => setMainTab('history')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'history' ? 'text-brand-600' : 'text-slate-400'}`}>
+                  <button onClick={() => handleTabClick('history')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'history' ? 'text-brand-600' : 'text-slate-400'}`}>
                     <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform ${mainTab === 'history' ? 'bg-brand-50' : 'hover:bg-slate-50'}`}>
                       <History className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
                     <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">History</span>
                   </button>
-                  <button onClick={() => setMainTab('library')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'library' ? 'text-brand-600' : 'text-slate-400'}`}>
+                  <button onClick={() => handleTabClick('library')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'library' ? 'text-brand-600' : 'text-slate-400'}`}>
                     <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform ${mainTab === 'library' ? 'bg-brand-50' : 'hover:bg-slate-50'}`}>
                       <BookMarked className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
                     <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">Library</span>
                   </button>
-                  <button onClick={() => setMainTab('ai_mentor')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'ai_mentor' ? 'text-brand-600' : 'text-slate-400'}`}>
+                  <button onClick={() => handleTabClick('ai_mentor')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'ai_mentor' ? 'text-brand-600' : 'text-slate-400'}`}>
                     <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform ${mainTab === 'ai_mentor' ? 'bg-brand-50' : 'hover:bg-slate-50'}`}>
                       <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
