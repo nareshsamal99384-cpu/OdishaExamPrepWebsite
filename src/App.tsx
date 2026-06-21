@@ -3298,11 +3298,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       <motion.div 
                         initial={isMobile ? "show" : "hidden"}
                         animate="show"
-                        variants={isMobile ? undefined : {
+                        variants={{
                           hidden: { opacity: 0 },
                           show: {
                             opacity: 1,
-                            transition: { staggerChildren: 0.08 }
+                            transition: { staggerChildren: isMobile ? 0 : 0.08 }
                           }
                         }}
                         className="max-h-[160px] overflow-y-auto pr-1 space-y-2 custom-scrollbar"
@@ -3311,7 +3311,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           selectedBankItem.pdfLinks.map((link: any, idx: number) => (
                             <motion.button 
                               key={idx}
-                              variants={isMobile ? undefined : {
+                              variants={{
                                 hidden: { opacity: 0, x: -10 },
                                 show: { opacity: 1, x: 0 }
                               }}
@@ -5748,11 +5748,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               initial={isMobile ? "show" : "hidden"}
               whileInView={isMobile ? undefined : "show"}
               viewport={isMobile ? undefined : { once: true }}
-              variants={isMobile ? undefined : {
+              variants={{
                 hidden: { opacity: 0 },
                 show: {
                   opacity: 1,
-                  transition: { staggerChildren: 0.1 }
+                  transition: { staggerChildren: isMobile ? 0 : 0.1 }
                 }
               }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
@@ -5762,7 +5762,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             return (
               <motion.div
                 key={item.id}
-                variants={isMobile ? undefined : {
+                variants={{
                   hidden: { opacity: 0, y: 20 },
                   show: { opacity: 1, y: 0 }
                 }}
@@ -6036,12 +6036,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   initial={isMobile ? "show" : "hidden"}
                   whileInView={isMobile ? undefined : "show"}
                   viewport={isMobile ? undefined : { once: true }}
-                  variants={isMobile ? undefined : {
+                  variants={{
                     hidden: { opacity: 0 },
                     show: {
                       opacity: 1,
                       transition: {
-                        staggerChildren: 0.08
+                        staggerChildren: isMobile ? 0 : 0.08
                       }
                     }
                   }}
@@ -6049,7 +6049,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 >
                   {/* Rotating Orbital Emblem */}
                   <motion.div 
-                    variants={isMobile ? undefined : {
+                    variants={{
                       hidden: { scale: 0.8, opacity: 0 },
                       show: { scale: 1, opacity: 1 }
                     }}
@@ -6258,11 +6258,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           initial={isMobile ? "show" : "hidden"}
           whileInView={isMobile ? undefined : "show"}
           viewport={isMobile ? undefined : { once: true }}
-          variants={isMobile ? undefined : {
+          variants={{
             hidden: { opacity: 0 },
             show: {
               opacity: 1,
-              transition: { staggerChildren: 0.1 }
+              transition: { staggerChildren: isMobile ? 0 : 0.1 }
             }
           }}
           className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6"
@@ -6275,7 +6275,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           ].map((item, i) => (
             <motion.div
               key={i}
-              variants={isMobile ? undefined : {
+              variants={{
                 hidden: { y: 20, opacity: 0 },
                 show: { y: 0, opacity: 1 }
               }}
@@ -6475,11 +6475,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               <motion.div 
                 initial={isMobile ? "show" : "hidden"}
                 animate={isMobile ? undefined : "show"}
-                variants={isMobile ? undefined : {
+                variants={{
                   hidden: { opacity: 0 },
                   show: {
                     opacity: 1,
-                    transition: { staggerChildren: 0.1 }
+                    transition: { staggerChildren: isMobile ? 0 : 0.1 }
                   }
                 }}
                 className="grid grid-cols-1 sm:grid-cols-2 lg:gap-8 gap-4 sm:gap-6"
@@ -6492,7 +6492,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 ].map((test, i) => (
                   <motion.div
                     key={i}
-                    variants={isMobile ? undefined : {
+                    variants={{
                       hidden: { opacity: 0, scale: 0.95, y: 10 },
                       show: { opacity: 1, scale: 1, y: 0 }
                     }}
