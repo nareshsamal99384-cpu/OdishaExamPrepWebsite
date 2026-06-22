@@ -108,9 +108,11 @@ export function scrollToElement(
           document.documentElement.scrollTop = lastTargetY;
           document.body.scrollTop = lastTargetY;
         }
-      } else {
-        smoothScrollWindow(lastTargetY);
+        resolve();
+        return;
       }
+
+      smoothScrollWindow(lastTargetY);
 
       // Continuously adjust scroll for layout shifts / animations for 1.2s
       const startTime = performance.now();
