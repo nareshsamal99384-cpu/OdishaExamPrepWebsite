@@ -5746,6 +5746,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             <div className="pb-12 pt-4">
             <motion.div 
               initial={isMobile ? "show" : "hidden"}
+              animate={isMobile ? "show" : undefined}
               whileInView={isMobile ? undefined : "show"}
               viewport={isMobile ? undefined : { once: true }}
               variants={{
@@ -6034,6 +6035,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               <div className="relative z-10 px-6 py-8 sm:p-10 lg:p-14 flex flex-col lg:flex-row items-center justify-between gap-10">
                 <motion.div 
                   initial={isMobile ? "show" : "hidden"}
+                  animate={isMobile ? "show" : undefined}
                   whileInView={isMobile ? undefined : "show"}
                   viewport={isMobile ? undefined : { once: true }}
                   variants={{
@@ -6256,6 +6258,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         
         <motion.div 
           initial={isMobile ? "show" : "hidden"}
+          animate={isMobile ? "show" : undefined}
           whileInView={isMobile ? undefined : "show"}
           viewport={isMobile ? undefined : { once: true }}
           variants={{
@@ -6474,7 +6477,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           if (!selectedMockCategory) return (
               <motion.div 
                 initial={isMobile ? "show" : "hidden"}
-                animate={isMobile ? undefined : "show"}
+                animate="show"
                 variants={{
                   hidden: { opacity: 0 },
                   show: {
