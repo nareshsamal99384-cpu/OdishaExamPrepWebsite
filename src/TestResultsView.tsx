@@ -9,6 +9,7 @@ import { MathTextRenderer, DiagramRenderer } from './components/MathTextRenderer
 export default function TestResultsView({ results, onClose }: { results: any, onClose: () => void }) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const questionCardRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const isFirstRender = useRef(true);
   const [showQuestionNav, setShowQuestionNav] = useState(false);
   const [questionExpanded, setQuestionExpanded] = useState(false);
@@ -34,6 +35,9 @@ export default function TestResultsView({ results, onClose }: { results: any, on
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
   }, [results]);
 
   React.useEffect(() => {
@@ -41,6 +45,9 @@ export default function TestResultsView({ results, onClose }: { results: any, on
       window.scrollTo(0, 0);
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
+      if (containerRef.current) {
+        containerRef.current.scrollTop = 0;
+      }
     };
     handleScrollToTop();
     const frameId = requestAnimationFrame(handleScrollToTop);
@@ -110,11 +117,12 @@ export default function TestResultsView({ results, onClose }: { results: any, on
       isFirstRender.current = false;
       return;
     }
-    if (questionCardRef.current) {
-      const rect = questionCardRef.current.getBoundingClientRect();
+    if (questionCardRef.current && containerRef.current) {
+      const cardRect = questionCardRef.current.getBoundingClientRect();
+      const containerRect = containerRef.current.getBoundingClientRect();
       const offset = window.innerWidth < 1024 ? 80 : 100;
-      const targetY = rect.top + window.scrollY - offset;
-      window.scrollTo({ top: targetY, behavior: 'smooth' });
+      const targetY = containerRef.current.scrollTop + cardRect.top - containerRect.top - offset;
+      containerRef.current.scrollTo({ top: targetY, behavior: 'smooth' });
     }
   }, [currentIdx]);
 
@@ -165,10 +173,13 @@ export default function TestResultsView({ results, onClose }: { results: any, on
   };
 
   return (
-    <div className={cn(
-      "relative w-full min-h-screen bg-[#F8FAFC] font-sans overflow-hidden transition-all duration-300",
-      showQuestionNav ? "pb-18 sm:pb-20" : "pb-12"
-    )}>
+    <div 
+      ref={containerRef}
+      className={cn(
+        "fixed inset-0 z-[200] overflow-y-auto bg-[#F8FAFC] font-sans transition-all duration-300",
+        showQuestionNav ? "pb-18 sm:pb-20" : "pb-12"
+      )}
+    >
       {/* Background gradients for ambient atmosphere */}
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] bg-gradient-to-br from-brand-100/20 via-purple-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" />
       <div className="fixed bottom-0 right-0 w-[800px] h-[600px] bg-gradient-to-tl from-indigo-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" />
