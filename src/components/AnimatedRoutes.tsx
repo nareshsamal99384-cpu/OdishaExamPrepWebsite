@@ -4,9 +4,9 @@ import { Routes, useLocation } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
 
 const pageVariants = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -20 },
+  initial: { opacity: 0, scale: 0.985, y: 6 },
+  animate: { opacity: 1, scale: 1, y: 0 },
+  exit: { opacity: 0, scale: 0.985, y: -6 },
 };
 
 export default function AnimatedRoutes({ children }: { children: React.ReactNode }) {
@@ -55,7 +55,7 @@ export default function AnimatedRoutes({ children }: { children: React.ReactNode
           initial="initial"
           animate="animate"
           exit="exit"
-          transition={{ duration: 0.25, ease: 'easeInOut' }}
+          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
         >
           <Routes location={location}>
             {children}
