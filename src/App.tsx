@@ -5068,15 +5068,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           initialState={activeTestState}
           onExit={(progressState) => {
             sessionStorage.removeItem('oep_activeTestState');
+            const test = activeTest;
             setActiveTest(null);
             setActiveTestState(null);
             // Log as incomplete whenever the user exits a test — even if they answered 0 questions.
             // "progressState.test" confirms the user actually entered the test (not a spurious exit).
-            if (progressState && progressState.test) {
+            if (progressState && progressState.test && test) {
               const currentExamName = exams.find(e => e.id === selectedExam)?.name || 'General';
               
               let testCategory = 'Mock Test';
-              if (activeTest.id.startsWith('practice-')) {
+              if (test.id.startsWith('practice-')) {
                 testCategory = 'Practice Test';
               } else if (selectedMockCategory) {
                 const categories: Record<string, string> = {
@@ -5090,7 +5091,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
               activityTracker.logActivity(user?.id, {
                 type: 'test_incomplete',
-                title: activeTest.title,
+                title: test.title,
                 metadata: {
                   ...progressState,
                   resumeSessionId: activeTestState?.resumeSessionId || `session-${Date.now()}`,
@@ -5104,37 +5105,40 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           onComplete={(results) => {
             sessionStorage.removeItem('oep_activeTestState');
             scrollToTop({ behavior: 'instant' });
+            const test = activeTest;
             setActiveTest(null);
             setTestResults(results);
-            const currentExamName = exams.find(e => e.id === selectedExam)?.name || 'General';
-            
-            let testCategory = 'Mock Test';
-            if (activeTest.id.startsWith('practice-')) {
-              testCategory = 'Practice Test';
-            } else if (selectedMockCategory) {
-              const categories: Record<string, string> = {
-                'full-length': 'Full-Length Mock Test',
-                'sectional': 'Sectional Test',
-                'pyq': 'PYQ Test',
-                'daily': 'Daily / Weekly Test'
-              };
-              testCategory = categories[selectedMockCategory] || 'Mock Test';
-            }
-
-            activityTracker.logActivity(user?.id, {
-              type: 'mock_test_completed',
-              title: activeTest.title,
-              score: results.score,
-              totalMarks: results.totalMarks || results.total,
-              accuracy: results.accuracy || 0,
-              metadata: {
-                ...results,
-                resumeSessionId: activeTestState?.resumeSessionId,
-                examName: currentExamName,
-                testCategory: testCategory
+            if (test) {
+              const currentExamName = exams.find(e => e.id === selectedExam)?.name || 'General';
+              
+              let testCategory = 'Mock Test';
+              if (test.id.startsWith('practice-')) {
+                testCategory = 'Practice Test';
+              } else if (selectedMockCategory) {
+                const categories: Record<string, string> = {
+                  'full-length': 'Full-Length Mock Test',
+                  'sectional': 'Sectional Test',
+                  'pyq': 'PYQ Test',
+                  'daily': 'Daily / Weekly Test'
+                };
+                testCategory = categories[selectedMockCategory] || 'Mock Test';
               }
-            });
-            if (onActivityLogged) onActivityLogged();
+
+              activityTracker.logActivity(user?.id, {
+                type: 'mock_test_completed',
+                title: test.title,
+                score: results.score,
+                totalMarks: results.totalMarks || results.total,
+                accuracy: results.accuracy || 0,
+                metadata: {
+                  ...results,
+                  resumeSessionId: activeTestState?.resumeSessionId,
+                  examName: currentExamName,
+                  testCategory: testCategory
+                }
+              });
+              if (onActivityLogged) onActivityLogged();
+            }
           }} 
         />
       </React.Suspense>
