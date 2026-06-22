@@ -1,10 +1,23 @@
 const isBrowser = typeof window !== 'undefined';
 
+let scrollCancelHandler: (() => void) | null = null;
+
+function clearScrollCancelHandler() {
+  if (scrollCancelHandler) {
+    scrollCancelHandler();
+    scrollCancelHandler = null;
+  }
+}
+
 /** Premium eased window scroll to a target Y position.
  *  Uses easeInOutCubic curve so the animation decelerates naturally.
  *  Duration scales with distance: short hops feel snappy, long jumps feel cinematic. */
 function smoothScrollWindow(targetY: number, duration = 1200): Promise<void> {
+  clearScrollCancelHandler();
+
   return new Promise((resolve) => {
+    if (!isBrowser) { resolve(); return; }
+
     const startY = window.scrollY;
     const distance = targetY - startY;
     if (Math.abs(distance) < 2) { resolve(); return; }
@@ -15,9 +28,7 @@ function smoothScrollWindow(targetY: number, duration = 1200): Promise<void> {
     }
 
     // Set global programmatic scroll flag to bypass scrollspy layout updates
-    if (typeof window !== 'undefined') {
-      (window as any).isProgrammaticScrolling = true;
-    }
+    (window as any).isProgrammaticScrolling = true;
 
     // Scale duration to a slow, majestic, cinematic smooth range: 1100ms to 1600ms
     const scaledDuration = Math.min(Math.max(1000 + Math.abs(distance) * 0.25, 1100), 1600);
@@ -28,7 +39,36 @@ function smoothScrollWindow(targetY: number, duration = 1200): Promise<void> {
     const easeInOutQuart = (t: number) =>
       t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;
 
+    let rafId = 0;
+    let isCancelled = false;
+
+    const cleanup = () => {
+      if (document.documentElement) {
+        document.documentElement.style.pointerEvents = '';
+      }
+      (window as any).isProgrammaticScrolling = false;
+      window.removeEventListener('wheel', cancelScroll, { capture: true });
+      window.removeEventListener('touchmove', cancelScroll, { capture: true });
+      window.removeEventListener('mousedown', cancelScroll, { capture: true });
+      window.removeEventListener('keydown', cancelScroll, { capture: true });
+    };
+
+    const cancelScroll = () => {
+      isCancelled = true;
+      cancelAnimationFrame(rafId);
+      cleanup();
+      resolve();
+    };
+
+    scrollCancelHandler = cancelScroll;
+
+    window.addEventListener('wheel', cancelScroll, { passive: true, capture: true });
+    window.addEventListener('touchmove', cancelScroll, { passive: true, capture: true });
+    window.addEventListener('mousedown', cancelScroll, { passive: true, capture: true });
+    window.addEventListener('keydown', cancelScroll, { passive: true, capture: true });
+
     const tick = (now: number) => {
+      if (isCancelled) return;
       const elapsed = now - t0;
       const progress = Math.min(elapsed / scaledDuration, 1);
       const eased = easeInOutQuart(progress);
@@ -37,22 +77,19 @@ function smoothScrollWindow(targetY: number, duration = 1200): Promise<void> {
       window.scrollTo(0, Math.round(startY + distance * eased));
       
       if (progress < 1) {
-        requestAnimationFrame(tick);
+        rafId = requestAnimationFrame(tick);
       } else {
         // Ensure we land exactly on targetY
         window.scrollTo(0, targetY);
-
-        if (document.documentElement) {
-          document.documentElement.style.pointerEvents = '';
-        }
-        if (typeof window !== 'undefined') {
-          (window as any).isProgrammaticScrolling = false;
+        cleanup();
+        if (scrollCancelHandler === cancelScroll) {
+          scrollCancelHandler = null;
         }
         resolve();
       }
     };
 
-    requestAnimationFrame(tick);
+    rafId = requestAnimationFrame(tick);
   });
 }
 
@@ -60,24 +97,55 @@ export function scrollToElement(
   idOrEl: string | HTMLElement | null,
   options?: {
     block?: ScrollLogicalPosition;
-    behavior?: ScrollBehavior;
+    behavior?: ScrollBehavior | 'instant';
     delay?: number;
   }
 ): Promise<void> {
   const { block = 'start', behavior = 'smooth', delay = 0 } = options || {};
+  clearScrollCancelHandler();
 
   return new Promise((resolve) => {
+    if (!isBrowser) { resolve(); return; }
+
     let attempts = 0;
     const maxAttempts = 40; // up to 2 seconds (40 * 50ms)
 
+    let timeoutId = 0;
+    let rafId = 0;
+    let isCancelled = false;
+
+    const cleanupListeners = () => {
+      window.removeEventListener('wheel', cancelScroll, { capture: true });
+      window.removeEventListener('touchmove', cancelScroll, { capture: true });
+      window.removeEventListener('mousedown', cancelScroll, { capture: true });
+      window.removeEventListener('keydown', cancelScroll, { capture: true });
+    };
+
+    const cancelScroll = () => {
+      isCancelled = true;
+      clearTimeout(timeoutId);
+      cancelAnimationFrame(rafId);
+      cleanupListeners();
+      resolve();
+    };
+
+    scrollCancelHandler = cancelScroll;
+
+    window.addEventListener('wheel', cancelScroll, { passive: true, capture: true });
+    window.addEventListener('touchmove', cancelScroll, { passive: true, capture: true });
+    window.addEventListener('mousedown', cancelScroll, { passive: true, capture: true });
+    window.addEventListener('keydown', cancelScroll, { passive: true, capture: true });
+
     const tryScroll = () => {
+      if (isCancelled) return;
       const el = typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
       if (!el) {
         if (attempts < maxAttempts) {
           attempts++;
-          setTimeout(tryScroll, 50);
+          timeoutId = setTimeout(tryScroll, 50) as any;
         } else {
           console.warn(`[ScrollManager] Element not found after ${maxAttempts} attempts:`, idOrEl);
+          cleanupListeners();
           resolve();
         }
         return;
@@ -103,71 +171,108 @@ export function scrollToElement(
       // Perform initial scroll
       let lastTargetY = getTargetY();
       if (behavior === 'instant' || behavior === 'auto') {
-        if (typeof window !== 'undefined') {
-          window.scrollTo(0, lastTargetY);
-          document.documentElement.scrollTop = lastTargetY;
-          document.body.scrollTop = lastTargetY;
+        window.scrollTo(0, lastTargetY);
+        document.documentElement.scrollTop = lastTargetY;
+        document.body.scrollTop = lastTargetY;
+        cleanupListeners();
+        if (scrollCancelHandler === cancelScroll) {
+          scrollCancelHandler = null;
         }
         resolve();
         return;
       }
 
-      smoothScrollWindow(lastTargetY);
+      smoothScrollWindow(lastTargetY).then(() => {
+        if (isCancelled) return;
 
-      // Continuously adjust scroll for layout shifts / animations for 1.2s
-      const startTime = performance.now();
-      const trackShifts = () => {
-        const currentTargetY = getTargetY();
-        if (Math.abs(currentTargetY - lastTargetY) > 4) {
-          lastTargetY = currentTargetY;
-          if (behavior === 'instant' || behavior === 'auto') {
-            if (typeof window !== 'undefined') {
-              window.scrollTo(0, currentTargetY);
-              document.documentElement.scrollTop = currentTargetY;
-              document.body.scrollTop = currentTargetY;
-            }
-          } else {
+        // Continuously adjust scroll for layout shifts / animations for 1.2s
+        const startTime = performance.now();
+        const trackShifts = () => {
+          if (isCancelled) return;
+          const currentTargetY = getTargetY();
+          if (Math.abs(currentTargetY - lastTargetY) > 4) {
+            lastTargetY = currentTargetY;
             smoothScrollWindow(currentTargetY);
           }
-        }
 
-        if (performance.now() - startTime < 1200) {
-          requestAnimationFrame(trackShifts);
-        } else {
-          resolve();
-        }
-      };
+          if (performance.now() - startTime < 1200) {
+            rafId = requestAnimationFrame(trackShifts);
+          } else {
+            cleanupListeners();
+            if (scrollCancelHandler === cancelScroll) {
+              scrollCancelHandler = null;
+            }
+            resolve();
+          }
+        };
 
-      requestAnimationFrame(trackShifts);
+        rafId = requestAnimationFrame(trackShifts);
+      });
     };
 
     if (delay > 0) {
-      setTimeout(tryScroll, delay);
+      timeoutId = setTimeout(tryScroll, delay) as any;
     } else {
       tryScroll();
     }
   });
 }
 
-export function scrollToTop(options?: { behavior?: ScrollBehavior; delay?: number }): Promise<void> {
+export function scrollToTop(options?: { behavior?: ScrollBehavior | 'instant'; delay?: number }): Promise<void> {
   const { behavior = 'smooth', delay = 0 } = options || {};
+  clearScrollCancelHandler();
 
   return new Promise((resolve) => {
+    if (!isBrowser) { resolve(); return; }
+
+    let timeoutId = 0;
+    let isCancelled = false;
+
+    const cleanupListeners = () => {
+      window.removeEventListener('wheel', cancelScroll, { capture: true });
+      window.removeEventListener('touchmove', cancelScroll, { capture: true });
+      window.removeEventListener('mousedown', cancelScroll, { capture: true });
+      window.removeEventListener('keydown', cancelScroll, { capture: true });
+    };
+
+    const cancelScroll = () => {
+      isCancelled = true;
+      clearTimeout(timeoutId);
+      cleanupListeners();
+      resolve();
+    };
+
+    scrollCancelHandler = cancelScroll;
+
+    window.addEventListener('wheel', cancelScroll, { passive: true, capture: true });
+    window.addEventListener('touchmove', cancelScroll, { passive: true, capture: true });
+    window.addEventListener('mousedown', cancelScroll, { passive: true, capture: true });
+    window.addEventListener('keydown', cancelScroll, { passive: true, capture: true });
+
     const doScroll = () => {
+      if (isCancelled) return;
       if (behavior === 'instant' || behavior === 'auto') {
-        if (typeof window !== 'undefined') {
-          window.scrollTo(0, 0);
-          document.documentElement.scrollTop = 0;
-          document.body.scrollTop = 0;
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        cleanupListeners();
+        if (scrollCancelHandler === cancelScroll) {
+          scrollCancelHandler = null;
         }
         resolve();
       } else {
-        smoothScrollWindow(0).then(resolve);
+        smoothScrollWindow(0).then(() => {
+          cleanupListeners();
+          if (scrollCancelHandler === cancelScroll) {
+            scrollCancelHandler = null;
+          }
+          resolve();
+        });
       }
     };
 
     if (delay > 0) {
-      setTimeout(doScroll, delay);
+      timeoutId = setTimeout(doScroll, delay) as any;
     } else {
       doScroll();
     }

@@ -6711,16 +6711,11 @@ const ScrollToTop = () => {
     const scrollTarget = typeof window !== 'undefined' ? sessionStorage.getItem('oep_scroll_target') : null;
     if (scrollTarget) {
       sessionStorage.removeItem('oep_scroll_target');
-      scrollToElement(scrollTarget, { block: 'start', behavior: 'instant', delay: 0 });
+      scrollToElement(scrollTarget, { block: 'start', behavior: 'instant', delay: 220 });
       return;
     }
 
-    if (typeof window !== 'undefined') {
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    }
-    scrollToTop({ behavior: 'instant', delay: 100 });
+    scrollToTop({ behavior: 'instant', delay: 220 });
   }, [pathname]);
 
   return null;
@@ -6833,14 +6828,6 @@ const ExamDetailPage = () => {
     fetchUpdates();
   }, []);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    }
-    scrollToTop({ behavior: 'instant', delay: 50 });
-  }, [examId]);
 
   if (loading) {
     return <LoadingPortal />;
