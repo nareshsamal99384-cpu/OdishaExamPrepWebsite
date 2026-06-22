@@ -822,11 +822,31 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [isReviewBottomNav, setIsReviewBottomNav] = useState(false);
   const [hasModalActive, setHasModalActive] = useState(false);
+  const [isMobileBannerVisible, setIsMobileBannerVisible] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   
   const effectiveBottomNavVisible = (isBottomNavVisible && !isReviewMode) || isReviewBottomNav;
+
+  const getCompanionBottomClass = (forOpenFullChat = false) => {
+    if (isMobileBannerVisible) {
+      if (forOpenFullChat) {
+        return effectiveBottomNavVisible ? "bottom-24 sm:bottom-28" : "bottom-8 sm:bottom-8";
+      }
+      if (effectiveBottomNavVisible) {
+        return "bottom-[calc(162px+env(safe-area-inset-bottom))]";
+      } else {
+        return "bottom-[calc(92px+env(safe-area-inset-bottom))]";
+      }
+    } else {
+      if (effectiveBottomNavVisible) {
+        return "bottom-24 sm:bottom-28";
+      } else {
+        return "bottom-8 sm:bottom-8";
+      }
+    }
+  };
 
   const getFreshUserDynamicData = useCallback((currentData: LiveSiteData | null): LiveSiteData | null => {
     const baseData = currentData || {
@@ -1299,10 +1319,16 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
       setIsTestMode(document.body.hasAttribute('data-test-mode'));
       setIsReviewMode(document.body.hasAttribute('data-review-mode'));
       setIsReviewBottomNav(document.body.hasAttribute('data-review-bottom-nav'));
+      setIsMobileBannerVisible(!!document.getElementById('mobile-payment-banner'));
     };
     check();
     const observer = new MutationObserver(check);
-    observer.observe(document.body, { attributes: true, attributeFilter: ['data-test-mode', 'data-review-mode', 'data-review-bottom-nav'] });
+    observer.observe(document.body, { 
+      attributes: true, 
+      attributeFilter: ['data-test-mode', 'data-review-mode', 'data-review-bottom-nav'],
+      childList: true,
+      subtree: true
+    });
     return () => observer.disconnect();
   }, []);
 
@@ -1627,7 +1653,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
             onClick={handleOpen}
             className={cn(
               "fixed right-4 sm:right-6 z-[80] group focus:outline-none transition-[bottom] duration-300",
-              effectiveBottomNavVisible ? "bottom-24 sm:bottom-28" : "bottom-8 sm:bottom-8"
+              getCompanionBottomClass()
             )}
             style={{ pointerEvents: hasModalActive ? 'none' : 'auto' }}
             title="Ask OEP Buddy"
@@ -1669,9 +1695,8 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
             transition={{ type: 'spring', stiffness: 320, damping: 26 }}
             className={cn(
               'fixed left-3 right-3 sm:left-auto sm:right-6 z-[80] w-auto sm:w-[390px] bg-white rounded-3xl shadow-[0_24px_70px_rgba(0,0,0,0.12),0_8px_24px_rgba(138,28,54,0.04)] border border-slate-200/50 overflow-hidden flex flex-col max-h-[85vh] sm:max-h-none transition-all duration-300',
-              isMinimized 
-                ? (effectiveBottomNavVisible ? 'h-auto bottom-24 sm:bottom-28' : 'h-auto bottom-8 sm:bottom-8') 
-                : (effectiveBottomNavVisible ? 'bottom-24 sm:bottom-28 h-[500px] sm:h-[540px]' : 'bottom-8 sm:bottom-8 h-[540px] sm:h-[570px]')
+              isMinimized ? 'h-auto' : (effectiveBottomNavVisible ? 'h-[500px] sm:h-[540px]' : 'h-[540px] sm:h-[570px]'),
+              getCompanionBottomClass(!isMinimized)
             )}
             style={{ pointerEvents: hasModalActive ? 'none' : 'auto' }}
           >

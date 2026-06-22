@@ -2280,6 +2280,13 @@ const LandingPage = () => {
     }
   };
   const [exams, setExams] = useState<any[]>([]);
+  const [focusedPrepTags, setFocusedPrepTags] = useState<any[]>([
+    { label: 'OPSC CGL', examId: '' },
+    { label: 'OSSC LSI', examId: '' },
+    { label: 'OSSSC RI/ARI', examId: '' },
+    { label: 'Police SI', examId: '' },
+    { label: 'Forest Guard', examId: '' }
+  ]);
 
   useEffect(() => {
     const fetchUpdates = async () => {
@@ -2292,6 +2299,15 @@ const LandingPage = () => {
           if (parsed.updates && parsed.updates.length > 0) {
             setAnnouncements(parsed.updates);
           }
+        }
+        const focusedPrepSettings = fetchedExams.find(e => e.name === 'SYSTEM_SETTINGS_FOCUSED_PREPARATION');
+        if (focusedPrepSettings && focusedPrepSettings.description) {
+          try {
+            const parsed = JSON.parse(focusedPrepSettings.description);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setFocusedPrepTags(parsed);
+            }
+          } catch(e) {}
         }
       } catch(e) {}
     };
@@ -2409,14 +2425,27 @@ const LandingPage = () => {
                 <div className="pt-6 sm:pt-10 space-y-4">
                   <p className="text-[10px] sm:text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] lg:text-left">Focused Preparation For:</p>
                   <div className="flex flex-wrap justify-center lg:justify-start gap-2 sm:gap-3">
-                    {['OPSC CGL', 'OSSC LSI', 'OSSSC RI/ARI', 'Police SI', 'Forest Guard'].map((exam) => (
-                      <span 
-                        key={exam} 
-                        className="px-3.5 py-1.5 rounded-xl bg-brand-50/50 border border-brand-100/80 text-[10px] sm:text-xs font-black uppercase tracking-wider text-brand-800 hover:bg-brand-100 hover:text-brand-900 transition-all duration-300 cursor-default whitespace-nowrap shadow-sm hover:scale-[1.03]"
-                      >
-                        {exam}
-                      </span>
-                    ))}
+                    {focusedPrepTags.map((tag, idx) => {
+                      const hasLink = !!tag.examId;
+                      return (
+                        <button 
+                          key={idx} 
+                          onClick={() => {
+                            if (hasLink) {
+                              setSelectedExam(tag.examId);
+                            }
+                          }}
+                          className={cn(
+                            "px-3.5 py-1.5 rounded-xl border text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-300 whitespace-nowrap shadow-sm select-none",
+                            hasLink 
+                              ? "bg-brand-50/80 border-brand-100/80 text-brand-800 hover:bg-brand-100 hover:text-brand-900 hover:scale-[1.03] active:scale-95 cursor-pointer" 
+                              : "bg-brand-50/30 border-brand-100/40 text-brand-700/70 cursor-default"
+                          )}
+                        >
+                          {tag.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </motion.div>
@@ -6711,11 +6740,16 @@ const ScrollToTop = () => {
     const scrollTarget = typeof window !== 'undefined' ? sessionStorage.getItem('oep_scroll_target') : null;
     if (scrollTarget) {
       sessionStorage.removeItem('oep_scroll_target');
-      scrollToElement(scrollTarget, { block: 'start', behavior: 'instant', delay: 220 });
+      scrollToElement(scrollTarget, { block: 'start', behavior: 'instant', delay: 0 });
       return;
     }
 
-    scrollToTop({ behavior: 'instant', delay: 220 });
+    if (typeof window !== 'undefined') {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+    scrollToTop({ behavior: 'instant', delay: 100 });
   }, [pathname]);
 
   return null;
@@ -6828,6 +6862,14 @@ const ExamDetailPage = () => {
     fetchUpdates();
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+    scrollToTop({ behavior: 'instant', delay: 50 });
+  }, [examId]);
 
   if (loading) {
     return <LoadingPortal />;

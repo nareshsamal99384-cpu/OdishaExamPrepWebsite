@@ -299,6 +299,13 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
   });
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [subscriberSearchQuery, setSubscriberSearchQuery] = useState('');
+  const [focusedPrep, setFocusedPrep] = useState<any[]>([
+    { label: 'OPSC CGL', examId: '' },
+    { label: 'OSSC LSI', examId: '' },
+    { label: 'OSSSC RI/ARI', examId: '' },
+    { label: 'Police SI', examId: '' },
+    { label: 'Forest Guard', examId: '' }
+  ]);
 
   const [questionsPage, setQuestionsPage] = useState(1);
   const [questionsLimit] = useState(50);
@@ -404,6 +411,14 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         try {
           const parsed = JSON.parse(achieversSettings.description);
           if (Array.isArray(parsed) && parsed.length > 0) setAchieversJournal(parsed);
+        } catch(e) {}
+      }
+
+      const focusedPrepSettings = ex.find(e => e.name === 'SYSTEM_SETTINGS_FOCUSED_PREPARATION');
+      if (focusedPrepSettings && focusedPrepSettings.description) {
+        try {
+          const parsed = JSON.parse(focusedPrepSettings.description);
+          if (Array.isArray(parsed) && parsed.length > 0) setFocusedPrep(parsed);
         } catch(e) {}
       }
 
@@ -3331,6 +3346,156 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                     className="px-10 py-3.5 premium-gradient text-white font-extrabold rounded-xl shadow-lg shadow-brand-500/20 hover:premium-glow transition-all active:scale-95 text-lg"
                   >
                     Publish Success Journeys
+                  </button>
+                </div>
+              </div>
+
+              {/* ── Focused Preparation Tags Editor ── */}
+              <div className="mt-10 border-t-2 border-dashed border-slate-200 pt-10 space-y-8">
+                <div>
+                  <h3 className="text-3xl font-black text-slate-900 tracking-tight">🎯 Focused Preparation Tags</h3>
+                  <p className="text-slate-500 font-medium mt-2 text-lg">Manage the quick-link exam tags shown on the homepage hero section.</p>
+                </div>
+
+                <div className="bg-brand-50 p-5 rounded-2xl border border-brand-100 flex gap-4 items-start shadow-sm text-left">
+                  <AlertCircle className="w-6 h-6 text-brand-600 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-extrabold text-slate-800">Tag quick-links live on homepage!</p>
+                    <p className="text-sm font-medium text-slate-600">
+                      Add, edit, reorder, or remove tags. Linking a tag to an exam allows students to click on the tag to jump directly to that exam's page.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {focusedPrep.map((tag, idx) => (
+                    <div 
+                      key={idx}
+                      className="bg-white border-2 border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm relative text-left"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Tag {idx + 1}</span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => {
+                              const next = [...focusedPrep];
+                              const temp = next[idx];
+                              next[idx] = next[idx - 1];
+                              next[idx - 1] = temp;
+                              setFocusedPrep(next);
+                            }}
+                            className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                            title="Move Up"
+                          >
+                            ▲
+                          </button>
+                          <button
+                            type="button"
+                            disabled={idx === focusedPrep.length - 1}
+                            onClick={() => {
+                              const next = [...focusedPrep];
+                              const temp = next[idx];
+                              next[idx] = next[idx + 1];
+                              next[idx + 1] = temp;
+                              setFocusedPrep(next);
+                            }}
+                            className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                            title="Move Down"
+                          >
+                            ▼
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFocusedPrep(focusedPrep.filter((_, i) => i !== idx));
+                            }}
+                            className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-50 hover:text-rose-600 transition-all cursor-pointer"
+                            title="Remove tag"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">Tag Label *</label>
+                          <input 
+                            type="text" 
+                            value={tag.label} 
+                            onChange={e => {
+                              const next = [...focusedPrep];
+                              next[idx] = { ...next[idx], label: e.target.value };
+                              setFocusedPrep(next);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-bold text-sm bg-white"
+                            placeholder="e.g. OPSC CGL"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">Linked Exam</label>
+                          <select 
+                            value={tag.examId || ''} 
+                            onChange={e => {
+                              const next = [...focusedPrep];
+                              next[idx] = { ...next[idx], examId: e.target.value };
+                              setFocusedPrep(next);
+                            }}
+                            className="w-full px-4 py-2.5 rounded-xl border-2 border-slate-100 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-bold text-sm bg-white cursor-pointer"
+                          >
+                            <option value="">— None (No Link) —</option>
+                            {actualExams.map(ex => (
+                              <option key={ex.id} value={ex.id}>{ex.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {focusedPrep.length < 12 && (
+                    <button
+                      type="button"
+                      onClick={() => setFocusedPrep([...focusedPrep, { label: '', examId: '' }])}
+                      className="w-full py-3.5 border-2 border-dashed border-slate-300 rounded-2xl text-sm font-extrabold text-slate-400 hover:border-brand-400 hover:text-brand-600 hover:bg-brand-50/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" /> Add Tag
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex justify-end pt-4 border-t border-slate-100">
+                  <button 
+                    onClick={async () => {
+                      try {
+                        if (focusedPrep.filter(t => !t.label.trim()).length > 0) {
+                          alert("Please enter a label for all tags.");
+                          return;
+                        }
+                        const updated = {
+                          name: 'SYSTEM_SETTINGS_FOCUSED_PREPARATION',
+                          description: JSON.stringify(focusedPrep),
+                          icon: '🎯',
+                          category: 'system' as const
+                        };
+                        const exists = exams.find(e => e.name === 'SYSTEM_SETTINGS_FOCUSED_PREPARATION');
+                        if (exists && exists.id) {
+                          await examService.updateExam(exists.id, updated);
+                        } else {
+                          await examService.addExam(updated);
+                        }
+                        await fetchData();
+                        alert("✅ Focused Preparation Tags saved and published to homepage!");
+                      } catch (err: any) {
+                        alert(`Failed to save: ${err.message || 'Unknown error'}`);
+                      }
+                    }} 
+                    className="px-10 py-3.5 premium-gradient text-white font-extrabold rounded-xl shadow-lg shadow-brand-500/20 hover:premium-glow transition-all active:scale-95 text-lg"
+                  >
+                    Publish Focused Preparation
                   </button>
                 </div>
               </div>
