@@ -2,7 +2,7 @@ import React, { useState, useRef, useLayoutEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, XCircle, Clock, Flag, AlertCircle, ChevronLeft, ChevronRight, ChevronDown, BarChart } from 'lucide-react';
 import { cn } from './lib/utils';
-import { Button } from './App';
+import { Button } from './components/Button';
 import { fadeSlideUpSm } from './lib/animations';
 import { MathTextRenderer, DiagramRenderer } from './components/MathTextRenderer';
 
@@ -129,11 +129,11 @@ export default function TestResultsView({ results, onClose }: { results: any, on
 
   // Calculate question metrics
   const correctCount = questions.reduce((acc, q, i) => {
-    return acc + (answers[i] === q.correctAnswerIndex ? 1 : 0);
+    return acc + ((answers && answers[i]) === q.correctAnswerIndex ? 1 : 0);
   }, 0);
 
   const incorrectCount = questions.reduce((acc, q, i) => {
-    const uAns = answers[i];
+    const uAns = answers ? answers[i] : undefined;
     const isCorrect = uAns === q.correctAnswerIndex;
     return acc + (uAns !== undefined && uAns !== null && !isCorrect ? 1 : 0);
   }, 0);
@@ -153,13 +153,13 @@ export default function TestResultsView({ results, onClose }: { results: any, on
   const accuracy = totalAttempted > 0 ? Math.round((correctCount / totalAttempted) * 100) : 0;
   const avgSpeed = questions.length > 0 ? (timeTaken / questions.length).toFixed(1) : "0";
   
-  const userAnswer = answers[currentIdx];
+  const userAnswer = answers ? answers[currentIdx] : undefined;
   const isCorrect = userAnswer === currentQ?.correctAnswerIndex;
   const isUnanswered = userAnswer === undefined;
   const isMarked = markedForReview.includes(currentIdx);
   
   const formatTime = (secs: number) => {
-    if (!secs) return '0s';
+    if (isNaN(secs) || secs === undefined || secs === null || !secs) return '0s';
     if (secs < 60) return `${Math.floor(secs)}s`;
     return `${Math.floor(secs/60)}m ${Math.floor(secs%60)}s`;
   };
@@ -333,28 +333,28 @@ export default function TestResultsView({ results, onClose }: { results: any, on
              <h3 className="font-extrabold text-slate-900 mb-6 text-lg sm:text-xl tracking-tight">Question Navigator</h3>
               <div className="max-h-[300px] lg:max-h-[450px] overflow-y-auto p-1.5 custom-scrollbar">
                <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-7 gap-2 sm:gap-3 py-1">
-                 {questions.map((q: any, i: number) => {
-                   const uAns = answers[i];
-                   const isCorr = uAns === q.correctAnswerIndex;
-                   const isUnans = uAns === undefined;
-                   const isMarked = markedForReview.includes(i);
-                   return (
-                     <button 
-                       key={i}
-                       onClick={() => setCurrentIdx(i)}
-                       className={cn(
-                         "aspect-square rounded-xl font-bold flex items-center justify-center text-xs sm:text-sm transition-all relative overflow-hidden",
-                         currentIdx === i ? "ring-2 sm:ring-4 ring-slate-200 scale-105 z-10 shadow-lg" : "hover:scale-105 shadow-sm",
-                         isUnans ? "bg-slate-100 text-slate-400 border border-slate-200" :
-                         isCorr ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : 
-                         "bg-rose-100 text-rose-700 border border-rose-200"
-                       )}
-                     >
-                       {isMarked && <div className="absolute top-0 right-0 w-4 h-4 bg-amber-400 rotate-45 transform translate-x-2 -translate-y-2"></div>}
-                       {i + 1}
-                     </button>
-                   )
-                 })}
+                  {questions.map((q: any, i: number) => {
+                    const uAns = answers ? answers[i] : undefined;
+                    const isCorr = uAns === q.correctAnswerIndex;
+                    const isUnans = uAns === undefined;
+                    const isMarked = markedForReview.includes(i);
+                    return (
+                      <button 
+                        key={i}
+                        onClick={() => setCurrentIdx(i)}
+                        className={cn(
+                          "aspect-square rounded-xl font-bold flex items-center justify-center text-xs sm:text-sm transition-all relative overflow-hidden",
+                          currentIdx === i ? "ring-2 sm:ring-4 ring-slate-200 scale-105 z-10 shadow-lg" : "hover:scale-105 shadow-sm",
+                          isUnans ? "bg-slate-100 text-slate-400 border border-slate-200" :
+                          isCorr ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : 
+                          "bg-rose-100 text-rose-700 border border-rose-200"
+                        )}
+                      >
+                        {isMarked && <div className="absolute top-0 right-0 w-4 h-4 bg-amber-400 rotate-45 transform translate-x-2 -translate-y-2"></div>}
+                        {i + 1}
+                      </button>
+                    )
+                  })}
                </div>
              </div>
              <div className="mt-8 lg:mt-6 space-y-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
@@ -375,16 +375,16 @@ export default function TestResultsView({ results, onClose }: { results: any, on
              >
              
              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
-               <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-                 <span className="px-4 sm:px-5 py-1.5 sm:py-2 bg-slate-100 text-slate-600 rounded-lg sm:rounded-xl text-xs sm:text-sm font-extrabold tracking-widest uppercase border border-slate-200">
-                   Question {currentIdx + 1}
-                 </span>
-                 <span className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                    <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4"/> Time Spent: {formatTime(timeSpent[currentIdx] || 0)}
-                 </span>
-               </div>
-               
-               <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                  <span className="px-4 sm:px-5 py-1.5 sm:py-2 bg-slate-100 text-slate-600 rounded-lg sm:rounded-xl text-xs sm:text-sm font-extrabold tracking-widest uppercase border border-slate-200">
+                    Question {currentIdx + 1}
+                  </span>
+                  <span className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                     <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4"/> Time Spent: {formatTime(timeSpent[currentIdx] || 0)}
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-2 flex-wrap">
                   {isMarked && (
                     <span className="flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 bg-amber-50 text-amber-600 rounded-lg sm:rounded-xl text-xs sm:text-sm font-extrabold border border-amber-200">
                       <Flag className="w-4 h-4 text-amber-500 fill-amber-500" /> Marked for Review
@@ -413,7 +413,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
                     ref={questionTextRef}
                     className="text-lg sm:text-2xl md:text-3xl lg:text-2xl xl:text-3xl font-semibold sm:font-extrabold text-slate-900 leading-relaxed sm:leading-[1.3] tracking-tight break-words overflow-wrap-anywhere space-y-4"
                   >
-                    {currentQ.questionText.split('\n\n').map((para, i) => (
+                    {(currentQ?.questionText || '').split('\n\n').map((para, i) => (
                       <p key={i}>
                         <MathTextRenderer text={para} />
                       </p>
@@ -421,11 +421,11 @@ export default function TestResultsView({ results, onClose }: { results: any, on
                     {(() => {
                       const question = currentQ;
                       console.log("QUESTION", question);
-                      console.log("DIAGRAM", question.diagram);
-                      console.log("TYPE", question.diagram?.type);
+                      console.log("DIAGRAM", question?.diagram);
+                      console.log("TYPE", question?.diagram?.type);
                       return null;
                     })()}
-                    {currentQ.diagram ? (
+                    {currentQ?.diagram ? (
                       <div className="mt-5 sm:mt-6 w-full block">
                         <DiagramRenderer diagram={currentQ.diagram} data={currentQ.diagram} />
                       </div>
@@ -456,15 +456,15 @@ export default function TestResultsView({ results, onClose }: { results: any, on
               </div>
 
              <div className="space-y-3 sm:space-y-4 mb-8 sm:mb-10">
-                {currentQ.options.map((opt: string, i: number) => {
+                {(currentQ?.options || []).map((opt: string, i: number) => {
                   const isThisSelected = userAnswer === i;
-                  const isThisCorrect = currentQ.correctAnswerIndex === i;
+                  const isThisCorrect = currentQ?.correctAnswerIndex === i;
                   
                   let ringClass = "border-slate-100 bg-slate-50";
                   let icon = null;
                   
                   if (isThisCorrect) {
-                     ringClass = "border-emerald-500 bg-emerald-50/50 text-emerald-900";
+                      ringClass = "border-emerald-500 bg-emerald-50/50 text-emerald-900";
                       icon = <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 lg:w-5 lg:h-5 text-emerald-500 ml-auto shrink-0" />;
                    } else if (isThisSelected && !isThisCorrect) {
                       ringClass = "border-rose-500 bg-rose-50/50 text-rose-900";
@@ -489,7 +489,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
                 })}
              </div>
 
-             {currentQ.explanation && (
+             {currentQ?.explanation && (
                  <div className="math-explanation bg-brand-50 px-3 py-4 sm:p-8 lg:p-6 rounded-xl sm:rounded-3xl border border-brand-100 mb-2 lg:mb-10">
                   <h4 className="font-extrabold text-brand-900 flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 text-base sm:text-lg">
                     <div className="bg-white p-1.5 sm:p-2 rounded-lg sm:rounded-xl shadow-sm"><AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-brand-600"/></div> 

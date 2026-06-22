@@ -2980,6 +2980,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   const [showAdmin, setShowAdmin] = useState(false);
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   const [isBannerDescExpanded, setIsBannerDescExpanded] = useState(false);
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -3053,6 +3054,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     }
     setIsDescExpanded(false);
     setIsBannerDescExpanded(false);
+    setIsBannerDismissed(false);
     window.dispatchEvent(new CustomEvent('oep-activity-changed'));
   }, [selectedExam, exams]);
 
@@ -3851,7 +3853,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     damping: 32,
                     mass: 0.9,
                   }}
-                  className="relative overflow-hidden rounded-t-[2.5rem] md:rounded-[2.5rem] p-[1px] bg-gradient-to-b from-white/15 via-white/5 to-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] w-full max-w-md max-h-[92vh] md:max-h-[90vh] flex flex-col pointer-events-auto"
+                  className="relative overflow-hidden rounded-t-[2.5rem] md:rounded-[2.5rem] p-[1px] bg-gradient-to-b from-white/15 via-white/5 to-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] w-full max-w-md max-h-fit md:max-h-fit flex flex-col pointer-events-auto"
                   style={{ willChange: 'transform, opacity' }}
                 >
                   {/* Drag handle (mobile only) */}
@@ -3861,7 +3863,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   <div className="absolute top-0 left-1/4 w-[180px] h-[180px] bg-brand-500/10 rounded-full blur-[50px] pointer-events-none" />
                   <div className="absolute bottom-0 right-1/4 w-[180px] h-[180px] bg-indigo-500/10 rounded-full blur-[50px] pointer-events-none" />
 
-                  <div className="bg-[#0B0F19] rounded-t-[2.45rem] sm:rounded-[2.45rem] p-6 sm:p-8 relative overflow-hidden flex flex-col max-h-full flex-1">
+                  <div className="bg-[#0B0F19] rounded-t-[2.45rem] sm:rounded-[2.45rem] p-5 sm:p-6 pb-6 sm:pb-7 relative overflow-hidden flex flex-col flex-1">
                     {/* Close button with subtle outline */}
                     {paymentState === 'idle' && (
                     <button 
@@ -3885,27 +3887,27 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.25 }}
-                        className="text-center space-y-6 overflow-y-auto no-scrollbar smooth-scroll-gpu flex-1 pr-1 py-2 mt-4"
+                        className="text-center space-y-4 sm:space-y-5 flex flex-col flex-1 py-1 mt-2.5 overflow-visible"
                       >
                         {/* Pulsing visual badge */}
                         <motion.div 
                           animate={{ y: [0, -4, 0] }}
                           transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-                          className="w-16 h-16 bg-gradient-to-tr from-brand-600 via-brand-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-[0_8px_25px_rgba(138,28,54,0.3)] border border-white/10 relative group"
+                          className="w-14 h-14 bg-gradient-to-tr from-brand-600 via-brand-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-[0_6px_20px_rgba(138,28,54,0.25)] border border-white/10 relative group shrink-0"
                         >
-                          <Award className="text-white w-8 h-8 filter drop-shadow-[0_2px_8px_rgba(255,255,255,0.25)]" />
+                          <Award className="text-white w-7 h-7 filter drop-shadow-[0_2px_6px_rgba(255,255,255,0.2)]" />
                           <div className="absolute inset-0 border border-brand-400/25 rounded-2xl animate-ping opacity-25 pointer-events-none" />
                         </motion.div>
                         
-                        <div className="space-y-2">
-                          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight px-1 font-sans">
+                        <div className="space-y-1.5 shrink-0">
+                          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight px-1 font-sans">
                             {paywallItemTitle.includes('Full Access') ? (
                               <>Unlock <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-pink-200 to-indigo-300">Full Access</span></>
                             ) : (
                               <>Unlock <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-pink-200 to-indigo-300">{paywallItemTitle}</span></>
                             )}
                           </h2>
-                          <p className="text-slate-400 text-xs sm:text-sm font-medium leading-relaxed max-w-sm mx-auto">
+                          <p className="text-slate-400 text-[11px] sm:text-xs font-medium leading-relaxed max-w-sm mx-auto">
                             {paywallItemTitle.includes('Full Access') 
                               ? 'Unlock full lifetime access to all Question Banks, Practice Mode, Premium Mock Tests, PDF notes, and any future content added to this exam.' 
                               : `Unlock full lifetime access to this specific premium content, including detailed solutions and any future updates.`
@@ -3924,7 +3926,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                               transition: { staggerChildren: 0.06 }
                             }
                           }}
-                          className="space-y-3.5 text-left bg-white/[0.02] border border-white/[0.06] p-5 rounded-[1.5rem] backdrop-blur-md"
+                          className="space-y-2 text-left bg-white/[0.02] border border-white/[0.06] p-4 rounded-[1.25rem] backdrop-blur-md shrink-0"
                         >
                           {paywallFeatures.map((benefit, i) => (
                             <motion.div 
@@ -3933,31 +3935,31 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                 hidden: { opacity: 0, x: -8 },
                                 show: { opacity: 1, x: 0 }
                               }}
-                              className="flex items-center gap-3 text-slate-200 font-bold"
+                              className="flex items-center gap-2.5 text-slate-200 font-bold"
                             >
-                              <div className="w-5 h-5 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                              <div className="w-4.5 h-4.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                               </div>
-                              <span className="text-xs sm:text-sm tracking-wide">{benefit}</span>
+                              <span className="text-[11px] sm:text-xs tracking-wide">{benefit}</span>
                             </motion.div>
                           ))}
                         </motion.div>
 
                         {/* Pricing Block */}
-                        <div className="space-y-4 pt-1">
+                        <div className="space-y-3 pt-0.5 shrink-0">
                           <div className="flex flex-col items-center justify-center">
-                            <div className="flex items-end justify-center gap-2.5 mb-1.5">
-                              <span className="text-lg sm:text-xl font-bold text-slate-500 line-through mb-1 font-mono">₹{paywallOriginalPrice}</span>
-                              <span className="text-4xl sm:text-5xl font-black text-white font-mono tracking-tighter">₹{paywallPrice}</span>
+                            <div className="flex items-end justify-center gap-2 mb-1">
+                              <span className="text-base sm:text-lg font-bold text-slate-500 line-through mb-0.5 font-mono">₹{paywallOriginalPrice}</span>
+                              <span className="text-3xl sm:text-4xl font-black text-white font-mono tracking-tighter">₹{paywallPrice}</span>
                             </div>
-                            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3.5 py-1.5 rounded-full border border-emerald-500/20">
+                            <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
                               {Math.round(((paywallOriginalPrice - paywallPrice) / paywallOriginalPrice) * 100)}% OFF • Lifetime Access
                             </span>
                           </div>
 
                           {/* CTA Button */}
                           <Button 
-                            className="w-full h-13 rounded-2xl text-base font-black bg-gradient-to-r from-brand-600 via-brand-500 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white shadow-[0_8px_30px_rgba(138,28,54,0.3)] hover:shadow-[0_15px_45px_rgba(138,28,54,0.5)] group/btn relative overflow-hidden transition-all duration-300 active:scale-[0.98] border border-white/10"
+                            className="w-full h-11 sm:h-12 rounded-xl text-sm sm:text-base font-black bg-gradient-to-r from-brand-600 via-brand-500 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white shadow-[0_6px_20px_rgba(138,28,54,0.25)] hover:shadow-[0_12px_35px_rgba(138,28,54,0.4)] group/btn relative overflow-hidden transition-all duration-300 active:scale-[0.98] border border-white/10"
                             onClick={async () => {
                             try {
                               const res = await loadRazorpay();
@@ -4102,8 +4104,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           </Button>
 
                           {/* Secure Info Footer */}
-                          <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 font-semibold pt-1">
-                            <Lock className="w-3.5 h-3.5 text-slate-500" />
+                          <div className="flex items-center justify-center gap-1.2 text-[9px] text-slate-400 font-semibold pt-0.5">
+                            <Lock className="w-3 h-3 text-slate-500" />
                             <span>Secure payment via Razorpay • Instant Activation</span>
                           </div>
                         </div>
@@ -4385,16 +4387,21 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   const [paywallProductType, setPaywallProductType] = useState<string>('full_access');
   const [loadingPractice, setLoadingPractice] = useState(false);
 
-  // Hide WhatsApp button on mobile when any dashboard modal is open
+  // Hide WhatsApp button on mobile when any dashboard modal is open and lock body scroll
   useEffect(() => {
-    if (window.innerWidth < 768) {
-      if (showPaywall || showLoginPrompt || showPracticeConfig) {
+    if (showPaywall || showLoginPrompt || showPracticeConfig) {
+      document.body.style.overflow = 'hidden';
+      if (window.innerWidth < 768) {
         document.body.setAttribute('data-modal-open', 'true');
-      } else {
-        document.body.removeAttribute('data-modal-open');
       }
+    } else {
+      document.body.style.overflow = '';
+      document.body.removeAttribute('data-modal-open');
     }
-    return () => { document.body.removeAttribute('data-modal-open'); };
+    return () => {
+      document.body.style.overflow = '';
+      document.body.removeAttribute('data-modal-open');
+    };
   }, [showPaywall, showLoginPrompt, showPracticeConfig]);
   const [topicMaxQuestions, setTopicMaxQuestions] = useState<number>(0);
   const [practiceSettings, setPracticeSettings] = useState(() => {
@@ -6000,9 +6007,85 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           </motion.div>
         </div>
 
+        {/* Section 1: Download Question Bank */}
+      <section id="question-bank-section" className="space-y-8 scroll-mt-24">
+        <div className="relative pl-4">
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-500 rounded-full" />
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Step 1: Learn & Review</h2>
+          <p className="text-slate-500 font-medium mt-1">Premium resources for your preparation</p>
+        </div>
+        
+        <motion.div 
+          initial={isMobile ? "show" : "hidden"}
+          animate={isMobile ? "show" : undefined}
+          whileInView={isMobile ? undefined : "show"}
+          viewport={isMobile ? undefined : { once: true }}
+          variants={{
+            hidden: { opacity: 0 },
+            show: {
+              opacity: 1,
+              transition: { staggerChildren: isMobile ? 0 : 0.1 }
+            }
+          }}
+          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6"
+        >
+          {[
+            { id: 'topic-wise', title: 'Topic-wise Question Bank', desc: 'Master specific subjects with curated questions.', icon: <Layers className="w-6 h-6 sm:w-7 sm:h-7" /> },
+            { id: 'exam-focused', title: 'Exam-Focused Bank', desc: 'High-yield questions tailored for this exam.', icon: <Target className="w-6 h-6 sm:w-7 sm:h-7" /> },
+            { id: 'revision-sets', title: 'Revision Sets', desc: 'Quick revision modules for last-minute prep.', icon: <BookMarked className="w-6 h-6 sm:w-7 sm:h-7" /> },
+            { id: 'pyq-collections', title: 'PYQ Collections', desc: 'Previous Year Questions with detailed solutions.', icon: <History className="w-6 h-6 sm:w-7 sm:h-7" /> },
+          ].map((item, i) => (
+            <motion.div
+              key={i}
+              variants={{
+                hidden: { y: 20, opacity: 0 },
+                show: { y: 0, opacity: 1 }
+              }}
+              whileHover={isMobile ? undefined : whileHover.liftTap}
+              whileTap={isMobile ? undefined : whileTap.press}
+            >
+              <Card 
+                onClick={() => setSelectedBankType(item.id)}
+                className={cn(
+                  "p-5 sm:p-6 lg:p-8 flex flex-col justify-between bg-gradient-to-br from-white to-slate-50/50 border border-white/20 shadow-sm rounded-[1.5rem] cursor-pointer group relative overflow-hidden h-full",
+                  !isMobile && "hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 premium-shine-container"
+                )}
+              >
+                <div className="absolute -right-6 -top-6 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-colors" />
+                
+                <div className="flex-1 pb-6 relative z-10">
+                  <div className="flex justify-between items-start mb-4 sm:mb-6">
+                    <div className={cn(
+                      "w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 premium-gradient rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-500/20 shrink-0 relative",
+                      !isMobile && "group-hover:scale-110 group-hover:premium-glow transition-all duration-500"
+                    )}>
+                      {item.icon}
+                      <div className="absolute inset-0 border-2 border-white/20 rounded-xl sm:rounded-2xl animate-pulse" />
+                    </div>
+                  </div>
+                  <h4 className="font-extrabold text-base sm:text-lg lg:text-xl text-slate-900 mb-2 group-hover:text-brand-650 transition-colors tracking-tight line-clamp-2 md:line-clamp-none leading-snug">{item.title}</h4>
+                  <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">{item.desc}</p>
+                </div>
+                
+                <Button className={cn(
+                  "w-full py-3 sm:py-3.5 mt-auto rounded-xl flex items-center justify-center text-xs sm:text-sm font-black premium-gradient border-none shadow-md shadow-brand-500/10 pointer-events-none relative overflow-hidden",
+                  !isMobile && "group-hover:shadow-lg group-hover:shadow-brand-500/30 transition-all"
+                )}>
+                   {/* Button Shine Effect */}
+                   {!isMobile && (
+                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
+                   )}
+                   <span className="relative z-10">View Collection</span>
+                </Button>
+              </Card>
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
+
+      {/* Full Exam Access Banner - Refined for Laptop & Mobile */}
         {/* Full Exam Access Banner - Refined for Laptop & Mobile */}
-        {/* Full Exam Access Banner - Refined for Laptop & Mobile */}
-        {hasBundle && !hasAccessTo(`exam_bundle_${selectedExam}`) && (
+        {hasBundle && !hasAccessTo(`exam_bundle_${selectedExam}`) && !isBannerDismissed && (
           <motion.div 
             initial={isMobile ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.98 }}
             animate={isMobile ? undefined : { opacity: 1, scale: 1 }}
@@ -6024,6 +6107,15 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 : "bg-gradient-to-br from-[#12040b]/98 via-[#08020a]/99 to-[#030005]/100 border border-brand-500/10"
             )}>
               <VisualEffects />
+              
+              {/* Premium Close Button */}
+              <button
+                onClick={() => setIsBannerDismissed(true)}
+                className="absolute top-4 right-4 sm:top-5 sm:right-5 z-20 p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white/60 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 group focus:outline-none cursor-pointer"
+                aria-label="Dismiss banner"
+              >
+                <X className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:rotate-90" />
+              </button>
               
               {/* Dynamic Glowing Ambient Mesh / Orbs */}
               {!isMobile && (
@@ -6286,82 +6378,6 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             </div>
           </motion.div>
         )}
-
-      {/* Section 1: Download Question Bank */}
-      <section id="question-bank-section" className="space-y-8 scroll-mt-24">
-        <div className="relative pl-4">
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-500 rounded-full" />
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Step 1: Learn & Review</h2>
-          <p className="text-slate-500 font-medium mt-1">Premium resources for your preparation</p>
-        </div>
-        
-        <motion.div 
-          initial={isMobile ? "show" : "hidden"}
-          animate={isMobile ? "show" : undefined}
-          whileInView={isMobile ? undefined : "show"}
-          viewport={isMobile ? undefined : { once: true }}
-          variants={{
-            hidden: { opacity: 0 },
-            show: {
-              opacity: 1,
-              transition: { staggerChildren: isMobile ? 0 : 0.1 }
-            }
-          }}
-          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6"
-        >
-          {[
-            { id: 'topic-wise', title: 'Topic-wise Question Bank', desc: 'Master specific subjects with curated questions.', icon: <Layers className="w-6 h-6 sm:w-7 sm:h-7" /> },
-            { id: 'exam-focused', title: 'Exam-Focused Bank', desc: 'High-yield questions tailored for this exam.', icon: <Target className="w-6 h-6 sm:w-7 sm:h-7" /> },
-            { id: 'revision-sets', title: 'Revision Sets', desc: 'Quick revision modules for last-minute prep.', icon: <BookMarked className="w-6 h-6 sm:w-7 sm:h-7" /> },
-            { id: 'pyq-collections', title: 'PYQ Collections', desc: 'Previous Year Questions with detailed solutions.', icon: <History className="w-6 h-6 sm:w-7 sm:h-7" /> },
-          ].map((item, i) => (
-            <motion.div
-              key={i}
-              variants={{
-                hidden: { y: 20, opacity: 0 },
-                show: { y: 0, opacity: 1 }
-              }}
-              whileHover={isMobile ? undefined : whileHover.liftTap}
-              whileTap={isMobile ? undefined : whileTap.press}
-            >
-              <Card 
-                onClick={() => setSelectedBankType(item.id)}
-                className={cn(
-                  "p-5 sm:p-6 lg:p-8 flex flex-col justify-between bg-gradient-to-br from-white to-slate-50/50 border border-white/20 shadow-sm rounded-[1.5rem] cursor-pointer group relative overflow-hidden h-full",
-                  !isMobile && "hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 premium-shine-container"
-                )}
-              >
-                <div className="absolute -right-6 -top-6 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-colors" />
-                
-                <div className="flex-1 pb-6 relative z-10">
-                  <div className="flex justify-between items-start mb-4 sm:mb-6">
-                    <div className={cn(
-                      "w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 premium-gradient rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-500/20 shrink-0 relative",
-                      !isMobile && "group-hover:scale-110 group-hover:premium-glow transition-all duration-500"
-                    )}>
-                      {item.icon}
-                      <div className="absolute inset-0 border-2 border-white/20 rounded-xl sm:rounded-2xl animate-pulse" />
-                    </div>
-                  </div>
-                  <h4 className="font-extrabold text-base sm:text-lg lg:text-xl text-slate-900 mb-2 group-hover:text-brand-650 transition-colors tracking-tight line-clamp-2 md:line-clamp-none leading-snug">{item.title}</h4>
-                  <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">{item.desc}</p>
-                </div>
-                
-                <Button className={cn(
-                  "w-full py-3 sm:py-3.5 mt-auto rounded-xl flex items-center justify-center text-xs sm:text-sm font-black premium-gradient border-none shadow-md shadow-brand-500/10 pointer-events-none relative overflow-hidden",
-                  !isMobile && "group-hover:shadow-lg group-hover:shadow-brand-500/30 transition-all"
-                )}>
-                   {/* Button Shine Effect */}
-                   {!isMobile && (
-                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
-                   )}
-                   <span className="relative z-10">View Collection</span>
-                </Button>
-              </Card>
-            </motion.div>
-          ))}
-        </motion.div>
-      </section>
 
       {/* Section 2: Practice Mode */}
       <section id="practice-mode-section" className="space-y-6 scroll-mt-24">
@@ -6985,52 +7001,52 @@ const ExamDetailPage = () => {
         initial={false}
         animate={{ y: isBottomNavVisible ? 0 : '100%' }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="bg-white/95 sm:glass border-t border-slate-200/50 px-2 sm:px-8 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:py-4 flex justify-around items-center fixed bottom-0 left-0 right-0 z-30 rounded-t-[2rem] shadow-[0_-8px_30px_rgba(0,0,0,0.05)]"
+        className="glass border-t border-white/25 border-x-transparent border-b-transparent px-2 sm:px-8 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:py-4 flex justify-around items-center fixed bottom-0 left-0 right-0 z-30 rounded-t-[2rem] shadow-[0_-10px_35px_rgba(0,0,0,0.06)]"
       >
         <button 
           type="button"
           onClick={() => setIsBottomNavVisible(false)}
-          className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white/95 border-t border-l border-r border-slate-200/50 hover:bg-slate-50 text-slate-400 hover:text-slate-700 rounded-t-xl px-4 py-1 flex items-center justify-center cursor-pointer shadow-[0_-4px_10px_rgba(0,0,0,0.03)] backdrop-blur-md transition-colors z-40 group focus:outline-none"
+          className="absolute -top-6 left-1/2 -translate-x-1/2 glass border-t border-l border-r border-white/35 text-slate-500 hover:text-slate-800 rounded-t-xl px-4 py-1 flex items-center justify-center cursor-pointer shadow-[0_-4px_12px_rgba(0,0,0,0.04)] backdrop-blur-md transition-all duration-300 hover:-translate-y-[2px] z-40 group focus:outline-none"
           title="Hide Navigation"
         >
           <ChevronDown className="w-4 h-4 transition-transform group-hover:translate-y-0.5 duration-200" />
         </button>
 
-        <button onClick={handleHomeClick} className="flex flex-col items-center gap-1 sm:gap-1.5 group text-slate-400">
-          <div className="p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform hover:bg-slate-50">
-            <LayoutDashboard className="w-5 h-5 sm:w-6 sm:h-6" />
+        <button onClick={handleHomeClick} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'home' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+          <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'home' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
+            <LayoutDashboard className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
           </div>
-          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">Home</span>
+          <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'home' ? 'font-black' : 'font-extrabold'}`}>Home</span>
         </button>
-        <button onClick={() => handleTabClick('courses')} className="flex flex-col items-center gap-1 sm:gap-1.5 group text-slate-400">
-          <div className="p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform hover:bg-slate-50">
-            <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />
+        <button onClick={() => handleTabClick('courses')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'courses' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+          <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'courses' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
+            <BookOpen className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
           </div>
-          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">Courses</span>
+          <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'courses' ? 'font-black' : 'font-extrabold'}`}>Courses</span>
         </button>
-        <button onClick={() => handleTabClick('analytics')} className="flex flex-col items-center gap-1 sm:gap-1.5 group text-slate-400">
-          <div className="p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform hover:bg-slate-50">
-            <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6" />
+        <button onClick={() => handleTabClick('analytics')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'analytics' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+          <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'analytics' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
+            <BarChart3 className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
           </div>
-          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">Analytics</span>
+          <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'analytics' ? 'font-black' : 'font-extrabold'}`}>Analytics</span>
         </button>
-        <button onClick={() => handleTabClick('history')} className="flex flex-col items-center gap-1 sm:gap-1.5 group text-slate-400">
-          <div className="p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform hover:bg-slate-50">
-            <History className="w-5 h-5 sm:w-6 sm:h-6" />
+        <button onClick={() => handleTabClick('history')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'history' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+          <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'history' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
+            <History className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
           </div>
-          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">History</span>
+          <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'history' ? 'font-black' : 'font-extrabold'}`}>History</span>
         </button>
-        <button onClick={() => handleTabClick('library')} className="flex flex-col items-center gap-1 sm:gap-1.5 group text-slate-400">
-          <div className="p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform hover:bg-slate-50">
-            <BookMarked className="w-5 h-5 sm:w-6 sm:h-6" />
+        <button onClick={() => handleTabClick('library')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'library' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+          <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'library' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
+            <BookMarked className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
           </div>
-          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">Library</span>
+          <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'library' ? 'font-black' : 'font-extrabold'}`}>Library</span>
         </button>
-        <button onClick={() => handleTabClick('ai_mentor')} className="flex flex-col items-center gap-1 sm:gap-1.5 group text-slate-400">
-          <div className="p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform hover:bg-slate-50">
-            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
+        <button onClick={() => handleTabClick('ai_mentor')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'ai_mentor' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+          <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'ai_mentor' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
+            <Sparkles className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
           </div>
-          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">AI Mentor</span>
+          <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'ai_mentor' ? 'font-black' : 'font-extrabold'}`}>AI Mentor</span>
         </button>
       </motion.nav>
 
@@ -7043,7 +7059,7 @@ const ExamDetailPage = () => {
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             type="button"
             onClick={() => setIsBottomNavVisible(true)}
-            className="fixed bottom-0 left-1/2 bg-white/95 border-t border-l border-r border-slate-200/50 hover:bg-slate-50 text-slate-500 hover:text-slate-800 rounded-t-xl px-5 py-1.5 flex items-center justify-center cursor-pointer shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur-md z-40 group focus:outline-none"
+            className="fixed bottom-0 left-1/2 glass border-t border-l border-r border-white/35 text-slate-500 hover:text-slate-800 rounded-t-xl px-5 py-1.5 flex items-center justify-center cursor-pointer shadow-[0_-4px_12px_rgba(0,0,0,0.04)] backdrop-blur-md z-40 group focus:outline-none transition-all duration-300 hover:-translate-y-[2px]"
             title="Show Navigation"
           >
             <ChevronUp className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 duration-200" />
@@ -7329,53 +7345,53 @@ function AppContent() {
                   initial={false}
                   animate={{ y: isBottomNavVisible ? 0 : '100%' }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="bg-white/95 sm:glass border-t border-slate-200/50 px-2 sm:px-8 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:py-4 flex justify-around items-center fixed bottom-0 left-0 right-0 z-30 rounded-t-[2rem] shadow-[0_-8px_30px_rgba(0,0,0,0.05)]"
+                  className="glass border-t border-white/25 border-x-transparent border-b-transparent px-2 sm:px-8 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:py-4 flex justify-around items-center fixed bottom-0 left-0 right-0 z-30 rounded-t-[2rem] shadow-[0_-10px_35px_rgba(0,0,0,0.06)]"
                 >
                   {/* Hide Navigation Toggle Tab */}
                   <button 
                     type="button"
                     onClick={() => setIsBottomNavVisible(false)}
-                    className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white/95 border-t border-l border-r border-slate-200/50 hover:bg-slate-50 text-slate-400 hover:text-slate-700 rounded-t-xl px-4 py-1 flex items-center justify-center cursor-pointer shadow-[0_-4px_10px_rgba(0,0,0,0.03)] backdrop-blur-md transition-colors z-40 group focus:outline-none"
+                    className="absolute -top-6 left-1/2 -translate-x-1/2 glass border-t border-l border-r border-white/35 text-slate-500 hover:text-slate-800 rounded-t-xl px-4 py-1 flex items-center justify-center cursor-pointer shadow-[0_-4px_12px_rgba(0,0,0,0.04)] backdrop-blur-md transition-all duration-300 hover:-translate-y-[2px] z-40 group focus:outline-none"
                     title="Hide Navigation"
                   >
                     <ChevronDown className="w-4 h-4 transition-transform group-hover:translate-y-0.5 duration-200" />
                   </button>
 
-                  <button onClick={handleHomeClick} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'home' ? 'text-brand-600' : 'text-slate-400'}`}>
-                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform ${mainTab === 'home' ? 'bg-brand-50' : 'hover:bg-slate-50'}`}>
-                      <LayoutDashboard className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <button onClick={handleHomeClick} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'home' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'home' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
+                      <LayoutDashboard className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
                     </div>
-                    <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">Home</span>
+                    <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'home' ? 'font-black' : 'font-extrabold'}`}>Home</span>
                   </button>
-                  <button onClick={() => handleTabClick('courses')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'courses' ? 'text-brand-600' : 'text-slate-400'}`}>
-                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform ${mainTab === 'courses' ? 'bg-brand-50' : 'hover:bg-slate-50'}`}>
-                      <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <button onClick={() => handleTabClick('courses')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'courses' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'courses' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
+                      <BookOpen className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
                     </div>
-                    <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">Courses</span>
+                    <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'courses' ? 'font-black' : 'font-extrabold'}`}>Courses</span>
                   </button>
-                  <button onClick={() => handleTabClick('analytics')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'analytics' ? 'text-brand-600' : 'text-slate-400'}`}>
-                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform ${mainTab === 'analytics' ? 'bg-brand-50' : 'hover:bg-slate-50'}`}>
-                      <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <button onClick={() => handleTabClick('analytics')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'analytics' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'analytics' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
+                      <BarChart3 className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
                     </div>
-                    <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">Analytics</span>
+                    <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'analytics' ? 'font-black' : 'font-extrabold'}`}>Analytics</span>
                   </button>
-                  <button onClick={() => handleTabClick('history')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'history' ? 'text-brand-600' : 'text-slate-400'}`}>
-                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform ${mainTab === 'history' ? 'bg-brand-50' : 'hover:bg-slate-50'}`}>
-                      <History className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <button onClick={() => handleTabClick('history')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'history' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'history' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
+                      <History className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
                     </div>
-                    <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">History</span>
+                    <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'history' ? 'font-black' : 'font-extrabold'}`}>History</span>
                   </button>
-                  <button onClick={() => handleTabClick('library')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'library' ? 'text-brand-600' : 'text-slate-400'}`}>
-                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform ${mainTab === 'library' ? 'bg-brand-50' : 'hover:bg-slate-50'}`}>
-                      <BookMarked className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <button onClick={() => handleTabClick('library')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'library' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'library' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
+                      <BookMarked className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
                     </div>
-                    <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">Library</span>
+                    <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'library' ? 'font-black' : 'font-extrabold'}`}>Library</span>
                   </button>
-                  <button onClick={() => handleTabClick('ai_mentor')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'ai_mentor' ? 'text-brand-600' : 'text-slate-400'}`}>
-                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-110 transition-transform ${mainTab === 'ai_mentor' ? 'bg-brand-50' : 'hover:bg-slate-50'}`}>
-                      <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <button onClick={() => handleTabClick('ai_mentor')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'ai_mentor' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'ai_mentor' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
+                      <Sparkles className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
                     </div>
-                    <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide sm:tracking-widest">AI Mentor</span>
+                    <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'ai_mentor' ? 'font-black' : 'font-extrabold'}`}>AI Mentor</span>
                   </button>
                 </motion.nav>
 
@@ -7389,7 +7405,7 @@ function AppContent() {
                       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                       type="button"
                       onClick={() => setIsBottomNavVisible(true)}
-                      className="fixed bottom-0 left-1/2 bg-white/95 border-t border-l border-r border-slate-200/50 hover:bg-slate-50 text-slate-500 hover:text-slate-800 rounded-t-xl px-5 py-1.5 flex items-center justify-center cursor-pointer shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur-md z-40 group focus:outline-none"
+                      className="fixed bottom-0 left-1/2 glass border-t border-l border-r border-white/35 text-slate-500 hover:text-slate-800 rounded-t-xl px-5 py-1.5 flex items-center justify-center cursor-pointer shadow-[0_-4px_12px_rgba(0,0,0,0.04)] backdrop-blur-md z-40 group focus:outline-none transition-all duration-300 hover:-translate-y-[2px]"
                       title="Show Navigation"
                     >
                       <ChevronUp className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 duration-200" />

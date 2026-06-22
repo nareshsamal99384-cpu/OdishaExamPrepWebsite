@@ -64,7 +64,8 @@ export function scrollToElement(
     delay?: number;
   }
 ): Promise<void> {
-  const { block = 'start', behavior = 'smooth', delay = 0 } = options || {};
+  const { block = 'start', behavior: rawBehavior = 'smooth', delay = 0 } = options || {};
+  const behavior = rawBehavior as any;
 
   return new Promise((resolve) => {
     let attempts = 0;
@@ -150,7 +151,8 @@ export function scrollToElement(
 }
 
 export function scrollToTop(options?: { behavior?: ScrollBehavior; delay?: number }): Promise<void> {
-  const { behavior = 'smooth', delay = 0 } = options || {};
+  const { behavior: rawBehavior = 'smooth', delay = 0 } = options || {};
+  const behavior = rawBehavior as any;
 
   return new Promise((resolve) => {
     const doScroll = () => {

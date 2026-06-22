@@ -27,7 +27,13 @@ const CLOUD_MAX = 5;
  *
  * Target: < 200 bytes per activity in cloud.
  */
+function sanitizeActivities(arr: any[]): UserActivity[] {
+  if (!Array.isArray(arr)) return [];
+  return arr.filter((a): a is UserActivity => !!(a && typeof a === 'object' && typeof a.type === 'string'));
+}
+
 function toCloudSafe(activity: UserActivity): UserActivity {
+  if (!activity) return {} as any;
   try {
     const m = activity.metadata || {};
     // Only keep fields needed for "Continue Practice" card display
@@ -65,14 +71,14 @@ function toCloudSafe(activity: UserActivity): UserActivity {
   } catch {
     // On any error return a minimal safe object
     return {
-      id: activity.id,
-      userId: activity.userId,
-      type: activity.type,
-      title: activity.title,
-      timestamp: activity.timestamp,
-      score: activity.score,
-      totalMarks: activity.totalMarks,
-      accuracy: activity.accuracy,
+      id: activity?.id || '',
+      userId: activity?.userId || '',
+      type: activity?.type || 'mock_test_completed',
+      title: activity?.title || '',
+      timestamp: activity?.timestamp || new Date().toISOString(),
+      score: activity?.score,
+      totalMarks: activity?.totalMarks,
+      accuracy: activity?.accuracy,
     };
   }
 }
@@ -95,14 +101,14 @@ export const activityTracker = {
     if (!userId) return [];
     try {
       const localKey = `${STORAGE_KEY_PREFIX}${userId}`;
-      const localActivities: UserActivity[] = safeParse<UserActivity[]>(
+      const localActivities = sanitizeActivities(safeParse<UserActivity[]>(
         localStorage.getItem(localKey),
         []
-      );
+      ));
 
-      const cloudActivities: UserActivity[] = (
+      const cloudActivities = sanitizeActivities((
         userMetadata?.activities && Array.isArray(userMetadata.activities)
-      ) ? userMetadata.activities : [];
+      ) ? userMetadata.activities : []);
 
       // Always prefer local (it has full question data for resuming).
       // Only fall back to cloud if local is completely empty (e.g. new device).
@@ -129,27 +135,27 @@ export const activityTracker = {
 
     try {
       const localKey = `${STORAGE_KEY_PREFIX}${userId}`;
-      const existing: UserActivity[] = safeParse<UserActivity[]>(
+      const existing = sanitizeActivities(safeParse<UserActivity[]>(
         localStorage.getItem(localKey),
         []
-      );
+      ));
 
       const newActivity: UserActivity = {
         ...activity,
         id: Math.random().toString(36).substring(2, 15),
         userId,
         timestamp: new Date().toISOString(),
-      };
+      } as UserActivity;
 
       // Keep full data (with questions) in localStorage for resume functionality
-      const updated = [newActivity, ...existing].slice(0, LOCAL_MAX);
+      const updated = sanitizeActivities([newActivity, ...existing]).slice(0, LOCAL_MAX);
       try {
         localStorage.setItem(localKey, JSON.stringify(updated));
         window.dispatchEvent(new CustomEvent('oep-activity-changed'));
       } catch (storageErr) {
         // If storage is full, try trimming older entries
         try {
-          const trimmed = [newActivity, ...existing].slice(0, 100);
+          const trimmed = sanitizeActivities([newActivity, ...existing]).slice(0, 100);
           localStorage.setItem(localKey, JSON.stringify(trimmed));
           window.dispatchEvent(new CustomEvent('oep-activity-changed'));
         } catch { /* give up on local storage */ }
@@ -197,11 +203,11 @@ export const activityTracker = {
     if (!userId || !activityId) return;
     try {
       const localKey = `${STORAGE_KEY_PREFIX}${userId}`;
-      const existing: UserActivity[] = safeParse<UserActivity[]>(
+      const existing = sanitizeActivities(safeParse<UserActivity[]>(
         localStorage.getItem(localKey),
         []
-      );
-      const updated = existing.filter((a) => a.id !== activityId);
+      ));
+      const updated = existing.filter((a) => a && a.id !== activityId);
       try {
         localStorage.setItem(localKey, JSON.stringify(updated));
         window.dispatchEvent(new CustomEvent('oep-activity-changed'));

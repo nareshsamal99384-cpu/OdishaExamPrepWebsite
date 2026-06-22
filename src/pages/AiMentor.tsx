@@ -794,12 +794,13 @@ export default function AiMentor({ user }: { user: any }) {
   });
 
   const activities = React.useMemo(() => {
-    return user?.id ? activityTracker.getActivities(user.id) : [];
+    const raw = user?.id ? activityTracker.getActivities(user.id) : [];
+    return raw.filter(act => act && typeof act === 'object' && typeof act.type === 'string');
   }, [user?.id]);
 
   const practiceStats = React.useMemo(() => {
     const completedFromActivities = activities.filter(
-      (act) => act.type === 'practice_test_completed' || act.type === 'mock_test_completed'
+      (act) => act && (act.type === 'practice_test_completed' || act.type === 'mock_test_completed')
     );
 
     const totalCompleted = Math.max(
@@ -833,7 +834,7 @@ export default function AiMentor({ user }: { user: any }) {
 
     const activeDates = new Set<string>();
     activities.forEach((act) => {
-      if (act.timestamp) {
+      if (act && act.timestamp) {
         try {
           const dateStr = act.timestamp.split('T')[0];
           activeDates.add(dateStr);

@@ -43,12 +43,37 @@
             window.location.reload();
           }
         }
+        function showErrorOverlay(errorMsg, errorStack) {
+          try {
+            if (document.getElementById('oep-fatal-error-overlay')) return;
+            var div = document.createElement('div');
+            div.id = 'oep-fatal-error-overlay';
+            div.style.position = 'fixed';
+            div.style.inset = '0';
+            div.style.background = '#8A1C36';
+            div.style.color = '#fef2f2';
+            div.style.zIndex = '999999';
+            div.style.padding = '24px';
+            div.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+            div.style.overflow = 'auto';
+            div.innerHTML = '<div style="max-w-xl; margin: 40px auto; background: rgba(0,0,0,0.2); padding: 32px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1);">' +
+              '<h1 style="font-size: 24px; font-weight: 900; margin-bottom: 8px; color: #fecaca;">Application Error</h1>' +
+              '<p style="font-size: 14px; margin-bottom: 20px; opacity: 0.9;">An uncaught runtime error occurred on this page:</p>' +
+              '<p style="font-weight: bold; font-size: 16px; margin-bottom: 12px; font-family: monospace; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 12px; border-left: 4px solid #f87171;">' + errorMsg + '</p>' +
+              '<pre style="background: rgba(0,0,0,0.5); padding: 16px; border-radius: 12px; font-size: 12px; font-family: monospace; white-space: pre-wrap; max-height: 250px; overflow: auto; border: 1px solid rgba(255,255,255,0.05);">' + (errorStack || 'No stack trace available') + '</pre>' +
+              '<button onclick="window.location.reload()" style="margin-top: 24px; padding: 12px 24px; background: white; border: none; color: #8A1C36; border-radius: 12px; cursor: pointer; font-weight: 800; font-size: 14px; transition: transform 0.2s;">Reload Application</button>' +
+              '</div>';
+            document.body.appendChild(div);
+          } catch(e) {}
+        }
         window.addEventListener('error', function(e) {
           var msg = e.message || '';
           if (msg.indexOf('Failed to fetch dynamically') !== -1 || 
               msg.indexOf('loading chunk') !== -1 || 
               msg.indexOf('Failed to fetch') !== -1) {
             reloadPage();
+          } else {
+            showErrorOverlay(e.message, e.error ? e.error.stack : '');
           }
         }, true);
         window.addEventListener('unhandledrejection', function(e) {
@@ -57,6 +82,8 @@
               reason.indexOf('loading chunk') !== -1 || 
               reason.indexOf('Failed to fetch') !== -1) {
             reloadPage();
+          } else {
+            showErrorOverlay(reason, e.reason && e.reason.stack || '');
           }
         });
       })();

@@ -21,7 +21,7 @@ import {
   Play
 } from 'lucide-react';
 import { cn } from './lib/utils';
-import { Button } from './App';
+import { Button } from './components/Button';
 import { useAuth } from './lib/AuthContext';
 import { MathTextRenderer, DiagramRenderer } from './components/MathTextRenderer';
 import { fadeSlideUp, modalContent } from './lib/animations';

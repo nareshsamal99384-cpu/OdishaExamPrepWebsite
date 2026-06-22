@@ -432,8 +432,8 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
     const rawData = (propActivities && propActivities.length > 0)
       ? propActivities
       : (user?.id ? activityTracker.getActivities(user.id) : []);
-    return rawData.filter(a => a.type === 'mock_test_completed' || a.type === 'practice_test_completed')
-      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    return rawData.filter(a => a && (a.type === 'mock_test_completed' || a.type === 'practice_test_completed'))
+      .sort((a: any, b: any) => new Date(a?.timestamp || 0).getTime() - new Date(b?.timestamp || 0).getTime());
   });
   const [loading, setLoading] = useState(() => !user?.id);
 
@@ -525,8 +525,8 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
       const rawData = (propActivities && propActivities.length > 0)
         ? propActivities
         : (user?.id ? activityTracker.getActivities(user.id) : []);
-      const completions = rawData.filter(a => a.type === 'mock_test_completed' || a.type === 'practice_test_completed')
-        .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      const completions = rawData.filter(a => a && (a.type === 'mock_test_completed' || a.type === 'practice_test_completed'))
+        .sort((a: any, b: any) => new Date(a?.timestamp || 0).getTime() - new Date(b?.timestamp || 0).getTime());
       setActivities(completions);
       setLoading(false);
     };
@@ -547,7 +547,7 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
     let totalTimeTaken = 0;
     let totalCalculatedScore = 0;
 
-    const recalculatedActivities = activities.map(a => {
+    const recalculatedActivities = activities.filter(Boolean).map(a => {
       const rawAnswers = a.metadata?.answers || {};
       const questions = a.metadata?.test?.questions || [];
       const hasRawData = questions.length > 0 && Object.keys(rawAnswers).length > 0;

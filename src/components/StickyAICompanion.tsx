@@ -193,6 +193,7 @@ function buildSystemPrompt(data: LiveSiteData | null, userName: string, activeTa
 
   const historyStr = data?.history && data.history.length
     ? data.history
+        .filter(Boolean)
         .map(h => {
           const scoreStr = h.score !== undefined ? `, Score: ${h.score}${h.totalMarks !== undefined ? `/${h.totalMarks}` : ''}` : '';
           const accStr = h.accuracy !== undefined ? `, Accuracy: ${h.accuracy}%` : '';
@@ -242,7 +243,7 @@ function buildSystemPrompt(data: LiveSiteData | null, userName: string, activeTa
     ? `• Current Active Selected Exam: ${data.selectedExamName} (ID: ${data.selectedExamId})`
     : '• No exam currently selected on the dashboard (student is in general browsing mode).';
 
-  const incompleteTests = data?.history?.filter(h => h.type === 'test_incomplete') || [];
+  const incompleteTests = data?.history?.filter(h => h && h.type === 'test_incomplete') || [];
   const incompleteStr = incompleteTests.length
     ? incompleteTests.map(h => {
         const totalQ = h.metadata?.totalQuestions || h.metadata?.test?.questions?.length;
@@ -254,7 +255,7 @@ function buildSystemPrompt(data: LiveSiteData | null, userName: string, activeTa
       }).join('\n')
     : 'No in-progress tests found (Continue Practice slider is empty).';
 
-  const recentCompleted = data?.history?.filter(h => h.type === 'mock_test_completed' || h.type === 'practice_test_completed').slice(0, 5) || [];
+  const recentCompleted = data?.history?.filter(h => h && (h.type === 'mock_test_completed' || h.type === 'practice_test_completed')).slice(0, 5) || [];
   const recentCompletedStr = recentCompleted.length
     ? recentCompleted.map(h => {
         const scoreStr = h.score !== undefined ? ` | Score: ${h.score}${h.totalMarks !== undefined ? `/${h.totalMarks}` : ''}` : '';
@@ -858,7 +859,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
     };
 
     const userActivities = user?.id ? activityTracker.getActivities(user.id, user.user_metadata) : [];
-    const history = userActivities.map((h: any) => {
+    const history = userActivities.filter(Boolean).map((h: any) => {
       const score = h.score !== undefined ? h.score : h.metadata?.score;
       const totalMarks = h.totalMarks !== undefined ? h.totalMarks : (h.metadata?.totalMarks || h.metadata?.total);
       const accuracy = h.accuracy !== undefined ? h.accuracy : h.metadata?.accuracy;
@@ -881,8 +882,8 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
 
     const selectedExamId = sessionStorage.getItem('oep_selectedExam');
 
-    const completions = userActivities.filter((a: any) => a.type === 'mock_test_completed' || a.type === 'practice_test_completed')
-      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    const completions = userActivities.filter((a: any) => a && (a.type === 'mock_test_completed' || a.type === 'practice_test_completed'))
+      .sort((a: any, b: any) => new Date(a?.timestamp || 0).getTime() - new Date(b?.timestamp || 0).getTime());
 
     let totalCorrect = 0;
     let totalWrong = 0;
