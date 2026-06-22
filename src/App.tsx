@@ -6705,7 +6705,7 @@ const ScrollToTop = () => {
     const scrollTarget = typeof window !== 'undefined' ? sessionStorage.getItem('oep_scroll_target') : null;
     if (scrollTarget) {
       sessionStorage.removeItem('oep_scroll_target');
-      scrollToElement(scrollTarget, { block: 'start', behavior: 'smooth', delay: 100 });
+      scrollToElement(scrollTarget, { block: 'start', behavior: 'instant', delay: 0 });
       return;
     }
 
