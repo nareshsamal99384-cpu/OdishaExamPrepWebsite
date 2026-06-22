@@ -2929,6 +2929,7 @@ const SPARKLE_POSITIONS = [
 const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activities = [], onNavigate, onActivityLogged, selectedExam: propsSelectedExam, setSelectedExam: propsSetSelectedExam }: { isGuest?: boolean, onSignIn?: () => void, mainTab?: string, user?: any, activities?: any[], onNavigate?: (tab: any) => void, onActivityLogged?: () => void, selectedExam?: string | null, setSelectedExam?: (val: string | null) => void }) => {
   const { profile, isAdmin, hasFullAccess, grantFullAccess, hasAccessTo, unlockItem, guestUsage, incrementGuestUsage } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [dynamicQuestionBanks, setDynamicQuestionBanks] = useState<Record<string, any[]>>(() => _dashboardCache.dynamicQuestionBanks);
   const [exams, setExams] = useState<any[]>(() => _dashboardCache.exams);
   const [testSeries, setTestSeries] = useState<any[]>(() => _dashboardCache.testSeries);
@@ -5903,7 +5904,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             <div className="flex items-start gap-3 sm:gap-4">
               <Button 
                 variant="ghost" 
-                onClick={() => { setSelectedExam(null); scrollToElement('exams', { block: 'start', delay: 100 }); }} 
+                onClick={() => { 
+                  setSelectedExam(null); 
+                  if (location.pathname === '/') {
+                    scrollToElement('exams', { block: 'start', delay: 100 }); 
+                  }
+                }} 
                 className="p-3 rounded-2xl hover:bg-brand-50 mt-1 shrink-0"
               >
                 <ChevronRight className="w-6 h-6 rotate-180 text-brand-600" />
