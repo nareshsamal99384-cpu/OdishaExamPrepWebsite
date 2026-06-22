@@ -5374,7 +5374,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         setActiveTestState({ ...a.metadata, resumeSessionId: a.metadata?.resumeSessionId || a.metadata?.test?.id });
                         setActiveTest(testToResume);
                       }}
-                      className={`snap-start shrink-0 w-[72vw] sm:w-[300px] lg:w-[340px] bg-white rounded-2xl border border-slate-100 hover:border-brand-200/60 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 group p-4 sm:p-5 flex flex-col gap-3 premium-shine-container ${
+                      className={`snap-start shrink-0 w-[72vw] sm:w-[300px] lg:w-[340px] glass rounded-2xl border border-white/40 hover:border-brand-300/50 hover:bg-white/85 hover:shadow-2xl hover:shadow-brand-500/5 transition-all duration-500 group p-4 sm:p-5 flex flex-col gap-3 premium-shine-container ${
                         canResume ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed'
                       }`}
                     >
@@ -5470,7 +5470,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         if (isTestResult) handleViewResults(a.metadata);
                         else if (a.type === 'question_bank_accessed' && a.metadata?.pdfUrl) window.open(a.metadata.pdfUrl, '_blank');
                       }}
-                      className="snap-start shrink-0 w-[72vw] sm:w-[300px] lg:w-[340px] bg-white rounded-2xl border border-slate-100 hover:border-brand-200/60 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 cursor-pointer group flex items-center gap-3 sm:gap-4 p-4 sm:p-5 premium-shine-container"
+                      className="snap-start shrink-0 w-[72vw] sm:w-[300px] lg:w-[340px] glass rounded-2xl border border-white/40 hover:border-brand-300/50 hover:bg-white/85 hover:shadow-2xl hover:shadow-brand-500/5 transition-all duration-500 cursor-pointer group flex items-center gap-3 sm:gap-4 p-4 sm:p-5 premium-shine-container"
                     >
                       {/* Icon */}
                       <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 bg-brand-500/10 text-brand-600 group-hover:scale-110 transition-transform relative z-10">
