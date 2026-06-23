@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Odisha Exam Prep</string>
+    <string name="title_activity_main">Odisha Exam Prep</string>
+    <string name="package_name">com.odishaexamprep.app</string>
+    <string name="custom_url_scheme">com.odishaexamprep.app</string>
+</resources>

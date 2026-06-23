@@ -1,8 +1,22 @@
 node_modules/
 build/
-# dist/
+dist/
 coverage/
 .DS_Store
 *.log
 .env*
 !.env.example
+
+# IDE configurations
+.idea/
+.vscode/
+
+# Agent/Environment temporary & helper files
+scratch/
+commit_diff.txt
+tmp_app_diff.txt
+SKILL.md
+SKILL_EFFICIENT_DEVELOPMENT.md
+diagram_guidelines.md
+frontend-expert.md
+uiux-designer.md
