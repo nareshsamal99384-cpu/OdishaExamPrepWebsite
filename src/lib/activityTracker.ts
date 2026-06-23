@@ -186,6 +186,26 @@ export const activityTracker = {
         }
       }
 
+      // Sync full activity details to the public.activities table
+      try {
+        await supabase
+          .from('activities')
+          .upsert([{
+            id: newActivity.id,
+            userId: newActivity.userId,
+            type: newActivity.type,
+            title: newActivity.title,
+            timestamp: newActivity.timestamp,
+            score: newActivity.score,
+            totalMarks: newActivity.totalMarks,
+            accuracy: newActivity.accuracy,
+            timeSpent: newActivity.timeSpent,
+            metadata: newActivity.metadata
+          }]);
+      } catch (dbErr) {
+        console.error('[Activities System] Failed to write activity to database:', dbErr);
+      }
+
       try {
         await supabase.auth.updateUser({
           data: { activities: cloudPayload },
@@ -215,6 +235,18 @@ export const activityTracker = {
 
       // Sync LIGHTWEIGHT version to cloud (no questions, no large timeSpent maps)
       const cloudPayload = updated.slice(0, CLOUD_MAX).map(toCloudSafe);
+
+      // Delete from activities database table
+      try {
+        await supabase
+          .from('activities')
+          .delete()
+          .eq('id', activityId)
+          .eq('userId', userId);
+      } catch (dbErr) {
+        console.error('[Activities System] Failed to delete activity from database:', dbErr);
+      }
+
       try {
         await supabase.auth.updateUser({
           data: { activities: cloudPayload },
@@ -233,6 +265,17 @@ export const activityTracker = {
       localStorage.removeItem(`${STORAGE_KEY_PREFIX}${userId}`);
       window.dispatchEvent(new CustomEvent('oep-activity-changed'));
     } catch { /* ignore */ }
+
+    // Clear from activities database table
+    try {
+      await supabase
+        .from('activities')
+        .delete()
+        .eq('userId', userId);
+    } catch (dbErr) {
+      console.error('[Activities System] Failed to clear activities from database:', dbErr);
+    }
+
     try {
       await supabase.auth.updateUser({ data: { activities: [] } });
     } catch (e) {

@@ -88,24 +88,6 @@ async function startServer() {
   const USER_LIMIT = 500;
   const WINDOW_MS = 60 * 60 * 1e3;
   const checkAiRateLimit = (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    const isAuth = authHeader && authHeader.startsWith("Bearer ");
-    const ip = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress;
-    const key = isAuth ? `user:${authHeader}` : `anon:${ip}`;
-    const limit = isAuth ? USER_LIMIT : ANON_LIMIT;
-    const now = Date.now();
-    const record = aiRateLimitCache.get(key);
-    if (!record || now > record.resetAt) {
-      aiRateLimitCache.set(key, { count: 1, resetAt: now + WINDOW_MS });
-      return next();
-    }
-    if (record.count >= limit) {
-      return res.status(429).json({
-        error: "Too many requests",
-        message: isAuth ? "You have reached the hourly limit for AI queries. Please try again later." : "Anonymous AI access is limited. Please log in for unlimited access."
-      });
-    }
-    record.count++;
     next();
   };
   setInterval(() => {
@@ -934,7 +916,7 @@ async function startServer() {
         return res.status(400).json({ error: "Messages must be an array" });
       }
       const totalContentLength = messages.reduce((acc, m) => acc + (m.content?.length || 0), 0);
-      if (totalContentLength > 15e3) {
+      if (totalContentLength > 15e4) {
         return res.status(400).json({ error: "Request content too large" });
       }
       let apiKey = process.env.VITE_DEEPSEEK_API_KEY || process.env.VITE_DENTA_RESPONSE_AI;

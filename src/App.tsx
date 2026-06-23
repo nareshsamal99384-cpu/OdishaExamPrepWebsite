@@ -7163,6 +7163,33 @@ function AppContent() {
   const [dashboardKey, setDashboardKey] = useState(0);
   const [activities, setActivities] = useState<any[]>([]);
 
+  // Fetch activities from DB asynchronously
+  const fetchActivitiesFromDB = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('activities')
+        .select('*')
+        .eq('userId', userId)
+        .order('timestamp', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        // Save to localStorage so that synchronous getActivities reads the fresh database state
+        const localKey = `oep_activities_${userId}`;
+        localStorage.setItem(localKey, JSON.stringify(data));
+        
+        // Update state in App.tsx
+        setActivities(data);
+        
+        // Dispatch event to notify AnalyticsView and other listeners
+        window.dispatchEvent(new CustomEvent('oep-activity-changed'));
+      }
+    } catch (err) {
+      console.error('Error fetching activities from DB:', err);
+    }
+  }, []);
+
   // Clean up stale sessionStorage key that previously caused Practice Mode
   // to reopen unexpectedly when navigating to Dashboard from Library tab.
   useEffect(() => {
@@ -7170,11 +7197,35 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setActivities([]);
+      return;
+    }
 
-    // Load activities (merges local + cloud, prefers local which has full question data)
+    // Load initial activities (merges local + cloud, prefers local which has full question data)
     const initialActivities = activityTracker.getActivities(user.id, user.user_metadata);
     setActivities(initialActivities);
+
+    // Fetch fresh from DB in the background
+    fetchActivitiesFromDB(user.id);
+
+    // Set up Realtime subscription to receive updates from other devices instantly
+    const channel = supabase
+      .channel(`realtime-activities-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'activities',
+          filter: `userId=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('[Realtime] Activity change received:', payload);
+          fetchActivitiesFromDB(user.id);
+        }
+      )
+      .subscribe();
 
     // ── One-time metadata repair for old accounts ──────────────────────────────
     // Run whenever user_metadata is large (> 2KB). Strips ALL heavy session state
@@ -7209,15 +7260,16 @@ function AppContent() {
         return { id: a.id, type: a.type, title: a.title, timestamp: a.timestamp,
                  score: a.score, accuracy: a.accuracy, metadata: lightMeta };
       }).filter(Boolean);
-      // Fire-and-forget — don't await so it doesn't block anything
-      import('./lib/supabase').then(({ supabase }) => {
-        supabase.auth.updateUser({ data: { activities: repaired } }).catch(
-          (e: any) => console.warn('Metadata repair failed (non-fatal):', e)
-        );
-      });
+      supabase.auth.updateUser({ data: { activities: repaired } }).catch(
+        (e: any) => console.warn('Metadata repair failed (non-fatal):', e)
+      );
     }
     // ─────────────────────────────────────────────────────────────────────────
-  }, [user?.id, user?.user_metadata]);
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, user?.user_metadata, fetchActivitiesFromDB]);
 
   // Clear dashboard cache on logout so a different account sees fresh data
   useEffect(() => {
@@ -7268,8 +7320,7 @@ function AppContent() {
 
   const refreshActivities = () => {
     if (user?.id) {
-       const updated = activityTracker.getActivities(user.id, user.user_metadata);
-       setActivities(updated);
+       fetchActivitiesFromDB(user.id);
     }
   };
 
