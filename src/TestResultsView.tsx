@@ -122,7 +122,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
       const containerRect = containerRef.current.getBoundingClientRect();
       const offset = window.innerWidth < 1024 ? 80 : 100;
       const targetY = containerRef.current.scrollTop + cardRect.top - containerRect.top - offset;
-      containerRef.current.scrollTo({ top: targetY, behavior: 'smooth' });
+      containerRef.current.scrollTo({ top: targetY, behavior: 'auto' });
     }
   }, [currentIdx]);
 
@@ -381,10 +381,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
         {/* Right Col: Detailed Question Card */}
         <div className="lg:col-span-2 space-y-6">
           <div ref={questionCardRef} className="glass px-2.5 py-5 sm:p-10 lg:p-8 rounded-2xl sm:rounded-[2.5rem] border border-slate-200 premium-shadow bg-white">
-            <motion.div 
-               key={currentIdx}
-               {...fadeSlideUpSm}
-             >
+            <div key={currentIdx}>
              
              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
                 <div className="flex flex-wrap items-center gap-3 sm:gap-4">
@@ -515,11 +512,11 @@ export default function TestResultsView({ results, onClose }: { results: any, on
              
              {/* Desktop inline nav - hidden on mobile */}
               <div className="hidden lg:flex mt-6 justify-between gap-4">
-                <Button variant="outline" disabled={currentIdx === 0} onClick={() => setCurrentIdx(p => p - 1)} className="flex-none justify-center gap-2 px-8 py-5 text-base rounded-2xl border-2 border-slate-200"><ChevronLeft className="w-5 h-5"/> Previous</Button>
-                <Button disabled={currentIdx === questions.length - 1} onClick={() => setCurrentIdx(p => p + 1)} className="flex-none justify-center gap-2 px-10 py-5 text-base rounded-2xl bg-slate-900 text-white hover:bg-slate-800">Next <ChevronRight className="w-5 h-5"/></Button>
+                <Button variant="outline" disabled={currentIdx === 0} onClick={() => { setCurrentIdx(p => p - 1); questionCardRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' }); }} className="flex-none justify-center gap-2 px-8 py-5 text-base rounded-2xl border-2 border-slate-200"><ChevronLeft className="w-5 h-5"/> Previous</Button>
+                <Button disabled={currentIdx === questions.length - 1} onClick={() => { setCurrentIdx(p => p + 1); questionCardRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' }); }} className="flex-none justify-center gap-2 px-10 py-5 text-base rounded-2xl bg-slate-900 text-white hover:bg-slate-800">Next <ChevronRight className="w-5 h-5"/></Button>
              </div>
 
-            </motion.div>
+            </div>
           </div>
         </div>
 
