@@ -75,15 +75,40 @@ export default function TestResultsView({ results, onClose }: { results: any, on
   }, [showQuestionNav]);
 
   React.useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const handleScroll = () => {
-      setShowQuestionNav(el.scrollTop > 150);
-    };
-    handleScroll();
-    el.addEventListener('scroll', handleScroll, { passive: true });
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
+      // Fallback: show nav only after a delay so the scroll-to-top can settle first
+      const t = setTimeout(() => setShowQuestionNav(true), 600);
+      return () => clearTimeout(t);
+    }
+
+    // Delay observer setup so the scroll-to-top (instant) has fully committed
+    // before the observer fires its first callback.
+    const setupTimer = setTimeout(() => {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          setShowQuestionNav(entry.isIntersecting);
+        },
+        {
+          rootMargin: '0px 0px -10% 0px',
+          threshold: 0.05
+        }
+      );
+
+      const currentCard = questionCardRef.current;
+      if (currentCard) {
+        observer.observe(currentCard);
+      }
+
+      // Store observer on a ref so the cleanup can disconnect it
+      (questionCardRef as any)._observer = observer;
+    }, 250);
+
     return () => {
-      el.removeEventListener('scroll', handleScroll);
+      clearTimeout(setupTimer);
+      if ((questionCardRef as any)._observer) {
+        (questionCardRef as any)._observer.disconnect();
+        (questionCardRef as any)._observer = null;
+      }
     };
   }, [results]);
 
@@ -97,7 +122,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
       const containerRect = containerRef.current.getBoundingClientRect();
       const offset = window.innerWidth < 1024 ? 80 : 100;
       const targetY = containerRef.current.scrollTop + cardRect.top - containerRect.top - offset;
-      containerRef.current.scrollTo({ top: targetY, behavior: 'auto' });
+      containerRef.current.scrollTo({ top: targetY, behavior: 'smooth' });
     }
   }, [currentIdx]);
 
@@ -154,11 +179,10 @@ export default function TestResultsView({ results, onClose }: { results: any, on
         "fixed inset-0 z-[200] overflow-y-auto bg-[#F8FAFC] font-sans transition-all duration-300",
         showQuestionNav ? "pb-18 sm:pb-20" : "pb-12"
       )}
-      style={{ transform: 'translate3d(0, 0, 0)' }}
     >
       {/* Background gradients for ambient atmosphere */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] bg-gradient-to-br from-brand-100/20 via-purple-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" style={{ transform: 'translate3d(0, 0, 0)' }} />
-      <div className="fixed bottom-0 right-0 w-[800px] h-[600px] bg-gradient-to-tl from-indigo-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" style={{ transform: 'translate3d(0, 0, 0)' }} />
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] bg-gradient-to-br from-brand-100/20 via-purple-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" />
+      <div className="fixed bottom-0 right-0 w-[800px] h-[600px] bg-gradient-to-tl from-indigo-100/10 to-transparent blur-[120px] -z-10 pointer-events-none" />
 
       <header className="h-16 sm:h-20 glass border-b border-slate-200/50 flex items-center justify-between px-4 sm:px-10 sticky top-0 z-[100] w-full mb-4 sm:mb-8">
         <h1 className="font-black text-lg sm:text-2xl text-slate-900 tracking-tight line-clamp-1">Performance Report</h1>
@@ -170,7 +194,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-6">
           
           {/* Overall Score Card */}
-          <div className="lg:col-span-1 relative overflow-hidden bg-white/95 p-6 sm:p-8 rounded-[2.5rem] border border-white/85 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] flex flex-col justify-between group transition-all duration-500 cursor-default" style={{ transform: 'translate3d(0,0,0)' }}>
+          <div className="lg:col-span-1 relative overflow-hidden bg-white/65 backdrop-blur-xl p-6 sm:p-8 rounded-[2.5rem] border border-white/85 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] flex flex-col justify-between group transition-all duration-500 cursor-default">
             {/* Background Glow */}
             <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#8a1c36]/5 rounded-full blur-3xl pointer-events-none group-hover:bg-[#8a1c36]/10 transition-colors duration-500" />
             <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-indigo-500/3 rounded-full blur-3xl pointer-events-none group-hover:bg-indigo-500/5 transition-colors duration-500" />
@@ -188,7 +212,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
             </div>
 
             {/* Performance Calculation Breakdown */}
-            <div className="relative z-10 bg-[#F8FAFC]/90 border border-slate-200/50 rounded-2xl p-4 text-left space-y-2.5 mt-8 hover:bg-white/80 transition-all duration-300">
+            <div className="relative z-10 bg-white/45 border border-white/60 backdrop-blur-md rounded-2xl p-4 text-left space-y-2.5 mt-8 hover:bg-white/80 transition-all duration-300">
               <div className="flex justify-between items-center text-xs font-bold text-slate-500">
                 <span>Total Marks</span>
                 <span className="text-slate-800 font-extrabold">{totalMarks} Marks</span>
@@ -214,7 +238,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
           <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
             
             {/* Time Taken */}
-            <div className="relative overflow-hidden bg-white/95 p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default" style={{ transform: 'translate3d(0,0,0)' }}>
+            <div className="relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
               <div className="absolute -top-12 -right-12 w-28 h-28 bg-[#8a1c36]/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
               <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
                 <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Time Taken</span>
@@ -228,7 +252,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
             </div>
 
             {/* Average Speed */}
-            <div className="relative overflow-hidden bg-white/95 p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default" style={{ transform: 'translate3d(0,0,0)' }}>
+            <div className="relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
               <div className="absolute -top-12 -right-12 w-28 h-28 bg-[#8a1c36]/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
               <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
                 <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Average Speed</span>
@@ -242,7 +266,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
             </div>
 
             {/* Marked Review */}
-            <div className="relative overflow-hidden bg-white/95 p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default" style={{ transform: 'translate3d(0,0,0)' }}>
+            <div className="relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
               <div className="absolute -top-12 -right-12 w-28 h-28 bg-amber-500/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
               <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
                 <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Marked Review</span>
@@ -256,7 +280,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
             </div>
 
             {/* Correct Answers */}
-            <div className="relative overflow-hidden bg-white/95 p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default" style={{ transform: 'translate3d(0,0,0)' }}>
+            <div className="relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
               <div className="absolute -top-12 -right-12 w-28 h-28 bg-emerald-500/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
               <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
                 <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Correct Answers</span>
@@ -270,7 +294,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
             </div>
 
             {/* Incorrect Answers */}
-            <div className="relative overflow-hidden bg-white/95 p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default" style={{ transform: 'translate3d(0,0,0)' }}>
+            <div className="relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
               <div className="absolute -top-12 -right-12 w-28 h-28 bg-rose-500/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
               <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
                 <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Incorrect Answers</span>
@@ -284,7 +308,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
             </div>
 
             {/* Unanswered */}
-            <div className="relative overflow-hidden bg-white/95 p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default" style={{ transform: 'translate3d(0,0,0)' }}>
+            <div className="relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
               <div className="absolute -top-12 -right-12 w-28 h-28 bg-slate-500/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
               <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
                 <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Unanswered</span>
@@ -356,7 +380,10 @@ export default function TestResultsView({ results, onClose }: { results: any, on
         {/* Right Col: Detailed Question Card */}
         <div className="lg:col-span-2 space-y-6">
           <div ref={questionCardRef} className="glass px-2.5 py-5 sm:p-10 lg:p-8 rounded-2xl sm:rounded-[2.5rem] border border-slate-200 premium-shadow bg-white">
-            <div key={currentIdx}>
+            <motion.div 
+               key={currentIdx}
+               {...fadeSlideUpSm}
+             >
              
              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
                 <div className="flex flex-wrap items-center gap-3 sm:gap-4">
@@ -487,11 +514,11 @@ export default function TestResultsView({ results, onClose }: { results: any, on
              
              {/* Desktop inline nav - hidden on mobile */}
               <div className="hidden lg:flex mt-6 justify-between gap-4">
-                <Button variant="outline" disabled={currentIdx === 0} onClick={() => { setCurrentIdx(p => p - 1); questionCardRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' }); }} className="flex-none justify-center gap-2 px-8 py-5 text-base rounded-2xl border-2 border-slate-200"><ChevronLeft className="w-5 h-5"/> Previous</Button>
-                <Button disabled={currentIdx === questions.length - 1} onClick={() => { setCurrentIdx(p => p + 1); questionCardRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' }); }} className="flex-none justify-center gap-2 px-10 py-5 text-base rounded-2xl bg-slate-900 text-white hover:bg-slate-800">Next <ChevronRight className="w-5 h-5"/></Button>
+                <Button variant="outline" disabled={currentIdx === 0} onClick={() => setCurrentIdx(p => p - 1)} className="flex-none justify-center gap-2 px-8 py-5 text-base rounded-2xl border-2 border-slate-200"><ChevronLeft className="w-5 h-5"/> Previous</Button>
+                <Button disabled={currentIdx === questions.length - 1} onClick={() => setCurrentIdx(p => p + 1)} className="flex-none justify-center gap-2 px-10 py-5 text-base rounded-2xl bg-slate-900 text-white hover:bg-slate-800">Next <ChevronRight className="w-5 h-5"/></Button>
              </div>
 
-            </div>
+            </motion.div>
           </div>
         </div>
 
