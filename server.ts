@@ -1195,7 +1195,7 @@ async function startServer() {
       }
 
       const totalContentLength = messages.reduce((acc: number, m: any) => acc + (m.content?.length || 0), 0);
-      if (totalContentLength > 15000) {
+      if (totalContentLength > 150000) {
         return res.status(400).json({ error: "Request content too large" });
       }
 
