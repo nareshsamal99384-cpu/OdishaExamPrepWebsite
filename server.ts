@@ -98,29 +98,7 @@ async function startServer() {
   const WINDOW_MS = 60 * 60 * 1000;
 
   const checkAiRateLimit = (req: any, res: any, next: any) => {
-    const authHeader = req.headers.authorization;
-    const isAuth = authHeader && authHeader.startsWith("Bearer ");
-    const ip = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress;
-    const key = isAuth ? `user:${authHeader}` : `anon:${ip}`;
-    const limit = isAuth ? USER_LIMIT : ANON_LIMIT;
-    const now = Date.now();
-    const record = aiRateLimitCache.get(key);
-
-    if (!record || now > record.resetAt) {
-      aiRateLimitCache.set(key, { count: 1, resetAt: now + WINDOW_MS });
-      return next();
-    }
-
-    if (record.count >= limit) {
-      return res.status(429).json({
-        error: "Too many requests",
-        message: isAuth 
-          ? "You have reached the hourly limit for AI queries. Please try again later." 
-          : "Anonymous AI access is limited. Please log in for unlimited access."
-      });
-    }
-
-    record.count++;
+    // AI rate limiting has been disabled to allow unlimited AI queries.
     next();
   };
 
