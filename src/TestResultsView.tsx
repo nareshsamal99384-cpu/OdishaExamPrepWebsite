@@ -75,42 +75,17 @@ export default function TestResultsView({ results, onClose }: { results: any, on
   }, [showQuestionNav]);
 
   React.useEffect(() => {
-    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
-      // Fallback: show nav only after a delay so the scroll-to-top can settle first
-      const t = setTimeout(() => setShowQuestionNav(true), 600);
-      return () => clearTimeout(t);
-    }
-
-    // Delay observer setup so the scroll-to-top (instant) has fully committed
-    // before the observer fires its first callback.
-    const setupTimer = setTimeout(() => {
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          setShowQuestionNav(entry.isIntersecting);
-        },
-        {
-          rootMargin: '0px 0px -10% 0px',
-          threshold: 0.01
-        }
-      );
-
-      const currentCard = questionCardRef.current;
-      if (currentCard) {
-        observer.observe(currentCard);
-      }
-
-      // Store observer on a ref so the cleanup can disconnect it
-      (questionCardRef as any)._observer = observer;
-    }, 250);
-
-    return () => {
-      clearTimeout(setupTimer);
-      if ((questionCardRef as any)._observer) {
-        (questionCardRef as any)._observer.disconnect();
-        (questionCardRef as any)._observer = null;
-      }
+    const el = containerRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      setShowQuestionNav(el.scrollTop > 150);
     };
-  }, [results, currentIdx]);
+    handleScroll();
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', handleScroll);
+    };
+  }, [results]);
 
   React.useEffect(() => {
     if (isFirstRender.current) {
