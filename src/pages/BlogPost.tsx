@@ -198,7 +198,7 @@ export default function BlogPost() {
       "@type": "BlogPosting",
       "headline": blog.name,
       "description": seoDesc,
-      "image": imageUrl || "https://odishaexamprep.com/og-image.jpg",
+      "image": imageUrl || "https://odishaexamprep.in/og-image.jpg",
       "datePublished": blog.examDate || blog.createdAt,
       "author": { "@type": "Organization", "name": "OdishaExamPrep" }
     };
