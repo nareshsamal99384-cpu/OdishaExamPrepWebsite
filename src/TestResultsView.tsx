@@ -90,7 +90,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
         },
         {
           rootMargin: '0px 0px -10% 0px',
-          threshold: 0.05
+          threshold: 0.01
         }
       );
 
@@ -110,7 +110,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
         (questionCardRef as any)._observer = null;
       }
     };
-  }, [results]);
+  }, [results, currentIdx]);
 
   React.useEffect(() => {
     if (isFirstRender.current) {
