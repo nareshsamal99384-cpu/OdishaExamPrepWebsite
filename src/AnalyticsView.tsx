@@ -116,7 +116,7 @@ const AnimatedCounter = ({ value, suffix = "", decimals = 0 }: { value: number, 
   return <>{displayValue}{suffix}</>;
 };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = React.memo(({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-slate-950/90 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-slate-800 text-white">
@@ -134,9 +134,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     );
   }
   return null;
-};
+});
 
-const Sparkline = ({ data, color = "#8a1c36", id }: { data: number[]; color?: string; id: string }) => {
+const Sparkline = React.memo(({ data, color = "#8a1c36", id }: { data: number[]; color?: string; id: string }) => {
   if (!data || data.length < 2) return null;
   const max = Math.max(...data);
   const min = Math.min(...data);
@@ -181,9 +181,9 @@ const Sparkline = ({ data, color = "#8a1c36", id }: { data: number[]; color?: st
       />
     </svg>
   );
-};
+});
 
-function StatCard({ icon, title, value, suffix = "", trend, decimals = 0, sparklineData, color = "brand" }: any) {
+const StatCard = React.memo(({ icon, title, value, suffix = "", trend, decimals = 0, sparklineData, color = "brand" }: any) => {
   const isPositive = (trend ?? 0) >= 0;
   const strokeColor = color === "brand" ? "#8a1c36" : color === "success" ? "#10b981" : color === "warning" ? "#d97706" : "#6366f1";
   
@@ -250,9 +250,9 @@ function StatCard({ icon, title, value, suffix = "", trend, decimals = 0, sparkl
       </div>
     </motion.div>
   );
-}
+});
 
-function AccuracyRow({ label, value, total, color }: { label: string, value: number, total: number, color: string }) {
+const AccuracyRow = React.memo(({ label, value, total, color }: { label: string, value: number, total: number, color: string }) => {
   const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
   const circleColor = color === "bg-rose-500" ? "bg-rose-500" : color;
 
@@ -268,9 +268,9 @@ function AccuracyRow({ label, value, total, color }: { label: string, value: num
        </div>
     </div>
   );
-}
+});
 
-const SubjectRow = ({ subject }: { subject: any; key?: string }) => {
+const SubjectRow = React.memo(({ subject }: { subject: any }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const incorrect = Math.max(0, subject.attempted - subject.correct);
   const correctPct = subject.attempted > 0 ? Math.round((subject.correct / subject.attempted) * 100) : 0;
@@ -363,7 +363,107 @@ const SubjectRow = ({ subject }: { subject: any; key?: string }) => {
        </AnimatePresence>
     </div>
   );
-};
+});
+
+// Standalone memoized Chart components to prevent re-renders & scroll lag
+const PerformanceTrendChart = React.memo(({ chartData }: { chartData: any[] }) => {
+  return (
+    <div className="w-full h-[300px] relative z-10 pr-2">
+       <ResponsiveContainer width="100%" height="100%" debounce={100}>
+          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+             <defs>
+                <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
+                   <stop offset="0%" stopColor="#8a1c36" stopOpacity={0.22}/>
+                   <stop offset="100%" stopColor="#8a1c36" stopOpacity={0}/>
+                 </linearGradient>
+             </defs>
+             <CartesianGrid strokeDasharray="6 6" vertical={false} stroke="#e2e8f0/60" />
+             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-sans)', letterSpacing: '0.05em' }} dy={10} />
+             <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-sans)' }} domain={[0, 100]} />
+             <Tooltip content={<CustomTooltip />} />
+             <Area type="monotone" dataKey="score" name="Score" stroke="#8a1c36" strokeWidth={3.5} fillOpacity={1} fill="url(#scoreGrad)" activeDot={{ r: 6, stroke: '#ffffff', strokeWidth: 2, fill: '#8a1c36' }} isAnimationActive={false} />
+          </AreaChart>
+       </ResponsiveContainer>
+    </div>
+  );
+});
+
+const AccuracyBreakdownChart = React.memo(({ pieData, totalQuestions, totalCorrect, totalWrong, totalSkipped }: { pieData: any[], totalQuestions: number, totalCorrect: number, totalWrong: number, totalSkipped: number }) => {
+  return (
+    <div className="relative z-10">
+       <div className="w-full aspect-square relative max-w-[190px] mx-auto mb-8 drop-shadow-md">
+          <ResponsiveContainer width="100%" height="100%" debounce={100}>
+             <PieChart>
+                <Pie data={pieData} innerRadius={60} outerRadius={85} paddingAngle={6} dataKey="value" stroke="none" isAnimationActive={false}>
+                   {pieData.map((entry: any, index: number) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                </Pie>
+             </PieChart>
+          </ResponsiveContainer>
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+             <span className="text-3xl sm:text-4xl font-sans font-black text-slate-900 leading-none tracking-tight">{totalQuestions}</span>
+             <span className="text-[9px] font-sans font-black text-slate-400 mt-1.5 uppercase tracking-widest">Total Qs</span>
+          </div>
+       </div>
+       <div className="space-y-2.5">
+          <AccuracyRow label="Correct" value={totalCorrect} total={totalQuestions} color="bg-emerald-500" />
+          <AccuracyRow label="Wrong" value={totalWrong} total={totalQuestions} color="bg-rose-500" />
+          <AccuracyRow label="Skipped" value={totalSkipped} total={totalQuestions} color="bg-slate-400" />
+       </div>
+    </div>
+  );
+});
+
+const SkillRadarChart = React.memo(({ skillProfile }: { skillProfile: any[] }) => {
+  return (
+    <div className="lg:col-span-5 w-full h-[280px] relative z-10 flex items-center justify-center">
+       <ResponsiveContainer width="100%" height="100%" debounce={100}>
+          <RadarChart cx="50%" cy="50%" outerRadius="58%" data={skillProfile} margin={{ top: 10, right: 40, bottom: 10, left: 40 }}>
+             <defs>
+                <linearGradient id="overallRadarGrad" x1="0" y1="0" x2="0" y2="1">
+                   <stop offset="0%" stopColor="#8a1c36" stopOpacity={0.65}/>
+                   <stop offset="100%" stopColor="#6366f1" stopOpacity={0.10}/>
+                </linearGradient>
+             </defs>
+             <PolarGrid stroke="#cbd5e1" strokeOpacity={0.5} strokeDasharray="4 4" />
+             <PolarAngleAxis dataKey="name" tickFormatter={(t) => t.toUpperCase()} tick={{ fill: '#64748b', fontSize: 9, fontWeight: 900, fontFamily: 'var(--font-sans)', letterSpacing: '0.05em' }} />
+             <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} tickCount={6} />
+             <Radar 
+               name="Skill Level" 
+               dataKey="value" 
+               stroke="#8a1c36" 
+               strokeWidth={2.5} 
+               fill="url(#overallRadarGrad)" 
+               activeDot={{ r: 5, fill: '#8a1c36', strokeWidth: 2, stroke: '#ffffff' }} 
+               isAnimationActive={false}
+             />
+             <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '3 3' }} />
+          </RadarChart>
+       </ResponsiveContainer>
+    </div>
+  );
+});
+
+const SubjectBarChart = React.memo(({ uniqueSubjects }: { uniqueSubjects: any[] }) => {
+  return (
+    <div className="lg:col-span-5 w-full h-[240px] flex items-center justify-center">
+       <ResponsiveContainer width="100%" height="100%" debounce={100}>
+          <BarChart data={uniqueSubjects} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+             <defs>
+                <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                   <stop offset="5%" stopColor="#8a1c36" stopOpacity={0.95}/>
+                   <stop offset="95%" stopColor="#6366f1" stopOpacity={0.65}/>
+                </linearGradient>
+             </defs>
+             <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#cbd5e1" strokeOpacity={0.25} />
+             <XAxis dataKey="name" axisLine={false} tickLine={false} tickFormatter={(val) => val.length > 24 ? `${val.substring(0, 22)}...` : val} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} dy={10} />
+             <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} domain={[0, 100]} />
+             <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
+             <Bar dataKey="avgScore" name="Accuracy" fill="url(#barGrad)" radius={[8, 8, 0, 0]} barSize={28} isAnimationActive={false} />
+          </BarChart>
+       </ResponsiveContainer>
+    </div>
+  );
+});;
 
 function SkeletonStatCard() {
   return (
@@ -1210,7 +1310,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
   );
 
   return (
-    <div className="relative w-full min-h-screen overflow-x-hidden">
+    <div className="relative w-full min-h-screen overflow-x-hidden" style={{ transform: 'translate3d(0, 0, 0)' }}>
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(138,28,54,0.06),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.04),transparent_50%)] -z-10 pointer-events-none" style={{ transform: 'translate3d(0,0,0)', willChange: 'transform' }} />
 
       <motion.div 
@@ -1548,7 +1648,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                           )}
                         </div>
 
-                        <div ref={chatContainerRef} className="p-4 overflow-y-auto space-y-3.5 flex-1 no-scrollbar text-xs">
+                        <div ref={chatContainerRef} className="p-4 overflow-y-auto space-y-3.5 flex-1 no-scrollbar text-xs" style={{ overscrollBehaviorY: 'contain' }}>
                           {chatHistory.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 p-6">
                               <Cpu className="w-10 h-10 text-slate-400 mb-3 animate-float-gentle" />
@@ -1686,23 +1786,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
               </div>
               
               {stats.chartData.length > 0 ? (
-                <div className="w-full h-[300px] relative z-10 pr-2">
-                   <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={stats.chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                         <defs>
-                            <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
-                               <stop offset="0%" stopColor="#8a1c36" stopOpacity={0.22}/>
-                               <stop offset="100%" stopColor="#8a1c36" stopOpacity={0}/>
-                             </linearGradient>
-                         </defs>
-                         <CartesianGrid strokeDasharray="6 6" vertical={false} stroke="#e2e8f0/60" />
-                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-sans)', letterSpacing: '0.05em' }} dy={10} />
-                         <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-sans)' }} domain={[0, 100]} />
-                         <Tooltip content={<CustomTooltip />} />
-                         <Area type="monotone" dataKey="score" name="Score" stroke="#8a1c36" strokeWidth={3.5} fillOpacity={1} fill="url(#scoreGrad)" activeDot={{ r: 6, stroke: '#ffffff', strokeWidth: 2, fill: '#8a1c36' }} isAnimationActive={true} animationDuration={850} animationEasing="ease-out" />
-                      </AreaChart>
-                   </ResponsiveContainer>
-                </div>
+                <PerformanceTrendChart chartData={stats.chartData} />
               ) : (
                  <div className="w-full h-[300px] flex items-center justify-center bg-slate-50/40 rounded-2xl border border-slate-150/50">
                     <p className="text-slate-400 font-bold text-sm">Not enough data to plot a trend.</p>
@@ -1730,26 +1814,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
               </div>
               
               {stats.totalQuestions > 0 ? (
-                <div className="relative z-10">
-                   <div className="w-full aspect-square relative max-w-[190px] mx-auto mb-8 drop-shadow-md">
-                      <ResponsiveContainer width="100%" height="100%">
-                         <PieChart>
-                            <Pie data={stats.pieData} innerRadius={60} outerRadius={85} paddingAngle={6} dataKey="value" stroke="none" isAnimationActive={true} animationDuration={850} animationEasing="ease-out">
-                               {stats.pieData.map((entry: any, index: number) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                            </Pie>
-                         </PieChart>
-                      </ResponsiveContainer>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                         <span className="text-3xl sm:text-4xl font-sans font-black text-slate-900 leading-none tracking-tight">{stats.totalQuestions}</span>
-                         <span className="text-[9px] font-sans font-black text-slate-400 mt-1.5 uppercase tracking-widest">Total Qs</span>
-                      </div>
-                   </div>
-                   <div className="space-y-2.5">
-                      <AccuracyRow label="Correct" value={stats.totalCorrect} total={stats.totalQuestions} color="bg-emerald-500" />
-                      <AccuracyRow label="Wrong" value={stats.totalWrong} total={stats.totalQuestions} color="bg-rose-500" />
-                      <AccuracyRow label="Skipped" value={stats.totalSkipped} total={stats.totalQuestions} color="bg-slate-400" />
-                   </div>
-                </div>
+                <AccuracyBreakdownChart pieData={stats.pieData} totalQuestions={stats.totalQuestions} totalCorrect={stats.totalCorrect} totalWrong={stats.totalWrong} totalSkipped={stats.totalSkipped} />
               ) : (
                  <div className="p-4 bg-slate-50/40 rounded-2xl border border-slate-200/50 text-center text-xs font-bold text-slate-400">
                     No question breakdown history available.
@@ -1783,34 +1848,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                
                {stats.skillProfile && stats.totalQuestions > 0 ? (
                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                    {/* Radar Chart Container */}
-                    <div className="lg:col-span-5 w-full h-[280px] relative z-10 flex items-center justify-center">
-                       <ResponsiveContainer width="100%" height="100%">
-                          <RadarChart cx="50%" cy="50%" outerRadius="58%" data={stats.skillProfile} margin={{ top: 10, right: 40, bottom: 10, left: 40 }}>
-                             <defs>
-                                <linearGradient id="overallRadarGrad" x1="0" y1="0" x2="0" y2="1">
-                                   <stop offset="0%" stopColor="#8a1c36" stopOpacity={0.65}/>
-                                   <stop offset="100%" stopColor="#6366f1" stopOpacity={0.10}/>
-                                </linearGradient>
-                             </defs>
-                             <PolarGrid stroke="#cbd5e1" strokeOpacity={0.5} strokeDasharray="4 4" />
-                             <PolarAngleAxis dataKey="name" tickFormatter={(t) => t.toUpperCase()} tick={{ fill: '#64748b', fontSize: 9, fontWeight: 900, fontFamily: 'var(--font-sans)', letterSpacing: '0.05em' }} />
-                             <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} tickCount={6} />
-                             <Radar 
-                               name="Skill Level" 
-                               dataKey="value" 
-                               stroke="#8a1c36" 
-                               strokeWidth={2.5} 
-                               fill="url(#overallRadarGrad)" 
-                               activeDot={{ r: 5, fill: '#8a1c36', strokeWidth: 2, stroke: '#ffffff' }} 
-                               isAnimationActive={true}
-                               animationDuration={850}
-                               animationEasing="ease-out"
-                             />
-                             <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '3 3' }} />
-                          </RadarChart>
-                       </ResponsiveContainer>
-                    </div>
+                    <SkillRadarChart skillProfile={stats.skillProfile} />
  
                     {/* Detailed breakdown items */}
                     <div className="lg:col-span-7 space-y-3.5 relative z-10">
@@ -1929,24 +1967,8 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-10">
                         {/* Left column: Bar Chart */}
                         {uniqueSubjects.length > 0 ? (
-                          <div className="lg:col-span-5 w-full h-[240px] flex items-center justify-center">
-                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={uniqueSubjects} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                                   <defs>
-                                      <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                                         <stop offset="5%" stopColor="#8a1c36" stopOpacity={0.95}/>
-                                         <stop offset="95%" stopColor="#6366f1" stopOpacity={0.65}/>
-                                      </linearGradient>
-                                   </defs>
-                                   <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#cbd5e1" strokeOpacity={0.25} />
-                                   <XAxis dataKey="name" axisLine={false} tickLine={false} tickFormatter={(val) => val.length > 24 ? `${val.substring(0, 22)}...` : val} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} dy={10} />
-                                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} domain={[0, 100]} />
-                                   <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
-                                   <Bar dataKey="avgScore" name="Accuracy" fill="url(#barGrad)" radius={[8, 8, 0, 0]} barSize={28} isAnimationActive={true} animationDuration={850} animationEasing="ease-out" />
-                                </BarChart>
-                             </ResponsiveContainer>
-                          </div>
-                        ) : null}
+                            <SubjectBarChart uniqueSubjects={uniqueSubjects} />
+                         ) : null}
   
                         {/* Divider on mobile only */}
                         {uniqueSubjects.length > 0 && (
@@ -1954,7 +1976,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                         )}
   
                         {/* Right column: Expandable List */}
-                        <div className={cn("space-y-4 max-h-[380px] overflow-y-auto custom-scrollbar pr-1", uniqueSubjects.length > 0 ? "lg:col-span-7" : "lg:col-span-12")}>
+                        <div className={cn("space-y-4 max-h-[380px] overflow-y-auto custom-scrollbar pr-1", uniqueSubjects.length > 0 ? "lg:col-span-7" : "lg:col-span-12")} style={{ overscrollBehaviorY: 'contain' }}>
                            {exam.mockTests && exam.mockTests.length > 0 && (
                              <div className="space-y-3">
                                <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Mock Tests</h4>
