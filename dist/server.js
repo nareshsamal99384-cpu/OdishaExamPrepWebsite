@@ -1153,7 +1153,7 @@ async function startServer() {
       next();
     }
   });
-  app.get("/sitemap.xml", async (req, res) => {
+  app.get(["/sitemap.xml", "/sitemap_index.xml", "/sitemap-index.xml"], async (req, res) => {
     try {
       const host = req.get("host") || "odishaexamprep.in";
       const protocol = req.protocol || "https";
