@@ -10,6 +10,8 @@ export interface UserActivity {
   totalMarks?: number;
   accuracy?: number;
   timeSpent?: number; // in seconds
+  correct?: number;
+  incorrect?: number;
   metadata?: any;
 }
 
@@ -79,6 +81,8 @@ function toCloudSafe(activity: UserActivity): UserActivity {
       score: activity?.score,
       totalMarks: activity?.totalMarks,
       accuracy: activity?.accuracy,
+      correct: activity?.correct,
+      incorrect: activity?.incorrect,
     };
   }
 }

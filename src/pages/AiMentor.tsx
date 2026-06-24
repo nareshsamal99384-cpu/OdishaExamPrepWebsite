@@ -2206,7 +2206,9 @@ Note: "correctOption" must be an integer index (0 for Option A, 1 for Option B, 
         title: `AI Quiz: ${quizSubject} (${quizDifficulty})`,
         score,
         totalMarks: total,
-        accuracy: total > 0 ? Math.round((score / total) * 100) : 0
+        accuracy: total > 0 ? Math.round((score / total) * 100) : 0,
+        correct: score,
+        incorrect: total - score,
       });
     }
 
@@ -3177,10 +3179,10 @@ JSON structure:
                                       e.stopPropagation();
                                       handleDeleteExam(exam);
                                     }}
-                                    className="opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 p-1 rounded transition-all text-slate-500 hover:text-[#8A1C36] cursor-pointer"
+                                    className="opacity-70 md:opacity-0 md:group-hover:opacity-100 hover:opacity-100 hover:bg-rose-500/20 p-1 rounded transition-all text-slate-500 hover:text-[#8A1C36] cursor-pointer flex items-center justify-center shrink-0"
                                     title="Delete Target Exam"
                                   >
-                                    <X className="w-2.5 h-2.5" />
+                                    <X className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
                               );

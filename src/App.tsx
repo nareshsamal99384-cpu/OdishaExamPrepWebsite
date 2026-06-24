@@ -5137,6 +5137,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 score: results.score,
                 totalMarks: results.totalMarks || results.total,
                 accuracy: results.accuracy || 0,
+                correct: results.correctCount,
+                incorrect: results.incorrectCount,
                 metadata: {
                   ...results,
                   resumeSessionId: activeTestState?.resumeSessionId,

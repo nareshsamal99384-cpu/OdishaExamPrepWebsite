@@ -920,8 +920,20 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
           }
         });
       } else {
-        actCorrect = typeof a?.correct === 'number' ? a.correct : (typeof a?.score === 'number' && a.score > 0 ? a.score : 0);
-        actWrong = typeof a?.incorrect === 'number' ? a?.incorrect : 0;
+        actCorrect = typeof a?.correct === 'number' 
+          ? a.correct 
+          : (typeof a?.metadata?.correctCount === 'number' 
+            ? a.metadata.correctCount 
+            : (typeof a?.metadata?.correct === 'number' 
+              ? a.metadata.correct 
+              : (typeof a?.score === 'number' && a.score > 0 ? Math.round(a.score) : 0)));
+        actWrong = typeof a?.incorrect === 'number' 
+          ? a.incorrect 
+          : (typeof a?.metadata?.incorrectCount === 'number' 
+            ? a.metadata.incorrectCount 
+            : (typeof a?.metadata?.incorrect === 'number' 
+              ? a.metadata.incorrect 
+              : 0));
         actAttempted = a?.metadata?.attempted || (actCorrect + actWrong);
         actTotalQ = a?.totalMarks || a?.total || actAttempted;
       }
@@ -1159,13 +1171,16 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
       }
     })() : {};
 
+    const roundedCorrect = Math.round(totalCorrect);
+    const roundedWrong = Math.round(totalWrong);
+
     const analytics = totalTests > 0 ? {
       totalTests,
       avgScore,
       avgAccuracy,
       avgTimePerQuestion,
-      totalCorrect,
-      totalWrong,
+      totalCorrect: roundedCorrect,
+      totalWrong: roundedWrong,
       totalQuestions,
       chartData: chartDataList.slice(-15),
       precision,

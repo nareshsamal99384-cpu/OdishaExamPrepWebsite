@@ -672,8 +672,20 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
           }
         });
       } else {
-        actCorrect = typeof a.correct === 'number' ? a.correct : (typeof a.score === 'number' && a.score > 0 ? a.score : 0);
-        actWrong = typeof a.incorrect === 'number' ? a.incorrect : 0;
+        actCorrect = typeof a.correct === 'number' 
+          ? a.correct 
+          : (typeof a.metadata?.correctCount === 'number' 
+            ? a.metadata.correctCount 
+            : (typeof a.metadata?.correct === 'number' 
+              ? a.metadata.correct 
+              : (typeof a.score === 'number' && a.score > 0 ? Math.round(a.score) : 0)));
+        actWrong = typeof a.incorrect === 'number' 
+          ? a.incorrect 
+          : (typeof a.metadata?.incorrectCount === 'number' 
+            ? a.metadata.incorrectCount 
+            : (typeof a.metadata?.incorrect === 'number' 
+              ? a.metadata.incorrect 
+              : 0));
         actAttempted = a.metadata?.attempted || (actCorrect + actWrong);
         actTotalQ = a.totalMarks || a.total || actAttempted;
       }
@@ -717,12 +729,14 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
     const avgTimePerQuestion = isNaN(totalTimeTaken) || isNaN(totalAttempted) || totalAttempted <= 0 
       ? 0 
       : (totalTimeTaken / totalAttempted);
-    const totalSkipped = Math.max(0, totalQuestions - totalAttempted);
+    const roundedCorrect = Math.round(totalCorrect);
+    const roundedWrong = Math.round(totalWrong);
+    const roundedSkipped = Math.max(0, totalQuestions - (roundedCorrect + roundedWrong));
 
     const pieData = [
-      { name: 'Correct', value: totalCorrect, color: '#10b981' },
-      { name: 'Wrong', value: totalWrong, color: '#f43f5e' },
-      { name: 'Skipped', value: totalSkipped, color: '#94a3b8' }
+      { name: 'Correct', value: roundedCorrect, color: '#10b981' },
+      { name: 'Wrong', value: roundedWrong, color: '#f43f5e' },
+      { name: 'Skipped', value: roundedSkipped, color: '#94a3b8' }
     ];
 
     let impScore = 0;
@@ -931,9 +945,9 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
       avgTimePerQuestion,
       pieData,
       chartData,
-      totalCorrect,
-      totalWrong,
-      totalSkipped,
+      totalCorrect: roundedCorrect,
+      totalWrong: roundedWrong,
+      totalSkipped: roundedSkipped,
       totalQuestions,
       impScore: Math.round(impScore),
       impAcc: Math.round(impAcc),
