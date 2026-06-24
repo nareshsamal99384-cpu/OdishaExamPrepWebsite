@@ -1295,8 +1295,30 @@ async function startServer() {
     }
   });
 
-  // Redirect legacy WordPress URLs to the new home page (301 Permanent Redirect)
-  app.get(['/shop*', '/cart*', '/my-account*', '/checkout*', '/product*'], (req, res) => {
+  // Redirect legacy WordPress URLs to the new home page or specific pages (301 Permanent Redirect)
+  app.get(['/shop*', '/cart*', '/my-account*', '/checkout*', '/product*', '/courses*', '/course*', '/all-courses*', '/home*', '/category*', '/tag*', '/author*'], (req, res) => {
+    const pathLower = req.path.toLowerCase();
+    
+    // Check if the old URL contains exam keywords to redirect to the new exam pages
+    if (pathLower.includes('opsc')) {
+      return res.redirect(301, '/exams/opsc-aio');
+    }
+    if (pathLower.includes('osssc')) {
+      return res.redirect(301, '/exams/osssc');
+    }
+    if (pathLower.includes('ossc')) {
+      return res.redirect(301, '/exams/ossc');
+    }
+    
+    // Check for policies
+    if (pathLower.includes('terms-conditions') || pathLower.includes('terms-and-conditions')) {
+      return res.redirect(301, '/terms-of-service');
+    }
+    if (pathLower.includes('privacy-policy-2')) {
+      return res.redirect(301, '/privacy-policy');
+    }
+    
+    // Default fallback to home page
     res.redirect(301, '/');
   });
 
@@ -1471,12 +1493,13 @@ async function startServer() {
         '/refund-policy'
       ];
 
-      // Fetch dynamic blog routes from Supabase database
-      const { data: blogs } = await supabaseAdmin
+      // Fetch dynamic blog routes and exam routes from Supabase database
+      const { data: rawExams } = await supabaseAdmin
         .from('exams')
-        .select('id, createdAt')
-        .eq('category', 'blog')
-        .order('createdAt', { ascending: false });
+        .select('id, category, createdAt, is_archived');
+
+      const blogs = rawExams ? rawExams.filter(e => e.category === 'blog').sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()) : [];
+      const exams = rawExams ? rawExams.filter(e => e.category !== 'system' && e.category !== 'blog' && e.is_archived !== true) : [];
 
       let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
       xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
@@ -1489,6 +1512,19 @@ async function startServer() {
         xml += `    <priority>${route === '' ? '1.0' : '0.8'}</priority>\n`;
         xml += `  </url>\n`;
       });
+
+      // Add dynamic exam URLs
+      if (exams) {
+        exams.forEach(exam => {
+          const lastMod = exam.createdAt ? new Date(exam.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+          xml += `  <url>\n`;
+          xml += `    <loc>${baseUrl}/exams/${exam.id}</loc>\n`;
+          xml += `    <lastmod>${lastMod}</lastmod>\n`;
+          xml += `    <changefreq>weekly</changefreq>\n`;
+          xml += `    <priority>0.9</priority>\n`;
+          xml += `  </url>\n`;
+        });
+      }
 
       // Add dynamic blog URLs
       if (blogs) {

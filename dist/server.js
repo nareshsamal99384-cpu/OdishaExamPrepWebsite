@@ -1003,7 +1003,23 @@ async function startServer() {
       }
     }
   });
-  app.get(["/shop*", "/cart*", "/my-account*", "/checkout*", "/product*"], (req, res) => {
+  app.get(["/shop*", "/cart*", "/my-account*", "/checkout*", "/product*", "/courses*", "/course*", "/all-courses*", "/home*", "/category*", "/tag*", "/author*"], (req, res) => {
+    const pathLower = req.path.toLowerCase();
+    if (pathLower.includes("opsc")) {
+      return res.redirect(301, "/exams/opsc-aio");
+    }
+    if (pathLower.includes("osssc")) {
+      return res.redirect(301, "/exams/osssc");
+    }
+    if (pathLower.includes("ossc")) {
+      return res.redirect(301, "/exams/ossc");
+    }
+    if (pathLower.includes("terms-conditions") || pathLower.includes("terms-and-conditions")) {
+      return res.redirect(301, "/terms-of-service");
+    }
+    if (pathLower.includes("privacy-policy-2")) {
+      return res.redirect(301, "/privacy-policy");
+    }
     res.redirect(301, "/");
   });
   app.get(["/", "/blog", "/blog/:id", "/privacy-policy", "/terms-of-service", "/refund-policy", "/admin-login"], async (req, res, next) => {
@@ -1149,7 +1165,9 @@ async function startServer() {
         "/terms-of-service",
         "/refund-policy"
       ];
-      const { data: blogs } = await supabaseAdmin.from("exams").select("id, createdAt").eq("category", "blog").order("createdAt", { ascending: false });
+      const { data: rawExams } = await supabaseAdmin.from("exams").select("id, category, createdAt, is_archived");
+      const blogs = rawExams ? rawExams.filter((e) => e.category === "blog").sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()) : [];
+      const exams = rawExams ? rawExams.filter((e) => e.category !== "system" && e.category !== "blog" && e.is_archived !== true) : [];
       let xml = `<?xml version="1.0" encoding="UTF-8"?>
 `;
       xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -1166,6 +1184,23 @@ async function startServer() {
         xml += `  </url>
 `;
       });
+      if (exams) {
+        exams.forEach((exam) => {
+          const lastMod = exam.createdAt ? new Date(exam.createdAt).toISOString().split("T")[0] : (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+          xml += `  <url>
+`;
+          xml += `    <loc>${baseUrl}/exams/${exam.id}</loc>
+`;
+          xml += `    <lastmod>${lastMod}</lastmod>
+`;
+          xml += `    <changefreq>weekly</changefreq>
+`;
+          xml += `    <priority>0.9</priority>
+`;
+          xml += `  </url>
+`;
+        });
+      }
       if (blogs) {
         blogs.forEach((blog) => {
           const lastMod = blog.createdAt ? new Date(blog.createdAt).toISOString().split("T")[0] : (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
