@@ -5957,7 +5957,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 <ChevronRight className="w-6 h-6 rotate-180 text-brand-600" />
               </Button>
               <div className="min-w-0 flex-1">
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight leading-tight mb-1 flex flex-wrap items-center gap-3">
+                {/* Desktop Title with inline badge */}
+                <h1 className="hidden sm:flex flex-wrap items-center gap-3 text-2xl sm:text-3xl font-black text-slate-950 tracking-tight leading-tight mb-1">
                   {currentExam?.name}
                   {hasAccessTo(`exam_bundle_${selectedExam}`) && (
                     <span className="px-3.5 py-1 bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 text-[10px] font-black rounded-lg uppercase tracking-wider inline-flex items-center gap-1.5 h-6">
@@ -5966,10 +5967,26 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     </span>
                   )}
                 </h1>
-                <div className="max-w-3xl">
+                
+                {/* Mobile Title with stacked badge */}
+                <div className="sm:hidden flex flex-col">
+                  <h1 className="text-xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                    {currentExam?.name}
+                  </h1>
+                  {hasAccessTo(`exam_bundle_${selectedExam}`) && (
+                    <div className="mt-1.5 self-start">
+                      <span className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[9px] font-black rounded-full uppercase tracking-wider inline-flex items-center gap-1.5">
+                        <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                        Premium Unlocked
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="max-w-3xl mt-1.5 sm:mt-0">
                   <p 
                     className={cn(
-                      "text-slate-500 font-medium text-sm sm:text-base leading-relaxed transition-all duration-300",
+                      "text-slate-500 font-medium text-xs sm:text-base leading-relaxed transition-all duration-300",
                       !isDescExpanded && "line-clamp-2"
                     )}
                   >
@@ -5988,11 +6005,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             </div>
           </div>
 
-          {/* Quick Navigation Pills */}
+          {/* Desktop Quick Navigation Pills */}
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-wrap items-center gap-2 sm:gap-3"
+            className="hidden sm:flex flex-wrap items-center gap-2 sm:gap-3"
           >
             <Button variant="outline" className="rounded-full bg-white border-slate-200/60 shadow-sm text-slate-600 font-bold hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 h-9 px-4 text-xs sm:text-sm transition-all" onClick={() => scrollToElement('question-bank-section', { block: 'start' })}>
               <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-brand-500" />
@@ -6006,6 +6023,46 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-amber-500" />
               Mock Tests
             </Button>
+          </motion.div>
+
+          {/* Mobile Quick Navigation Grid */}
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="grid grid-cols-3 gap-2.5 sm:hidden w-full mt-1"
+          >
+            <button 
+              onClick={() => scrollToElement('question-bank-section', { block: 'start' })}
+              className="flex flex-col items-center justify-center p-3.5 rounded-2xl border border-slate-200/80 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.015)] active:scale-95 transition-all text-center min-h-[96px] cursor-pointer group hover:border-brand-300"
+            >
+              <div className="w-9 h-9 rounded-full bg-brand-50 flex items-center justify-center mb-1.5 border border-brand-100/30">
+                <Layers className="w-4 h-4 text-brand-600" />
+              </div>
+              <span className="text-[10px] font-black font-sans text-slate-800 tracking-wide uppercase">Question</span>
+              <span className="text-[10px] font-black font-sans text-slate-800 tracking-wide uppercase -mt-0.5">Bank</span>
+            </button>
+
+            <button 
+              onClick={() => scrollToElement('practice-mode-section', { block: 'start' })}
+              className="flex flex-col items-center justify-center p-3.5 rounded-2xl border border-slate-200/80 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.015)] active:scale-95 transition-all text-center min-h-[96px] cursor-pointer group hover:border-indigo-300"
+            >
+              <div className="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center mb-1.5 border border-indigo-100/30">
+                <Dumbbell className="w-4 h-4 text-indigo-600" />
+              </div>
+              <span className="text-[10px] font-black font-sans text-slate-800 tracking-wide uppercase">Practice</span>
+              <span className="text-[10px] font-black font-sans text-slate-800 tracking-wide uppercase -mt-0.5">Mode</span>
+            </button>
+
+            <button 
+              onClick={() => scrollToElement('test-series', { block: 'start' })}
+              className="flex flex-col items-center justify-center p-3.5 rounded-2xl border border-slate-200/80 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.015)] active:scale-95 transition-all text-center min-h-[96px] cursor-pointer group hover:border-amber-300"
+            >
+              <div className="w-9 h-9 rounded-full bg-amber-50 flex items-center justify-center mb-1.5 border border-amber-100/30">
+                <Award className="w-4 h-4 text-amber-600" />
+              </div>
+              <span className="text-[10px] font-black font-sans text-slate-800 tracking-wide uppercase">Mock</span>
+              <span className="text-[10px] font-black font-sans text-slate-800 tracking-wide uppercase -mt-0.5">Tests</span>
+            </button>
           </motion.div>
         </div>
 
