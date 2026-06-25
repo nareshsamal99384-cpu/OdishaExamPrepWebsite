@@ -5394,11 +5394,15 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         {/* ── Continue Practice (horizontal snap-scroll slider) ── */}
         {!isGuest && incompleteTests.length > 0 && (
           <div className="space-y-3 sm:space-y-4">
+            {/* Section header — bolder on mobile */}
             <div className="flex items-center justify-between">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Continue Practice</h2>
+              <div>
+                <h2 className="text-[18px] sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight">Continue Practice</h2>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5 sm:hidden">Pick up where you left off</p>
+              </div>
               <button
                 onClick={() => onNavigate?.('history')}
-                className="text-xs sm:text-sm font-bold text-brand-600 hover:text-brand-700 transition-colors"
+                className="text-xs sm:text-sm font-bold text-brand-600 hover:text-brand-700 transition-colors shrink-0 ml-2"
               >
                 View All
               </button>
@@ -5427,7 +5431,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
               <div 
                 ref={continuePracticeRef}
-                className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pt-3 pb-3 px-4 sm:px-6"
+                className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pt-1 pb-3 px-4 sm:px-6"
                 style={{
                   WebkitMaskImage: 'linear-gradient(to right, transparent, white 24px, white calc(100% - 24px), transparent)',
                   maskImage: 'linear-gradient(to right, transparent, white 24px, white calc(100% - 24px), transparent)'
@@ -5484,49 +5488,67 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         setActiveTestState({ ...a.metadata, resumeSessionId: a.metadata?.resumeSessionId || a.metadata?.test?.id });
                         setActiveTest(testToResume);
                       }}
-                      className={`snap-start shrink-0 w-[72vw] sm:w-[300px] lg:w-[340px] glass rounded-2xl border border-white/40 hover:border-brand-300/50 hover:bg-white/85 hover:shadow-2xl hover:shadow-brand-500/5 transition-all duration-500 group p-4 sm:p-5 flex flex-col gap-3 premium-shine-container ${
-                        canResume ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed'
+                      className={`snap-start shrink-0 w-[76vw] sm:w-[300px] lg:w-[340px] rounded-2xl border border-slate-100/90 sm:border-white/40 bg-white sm:glass hover:border-brand-300/60 sm:hover:border-brand-300/50 shadow-[0_4px_16px_rgba(0,0,0,0.035)] sm:hover:shadow-2xl hover:shadow-brand-500/8 sm:hover:shadow-brand-500/5 transition-all duration-300 group p-3.5 sm:p-5 flex flex-col gap-2.5 premium-shine-container ${
+                        canResume ? 'cursor-pointer active:scale-[0.98]' : 'opacity-60 cursor-not-allowed'
                       }`}
                     >
                       {/* Top row: icon + text */}
                       <div className="flex items-center gap-3 relative z-10">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shrink-0 shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform duration-300">
-                          <Play className="w-4 h-4 text-white fill-white ml-0.5" />
+                        {/* Play icon with brand gradient */}
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shrink-0 shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform duration-300">
+                          <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white fill-white ml-0.5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-extrabold text-sm text-slate-900 line-clamp-1 group-hover:text-brand-600 transition-colors duration-300">{a.title || 'Practice Session'}</h4>
-                          <p className="text-[11px] text-slate-400 font-medium mt-0.5">Last practiced {timeAgo}</p>
+                          <h4 className="font-extrabold text-[13.5px] sm:text-sm text-slate-900 line-clamp-2 sm:line-clamp-1 leading-snug group-hover:text-brand-600 transition-colors duration-300">{a.title || 'Practice Session'}</h4>
+                          <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-0.5">Last practiced <span className="text-slate-600 font-semibold">{timeAgo}</span></p>
                           {a.metadata?.testCategory && (
-                            <span className="text-[9px] font-black uppercase tracking-widest text-brand-600">{a.metadata.testCategory}</span>
+                            <span className="inline-block mt-1 text-[8.5px] sm:text-[9px] font-black uppercase tracking-widest text-brand-600 bg-brand-50/70 border border-brand-100/40 px-1.5 py-0.5 rounded">{a.metadata.testCategory}</span>
                           )}
                           {!canResume && (
-                            <span className="text-[9px] font-bold text-slate-400">Open app to resume</span>
+                            <span className="block text-[8.5px] sm:text-[9px] font-bold text-slate-400 mt-0.5">Open app to resume</span>
                           )}
                         </div>
                       </div>
-                      {/* Progress bar at bottom */}
-                      <div className="flex items-center gap-2 relative z-10">
-                        <div className="flex-1 h-1.5 bg-brand-50 rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-full" style={{ width: `${progressPct}%` }} />
+                      {/* Progress bar — taller + labelled on mobile for clarity */}
+                      <div className="flex flex-col gap-1 relative z-10">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="text-[8.5px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest">Progress</span>
+                          <span className="text-[10px] sm:text-[11px] font-black text-brand-600">{progressPct}%</span>
                         </div>
-                        <span className="text-[10px] font-black text-brand-600 shrink-0">{progressPct}%</span>
+                        <div className="w-full h-1.5 sm:h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-brand-600 to-brand-400 rounded-full transition-all duration-700"
+                            style={{ width: `${Math.max(progressPct, progressPct === 0 ? 0 : 4)}%` }}
+                          />
+                        </div>
                       </div>
                     </motion.div>
                   );
                 })}
               </div>
             </div>
+            {incompleteTests.length > 1 && (
+              <div className="flex items-center justify-center gap-1.5 mt-1 sm:hidden pointer-events-none px-4">
+                <div className="h-[1px] flex-1 bg-slate-200/60" />
+                <span className="text-[8.5px] font-black uppercase tracking-widest text-slate-400">Swipe to explore</span>
+                <div className="h-[1px] flex-1 bg-slate-200/60" />
+              </div>
+            )}
           </div>
         )}
 
         {/* ── Recent Activity (completed tests & other) ── */}
         {!isGuest && activities.filter((a: any) => a.type !== 'test_incomplete').length > 0 && (
           <div className="space-y-3 sm:space-y-5">
+            {/* Section header — bolder on mobile */}
             <div className="flex items-center justify-between">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Recent Activity</h2>
+              <div>
+                <h2 className="text-[18px] sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight">Recent Activity</h2>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5 sm:hidden">Your test history at a glance</p>
+              </div>
               <button
                 onClick={() => onNavigate?.('history')}
-                className="text-xs sm:text-sm font-bold text-brand-600 hover:text-brand-700 transition-colors"
+                className="text-xs sm:text-sm font-bold text-brand-600 hover:text-brand-700 transition-colors shrink-0 ml-2"
               >
                 View All
               </button>
@@ -5555,7 +5577,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
               <div 
                 ref={recentActivityRef}
-                className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pt-3 pb-3 px-4 sm:px-6"
+                className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pt-1 pb-3 px-4 sm:px-6"
                 style={{
                   WebkitMaskImage: 'linear-gradient(to right, transparent, white 24px, white calc(100% - 24px), transparent)',
                   maskImage: 'linear-gradient(to right, transparent, white 24px, white calc(100% - 24px), transparent)'
@@ -5563,11 +5585,22 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               >
                 {activities.filter((a: any) => a.type !== 'test_incomplete').slice(0, 6).map((a: any, i: number) => {
                   const isTestResult = a.type === 'mock_test_completed' || a.type === 'practice_test_completed';
-                  const scoreLabel = a.metadata?.score !== undefined
-                    ? `${typeof a.metadata.score === 'number' ? Number(a.metadata.score.toFixed(2)) : a.metadata.score}/${a.metadata.totalMarks ?? a.metadata.total ?? '?'}`
-                    : a.score !== undefined
-                    ? `${typeof a.score === 'number' ? Number(a.score.toFixed(2)) : a.score}/${a.totalMarks ?? '?'}`
+                  const rawScore = a.metadata?.score ?? a.score;
+                  const rawTotal = a.metadata?.totalMarks ?? a.metadata?.total ?? a.totalMarks;
+                  const scoreNum = typeof rawScore === 'number' ? rawScore : parseFloat(rawScore);
+                  const totalNum = typeof rawTotal === 'number' ? rawTotal : parseFloat(rawTotal);
+                  const scoreLabel = rawScore !== undefined
+                    ? `${Number(isNaN(scoreNum) ? rawScore : scoreNum.toFixed(2))}/${isNaN(totalNum) ? (rawTotal ?? '?') : totalNum}`
                     : null;
+                  // Derive percentage for colour coding
+                  const scorePct = (!isNaN(scoreNum) && !isNaN(totalNum) && totalNum > 0) ? (scoreNum / totalNum) * 100 : null;
+                  const scoreColour = scorePct === null
+                    ? 'bg-slate-100 text-slate-600'
+                    : scorePct >= 60
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : scorePct >= 35
+                    ? 'bg-amber-50 text-amber-700'
+                    : 'bg-red-50 text-red-600';
                   return (
                     <motion.div
                       key={i}
@@ -5580,43 +5613,51 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         if (isTestResult) handleViewResults(a.metadata);
                         else if (a.type === 'question_bank_accessed' && a.metadata?.pdfUrl) window.open(a.metadata.pdfUrl, '_blank');
                       }}
-                      className="snap-start shrink-0 w-[72vw] sm:w-[300px] lg:w-[340px] glass rounded-2xl border border-white/40 hover:border-brand-300/50 hover:bg-white/85 hover:shadow-2xl hover:shadow-brand-500/5 transition-all duration-500 cursor-pointer group flex items-center gap-3 sm:gap-4 p-4 sm:p-5 premium-shine-container"
+                      className="snap-start shrink-0 w-[76vw] sm:w-[300px] lg:w-[340px] rounded-2xl border border-slate-100/90 sm:border-white/40 bg-white sm:glass hover:border-brand-300/60 sm:hover:border-brand-300/50 shadow-[0_4px_16px_rgba(0,0,0,0.035)] sm:hover:shadow-2xl hover:shadow-brand-500/8 sm:hover:shadow-brand-500/5 transition-all duration-300 cursor-pointer group p-3.5 sm:p-5 flex flex-col gap-2.5 premium-shine-container active:scale-[0.98]"
                     >
-                      {/* Icon */}
-                      <div className="w-11 h-11 sm:w-13 sm:h-13 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 bg-brand-500/10 text-brand-600 group-hover:scale-110 transition-transform relative z-10">
-                        <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" />
-                      </div>
-                      {/* Text */}
-                      <div className="flex-1 min-w-0 relative z-10">
-                        <h4 className="font-extrabold text-sm sm:text-base text-slate-900 line-clamp-1 group-hover:text-brand-600 transition-colors">{a.title}</h4>
-                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                          <p className="text-xs text-slate-400 font-medium">{new Date(a.timestamp).toLocaleDateString()}</p>
-                          {scoreLabel && (
-                            <span className="text-[10px] font-black text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded-md">
-                              {scoreLabel}
-                            </span>
-                          )}
+                      {/* Top row: icon + title + arrow */}
+                      <div className="flex items-start gap-3 relative z-10">
+                        {/* Completed icon — branded circle */}
+                        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shrink-0 bg-brand-50 text-brand-600 border border-brand-100 group-hover:scale-105 transition-transform relative z-10">
+                          <CheckCircle2 className="w-4.5 h-4.5 sm:w-5 h-5" />
                         </div>
-                        <p className="text-[9px] text-slate-400 font-black mt-1 uppercase tracking-widest truncate">
-                          {a.metadata?.testCategory || 'Activity'}
-                        </p>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-extrabold text-[13.5px] sm:text-sm text-slate-900 line-clamp-2 sm:line-clamp-1 leading-snug group-hover:text-brand-600 transition-colors">{a.title}</h4>
+                          <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-0.5">{new Date(a.timestamp).toLocaleDateString()}</p>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-300 shrink-0 mt-0.5 group-hover:text-brand-500 group-hover:translate-x-0.5 transition-all relative z-10" />
                       </div>
-                      {/* Arrow hint */}
-                      <ChevronRight className="w-4 h-4 text-slate-300 shrink-0 group-hover:text-brand-500 group-hover:translate-x-0.5 transition-all relative z-10" />
+
+                      {/* Bottom row: score chip + category label */}
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-100 relative z-10">
+                        <span className="text-[8.5px] sm:text-[9px] font-black uppercase tracking-widest text-slate-400 truncate">
+                          {a.metadata?.testCategory || 'Activity'}
+                        </span>
+                        {scoreLabel && (
+                          <span className={`text-[10px] sm:text-[11px] font-black px-2 py-0.5 rounded-lg shrink-0 ml-2 ${scoreColour}`}>
+                            {scoreLabel}
+                          </span>
+                        )}
+                      </div>
                     </motion.div>
                   );
                 })}
               </div>
             </div>
+            {activities.filter((a: any) => a.type !== 'test_incomplete').length > 1 && (
+              <div className="flex items-center justify-center gap-1.5 mt-1 sm:hidden pointer-events-none px-4">
+                <div className="h-[1px] flex-1 bg-slate-200/60" />
+                <span className="text-[8.5px] font-black uppercase tracking-widest text-slate-400">Swipe to explore</span>
+                <div className="h-[1px] flex-1 bg-slate-200/60" />
+              </div>
+            )}
           </div>
         )}
-
-
 
         <div className="flex flex-col space-y-5 sm:space-y-7">
           {/* Controls Bar */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-            <div className="border-2 border-slate-900 bg-white p-1 rounded-2xl flex gap-1.5 w-full sm:w-auto shrink-0 shadow-[4px_4px_0px_rgba(138,28,54,0.15)] relative">
+            <div className="border border-slate-200/80 sm:border-2 sm:border-slate-900 bg-slate-50/50 sm:bg-white p-1 rounded-2xl flex gap-1.5 w-full sm:w-auto shrink-0 shadow-none sm:shadow-[4px_4px_0px_rgba(138,28,54,0.15)] relative">
               {(['upcoming', 'popular'] as const).map((tab) => {
                 const isTabActive = examSearchQuery 
                   ? filteredExams.some(e => e.category === tab) 
@@ -5634,14 +5675,14 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     className={cn(
                       "px-5 sm:px-8 py-2 sm:py-3 rounded-xl font-extrabold text-xs sm:text-sm cursor-pointer relative transition-all duration-300 focus:outline-none select-none flex-1 sm:flex-initial text-center",
                       isTabActive 
-                        ? "text-white -translate-y-0.5" 
+                        ? "text-white sm:-translate-y-0.5" 
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-50/50"
                     )}
                   >
                     {isTabActive && (
                       <motion.div
                         layoutId="activeExamTabBg"
-                        className="absolute inset-0 bg-[#8A1C36] rounded-xl shadow-[2px_2px_0px_#0f172a] z-0"
+                        className="absolute inset-0 bg-[#8A1C36] rounded-xl shadow-[1px_2px_4px_rgba(138,28,54,0.2)] sm:shadow-[2px_2px_0px_#0f172a] z-0"
                         transition={{ type: "spring", stiffness: 380, damping: 30 }}
                       />
                     )}
@@ -5662,7 +5703,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   setExamSearchQuery(val);
                   sessionStorage.setItem('oep_exam_search_query', val);
                 }}
-                className="pl-10 sm:pl-14 pr-12 py-2.5 sm:py-3.5 rounded-2xl font-bold text-sm sm:text-base w-full border-2 border-slate-900 bg-white shadow-[4px_4px_0px_rgba(138,28,54,0.15)] focus:shadow-[6px_6px_0px_#8A1C36] focus:outline-none transition-all duration-200"
+                className="pl-10 sm:pl-14 pr-12 py-2.5 sm:py-3.5 rounded-2xl font-bold text-sm sm:text-base w-full border border-slate-200 bg-white/95 sm:border-2 sm:border-slate-900 shadow-sm sm:shadow-[4px_4px_0px_rgba(138,28,54,0.15)] focus:border-brand-500/80 sm:focus:border-slate-900 focus:ring-2 focus:ring-brand-500/10 sm:focus:ring-0 focus:shadow-none sm:focus:shadow-[6px_6px_0px_#8A1C36] focus:outline-none transition-all duration-200"
               />
               {examSearchQuery && (
                 <button onClick={() => { setExamSearchQuery(''); sessionStorage.removeItem('oep_exam_search_query'); }} className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-900 transition-colors">
@@ -5674,10 +5715,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
           <div className="relative group -mx-2 px-2">
             {/* Top Fade */}
-            <div className="absolute top-0.5 left-0.5 right-0.5 h-8 bg-gradient-to-b from-[#FAF8F5] to-transparent z-20 pointer-events-none rounded-t-3xl" />
+            <div className="absolute top-0.5 left-0.5 right-0.5 h-8 bg-gradient-to-b from-[#FAF8F5] to-transparent z-20 pointer-events-none rounded-t-3xl hidden sm:block" />
 
             <div 
-              className="max-h-[420px] sm:max-h-[500px] md:max-h-[600px] overflow-y-auto no-scrollbar pb-6 pt-6 px-4 rounded-3xl border-2 border-slate-900 bg-[#FAF8F5] shadow-[6px_6px_0px_rgba(138,28,54,0.15)]"
+              className="max-h-[420px] sm:max-h-[500px] md:max-h-[600px] overflow-y-auto no-scrollbar pb-2 pt-2 px-1 sm:pb-6 sm:pt-6 sm:px-4 rounded-3xl border-0 sm:border-2 border-transparent sm:border-slate-900 bg-transparent sm:bg-[#FAF8F5] shadow-none sm:shadow-[6px_6px_0px_rgba(138,28,54,0.15)]"
               style={{ scrollbarGutter: 'stable' }}
               onWheel={(e) => {
                 const el = e.currentTarget;
@@ -5689,7 +5730,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               }}
             >
               <motion.div 
-                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-4 md:gap-6 px-1"
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-4 md:gap-6 px-1"
               >
                 <AnimatePresence mode="wait">
                   {loadingExams ? (
@@ -5764,7 +5805,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           }}
                           className="cursor-pointer h-full group/card"
                         >
-                          <div className="p-4 sm:p-5 md:p-6 h-full bg-white border-2 border-slate-900 rounded-3xl flex flex-col items-center text-center justify-center space-y-3 sm:space-y-4 md:space-y-5 relative shadow-[4px_4px_0px_#8A1C36] md:group-hover/card:shadow-[8px_8px_0px_#8A1C36] md:group-hover/card:-translate-y-1 md:group-hover/card:-translate-x-1 transition-all duration-300">
+                          <div className="p-3 sm:p-5 md:p-6 h-full bg-white border sm:border-2 border-slate-100/90 sm:border-slate-900 rounded-2xl sm:rounded-3xl flex flex-col items-center text-center justify-center space-y-2 sm:space-y-4 md:space-y-5 relative shadow-[0_4px_16px_rgba(0,0,0,0.035)] sm:shadow-[4px_4px_0px_#8A1C36] md:group-hover/card:shadow-[8px_8px_0px_#8A1C36] md:group-hover/card:-translate-y-1 md:group-hover/card:-translate-x-1 transition-all duration-300 active:scale-[0.98] sm:active:scale-100 active:bg-slate-50/70 sm:active:bg-white">
                             {/* Corner arrow - structured circle */}
                             {!isMobile && (
                               <div className="absolute top-2 right-2 sm:top-4 sm:right-4 md:top-5 md:right-5 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full border-2 border-slate-900 bg-white flex items-center justify-center transition-all duration-300 shadow-[2px_2px_0px_#8A1C36] group-hover/card:bg-[#8A1C36] group-hover/card:shadow-none group-hover/card:translate-x-0.5 group-hover/card:translate-y-0.5">
@@ -5773,7 +5814,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                             )}
 
                             {/* Icon Container */}
-                            <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl border-2 border-slate-900 bg-[#FAF8F5] flex justify-center items-center shrink-0 shadow-[3px_3px_0px_rgba(138,28,54,0.15)] md:group-hover/card:shadow-[4px_4px_0px_#8A1C36] transition-all duration-300 relative overflow-hidden">
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl border sm:border-2 border-brand-100/20 sm:border-slate-900 bg-brand-50/60 sm:bg-[#FAF8F5] flex justify-center items-center shrink-0 shadow-none sm:shadow-[3px_3px_0px_rgba(138,28,54,0.15)] md:group-hover/card:shadow-[4px_4px_0px_#8A1C36] transition-all duration-300 relative overflow-hidden">
                               {(exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/'))) ? (
                                 <img src={getDirectImageUrl(exam.icon)} alt={`Odisha Exam Prep Icon: ${exam.name}`} className="w-8/12 h-8/12 object-contain relative z-10" referrerPolicy="no-referrer" />
                               ) : (
@@ -5783,7 +5824,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                             
                             <div className="flex-1 w-full flex flex-col justify-start">
                               <h3 
-                                className="text-sm sm:text-base md:text-lg lg:text-xl font-serif font-black text-slate-900 md:group-hover/card:text-[#8A1C36] transition-all duration-300 leading-tight tracking-tight uppercase"
+                                className="text-[12px] sm:text-base md:text-lg lg:text-xl font-serif font-black text-slate-900 md:group-hover/card:text-[#8A1C36] transition-all duration-300 leading-snug tracking-tight uppercase"
                                 style={{
                                   display: '-webkit-box',
                                   WebkitLineClamp: 2,
@@ -5794,9 +5835,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                               >
                                 {exam.name}
                               </h3>
-                              <div className="w-full mt-2.5">
+                              <div className="w-full mt-2">
                                 <p 
-                                  className="text-slate-500 text-[11px] sm:text-xs font-bold leading-relaxed opacity-85 md:group-hover/card:opacity-100 transition-opacity"
+                                  className="text-slate-400 sm:text-slate-500 text-[10px] sm:text-xs font-medium sm:font-bold leading-normal sm:leading-relaxed opacity-85 md:group-hover/card:opacity-100 transition-opacity"
                                   style={{
                                     display: '-webkit-box',
                                     WebkitLineClamp: 2,

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Play, X, Youtube } from 'lucide-react';
+import { Play, X, Youtube, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { modalBackdrop, modalContent } from '../lib/animations';
 import { cn } from '../lib/utils';
@@ -31,6 +31,16 @@ const getVideoTitle = (id: string) => {
   return fallbacks[sum % fallbacks.length];
 };
 
+// Category badge colour mapping for premium look
+const categoryColours: Record<string, { bg: string; text: string; border: string }> = {
+  'Aptitude':        { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200' },
+  'Strategy':        { bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200' },
+  'General Studies': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+  'Language':        { bg: 'bg-purple-50',  text: 'text-purple-700',  border: 'border-purple-200' },
+  'Current Affairs': { bg: 'bg-rose-50',    text: 'text-rose-700',    border: 'border-rose-200' },
+};
+const defaultCatStyle = { bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200' };
+
 export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -44,8 +54,9 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const cardWidth = isMobile ? 276 : 320;
-  const cardGap   = isMobile ? 16 : 24;
+  // Mobile card is narrower so it feels complete and doesn't feel cut off
+  const cardWidth = isMobile ? 240 : 320;
+  const cardGap   = isMobile ? 12 : 24;
   const itemStep  = cardWidth + cardGap;
 
   // Map dynamic videos to their academic titles and categories
@@ -181,69 +192,117 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
   if (sourceVideos.length === 0) return null;
 
   return (
-    <div className="w-full relative py-6 sm:py-12 overflow-hidden bg-[#F2EFE9] border-2 border-slate-900 rounded-[2.5rem] shadow-[8px_8px_0px_rgba(0,0,0,1)] select-none">
-      {/* Editorial Decorative Grid overlay */}
+    <div className="w-full relative py-5 sm:py-12 overflow-hidden bg-[#F2EFE9] border-2 border-slate-900 rounded-[2rem] sm:rounded-[2.5rem] shadow-[6px_6px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_rgba(0,0,0,1)] select-none">
+      {/* Editorial Decorative Grid overlay — desktop only */}
       {!isMobile && <div className="absolute inset-0 grid-bg opacity-[0.02] pointer-events-none" />}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 sm:px-10 mb-6 sm:mb-8 relative z-10">
-        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#8A1C36] text-white rounded-xl flex items-center justify-center border-2 border-slate-900 shrink-0 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
-            <Youtube className="w-5.5 h-5.5 sm:w-6 sm:h-6 text-white" />
+      {/* ── MOBILE HEADER ─────────────────────────────────────────────── */}
+      {isMobile ? (
+        <div className="px-5 mb-5 relative z-10">
+          {/* Top row: icon + title */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-9 h-9 bg-[#8A1C36] text-white rounded-xl flex items-center justify-center border-2 border-slate-900 shrink-0 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+              <Youtube className="w-4.5 h-4.5 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-[15px] font-serif font-extrabold text-slate-900 tracking-tight leading-tight">
+                Free Strategy Videos
+              </h3>
+              <p className="text-slate-500 font-medium text-[11px] mt-0.5 leading-snug">
+                Masterclasses &amp; proven exam tips — free
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <h3 className="text-base sm:text-2xl font-serif font-extrabold text-slate-900 tracking-tight leading-tight">Free Strategy Videos</h3>
-            <p className="text-slate-600 font-medium text-[10px] sm:text-sm mt-0.5 line-clamp-1 sm:line-clamp-none">Watch free masterclasses and proven exam tips from our channel.</p>
-          </div>
+
+          {/* Subscribe button — compact, inline, premium pill style */}
+          <a
+            href="https://www.youtube.com/@OdishaExamPrep365?sub_confirmation=1"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#FF0000] border-2 border-slate-900 text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-[3px_3px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[3px] active:translate-y-[3px] transition-all duration-150 select-none cursor-pointer"
+          >
+            <Youtube className="w-3.5 h-3.5 text-white shrink-0" />
+            <span>Subscribe</span>
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-white animate-ping shrink-0" />
+          </a>
         </div>
+      ) : (
+        /* ── DESKTOP HEADER ───────────────────────────────────────────── */
+        <div className="flex flex-row sm:items-center justify-between gap-4 px-10 mb-8 relative z-10">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="w-12 h-12 bg-[#8A1C36] text-white rounded-xl flex items-center justify-center border-2 border-slate-900 shrink-0 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+              <Youtube className="w-6 h-6 text-white" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-2xl font-serif font-extrabold text-slate-900 tracking-tight leading-tight">Free Strategy Videos</h3>
+              <p className="text-slate-600 font-medium text-sm mt-0.5">Watch free masterclasses and proven exam tips from our channel.</p>
+            </div>
+          </div>
 
-        {/* YouTube Subscribe Button */}
-        <a
-          href="https://www.youtube.com/@OdishaExamPrep365?sub_confirmation=1"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 sm:px-6 sm:py-3.5 bg-[#FF0000] border-2 border-slate-900 text-white font-black uppercase text-[10px] sm:text-xs tracking-widest rounded-xl shadow-[4px_4px_0px_rgba(0,0,0,1)] md:hover:shadow-none md:hover:translate-x-0.5 md:hover:translate-y-0.5 transition-all select-none cursor-pointer duration-200 shrink-0"
-        >
-          <Youtube className="w-4 h-4 text-white" />
-          <span className="sm:hidden">Subscribe</span>
-          <span className="hidden sm:inline">Subscribe on YouTube</span>
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-white animate-ping shrink-0" />
-        </a>
-      </div>
+          <a
+            href="https://www.youtube.com/@OdishaExamPrep365?sub_confirmation=1"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#FF0000] border-2 border-slate-900 text-white font-black uppercase text-xs tracking-widest rounded-xl shadow-[4px_4px_0px_rgba(0,0,0,1)] md:hover:shadow-none md:hover:translate-x-0.5 md:hover:translate-y-0.5 transition-all select-none cursor-pointer duration-200 shrink-0"
+          >
+            <Youtube className="w-4 h-4 text-white" />
+            <span>Subscribe on YouTube</span>
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-white animate-ping shrink-0" />
+          </a>
+        </div>
+      )}
 
-      {/* Draggable Track */}
+      {/* ── DRAGGABLE CAROUSEL TRACK ──────────────────────────────────── */}
       <div
         className="relative overflow-hidden cursor-grab active:cursor-grabbing"
         onMouseDown={onMouseDown}
         onTouchStart={onTouchStart}
       >
-        {/* Edge fade masks */}
-        {!isMobile && (
+        {/* Edge fade masks — desktop always, mobile soft version */}
+        {!isMobile ? (
           <>
             <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
               style={{ background: 'linear-gradient(to right, #F2EFE9, transparent)' }} />
             <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
               style={{ background: 'linear-gradient(to left, #F2EFE9, transparent)' }} />
           </>
+        ) : (
+          <>
+            {/* Soft left fade on mobile so partial cards look intentional */}
+            <div className="absolute left-0 top-0 bottom-0 w-8 z-10 pointer-events-none"
+              style={{ background: 'linear-gradient(to right, #F2EFE9 30%, transparent)' }} />
+            <div className="absolute right-0 top-0 bottom-0 w-8 z-10 pointer-events-none"
+              style={{ background: 'linear-gradient(to left, #F2EFE9 30%, transparent)' }} />
+          </>
         )}
 
         {/* Scrolling track */}
         <div
           ref={trackRef}
-          className={cn("flex will-change-transform", isMobile ? "gap-4 pl-4" : "gap-6 pl-6")}
+          className={cn("flex will-change-transform", isMobile ? "gap-3 pl-5 pr-5 pb-1" : "gap-6 pl-6")}
           style={{ width: `${totalWidth}px` }}
         >
-          {items.map((video, idx) => (
+          {items.map((video, idx) => {
+            const catStyle = categoryColours[video.category] ?? defaultCatStyle;
+            return (
               <div
                 key={`${video.id}-${idx}`}
                 onClick={() => {
                   if (!isDragging.current) setActiveVideo(video.id);
                 }}
-                className="relative shrink-0 rounded-2xl overflow-hidden border-2 border-slate-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] bg-[#FAF8F5] group/video md:hover:-translate-x-0.5 md:hover:-translate-y-0.5 md:hover:shadow-[6px_6px_0px_rgba(138,28,54,0.15)] transition-all cursor-pointer flex flex-col"
+                className={cn(
+                  "relative shrink-0 rounded-2xl overflow-hidden border-2 border-slate-900 bg-[#FAF8F5] group/video transition-all cursor-pointer flex flex-col",
+                  isMobile
+                    ? "shadow-[3px_3px_0px_rgba(0,0,0,0.85)] active:shadow-[1px_1px_0px_rgba(0,0,0,0.85)] active:translate-x-[2px] active:translate-y-[2px]"
+                    : "shadow-[4px_4px_0px_rgba(0,0,0,1)] md:hover:-translate-x-0.5 md:hover:-translate-y-0.5 md:hover:shadow-[6px_6px_0px_rgba(138,28,54,0.15)]"
+                )}
                 style={{ width: cardWidth }}
               >
-                {/* Thumbnail area with Aspect ratio */}
-                <div className="relative w-full h-[160px] border-b-2 border-slate-900 overflow-hidden shrink-0">
+                {/* Thumbnail with aspect ratio */}
+                <div className={cn(
+                  "relative w-full border-b-2 border-slate-900 overflow-hidden shrink-0",
+                  isMobile ? "h-[135px]" : "h-[160px]"
+                )}>
                   <img
                     src={`https://i.ytimg.com/vi_webp/${video.id}/maxresdefault.webp`}
                     alt={`Odisha Exam Prep Strategy Video: ${video.title}`}
@@ -255,42 +314,84 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
                     }}
                   />
 
-                  {/* Darken on hover */}
+                  {/* Gradient overlay for readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent pointer-events-none" />
+
+                  {/* Darken on hover — desktop only */}
                   <div className="absolute inset-0 bg-slate-950/20 opacity-0 md:group-hover/video:opacity-100 transition-opacity duration-300" />
-                  
+
                   {/* Play Button */}
                   <div className="absolute inset-0 flex items-center justify-center z-10">
-                    <div className="w-11 h-11 bg-[#8A1C36] text-white rounded-full border-2 border-slate-900 flex items-center justify-center shadow-lg md:group-hover/video:scale-110 transition-transform duration-300">
-                      <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                    <div className={cn(
+                      "bg-[#8A1C36] text-white rounded-full border-2 border-slate-900 flex items-center justify-center shadow-lg transition-transform duration-300",
+                      isMobile ? "w-10 h-10" : "w-11 h-11 md:group-hover/video:scale-110"
+                    )}>
+                      <Play className={cn("text-white fill-white ml-0.5", isMobile ? "w-4 h-4" : "w-5 h-5")} />
                     </div>
                   </div>
                 </div>
 
                 {/* Text Meta section */}
-                <div className="p-4 flex-1 flex flex-col justify-between bg-white">
+                <div className={cn(
+                  "flex-1 flex flex-col justify-between bg-white",
+                  isMobile ? "p-3" : "p-4"
+                )}>
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="bg-slate-100 border border-slate-200 text-slate-700 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded leading-none">
+                    {/* Category badge — coloured on mobile for premium feel */}
+                    <div className="mb-2">
+                      <span className={cn(
+                        "inline-flex items-center border font-black uppercase rounded-md leading-none",
+                        isMobile ? "text-[9px] tracking-wider px-2 py-1" : "text-[8px] tracking-widest px-2 py-0.5",
+                        catStyle.bg, catStyle.text, catStyle.border
+                      )}>
                         {video.category}
                       </span>
                     </div>
-                    <h3 className="text-slate-900 font-serif font-extrabold text-sm sm:text-base line-clamp-2 leading-snug md:group-hover/video:text-[#8A1C36] transition-colors">
+
+                    {/* Title */}
+                    <h3 className={cn(
+                      "text-slate-900 font-serif font-extrabold line-clamp-2 leading-snug md:group-hover/video:text-[#8A1C36] transition-colors",
+                      isMobile ? "text-[12.5px]" : "text-base"
+                    )}>
                       {video.title}
                     </h3>
                   </div>
-                  <div className="flex items-center justify-between pt-3 mt-4 border-t border-slate-100 text-[9px] font-black uppercase tracking-widest text-slate-400 font-mono">
-                    <span>Free Lecture</span>
-                    <span className="text-[#8A1C36] flex items-center gap-1 font-bold">
-                      Watch Now <Play className="w-3.5 h-3.5 fill-[#8A1C36] stroke-none" />
+
+                  {/* Footer row */}
+                  <div className={cn(
+                    "flex items-center justify-between border-t border-slate-100",
+                    isMobile ? "pt-2.5 mt-3" : "pt-3 mt-4"
+                  )}>
+                    <span className={cn(
+                      "font-black uppercase tracking-widest text-slate-400 font-mono",
+                      isMobile ? "text-[8px]" : "text-[9px]"
+                    )}>
+                      Free Lecture
+                    </span>
+                    <span className={cn(
+                      "text-[#8A1C36] flex items-center gap-1 font-bold uppercase tracking-wider",
+                      isMobile ? "text-[9px]" : "text-[9px]"
+                    )}>
+                      Watch Now <Play className="w-3 h-3 fill-[#8A1C36] stroke-none" />
                     </span>
                   </div>
                 </div>
               </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* Video Modal */}
+      {/* ── Swipe hint for mobile — shown briefly ─────────────────────── */}
+      {isMobile && (
+        <div className="flex items-center justify-center gap-1.5 mt-3 px-5 pointer-events-none">
+          <div className="h-px flex-1 bg-slate-300/60" />
+          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Swipe to explore</span>
+          <div className="h-px flex-1 bg-slate-300/60" />
+        </div>
+      )}
+
+      {/* ── VIDEO MODAL ──────────────────────────────────────────────── */}
       <AnimatePresence>
         {activeVideo && (
           <motion.div
