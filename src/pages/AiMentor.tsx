@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../lib/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, 
@@ -586,6 +587,7 @@ const MarkdownMathRenderer = ({ text, isUser = false }: { text: string; isUser?:
 
 
 export default function AiMentor({ user }: { user: any }) {
+  const { refreshProfile } = useAuth();
   // rotating exam tips index
   const [currentTipIdx, setCurrentTipIdx] = useState(0);
   const [mobileTab, setMobileTab] = useState<'chat' | 'tools'>('chat');
@@ -1067,6 +1069,8 @@ export default function AiMentor({ user }: { user: any }) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const roadmapContainerRef = useRef<HTMLDivElement>(null);
   const [hasPlanStarted, setHasPlanStarted] = useState(() => {
+    const metaVal = user?.user_metadata?.study_coach_planner?.hasPlanStarted;
+    if (metaVal !== undefined) return !!metaVal;
     return localStorage.getItem('study_coach_has_plan_started') === 'true';
   });
 
@@ -1089,11 +1093,12 @@ export default function AiMentor({ user }: { user: any }) {
 
   // Pomodoro Study Timer Initial State Calculation
   const initialTimer = React.useMemo(() => {
-    const savedSeconds = localStorage.getItem('study_coach_timer_seconds');
-    const savedActive = localStorage.getItem('study_coach_timer_active') === 'true';
-    const savedMode = localStorage.getItem('study_coach_timer_mode') as 'study' | 'break' || 'study';
-    const savedMaxSeconds = localStorage.getItem('study_coach_timer_max_seconds');
-    const savedLastTimestampStr = localStorage.getItem('study_coach_timer_last_timestamp');
+    const metaPlanner = user?.user_metadata?.study_coach_planner;
+    const savedSeconds = metaPlanner?.timerSeconds !== undefined ? String(metaPlanner.timerSeconds) : localStorage.getItem('study_coach_timer_seconds');
+    const savedActive = metaPlanner?.timerActive !== undefined ? metaPlanner.timerActive : (localStorage.getItem('study_coach_timer_active') === 'true');
+    const savedMode = metaPlanner?.timerMode || (localStorage.getItem('study_coach_timer_mode') as 'study' | 'break') || 'study';
+    const savedMaxSeconds = metaPlanner?.timerMaxSeconds !== undefined ? String(metaPlanner.timerMaxSeconds) : localStorage.getItem('study_coach_timer_max_seconds');
+    const savedLastTimestampStr = metaPlanner?.timerLastTimestamp !== undefined ? String(metaPlanner.timerLastTimestamp) : localStorage.getItem('study_coach_timer_last_timestamp');
     
     const initMaxSeconds = savedMaxSeconds ? Number(savedMaxSeconds) : 1500;
     const initSeconds = savedSeconds ? Number(savedSeconds) : 1500;
@@ -1118,10 +1123,10 @@ export default function AiMentor({ user }: { user: any }) {
           };
         } else {
           // Timer finished offline!
-          const isAi = localStorage.getItem('study_coach_timer_type') === 'ai';
+          const isAi = metaPlanner?.coachMode ? (metaPlanner.coachMode === 'ai') : (localStorage.getItem('study_coach_timer_type') === 'ai');
           if (isAi) {
-            const savedBlocksStr = localStorage.getItem('study_coach_planner_blocks');
-            const savedActiveIdxStr = localStorage.getItem('study_coach_active_block_index');
+            const savedBlocksStr = metaPlanner?.plannerBlocks ? JSON.stringify(metaPlanner.plannerBlocks) : localStorage.getItem('study_coach_planner_blocks');
+            const savedActiveIdxStr = metaPlanner?.activeBlockIndex !== undefined ? String(metaPlanner.activeBlockIndex) : localStorage.getItem('study_coach_active_block_index');
             
             if (savedBlocksStr && savedActiveIdxStr) {
               const savedBlocks = JSON.parse(savedBlocksStr);
@@ -1217,6 +1222,7 @@ export default function AiMentor({ user }: { user: any }) {
   const [timerActive, setTimerActive] = useState<boolean>(initialTimer.active);
   const [timerMode, setTimerMode] = useState<'study' | 'break'>(initialTimer.mode);
   const [timerMaxSeconds, setTimerMaxSeconds] = useState<number>(initialTimer.maxSeconds);
+  const [timerSyncTrigger, setTimerSyncTrigger] = useState(0);
   const [breakMaxSeconds, setBreakMaxSeconds] = useState<number>(() => {
     const metaVal = user?.user_metadata?.study_coach_planner?.breakMaxSeconds;
     if (metaVal !== undefined && metaVal !== null) return Number(metaVal);
@@ -1356,12 +1362,15 @@ export default function AiMentor({ user }: { user: any }) {
     }
   }, [activeCollectionId, user?.id]);
 
+  const lastSyncedTimestampRef = useRef<number>(0);
+
   // Unified Debounced Supabase Sync Engine
   useEffect(() => {
     if (!user || user.id === 'guest') return;
 
     const handler = setTimeout(async () => {
       try {
+        const updatedTimestamp = Date.now();
         const { error } = await supabase.auth.updateUser({
           data: {
             study_coach_planner: {
@@ -1380,7 +1389,13 @@ export default function AiMentor({ user }: { user: any }) {
               completedStudyMinutes,
               timerGoal,
               breakMaxSeconds,
-              targetExam
+              targetExam,
+              timerSeconds: timerSecondsRef.current,
+              timerActive,
+              timerMode,
+              timerMaxSeconds,
+              timerLastTimestamp: Date.now(),
+              hasPlanStarted
             },
             study_coach_practice: {
               quizSubject,
@@ -1401,10 +1416,15 @@ export default function AiMentor({ user }: { user: any }) {
             study_coach_formulas: {
               formulaCategories,
               activeFormulaCatId
-            }
+            },
+            study_coach_user_exams: userExams,
+            study_coach_target_exam: targetExam,
+            study_suite_last_updated: updatedTimestamp
           }
         });
-        if (error) {
+        if (!error) {
+          lastSyncedTimestampRef.current = updatedTimestamp;
+        } else {
           console.error("Supabase study suite sync error:", error);
         }
       } catch (err) {
@@ -1432,6 +1452,10 @@ export default function AiMentor({ user }: { user: any }) {
     timerGoal,
     breakMaxSeconds,
     targetExam,
+    timerActive,
+    timerMode,
+    timerMaxSeconds,
+    hasPlanStarted,
     // Practice section states
     quizSubject,
     quizDifficulty,
@@ -1448,8 +1472,148 @@ export default function AiMentor({ user }: { user: any }) {
     activeCollectionId,
     // Formulas section states
     formulaCategories,
-    activeFormulaCatId
+    activeFormulaCatId,
+    // User exams
+    userExams,
+    // Timer sync trigger
+    timerSyncTrigger
   ]);
+
+  // Sync-in cloud changes to local React states when user metadata changes
+  useEffect(() => {
+    if (!user || user.id === 'guest') return;
+    
+    // Initialize the ref if it hasn't been set yet
+    const initialServerTimestamp = user.user_metadata?.study_suite_last_updated;
+    if (lastSyncedTimestampRef.current === 0 && initialServerTimestamp) {
+      lastSyncedTimestampRef.current = Number(initialServerTimestamp);
+    }
+    
+    const serverTimestamp = user.user_metadata?.study_suite_last_updated;
+    if (serverTimestamp && Number(serverTimestamp) > lastSyncedTimestampRef.current) {
+      const meta = user.user_metadata;
+      
+      // 1. Target Exam & User Exams
+      if (meta.study_coach_target_exam !== undefined) setTargetExam(meta.study_coach_target_exam);
+      if (meta.study_coach_user_exams !== undefined) setUserExams(meta.study_coach_user_exams);
+
+      // 2. Planner
+      const planner = meta.study_coach_planner;
+      if (planner) {
+        if (planner.coachMode !== undefined) setCoachMode(planner.coachMode);
+        if (planner.plannerStart !== undefined) setPlannerStart(planner.plannerStart);
+        if (planner.plannerEnd !== undefined) setPlannerEnd(planner.plannerEnd);
+        if (planner.plannerGoal !== undefined) setPlannerGoal(planner.plannerGoal);
+        if (planner.plannerEnergy !== undefined) setPlannerEnergy(planner.plannerEnergy);
+        if (planner.plannerChapters !== undefined) setPlannerChapters(planner.plannerChapters);
+        if (planner.plannerQuestions !== undefined) setPlannerQuestions(planner.plannerQuestions);
+        if (planner.plannerHours !== undefined) setPlannerHours(planner.plannerHours);
+        if (planner.plannerBlocks !== undefined) setPlannerBlocks(planner.plannerBlocks);
+        if (planner.activeBlockIndex !== undefined) setActiveBlockIndex(planner.activeBlockIndex);
+        if (planner.coachStrategy !== undefined) setCoachStrategy(planner.coachStrategy);
+        if (planner.completedSessionsCount !== undefined) setCompletedSessionsCount(planner.completedSessionsCount);
+        if (planner.completedStudyMinutes !== undefined) setCompletedStudyMinutes(planner.completedStudyMinutes);
+        if (planner.hasPlanStarted !== undefined) setHasPlanStarted(planner.hasPlanStarted);
+        
+        // Timer states
+        if (planner.timerMode !== undefined) setTimerMode(planner.timerMode);
+        if (planner.timerMaxSeconds !== undefined) setTimerMaxSeconds(planner.timerMaxSeconds);
+        if (planner.breakMaxSeconds !== undefined) setBreakMaxSeconds(planner.breakMaxSeconds);
+        if (planner.timerGoal !== undefined) setTimerGoal(planner.timerGoal);
+        
+        if (planner.timerActive !== undefined) {
+          const isActive = planner.timerActive;
+          setTimerActive(isActive);
+          
+          if (planner.timerSeconds !== undefined) {
+            let finalSeconds = planner.timerSeconds;
+            if (isActive && planner.timerLastTimestamp) {
+              const elapsed = Math.floor((Date.now() - planner.timerLastTimestamp) / 1000);
+              if (elapsed > 0) {
+                finalSeconds = Math.max(0, finalSeconds - elapsed);
+              }
+            }
+            setTimerSeconds(finalSeconds);
+          }
+        }
+      }
+
+      // 3. Practice
+      const practice = meta.study_coach_practice;
+      if (practice) {
+        if (practice.quizSubject !== undefined) setQuizSubject(practice.quizSubject);
+        if (practice.quizDifficulty !== undefined) setQuizDifficulty(practice.quizDifficulty);
+        if (practice.quizSize !== undefined) setQuizSize(practice.quizSize);
+        if (practice.quizMode !== undefined) setQuizMode(practice.quizMode);
+        if (practice.quizTargetExam !== undefined) setQuizTargetExam(practice.quizTargetExam);
+        if (practice.activeQuiz !== undefined) setActiveQuiz(practice.activeQuiz);
+        if (practice.selectedAnswers !== undefined) setSelectedAnswers(practice.selectedAnswers);
+        if (practice.quizSubmitted !== undefined) setQuizSubmitted(practice.quizSubmitted);
+        if (practice.quizHistory !== undefined) setQuizHistory(practice.quizHistory);
+        if (practice.bookmarkedQuestions !== undefined) setBookmarkedQuestions(practice.bookmarkedQuestions);
+      }
+
+      // 4. Syllabus
+      const syllabus = meta.study_coach_syllabus;
+      if (syllabus) {
+        if (syllabus.collections !== undefined) setCollections(syllabus.collections);
+        if (syllabus.activeCollectionId !== undefined) setActiveCollectionId(syllabus.activeCollectionId);
+      }
+
+      // 5. Formulas
+      const formulas = meta.study_coach_formulas;
+      if (formulas) {
+        if (formulas.formulaCategories !== undefined) setFormulaCategories(formulas.formulaCategories);
+        if (formulas.activeFormulaCatId !== undefined) setActiveFormulaCatId(formulas.activeFormulaCatId);
+      }
+
+      // Update local timestamp reference to prevent recursive loop or stale writes
+      lastSyncedTimestampRef.current = Number(serverTimestamp);
+      
+      toast.success("🔄 Sync complete: study profile updated from cloud.", { id: 'cloud-sync-success', duration: 3000 });
+    }
+  }, [user]);
+
+  // Background polling & focus-driven sync-in from cloud
+  useEffect(() => {
+    if (!user || user.id === 'guest') return;
+
+    const checkCloudVersion = async () => {
+      if (document.visibilityState !== 'visible') return;
+      try {
+        // Fetch fresh user from server to bypass cached JWT issues
+        const { data: { user: freshUser }, error } = await supabase.auth.getUser();
+        if (!error && freshUser) {
+          const serverTimestamp = freshUser.user_metadata?.study_suite_last_updated;
+          if (serverTimestamp && Number(serverTimestamp) > lastSyncedTimestampRef.current) {
+            // Trigger AuthContext profile refresh to propagate changes to the app
+            await refreshProfile();
+          }
+        }
+      } catch (err) {
+        console.warn("[Sync-In] Failed to query cloud version:", err);
+      }
+    };
+
+    // Poll every 10 seconds while tab is active
+    const interval = setInterval(checkCloudVersion, 10000);
+
+    // Check immediately on tab focus/visibility change
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkCloudVersion();
+      }
+    };
+    
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', checkCloudVersion);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', checkCloudVersion);
+    };
+  }, [user, refreshProfile]);
 
   // Dispatch event to sync OEP Buddy AI Companion in real time
   useEffect(() => {
@@ -1854,6 +2018,9 @@ EXAM-ORIENTED DIRECTIVES:
         if (timerTickCountRef.current % 10 === 0) {
           localStorage.setItem('study_coach_timer_seconds', String(timerSecondsRef.current));
           localStorage.setItem('study_coach_timer_last_timestamp', String(Date.now()));
+        }
+        if (timerTickCountRef.current % 20 === 0) {
+          setTimerSyncTrigger(prev => prev + 1);
         }
       }, 1000);
     } else {

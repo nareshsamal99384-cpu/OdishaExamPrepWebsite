@@ -220,6 +220,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         purchasedSeries: finalPurchased,
       };
 
+      setUser(activeUser);
       setProfile(finalProfile);
       cacheOfflineAccess(activeUser.id, finalProfile);
       return finalProfile;
