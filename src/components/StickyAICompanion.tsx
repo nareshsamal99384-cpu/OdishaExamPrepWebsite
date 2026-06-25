@@ -833,7 +833,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
   const getCompanionBottomClass = (forOpenFullChat = false) => {
     if (isMobileBannerVisible) {
       if (forOpenFullChat) {
-        return effectiveBottomNavVisible ? "bottom-24 sm:bottom-28" : "bottom-8 sm:bottom-8";
+        return effectiveBottomNavVisible ? "sm:bottom-28" : "sm:bottom-8";
       }
       if (effectiveBottomNavVisible) {
         return "bottom-[calc(162px+env(safe-area-inset-bottom))]";
@@ -841,6 +841,9 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
         return "bottom-[calc(92px+env(safe-area-inset-bottom))]";
       }
     } else {
+      if (forOpenFullChat) {
+        return effectiveBottomNavVisible ? "sm:bottom-28" : "sm:bottom-8";
+      }
       if (effectiveBottomNavVisible) {
         return "bottom-24 sm:bottom-28";
       } else {
@@ -1714,60 +1717,72 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
             exit={{ opacity: 0, scale: 0.9, y: 30 }}
             transition={{ type: 'spring', stiffness: 320, damping: 26 }}
             className={cn(
-              'fixed left-3 right-3 sm:left-auto sm:right-6 z-[80] w-auto sm:w-[390px] bg-white rounded-3xl shadow-[0_24px_70px_rgba(0,0,0,0.12),0_8px_24px_rgba(138,28,54,0.04)] border border-slate-200/50 overflow-hidden flex flex-col max-h-[85vh] sm:max-h-none transition-all duration-300',
-              isMinimized ? 'h-auto' : (effectiveBottomNavVisible ? 'h-[500px] sm:h-[540px]' : 'h-[540px] sm:h-[570px]'),
-              getCompanionBottomClass(!isMinimized)
+              'fixed z-[80] bg-white transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col overflow-hidden',
+              isMinimized 
+                ? 'rounded-3xl shadow-lg left-3 right-3 sm:left-auto sm:right-6 w-auto sm:w-[390px] h-auto border border-slate-200/50 ' + getCompanionBottomClass(false)
+                : cn(
+                    // Mobile open style: docked bottom sheet
+                    'left-0 right-0 bottom-0 rounded-t-[1.75rem] rounded-b-none w-full h-[78dvh] max-h-[85dvh] shadow-[0_-8px_30px_rgba(0,0,0,0.08)] border-t border-slate-200/40',
+                    // Desktop open style: floating card
+                    'sm:left-auto sm:right-6 sm:bottom-auto sm:w-[390px] sm:rounded-3xl sm:shadow-[0_24px_70px_rgba(0,0,0,0.12),0_8px_24px_rgba(138,28,54,0.04)] sm:border sm:border-slate-200/50',
+                    effectiveBottomNavVisible ? 'sm:h-[540px]' : 'sm:h-[570px]',
+                    getCompanionBottomClass(true)
+                  )
             )}
             style={{ pointerEvents: hasModalActive ? 'none' : 'auto' }}
           >
             {/* ── Header ── */}
-            <div className="shrink-0 bg-gradient-to-r from-brand-800 via-brand-700 to-brand-600 px-4 py-3.5 flex items-center gap-3 relative overflow-hidden">
+            <div className="shrink-0 bg-gradient-to-r from-brand-800 via-brand-700 to-brand-600 px-4 py-3 sm:py-3.5 flex flex-col gap-1.5 sm:gap-0 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
-              <div className="relative shrink-0">
-                <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center border border-white/20 backdrop-blur-sm">
-                  <Bot className="w-5 h-5 text-white" />
+              {/* Mobile drag handle line */}
+              <div className="w-12 h-1 bg-white/25 rounded-full mx-auto mb-1.5 sm:hidden shrink-0" />
+              <div className="flex items-center gap-3 w-full">
+                <div className="relative shrink-0">
+                  <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center border border-white/20 backdrop-blur-sm">
+                    <Bot className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full animate-pulse" />
                 </div>
-                <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full animate-pulse" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-white font-black text-sm leading-tight tracking-wide">OEP Buddy</p>
-                  {dataLoading && (
-                    <span className="flex items-center gap-1 bg-white/15 text-white/80 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
-                      <RefreshCw className="w-2.5 h-2.5 animate-spin" />
-                      Loading data…
-                    </span>
-                  )}
-                  {dataError && (
-                    <span className="flex items-center gap-1 bg-amber-500/30 text-amber-200 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
-                      <AlertCircle className="w-2.5 h-2.5" />
-                      Offline mode
-                    </span>
-                  )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-white font-black text-sm leading-tight tracking-wide">OEP Buddy</p>
+                    {dataLoading && (
+                      <span className="flex items-center gap-1 bg-white/15 text-white/80 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                        <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                        Loading data…
+                      </span>
+                    )}
+                    {dataError && (
+                      <span className="flex items-center gap-1 bg-amber-500/30 text-amber-200 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                        <AlertCircle className="w-2.5 h-2.5" />
+                        Offline mode
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-white/70 text-[10px] font-semibold truncate">Your AI Study Companion ✨</p>
                 </div>
-                <p className="text-white/70 text-[10px] font-semibold truncate">Your AI Study Companion ✨</p>
-              </div>
-              <div className="flex items-center gap-1 relative z-10">
-                {siteData && (
-                  <button
-                    onClick={() => loadSiteData(true)}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/15 hover:scale-105 active:scale-95 transition-all"
-                    title="Refresh website data"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
+                <div className="flex items-center gap-1 relative z-10">
+                  {siteData && (
+                    <button
+                      onClick={() => loadSiteData(true)}
+                      className="w-7 h-7 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/15 hover:scale-105 active:scale-95 transition-all"
+                      title="Refresh website data"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  {messages.length > 0 && (
+                    <button onClick={clearChat} className="w-7 h-7 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/15 hover:scale-105 active:scale-95 transition-all" title="Clear chat">
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <button onClick={() => setIsMinimized(v => !v)} className="w-7 h-7 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/15 hover:scale-105 active:scale-95 transition-all" title={isMinimized ? 'Expand' : 'Minimize'}>
+                    {isMinimized ? <Sparkles className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
                   </button>
-                )}
-                {messages.length > 0 && (
-                  <button onClick={clearChat} className="w-7 h-7 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/15 hover:scale-105 active:scale-95 transition-all" title="Clear chat">
-                    <RotateCcw className="w-3.5 h-3.5" />
+                  <button onClick={() => setIsOpen(false)} className="w-7 h-7 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/15 hover:scale-105 active:scale-95 transition-all" title="Close">
+                    <X className="w-3.5 h-3.5" />
                   </button>
-                )}
-                <button onClick={() => setIsMinimized(v => !v)} className="w-7 h-7 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/15 hover:scale-105 active:scale-95 transition-all" title={isMinimized ? 'Expand' : 'Minimize'}>
-                  {isMinimized ? <Sparkles className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
-                </button>
-                <button onClick={() => setIsOpen(false)} className="w-7 h-7 flex items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/15 hover:scale-105 active:scale-95 transition-all" title="Close">
-                  <X className="w-3.5 h-3.5" />
-                </button>
+                </div>
               </div>
             </div>
 
@@ -1807,23 +1822,23 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
                       className="space-y-4 py-1"
                     >
                       {/* Premium Welcome Card */}
-                      <div className="relative overflow-hidden bg-gradient-to-br from-brand-50/70 via-slate-50/50 to-white border border-brand-100/60 rounded-3xl p-4 shadow-sm">
+                      <div className="relative overflow-hidden bg-gradient-to-br from-brand-50/70 via-slate-50/50 to-white border border-brand-100/60 rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 shadow-sm">
                         {/* Glow decorative element */}
                         <div className="absolute -right-8 -top-8 w-24 h-24 bg-gradient-to-br from-brand-300/10 to-brand-500/10 rounded-full blur-xl" />
                         
-                        <div className="flex items-center gap-3 mb-2.5 relative z-10">
-                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-md shadow-brand-900/10">
-                            <Bot className="w-5 h-5 text-white animate-bounce-subtle" style={{ animationDuration: '3s' }} />
+                        <div className="flex items-center gap-3 mb-2 relative z-10">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-md shadow-brand-900/10">
+                            <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-white animate-bounce-subtle" style={{ animationDuration: '3s' }} />
                           </div>
                           <div>
-                            <h3 className="text-[10px] font-black text-slate-400 tracking-wider uppercase">OEP Companion</h3>
-                            <h2 className="text-xs font-extrabold bg-gradient-to-r from-brand-600 to-brand-800 bg-clip-text text-transparent">
+                            <h3 className="text-[9px] sm:text-[10px] font-black text-slate-400 tracking-wider uppercase">OEP Companion</h3>
+                            <h2 className="text-[11.5px] sm:text-xs font-extrabold bg-gradient-to-r from-brand-600 to-brand-800 bg-clip-text text-transparent">
                               Namaskar, {firstName}! 🙏
                             </h2>
                           </div>
                         </div>
 
-                        <p className="text-[11px] text-slate-600 leading-relaxed font-semibold relative z-10">
+                        <p className="text-[10.5px] sm:text-[11px] text-slate-600 leading-relaxed font-semibold relative z-10">
                           I'm <strong className="text-brand-600 font-bold">OEP Buddy</strong>, your AI prep partner. Ask me about Odisha government exams, mock test counts, prices, or study tips!
                         </p>
                       </div>
@@ -1831,28 +1846,28 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
                       {/* Live Platform Status Panel */}
                       {siteData && siteData.catalogLoaded ? (
                         <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-slate-50/70 border border-slate-200/40 rounded-2xl p-2.5 flex flex-col items-center justify-center text-center shadow-xs transition-all duration-300 hover:border-brand-200/60 hover:-translate-y-0.5 group">
-                            <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform duration-300">
-                              <BookOpen className="w-4 h-4 text-indigo-600" />
+                          <div className="bg-slate-50/70 border border-slate-200/40 rounded-xl sm:rounded-2xl p-2 sm:p-2.5 flex flex-col items-center justify-center text-center shadow-xs transition-all duration-300 hover:border-brand-200/60 hover:-translate-y-0.5 group">
+                            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-indigo-50 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform duration-300">
+                              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600" />
                             </div>
-                            <span className="text-xs font-black text-slate-800 leading-tight">{siteData.exams.length}</span>
-                            <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-wide mt-0.5">Exams</span>
+                            <span className="text-[11.5px] sm:text-xs font-black text-slate-800 leading-tight">{siteData.exams.length}</span>
+                            <span className="text-[7.5px] sm:text-[8px] font-extrabold text-slate-400 uppercase tracking-wide mt-0.5">Exams</span>
                           </div>
                           
-                          <div className="bg-slate-50/70 border border-slate-200/40 rounded-2xl p-2.5 flex flex-col items-center justify-center text-center shadow-xs transition-all duration-300 hover:border-brand-200/60 hover:-translate-y-0.5 group">
-                            <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform duration-300">
-                              <Trophy className="w-4 h-4 text-amber-600" />
+                          <div className="bg-slate-50/70 border border-slate-200/40 rounded-xl sm:rounded-2xl p-2 sm:p-2.5 flex flex-col items-center justify-center text-center shadow-xs transition-all duration-300 hover:border-brand-200/60 hover:-translate-y-0.5 group">
+                            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-50 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform duration-300">
+                              <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />
                             </div>
-                            <span className="text-xs font-black text-slate-800 leading-tight">{siteData.mockTests.length}</span>
-                            <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-wide mt-0.5">Mock Tests</span>
+                            <span className="text-[11.5px] sm:text-xs font-black text-slate-800 leading-tight">{siteData.mockTests.length}</span>
+                            <span className="text-[7.5px] sm:text-[8px] font-extrabold text-slate-400 uppercase tracking-wide mt-0.5">Mock Tests</span>
                           </div>
 
-                          <div className="bg-slate-50/70 border border-slate-200/40 rounded-2xl p-2.5 flex flex-col items-center justify-center text-center shadow-xs transition-all duration-300 hover:border-brand-200/60 hover:-translate-y-0.5 group">
-                            <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform duration-300">
-                              <Award className="w-4 h-4 text-emerald-600" />
+                          <div className="bg-slate-50/70 border border-slate-200/40 rounded-xl sm:rounded-2xl p-2 sm:p-2.5 flex flex-col items-center justify-center text-center shadow-xs transition-all duration-300 hover:border-brand-200/60 hover:-translate-y-0.5 group">
+                            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-emerald-50 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform duration-300">
+                              <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
                             </div>
-                            <span className="text-xs font-black text-slate-800 leading-tight">{siteData.questionBanks.length}</span>
-                            <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-wide mt-0.5">Q-Banks</span>
+                            <span className="text-[11.5px] sm:text-xs font-black text-slate-800 leading-tight">{siteData.questionBanks.length}</span>
+                            <span className="text-[7.5px] sm:text-[8px] font-extrabold text-slate-400 uppercase tracking-wide mt-0.5">Q-Banks</span>
                           </div>
                         </div>
                       ) : (
@@ -1865,10 +1880,10 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
                       {/* Suggested Questions Section */}
                       <div className="space-y-2">
                         <div className="flex items-center gap-1.5 pl-1">
-                          <Sparkles className="w-3.5 h-3.5 text-brand-500 animate-pulse" />
-                          <h4 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Suggested Questions</h4>
+                          <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-brand-500 animate-pulse" />
+                          <h4 className="text-[9px] sm:text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Suggested Questions</h4>
                         </div>
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-row overflow-x-auto gap-2 pb-2.5 pt-0.5 px-0.5 no-scrollbar snap-x snap-mandatory sm:flex-col sm:gap-2">
                           {QUICK_PROMPTS.map((p, i) => {
                             // Extract emoji and question text
                             const match = p.match(/^([^\w\s\d]+)?\s*(.*)$/);
@@ -1882,15 +1897,15 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.05 }}
                                 onClick={() => sendMessage(p)}
-                                className="w-full flex items-center gap-2.5 bg-slate-50/70 hover:bg-brand-50/30 border border-slate-200/50 hover:border-brand-200/80 text-left px-3 py-2.5 rounded-2xl transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] group cursor-pointer shadow-xs hover:shadow-sm"
+                                className="w-[66vw] sm:w-full flex items-center gap-2 bg-slate-50/70 hover:bg-brand-50/30 border border-slate-200/50 hover:border-brand-200/80 text-left px-3 py-2 sm:py-2.5 rounded-2xl transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] group cursor-pointer shadow-xs hover:shadow-sm shrink-0 snap-start"
                               >
-                                <span className="w-7 h-7 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-xs text-[11px] shrink-0 group-hover:bg-brand-50 group-hover:border-brand-100 transition-colors duration-300">
+                                <span className="w-6 h-6 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-xs text-[10px] shrink-0 group-hover:bg-brand-50 group-hover:border-brand-100 transition-colors duration-300">
                                   {emoji}
                                 </span>
-                                <span className="text-[11px] font-semibold text-slate-600 group-hover:text-brand-800 flex-1 leading-snug transition-colors duration-300">
+                                <span className="text-[10.5px] sm:text-[11px] font-semibold text-slate-600 group-hover:text-brand-800 flex-1 leading-snug transition-colors duration-300 line-clamp-2">
                                   {text}
                                 </span>
-                                <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-600 translate-x-0 group-hover:translate-x-0.5 opacity-0 group-hover:opacity-100 transition-all duration-300 shrink-0" />
+                                <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-600 translate-x-0 group-hover:translate-x-0.5 opacity-0 group-hover:opacity-100 transition-all duration-300 shrink-0 hidden sm:block" />
                               </motion.button>
                             );
                           })}
@@ -1922,7 +1937,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
                 </div>
 
                 {/* Input Bar */}
-                <div className="shrink-0 border-t border-slate-100 bg-white/95 backdrop-blur-sm px-4 py-3">
+                <div className="shrink-0 border-t border-slate-100 bg-white/95 backdrop-blur-sm px-3 py-2 sm:px-4 sm:py-3 pb-[calc(8px+env(safe-area-inset-bottom))] sm:pb-3">
                   <form onSubmit={e => { e.preventDefault(); sendMessage(input); }} className="flex items-center gap-2">
                     <div className="flex-1 relative">
                       <input
@@ -1932,24 +1947,24 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
                         onChange={e => setInput(e.target.value)}
                         placeholder="Ask about exams, pricing, features…"
                         disabled={loading}
-                        className="w-full text-xs bg-slate-50/70 border border-slate-200/60 rounded-2xl px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-brand-400/80 focus:bg-white transition-all duration-300 font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="w-full text-xs bg-slate-50/70 border border-slate-200/60 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-brand-400/80 focus:bg-white transition-all duration-300 font-medium disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                     </div>
                     <button
                       type="submit"
                       disabled={!input.trim() || loading}
                       className={cn(
-                        'w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300',
+                        'w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300',
                         input.trim() && !loading
                           ? 'bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-900/15 hover:shadow-brand-500/25 hover:scale-105 active:scale-95'
                           : 'bg-slate-100 text-slate-300 cursor-not-allowed'
                       )}
                       title="Send"
                     >
-                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-3.5 h-3.5" strokeWidth={2.5} />}
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-3 h-3 sm:w-3.5 sm:h-3.5" strokeWidth={2.5} />}
                     </button>
                   </form>
-                  <p className="text-[9px] text-slate-400 text-center mt-2 font-semibold">
+                  <p className="text-[9px] text-slate-400 text-center mt-1.5 font-semibold">
                     OEP Buddy · Real-time data from OdishaExamPrep
                   </p>
                 </div>
