@@ -160,7 +160,7 @@ const Sparkline = React.memo(({ data, color = "#8a1c36", id }: { data: number[];
   const gradId = `sparkline-grad-${id}`;
 
   return (
-    <svg className="w-24 h-10 overflow-visible" viewBox={`0 0 ${width} ${height}`}>
+    <svg className="w-full h-8 overflow-visible" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity={0.25} />
@@ -198,52 +198,63 @@ const StatCard = React.memo(({ icon, title, value, suffix = "", trend, decimals 
   return (
     <motion.div 
       variants={stagger.itemFadeUp} 
-      className={cn(
-        "relative overflow-hidden bg-white/92 p-5 sm:p-6 rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 flex flex-col justify-between group transition-[transform,box-shadow,border-color,background-color] duration-300 ease-out cursor-default hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.98]",
-        color === "brand" ? "hover:shadow-[0_20px_40px_rgba(138,28,54,0.065)] hover:border-brand-200/50" :
-        color === "success" ? "hover:shadow-[0_20px_40px_rgba(16,185,129,0.065)] hover:border-emerald-200/50" :
-        color === "warning" ? "hover:shadow-[0_20px_40px_rgba(217,119,6,0.065)] hover:border-amber-200/50" :
-        "hover:shadow-[0_20px_40px_rgba(99,102,241,0.065)] hover:border-indigo-200/50"
-      )}
+      className="w-full flex"
     >
-      <div 
-        className="absolute -top-24 -right-24 w-48 h-48 pointer-events-none opacity-20 group-hover:opacity-30 transition-opacity duration-300" 
+      <div
+        className={cn(
+          "relative w-full bg-white p-4 sm:p-6 rounded-2xl sm:rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 flex flex-col justify-between group transition-[transform,box-shadow,border-color,background-color] duration-300 ease-out cursor-default hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.98] min-h-[146px] sm:min-h-[170px]",
+          color === "brand" ? "hover:shadow-[0_20px_40px_rgba(138,28,54,0.065)] hover:border-brand-200/50" :
+          color === "success" ? "hover:shadow-[0_20px_40px_rgba(16,185,129,0.065)] hover:border-emerald-200/50" :
+          color === "warning" ? "hover:shadow-[0_20px_40px_rgba(217,119,6,0.065)] hover:border-amber-200/50" :
+          "hover:shadow-[0_20px_40px_rgba(99,102,241,0.065)] hover:border-indigo-200/50"
+        )}
         style={{
-          background: `radial-gradient(circle at center, ${
-            color === "brand" ? "#8a1c36" :
-            color === "success" ? "#10b981" :
-            color === "warning" ? "#d97706" :
-            "#6366f1"
-          } 0%, transparent 70%)`
+          WebkitBackfaceVisibility: 'hidden',
+          backfaceVisibility: 'hidden',
+          WebkitTransform: 'translate3d(0,0,0)',
+          transform: 'translate3d(0,0,0)',
+          isolation: 'isolate'
         }}
-      />
-      
-      <div className="relative z-10 flex items-center justify-between mb-5">
-         <div className={cn("p-3 rounded-2xl border shadow-sm transition-[transform,background-color,border-color] duration-300 group-hover:scale-105 group-hover:rotate-2", iconBg)}>
-            {icon}
-         </div>
-         {trend !== undefined && trend !== 0 && (
-            <div className={cn(
-               "flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black shadow-sm border border-white/80 transition-transform duration-300 group-hover:scale-103",
-               isPositive ? "bg-emerald-50/80 text-emerald-700 border-emerald-100" : "bg-rose-50/80 text-rose-700 border-rose-100"
-            )}>
-               {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-               {Math.abs(Math.round(trend))}%
-            </div>
-         )}
-      </div>
+      >
+        <div className="absolute inset-0 rounded-2xl sm:rounded-[2.25rem] overflow-hidden pointer-events-none z-0">
+          <div 
+            className="absolute -top-24 -right-24 w-48 h-48 opacity-20 group-hover:opacity-30 transition-opacity duration-300" 
+            style={{
+              background: `radial-gradient(circle at center, ${
+                color === "brand" ? "#8a1c36" :
+                color === "success" ? "#10b981" :
+                color === "warning" ? "#d97706" :
+                "#6366f1"
+              } 0%, transparent 70%)`
+            }}
+          />
+        </div>
+        
+        <div className="relative z-10 flex items-center justify-between mb-3.5 sm:mb-5">
+           <div className={cn("p-2 sm:p-3 rounded-xl sm:rounded-2xl border shadow-sm transition-[transform,background-color,border-color] duration-300 group-hover:scale-105 group-hover:rotate-2", iconBg)}>
+              {React.cloneElement(icon, { className: "w-4 h-4 sm:w-5 h-5" })}
+           </div>
+           {trend !== undefined && trend !== 0 && (
+              <div className={cn(
+                 "flex items-center gap-1 px-1.5 py-0.5 sm:px-2.5 sm:py-1.5 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-black shadow-sm border border-white/80 transition-transform duration-300 group-hover:scale-103",
+                 isPositive ? "bg-emerald-50/80 text-emerald-700 border-emerald-100" : "bg-rose-50/80 text-rose-700 border-rose-100"
+              )}>
+                 {isPositive ? <TrendingUp className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" /> : <TrendingDown className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" />}
+                 {Math.abs(Math.round(trend))}%
+              </div>
+           )}
+        </div>
 
-      <div className="relative z-10 flex items-end justify-between mt-auto">
-        <div className="space-y-1.5 flex-1">
-          <h4 className="text-[10px] font-sans font-black tracking-widest text-slate-400/90 uppercase leading-none">{title}</h4>
-          <div className="text-3xl sm:text-4xl font-sans font-black text-slate-900 flex items-baseline tracking-tight group-hover:text-slate-950 transition-colors duration-300 leading-none mt-1">
+        <div className="relative z-10 space-y-1 flex-1 min-w-0 mb-3">
+          <h4 className="text-[9px] sm:text-[10px] font-sans font-black tracking-widest text-slate-400/90 uppercase leading-none truncate">{title}</h4>
+          <div className="text-xl xs:text-2xl sm:text-3xl font-sans font-black text-slate-900 flex items-baseline tracking-tight group-hover:text-slate-950 transition-colors duration-300 leading-none mt-1">
              <AnimatedCounter value={value} decimals={decimals} />
-             {suffix && <span className="text-sm font-sans font-black text-slate-400/80 ml-1 leading-none">{suffix}</span>}
+             {suffix && <span className="text-xs sm:text-sm font-sans font-black text-slate-400/80 ml-1 leading-none">{suffix}</span>}
           </div>
         </div>
         
         {sparklineData && sparklineData.length >= 2 && (
-          <div className="pb-1 pl-4 opacity-85 group-hover:opacity-100 transition-opacity duration-300 shrink-0">
+          <div className="relative z-10 w-full pt-1 border-t border-slate-100/50 opacity-85 group-hover:opacity-100 transition-opacity duration-300">
             <Sparkline data={sparklineData} color={strokeColor} id={title.replace(/\s+/g, '-').toLowerCase()} />
           </div>
         )}
@@ -257,14 +268,14 @@ const AccuracyRow = React.memo(({ label, value, total, color }: { label: string,
   const circleColor = color === "bg-rose-500" ? "bg-rose-500" : color;
 
   return (
-    <div className="flex items-center justify-between p-3.5 bg-white/80 border border-slate-100/50 rounded-[1.25rem] hover:bg-white hover:border-slate-200/50 shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.025)] hover:-translate-y-0.5 transition-[transform,background-color,border-color,box-shadow] duration-300 group">
+    <div className="flex items-center justify-between p-2.5 sm:p-3.5 bg-white/80 border border-slate-100/50 rounded-[1.25rem] hover:bg-white hover:border-slate-200/50 shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.025)] hover:-translate-y-0.5 transition-[transform,background-color,border-color,box-shadow] duration-300 group">
        <div className="flex items-center gap-3 font-sans">
           <div className={cn("w-2.5 h-2.5 rounded-full border-2 border-white shadow-[0_0_6px_rgba(0,0,0,0.05)]", circleColor)} />
           <span className="text-[10px] font-black text-slate-500 group-hover:text-slate-800 transition-colors uppercase tracking-wider">{label}</span>
        </div>
        <div className="flex items-center gap-4 font-sans">
           <span className="text-xs font-black text-slate-800">{value}</span>
-          <span className="text-[10px] font-black text-slate-400 px-2.5 py-0.5 bg-white border border-slate-100 rounded-lg leading-none">{percentage}%</span>
+          <span className="text-[10px] font-black text-slate-400 px-2 py-0.5 sm:px-2.5 sm:py-0.5 bg-white border border-slate-100 rounded-lg leading-none">{percentage}%</span>
        </div>
     </div>
   );
@@ -280,7 +291,7 @@ const SubjectRow = React.memo(({ subject }: { subject: any }) => {
     <div 
       onClick={() => setIsExpanded(!isExpanded)}
       className={cn(
-        "flex flex-col p-4 bg-white/80 rounded-2xl border border-slate-100/70 shadow-[0_2px_8px_rgba(0,0,0,0.005)] hover:bg-white/95 hover:border-brand-200/40 hover:-translate-y-0.5 transition-[transform,background-color,border-color,box-shadow] duration-300 group cursor-pointer relative overflow-hidden",
+        "flex flex-col p-3 sm:p-4 bg-white/80 rounded-2xl border border-slate-100/70 shadow-[0_2px_8px_rgba(0,0,0,0.005)] hover:bg-white/95 hover:border-brand-200/40 hover:-translate-y-0.5 transition-[transform,background-color,border-color,box-shadow] duration-300 group cursor-pointer relative overflow-hidden",
         isExpanded && "bg-white/85 border-brand-200/30 shadow-[0_8px_20px_rgba(138,28,54,0.02)]"
       )}
     >
@@ -299,7 +310,7 @@ const SubjectRow = React.memo(({ subject }: { subject: any }) => {
           <div className="flex items-center gap-3 shrink-0">
             <span className="text-xs sm:text-sm font-sans font-black text-slate-800 group-hover:text-[#8a1c36] transition-colors">{subject.avgScore}%</span>
             <span className={cn(
-              "px-2.5 py-1 rounded-lg text-[9px] font-sans font-black uppercase tracking-wider leading-none shadow-sm border", 
+              "px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[9px] font-sans font-black uppercase tracking-wider leading-none shadow-sm border", 
               subject.status === 'Strong' 
                  ? "bg-emerald-50 text-emerald-700 border-emerald-100/70" 
                  : "bg-rose-50 text-rose-700 border-rose-100/70"
@@ -335,26 +346,26 @@ const SubjectRow = React.memo(({ subject }: { subject: any }) => {
               className="overflow-hidden"
             >
               <div className="pt-4 mt-3 border-t border-slate-100/60 relative z-10">
-                 <div className="grid grid-cols-3 gap-2.5">
+                 <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
                    {/* Attempted stat box */}
-                   <div className="p-2.5 bg-slate-50/50 border border-slate-100 rounded-xl text-center flex flex-col justify-between items-center hover:bg-slate-100/40 transition-colors">
+                   <div className="p-2 sm:p-2.5 bg-slate-50/50 border border-slate-100 rounded-xl text-center flex flex-col justify-between items-center hover:bg-slate-100/40 transition-colors">
                      <span className="text-slate-400 font-sans font-black uppercase tracking-widest text-[8px] leading-none mb-1">Attempted</span>
-                     <span className="text-slate-800 font-sans font-black text-sm">{subject.attempted}</span>
-                     <span className="text-[7.5px] font-bold text-slate-400 uppercase mt-1 leading-none">Questions</span>
+                     <span className="text-slate-800 font-sans font-black text-xs sm:text-sm">{subject.attempted}</span>
+                     <span className="text-[7.5px] font-bold text-slate-400 uppercase mt-1 leading-none scale-90 sm:scale-100">Questions</span>
                    </div>
                    
                    {/* Correct stat box */}
-                   <div className="p-2.5 bg-emerald-50/30 border border-emerald-100/40 rounded-xl text-center flex flex-col justify-between items-center hover:bg-emerald-50/55 transition-colors">
+                   <div className="p-2 sm:p-2.5 bg-emerald-50/30 border border-emerald-100/40 rounded-xl text-center flex flex-col justify-between items-center hover:bg-emerald-50/55 transition-colors">
                      <span className="text-emerald-700/80 font-sans font-black uppercase tracking-widest text-[8px] leading-none mb-1">Correct</span>
-                     <span className="text-emerald-600 font-sans font-black text-sm">{subject.correct}</span>
-                     <span className="text-[7.5px] font-sans font-black text-emerald-500/80 uppercase mt-1 leading-none">{correctPct}% Acc</span>
+                     <span className="text-emerald-600 font-sans font-black text-xs sm:text-sm">{subject.correct}</span>
+                     <span className="text-[7.5px] font-sans font-black text-emerald-500/80 uppercase mt-1 leading-none scale-90 sm:scale-100">{correctPct}% Acc</span>
                    </div>
                    
                    {/* Incorrect stat box */}
-                   <div className="p-2.5 bg-rose-50/30 border border-rose-100/40 rounded-xl text-center flex flex-col justify-between items-center hover:bg-rose-50/55 transition-colors">
+                   <div className="p-2 sm:p-2.5 bg-rose-50/30 border border-rose-100/40 rounded-xl text-center flex flex-col justify-between items-center hover:bg-rose-50/55 transition-colors">
                      <span className="text-rose-700/80 font-sans font-black uppercase tracking-widest text-[8px] leading-none mb-1">Incorrect</span>
-                     <span className="text-rose-600 font-sans font-black text-sm">{incorrect}</span>
-                     <span className="text-[7.5px] font-sans font-black text-rose-500/80 uppercase mt-1 leading-none">{incorrectPct}% Pct</span>
+                     <span className="text-rose-600 font-sans font-black text-xs sm:text-sm">{incorrect}</span>
+                     <span className="text-[7.5px] font-sans font-black text-rose-500/80 uppercase mt-1 leading-none scale-90 sm:scale-100">{incorrectPct}% Pct</span>
                    </div>
                  </div>
               </div>
@@ -414,10 +425,20 @@ const AccuracyBreakdownChart = React.memo(({ pieData, totalQuestions, totalCorre
 });
 
 const SkillRadarChart = React.memo(({ skillProfile }: { skillProfile: any[] }) => {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div className="lg:col-span-5 w-full h-[280px] relative z-10 flex items-center justify-center">
        <ResponsiveContainer width="100%" height="100%" debounce={100}>
-          <RadarChart cx="50%" cy="50%" outerRadius="58%" data={skillProfile} margin={{ top: 10, right: 40, bottom: 10, left: 40 }}>
+          <RadarChart cx="50%" cy="50%" outerRadius={isMobile ? "64%" : "58%"} data={skillProfile} margin={isMobile ? { top: 10, right: 10, bottom: 10, left: 10 } : { top: 10, right: 40, bottom: 10, left: 40 }}>
              <defs>
                 <linearGradient id="overallRadarGrad" x1="0" y1="0" x2="0" y2="1">
                    <stop offset="0%" stopColor="#8a1c36" stopOpacity={0.65}/>
@@ -425,7 +446,7 @@ const SkillRadarChart = React.memo(({ skillProfile }: { skillProfile: any[] }) =
                 </linearGradient>
              </defs>
              <PolarGrid stroke="#cbd5e1" strokeOpacity={0.5} strokeDasharray="4 4" />
-             <PolarAngleAxis dataKey="name" tickFormatter={(t) => t.toUpperCase()} tick={{ fill: '#64748b', fontSize: 9, fontWeight: 900, fontFamily: 'var(--font-sans)', letterSpacing: '0.05em' }} />
+             <PolarAngleAxis dataKey="name" tickFormatter={(t) => t.toUpperCase()} tick={{ fill: '#64748b', fontSize: isMobile ? 8 : 9, fontWeight: 900, fontFamily: 'var(--font-sans)', letterSpacing: '0.05em' }} />
              <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} tickCount={6} />
              <Radar 
                name="Skill Level" 
@@ -444,10 +465,20 @@ const SkillRadarChart = React.memo(({ skillProfile }: { skillProfile: any[] }) =
 });
 
 const SubjectBarChart = React.memo(({ uniqueSubjects }: { uniqueSubjects: any[] }) => {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div className="lg:col-span-5 w-full h-[240px] flex items-center justify-center">
        <ResponsiveContainer width="100%" height="100%" debounce={100}>
-          <BarChart data={uniqueSubjects} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+          <BarChart data={uniqueSubjects} margin={isMobile ? { top: 10, right: 10, left: -32, bottom: 0 } : { top: 10, right: 10, left: -25, bottom: 0 }}>
              <defs>
                 <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
                    <stop offset="5%" stopColor="#8a1c36" stopOpacity={0.95}/>
@@ -455,30 +486,42 @@ const SubjectBarChart = React.memo(({ uniqueSubjects }: { uniqueSubjects: any[] 
                 </linearGradient>
              </defs>
              <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#cbd5e1" strokeOpacity={0.25} />
-             <XAxis dataKey="name" axisLine={false} tickLine={false} tickFormatter={(val) => val.length > 24 ? `${val.substring(0, 22)}...` : val} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} dy={10} />
-             <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} domain={[0, 100]} />
+             <XAxis dataKey="name" axisLine={false} tickLine={false} tickFormatter={(val) => val.length > (isMobile ? 12 : 24) ? `${val.substring(0, isMobile ? 10 : 22)}...` : val} tick={{ fill: '#94a3b8', fontSize: isMobile ? 8 : 10, fontWeight: 700 }} dy={10} />
+             <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: isMobile ? 8 : 10, fontWeight: 700 }} domain={[0, 100]} />
              <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
-             <Bar dataKey="avgScore" name="Accuracy" fill="url(#barGrad)" radius={[8, 8, 0, 0]} barSize={28} isAnimationActive={false} />
+             <Bar dataKey="avgScore" name="Accuracy" fill="url(#barGrad)" radius={[8, 8, 0, 0]} barSize={isMobile ? 20 : 28} isAnimationActive={false} />
           </BarChart>
        </ResponsiveContainer>
     </div>
   );
-});;
+});
 
 function SkeletonStatCard() {
   return (
-    <div className="relative overflow-hidden bg-white/85 p-5 sm:p-6 rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 flex flex-col justify-between min-h-[142px] animate-pulse">
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-slate-150/40 rounded-full blur-3xl pointer-events-none" />
-      <div className="relative z-10 flex items-center justify-between mb-4">
-        <div className="p-3 bg-slate-200/50 rounded-2xl border border-slate-150/60 w-11 h-11" />
-        <div className="px-2.5 py-1.5 bg-slate-200/50 rounded-xl w-14 h-7 border border-slate-150/60" />
-      </div>
-      <div className="relative z-10 flex items-end justify-between mt-auto">
-        <div className="space-y-2 flex-1">
-          <div className="h-3 w-20 bg-slate-200/60 rounded-md" />
-          <div className="h-9 w-28 bg-slate-200/70 rounded-xl mt-1.5" />
+    <div className="w-full animate-pulse">
+      <div 
+        className="relative bg-white/85 p-5 sm:p-6 rounded-2xl sm:rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 flex flex-col justify-between min-h-[142px]"
+        style={{
+          WebkitBackfaceVisibility: 'hidden',
+          backfaceVisibility: 'hidden',
+          WebkitTransform: 'translate3d(0,0,0)',
+          transform: 'translate3d(0,0,0)'
+        }}
+      >
+        <div className="absolute inset-0 rounded-2xl sm:rounded-[2.25rem] overflow-hidden pointer-events-none z-0">
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-slate-150/40 rounded-full blur-3xl" />
         </div>
-        <div className="w-24 h-10 bg-slate-200/40 rounded-xl shrink-0 ml-4" />
+        <div className="relative z-10 flex items-center justify-between mb-4">
+          <div className="p-3 bg-slate-200/50 rounded-2xl border border-slate-150/60 w-11 h-11" />
+          <div className="px-2.5 py-1.5 bg-slate-200/50 rounded-xl w-14 h-7 border border-slate-150/60" />
+        </div>
+        <div className="relative z-10 flex items-end justify-between mt-auto">
+          <div className="space-y-2 flex-1">
+            <div className="h-3 w-20 bg-slate-200/60 rounded-md" />
+            <div className="h-9 w-28 bg-slate-200/70 rounded-xl mt-1.5" />
+          </div>
+          <div className="w-24 h-10 bg-slate-200/40 rounded-xl shrink-0 ml-4" />
+        </div>
       </div>
     </div>
   );
@@ -486,7 +529,7 @@ function SkeletonStatCard() {
 
 function AnalyticsSkeleton() {
   return (
-    <div className="w-full mx-auto space-y-6 sm:space-y-8 pb-20 relative z-10">
+    <div className="w-full mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8 pb-32 sm:pb-24 relative z-10">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
         <SkeletonStatCard />
         <SkeletonStatCard />
@@ -1323,14 +1366,14 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
   );
 
   return (
-    <div className="relative w-full min-h-screen overflow-x-hidden" style={{ transform: 'translate3d(0, 0, 0)' }}>
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(138,28,54,0.06),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.04),transparent_50%)] -z-10 pointer-events-none" style={{ transform: 'translate3d(0,0,0)', willChange: 'transform' }} />
+    <div className="relative w-full min-h-screen overflow-x-hidden" style={{ isolation: 'isolate' }}>
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(138,28,54,0.06),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.04),transparent_50%)] -z-10 pointer-events-none" />
 
       <motion.div 
         variants={stagger.containerDelay(0.1, 0.1)}
         initial="hidden"
         animate="show"
-        className="w-full mx-auto space-y-6 sm:space-y-8 pb-20 relative z-10"
+        className="w-full mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8 pb-32 sm:pb-24 relative z-10"
       >
         {/* Redesigned Stat Cards Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
@@ -1373,7 +1416,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
         {/* AI Performance Lab */}
         <motion.div
           variants={stagger.itemFadeUp}
-          className="relative overflow-hidden bg-white text-slate-800 rounded-[2.5rem] border border-slate-200/60 shadow-xl p-6 sm:p-8"
+          className="relative overflow-hidden bg-white text-slate-800 rounded-3xl sm:rounded-[2.5rem] p-4.5 sm:p-6 lg:p-8 border border-slate-200/60 shadow-xl"
         >
           {/* Subtle Glow Orbs */}
           <div 
@@ -1484,7 +1527,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                           key={tab}
                           onClick={() => setAiPanelTab(tab)}
                           className={cn(
-                            "relative px-2 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-lg transition-colors duration-300 cursor-pointer flex-1 sm:flex-initial border-none whitespace-nowrap focus:outline-none bg-transparent",
+                            "relative px-1.5 sm:px-4 py-1 sm:py-2 text-[9px] sm:text-xs font-black uppercase tracking-wider rounded-lg transition-colors duration-300 cursor-pointer flex-1 sm:flex-initial border-none whitespace-nowrap focus:outline-none bg-transparent",
                             aiPanelTab === tab ? "text-[#8A1C36]" : "text-slate-500 hover:text-slate-800"
                           )}
                         >
@@ -1506,15 +1549,15 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                       onClick={() => runAiAnalysis(true)}
                       disabled={loadingAi}
                       className={cn(
-                        "flex items-center justify-center gap-2 px-4 py-2 sm:py-2.5 sm:px-2.5 rounded-xl transition-all cursor-pointer font-bold text-xs uppercase tracking-wider shrink-0 disabled:opacity-50 border active:scale-95",
+                        "flex items-center justify-center gap-1.5 px-3 py-1.5 sm:py-2.5 sm:px-2.5 rounded-xl transition-all cursor-pointer font-bold text-[10px] sm:text-xs uppercase tracking-wider shrink-0 disabled:opacity-50 border active:scale-95",
                         loadingAi
                           ? "bg-slate-50 border-slate-200/60 text-slate-400"
                           : "bg-[#8A1C36]/5 hover:bg-[#8A1C36]/10 border-[#8A1C36]/10 text-[#8A1C36] hover:text-[#8A1C36]"
                       )}
                       title="Re-Scan Analytics"
                     >
-                      <RefreshCw className={cn("w-3.5 h-3.5", loadingAi && "animate-spin")} />
-                      <span className="inline-block sm:hidden lg:inline text-[10px] sm:text-xs">
+                      <RefreshCw className={cn("w-3 h-3 sm:w-3.5 sm:h-3.5", loadingAi && "animate-spin")} />
+                      <span className="inline-block sm:hidden lg:inline text-[9px] sm:text-xs">
                         {loadingAi ? "Scanning..." : "Rescan Analytics"}
                       </span>
                     </button>
@@ -1673,18 +1716,18 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                               <div 
                                 key={i} 
                                 className={cn(
-                                  "flex gap-3 max-w-[85%] animate-in fade-in slide-in-from-bottom-2 duration-305",
+                                  "flex gap-2 sm:gap-3 max-w-[90%] sm:max-w-[85%] animate-in fade-in slide-in-from-bottom-2 duration-305",
                                   msg.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
                                 )}
                               >
                                 <div className={cn(
-                                  "w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-[10px] font-black shadow-sm",
+                                  "w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-lg flex items-center justify-center shrink-0 text-[9px] sm:text-[10px] font-black shadow-sm",
                                   msg.role === 'user' ? "bg-[#8A1C36] text-white" : "bg-slate-200 text-slate-700"
                                 )}>
                                   {msg.role === 'user' ? 'ME' : 'AI'}
                                 </div>
                                 <div className={cn(
-                                  "p-3 rounded-2xl leading-relaxed text-xs shadow-sm",
+                                  "p-2.5 sm:p-3 rounded-2xl leading-relaxed text-xs shadow-sm",
                                   msg.role === 'user' 
                                     ? "bg-[#8A1C36] text-white rounded-tr-none" 
                                     : "bg-white border border-slate-200 text-slate-800 rounded-tl-none"
@@ -1695,11 +1738,11 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                             ))
                           )}
                           {chatLoading && chatHistory[chatHistory.length - 1]?.role === 'user' && (
-                            <div className="flex gap-3 max-w-[85%] items-center mr-auto">
-                              <div className="w-6 h-6 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center text-[10px] font-black shadow-sm">
+                            <div className="flex gap-2 sm:gap-3 max-w-[90%] sm:max-w-[85%] items-center mr-auto">
+                              <div className="w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center text-[9px] sm:text-[10px] font-black shadow-sm">
                                 AI
                               </div>
-                              <div className="p-3 rounded-2xl bg-white border border-slate-200 text-slate-500 rounded-tl-none flex items-center gap-1.5 shadow-sm">
+                              <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-slate-200 text-slate-500 rounded-tl-none flex items-center gap-1.5 shadow-sm">
                                 <Loader2 className="w-3.5 h-3.5 animate-spin text-[#8A1C36]" /> Thinking...
                               </div>
                             </div>
@@ -1733,15 +1776,15 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                           <h4 className="text-[10px] font-black text-[#8A1C36] uppercase tracking-widest mb-1.5 flex items-center gap-1">
                             <Lightbulb className="w-3.5 h-3.5" /> Study Assistant
                           </h4>
-                          <p className="text-[10px] font-medium text-slate-500 leading-relaxed mb-4">Click any prompt to trigger instant diagnostics from your AI coach.</p>
+                          <p className="text-[10px] font-medium text-slate-500 leading-relaxed mb-3 sm:mb-4">Click any prompt to trigger instant diagnostics from your AI coach.</p>
                           
-                          <div className="flex flex-col gap-2.5">
+                          <div className="flex flex-row overflow-x-auto gap-2.5 no-scrollbar pb-1.5 whitespace-nowrap lg:flex-col lg:overflow-visible lg:whitespace-normal">
                             {assistantChips.map((chip, idx) => (
                               <button
                                 key={idx}
                                 onClick={() => sendMessage(chip)}
                                 disabled={chatLoading}
-                                className="text-left p-2.5 bg-white hover:bg-brand-50 border border-slate-200/60 hover:border-brand-200 rounded-xl text-[11px] font-semibold text-slate-600 hover:text-[#8A1C36] transition-all cursor-pointer leading-tight disabled:opacity-50 shadow-sm"
+                                className="text-left p-2.5 bg-white hover:bg-brand-50 border border-slate-200/60 hover:border-brand-200 rounded-xl text-[11px] font-semibold text-slate-600 hover:text-[#8A1C36] transition-all cursor-pointer leading-tight disabled:opacity-50 shadow-sm shrink-0 whitespace-nowrap lg:whitespace-normal"
                               >
                                 {chip}
                               </button>
@@ -1749,7 +1792,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                           </div>
                         </div>
 
-                        <div className="text-[8.5px] font-bold text-slate-400 uppercase tracking-widest text-center mt-4">
+                        <div className="text-[8.5px] font-bold text-slate-400 uppercase tracking-widest text-center mt-3 sm:mt-4">
                           OdishaExamPrep Cognitive Lab
                         </div>
                       </div>
@@ -1766,7 +1809,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
            {/* Performance Trend Card */}
            <motion.div 
              variants={stagger.itemFadeUp} 
-             className="lg:col-span-8 relative overflow-hidden bg-white/92 rounded-[2.5rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-[border-color,box-shadow] duration-500 group"
+             className="lg:col-span-8 relative overflow-hidden bg-white/92 rounded-3xl sm:rounded-[2.5rem] p-4.5 sm:p-6 lg:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-[border-color,box-shadow] duration-500 group"
            >
               <div 
                 className="absolute -top-32 -right-32 w-72 h-72 pointer-events-none transition-transform duration-700 group-hover:scale-110" 
@@ -1810,7 +1853,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
            {/* Accuracy Breakdown Card */}
            <motion.div 
              variants={stagger.itemFadeUp} 
-             className="lg:col-span-4 relative overflow-hidden bg-white/92 rounded-[2.5rem] p-6 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-[border-color,box-shadow] duration-500 group"
+             className="lg:col-span-4 relative overflow-hidden bg-white/92 rounded-3xl sm:rounded-[2.5rem] p-4.5 sm:p-6 lg:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-[border-color,box-shadow] duration-500 group"
            >
               <div 
                 className="absolute -bottom-24 -left-24 w-48 h-48 pointer-events-none" 
@@ -1838,7 +1881,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
             {/* Skill Radar Card */}
             <motion.div 
               variants={stagger.itemFadeUp} 
-              className="lg:col-span-12 relative overflow-hidden bg-white/92 rounded-[2.5rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-[border-color,box-shadow] duration-500 group"
+              className="lg:col-span-12 relative overflow-hidden bg-white/92 rounded-3xl sm:rounded-[2.5rem] p-4.5 sm:p-6 lg:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-[border-color,box-shadow] duration-500 group"
             >
                <div 
                  className="absolute -bottom-24 -left-24 w-48 h-48 pointer-events-none" 
@@ -1960,7 +2003,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                  const uniqueSubjects = Array.from(uniqueMap.values());
 
                  return (
-                   <motion.div key={idx} variants={stagger.itemFadeUp} className="bg-white/92 rounded-[2.5rem] p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-[border-color,box-shadow] duration-500 relative overflow-hidden flex flex-col shrink-0">
+                   <motion.div key={idx} variants={stagger.itemFadeUp} className="bg-white/92 rounded-3xl sm:rounded-[2.5rem] p-4.5 sm:p-6 lg:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-[border-color,box-shadow] duration-500 relative overflow-hidden flex flex-col shrink-0">
                      <div className="mb-6 relative z-10 flex flex-col gap-3">
                         <div>
                            <span className="px-3 py-1.5 bg-[#8a1c36]/8 text-[#8a1c36] text-[9px] font-sans font-black rounded-xl uppercase tracking-widest border border-[#8a1c36]/15 shadow-sm leading-none">
@@ -2027,7 +2070,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
 
            {/* Visual Action cards */}
            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-               <motion.div variants={stagger.itemFadeUp} whileHover={{ y: -3 }} className="bg-white/92 rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(15,23,42,0.015)] border border-slate-100/70 hover:border-slate-200 flex gap-5 items-start">
+               <motion.div variants={stagger.itemFadeUp} whileHover={{ y: -3 }} className="bg-white/92 rounded-3xl sm:rounded-[2rem] p-4.5 sm:p-6 shadow-[0_8px_30px_rgba(15,23,42,0.015)] border border-slate-100/70 hover:border-slate-200 flex gap-4 sm:gap-5 items-start">
                   <div className={cn("p-3 rounded-2xl shrink-0 shadow-sm border border-slate-100", stats.impScore >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600")}>
                      {stats.impScore >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
                  </div>
@@ -2036,7 +2079,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                     <p className="text-xs sm:text-sm font-medium text-slate-400 leading-relaxed">{stats.impScore >= 0 ? "Your latest test scores show positive momentum. Keep up the good work!" : "Review your recent mistakes to get back on track."}</p>
                  </div>
               </motion.div>
-               <motion.div variants={stagger.itemFadeUp} whileHover={{ y: -3 }} className="bg-white/92 rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(15,23,42,0.015)] border border-slate-100/70 hover:border-slate-200 flex gap-5 items-start">
+               <motion.div variants={stagger.itemFadeUp} whileHover={{ y: -3 }} className="bg-white/92 rounded-3xl sm:rounded-[2rem] p-4.5 sm:p-6 shadow-[0_8px_30px_rgba(15,23,42,0.015)] border border-slate-100/70 hover:border-slate-200 flex gap-4 sm:gap-5 items-start">
                   <div className={cn("p-3 rounded-2xl shrink-0 shadow-sm border border-slate-100", stats.avgTimePerQuestion > 60 ? "bg-amber-50 text-amber-600" : "bg-brand-50 text-brand-600")}>
                     <Timer className="w-5 h-5" />
                  </div>
@@ -2051,7 +2094,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
            <motion.div 
              variants={stagger.itemFadeUp} 
              whileHover={{ y: -3 }}
-             className="lg:col-span-5 relative bg-gradient-to-br from-slate-900 via-slate-950 to-indigo-950 rounded-[2rem] p-6 sm:p-8 flex flex-col justify-between shadow-xl border border-slate-800 gap-6 overflow-hidden min-h-[160px]"
+             className="lg:col-span-5 relative bg-gradient-to-br from-slate-900 via-slate-950 to-indigo-950 rounded-3xl sm:rounded-[2rem] p-4.5 sm:p-6 lg:p-8 flex flex-col justify-between shadow-xl border border-slate-800 gap-6 overflow-hidden min-h-[160px]"
            >
              <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-500/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3 pointer-events-none animate-pulse-soft" />
              <div className="text-left relative z-10">
