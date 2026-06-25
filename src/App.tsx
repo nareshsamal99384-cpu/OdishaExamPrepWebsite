@@ -6184,60 +6184,79 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             hidden: { opacity: 0 },
             show: {
               opacity: 1,
-              transition: { staggerChildren: isMobile ? 0 : 0.1 }
+              transition: { staggerChildren: isMobile ? 0.05 : 0.1 }
             }
           }}
-          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6"
+          className={cn(
+            isMobile 
+              ? "flex flex-col gap-3.5" 
+              : "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6"
+          )}
         >
           {[
-            { id: 'topic-wise', title: 'Topic-wise Question Bank', desc: 'Master specific subjects with curated questions.', icon: <Layers className="w-6 h-6 sm:w-7 sm:h-7" /> },
-            { id: 'exam-focused', title: 'Exam-Focused Bank', desc: 'High-yield questions tailored for this exam.', icon: <Target className="w-6 h-6 sm:w-7 sm:h-7" /> },
-            { id: 'revision-sets', title: 'Revision Sets', desc: 'Quick revision modules for last-minute prep.', icon: <BookMarked className="w-6 h-6 sm:w-7 sm:h-7" /> },
-            { id: 'pyq-collections', title: 'PYQ Collections', desc: 'Previous Year Questions with detailed solutions.', icon: <History className="w-6 h-6 sm:w-7 sm:h-7" /> },
+            { id: 'topic-wise', title: 'Topic-wise Question Bank', desc: 'Master specific subjects with curated questions.', icon: <Layers className="w-5.5 h-5.5 text-brand-600" />, iconDesktop: <Layers className="w-6 h-6 sm:w-7 sm:h-7" /> },
+            { id: 'exam-focused', title: 'Exam-Focused Bank', desc: 'High-yield questions tailored for this exam.', icon: <Target className="w-5.5 h-5.5 text-brand-600" />, iconDesktop: <Target className="w-6 h-6 sm:w-7 sm:h-7" /> },
+            { id: 'revision-sets', title: 'Revision Sets', desc: 'Quick revision modules for last-minute prep.', icon: <BookMarked className="w-5.5 h-5.5 text-brand-600" />, iconDesktop: <BookMarked className="w-6 h-6 sm:w-7 sm:h-7" /> },
+            { id: 'pyq-collections', title: 'PYQ Collections', desc: 'Previous Year Questions with detailed solutions.', icon: <History className="w-5.5 h-5.5 text-brand-600" />, iconDesktop: <History className="w-6 h-6 sm:w-7 sm:h-7" /> },
           ].map((item, i) => (
             <motion.div
               key={i}
               variants={{
-                hidden: { y: 20, opacity: 0 },
+                hidden: { y: 15, opacity: 0 },
                 show: { y: 0, opacity: 1 }
               }}
               whileHover={isMobile ? undefined : whileHover.liftTap}
-              whileTap={isMobile ? undefined : whileTap.press}
+              whileTap={isMobile ? { scale: 0.98 } : whileTap.press}
+              className="w-full"
             >
-              <Card 
-                onClick={() => setSelectedBankType(item.id)}
-                className={cn(
-                  "p-5 sm:p-6 lg:p-8 flex flex-col justify-between bg-gradient-to-br from-white to-slate-50/50 border border-white/20 shadow-sm rounded-[1.5rem] cursor-pointer group relative overflow-hidden h-full",
-                  !isMobile && "hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 premium-shine-container"
-                )}
-              >
-                <div className="absolute -right-6 -top-6 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-colors" />
-                
-                <div className="flex-1 pb-6 relative z-10">
-                  <div className="flex justify-between items-start mb-4 sm:mb-6">
-                    <div className={cn(
-                      "w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 premium-gradient rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-500/20 shrink-0 relative",
-                      !isMobile && "group-hover:scale-110 group-hover:premium-glow transition-all duration-500"
-                    )}>
-                      {item.icon}
-                      <div className="absolute inset-0 border-2 border-white/20 rounded-xl sm:rounded-2xl animate-pulse" />
+              {isMobile ? (
+                <div
+                  onClick={() => setSelectedBankType(item.id)}
+                  className="p-4 bg-white border border-slate-100 shadow-[0_4px_16px_-4px_rgba(138,28,54,0.06),0_1px_2px_rgba(138,28,54,0.02)] active:scale-[0.98] active:border-brand-300 active:shadow-md rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-brand-500/0 via-brand-500/[0.012] to-brand-500/0 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none" />
+                  <div className="absolute left-0 top-3.5 bottom-3.5 w-1 bg-gradient-to-b from-brand-500 to-brand-700 rounded-r-md opacity-80" />
+                  <div className="flex items-center gap-3.5 min-w-0 flex-1 pl-1">
+                    <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-brand-500/10 relative">
+                      {React.cloneElement(item.icon, { className: "w-5.5 h-5.5 text-white" })}
+                      <div className="absolute inset-0 border border-white/10 rounded-xl" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-extrabold text-[14.5px] text-slate-850 tracking-tight leading-snug">{item.title}</h4>
+                      <p className="text-[11.5px] text-slate-500 font-medium leading-relaxed mt-0.5 line-clamp-2 pr-1">{item.desc}</p>
                     </div>
                   </div>
-                  <h4 className="font-extrabold text-base sm:text-lg lg:text-xl text-slate-900 mb-2 group-hover:text-brand-650 transition-colors tracking-tight line-clamp-2 md:line-clamp-none leading-snug">{item.title}</h4>
-                  <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">{item.desc}</p>
+                  <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 shadow-2xs group-active:bg-brand-50 group-active:border-brand-100 group-active:text-brand-600 group-active:translate-x-0.5 transition-all duration-300">
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
                 </div>
-                
-                <Button className={cn(
-                  "w-full py-3 sm:py-3.5 mt-auto rounded-xl flex items-center justify-center text-xs sm:text-sm font-black premium-gradient border-none shadow-md shadow-brand-500/10 pointer-events-none relative overflow-hidden",
-                  !isMobile && "group-hover:shadow-lg group-hover:shadow-brand-500/30 transition-all"
-                )}>
-                   {/* Button Shine Effect */}
-                   {!isMobile && (
+              ) : (
+                <Card 
+                  onClick={() => setSelectedBankType(item.id)}
+                  className={cn(
+                    "p-5 sm:p-6 lg:p-8 flex flex-col justify-between bg-gradient-to-br from-white to-slate-50/50 border border-white/20 shadow-sm rounded-[1.5rem] cursor-pointer group relative overflow-hidden h-full",
+                    "hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 premium-shine-container"
+                  )}
+                >
+                  <div className="absolute -right-6 -top-6 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-colors" />
+                  
+                  <div className="flex-1 pb-6 relative z-10">
+                    <div className="flex justify-between items-start mb-4 sm:mb-6">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 premium-gradient rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-500/20 shrink-0 relative group-hover:scale-110 group-hover:premium-glow transition-all duration-500">
+                        {item.iconDesktop}
+                        <div className="absolute inset-0 border-2 border-white/20 rounded-xl sm:rounded-2xl animate-pulse" />
+                      </div>
+                    </div>
+                    <h4 className="font-extrabold text-base sm:text-lg lg:text-xl text-slate-900 mb-2 group-hover:text-brand-650 transition-colors tracking-tight line-clamp-2 md:line-clamp-none leading-snug">{item.title}</h4>
+                    <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">{item.desc}</p>
+                  </div>
+                  
+                  <Button className="w-full py-3 sm:py-3.5 mt-auto rounded-xl flex items-center justify-center text-xs sm:text-sm font-black premium-gradient border-none shadow-md shadow-brand-500/10 pointer-events-none relative overflow-hidden group-hover:shadow-lg group-hover:shadow-brand-500/30 transition-all">
                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
-                   )}
-                   <span className="relative z-10">View Collection</span>
-                </Button>
-              </Card>
+                     <span className="relative z-10">View Collection</span>
+                  </Button>
+                </Card>
+              )}
             </motion.div>
           ))}
         </motion.div>
