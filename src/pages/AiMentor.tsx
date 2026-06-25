@@ -1452,7 +1452,7 @@ export default function AiMentor({ user }: { user: any }) {
 
   // Dispatch event to sync OEP Buddy AI Companion in real time
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent('oep-activity-changed'));
+    window.dispatchEvent(new CustomEvent('oep-aimentor-changed'));
   }, [
     targetExam,
     plannerBlocks,

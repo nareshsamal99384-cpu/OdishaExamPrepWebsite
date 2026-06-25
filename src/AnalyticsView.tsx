@@ -608,7 +608,6 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
     localStorage.setItem(`oep_analytics_diagnostic_report_${user.id}`, aiInsight || '');
     localStorage.setItem(`oep_analytics_action_items_${user.id}`, JSON.stringify(actionItems || []));
     localStorage.setItem(`oep_analytics_checked_actions_${user.id}`, JSON.stringify(checkedActions || {}));
-    window.dispatchEvent(new CustomEvent('oep-activity-changed'));
   }, [user?.id, aiInsight, actionItems, checkedActions]);
 
   useEffect(() => {

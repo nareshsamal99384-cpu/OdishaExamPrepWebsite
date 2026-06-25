@@ -1279,55 +1279,55 @@ export const Navbar = ({
       return;
     }
 
-    let ticking = false;
+    const sectionIds = ['exams', 'syllabus-paths', 'exam-registry', 'achievers-journal'];
+    const elements = sectionIds.map(id => document.getElementById(id)).filter(Boolean) as HTMLElement[];
 
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          // Pause spy while a programmatic smooth-scroll is animating
-          if (isScrollingRef.current || (window as any).isProgrammaticScrolling) {
-            ticking = false;
-            return;
-          }
+    if (elements.length > 0) {
+      const activeEntries = new Map<string, boolean>();
 
-          const sectionIds = ['exams', 'syllabus-paths', 'exam-registry', 'achievers-journal'];
+      const observerOptions = {
+        root: null,
+        rootMargin: '-100px 0px -60% 0px',
+        threshold: 0
+      };
 
-          // If we are at the very top of the page, clear active section
-          if (window.scrollY < 100) {
-            setActiveSection('');
-            ticking = false;
-            return;
-          }
+      const observer = new IntersectionObserver((entries) => {
+        if (isScrollingRef.current || (window as any).isProgrammaticScrolling) {
+          return;
+        }
 
-          // Standard scroll-spy: iterate sections in REVERSE order.
-          // Find the LAST section whose top edge has scrolled above the trigger offset.
-          const NAVBAR_OFFSET = 100;
-
-          let currentActive = '';
-          for (let i = sectionIds.length - 1; i >= 0; i--) {
-            const id = sectionIds[i];
-            const el = document.getElementById(id);
-            if (el) {
-              const rect = el.getBoundingClientRect();
-              if (rect.top <= NAVBAR_OFFSET) {
-                currentActive = id;
-                break;
-              }
-            }
-          }
-          setActiveSection(currentActive);
-          ticking = false;
+        entries.forEach(entry => {
+          activeEntries.set(entry.target.id, entry.isIntersecting);
         });
-        ticking = true;
-      }
-    };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
+        let currentActive = '';
+        for (const id of sectionIds) {
+          if (activeEntries.get(id)) {
+            currentActive = id;
+          }
+        }
 
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+        if (window.scrollY < 100) {
+          setActiveSection('');
+        } else if (currentActive) {
+          setActiveSection(currentActive);
+        }
+      }, observerOptions);
+
+      elements.forEach(el => observer.observe(el));
+
+      const handleScroll = () => {
+        if (window.scrollY < 100) {
+          setActiveSection('');
+        }
+      };
+      window.addEventListener('scroll', handleScroll, { passive: true });
+
+      return () => {
+        observer.disconnect();
+        window.removeEventListener('scroll', handleScroll);
+      };
+    }
   }, [location.pathname]);
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
@@ -3055,7 +3055,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     setIsDescExpanded(false);
     setIsBannerDescExpanded(false);
     setIsBannerDismissed(false);
-    window.dispatchEvent(new CustomEvent('oep-activity-changed'));
+    window.dispatchEvent(new CustomEvent('oep-aimentor-changed'));
   }, [selectedExam, exams]);
 
   useEffect(() => {

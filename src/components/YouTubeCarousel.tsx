@@ -118,14 +118,6 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
   }, []);
 
   // Mouse drag
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
-    isDragging.current = true;
-    dragStartX.current = e.clientX;
-    dragStartOffset.current = offsetRef.current;
-    pauseAuto();
-    e.preventDefault();
-  }, [pauseAuto]);
-
   const onMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging.current) return;
     const delta = dragStartX.current - e.clientX;
@@ -136,16 +128,21 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
     if (!isDragging.current) return;
     isDragging.current = false;
     scheduleResume();
-  }, [scheduleResume]);
+    window.removeEventListener('mousemove', onMouseMove);
+    window.removeEventListener('mouseup',   onMouseUp);
+  }, [scheduleResume, onMouseMove]);
 
-  // Touch drag
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
     isDragging.current = true;
-    dragStartX.current = e.touches[0].clientX;
+    dragStartX.current = e.clientX;
     dragStartOffset.current = offsetRef.current;
     pauseAuto();
-  }, [pauseAuto]);
+    e.preventDefault();
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup',   onMouseUp);
+  }, [pauseAuto, onMouseMove, onMouseUp]);
 
+  // Touch drag
   const onTouchMove = useCallback((e: TouchEvent) => {
     if (!isDragging.current) return;
     const delta = dragStartX.current - e.touches[0].clientX;
@@ -157,14 +154,21 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
     if (!isDragging.current) return;
     isDragging.current = false;
     scheduleResume();
-  }, [scheduleResume]);
+    window.removeEventListener('touchmove', onTouchMove);
+    window.removeEventListener('touchend',  onTouchEnd);
+  }, [scheduleResume, onTouchMove]);
 
-  // Attach window-level listeners so drag works even if cursor leaves the track
-  useEffect(() => {
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup',   onMouseUp);
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    isDragging.current = true;
+    dragStartX.current = e.touches[0].clientX;
+    dragStartOffset.current = offsetRef.current;
+    pauseAuto();
     window.addEventListener('touchmove', onTouchMove, { passive: false });
     window.addEventListener('touchend',  onTouchEnd);
+  }, [pauseAuto, onTouchMove, onTouchEnd]);
+
+  // Cleanup window-level listeners on unmount
+  useEffect(() => {
     return () => {
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup',   onMouseUp);

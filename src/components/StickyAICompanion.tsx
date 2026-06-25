@@ -1326,7 +1326,11 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
       setSiteData(prev => getFreshUserDynamicData(prev));
     };
     window.addEventListener('oep-activity-changed', handleActivityChange);
-    return () => window.removeEventListener('oep-activity-changed', handleActivityChange);
+    window.addEventListener('oep-aimentor-changed', handleActivityChange);
+    return () => {
+      window.removeEventListener('oep-activity-changed', handleActivityChange);
+      window.removeEventListener('oep-aimentor-changed', handleActivityChange);
+    };
   }, [getFreshUserDynamicData]);
 
   /* ── Hide/adjust during active mock/practice tests & review modes ── */
