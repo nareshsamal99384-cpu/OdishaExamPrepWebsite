@@ -276,7 +276,13 @@ body {
     scroll-behavior: smooth;
     will-change: transform;
     transform: translateZ(0);
-    overscroll-behavior: contain;
+    overscroll-behavior: auto;
+  }
+
+  @media (min-width: 1024px) {
+    .smooth-scroll-gpu {
+      overscroll-behavior: contain;
+    }
   }
 
   .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
