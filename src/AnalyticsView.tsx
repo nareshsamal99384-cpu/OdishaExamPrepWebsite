@@ -202,11 +202,11 @@ const StatCard = React.memo(({ icon, title, value, suffix = "", trend, decimals 
     >
       <div
         className={cn(
-          "relative w-full bg-white p-4 sm:p-6 rounded-2xl sm:rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 flex flex-col justify-between group transition-[transform,box-shadow,border-color,background-color] duration-300 ease-out cursor-default hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.98] min-h-[146px] sm:min-h-[170px] will-change-transform",
-          color === "brand" ? "hover:shadow-[0_20px_40px_rgba(138,28,54,0.065)] hover:border-brand-200/50" :
-          color === "success" ? "hover:shadow-[0_20px_40px_rgba(16,185,129,0.065)] hover:border-emerald-200/50" :
-          color === "warning" ? "hover:shadow-[0_20px_40px_rgba(217,119,6,0.065)] hover:border-amber-200/50" :
-          "hover:shadow-[0_20px_40px_rgba(99,102,241,0.065)] hover:border-indigo-200/50"
+          "relative w-full bg-white p-4 sm:p-6 rounded-2xl sm:rounded-[2.25rem] shadow-sm border border-slate-200/60 flex flex-col justify-between group transition-[transform,box-shadow,border-color,background-color] duration-300 ease-out cursor-default hover:-translate-y-1 hover:scale-[1.01] active:scale-[0.99] min-h-[146px] sm:min-h-[170px] will-change-transform",
+          color === "brand" ? "hover:border-brand-200/60 hover:shadow-md" :
+          color === "success" ? "hover:border-emerald-200/60 hover:shadow-md" :
+          color === "warning" ? "hover:border-amber-200/60 hover:shadow-md" :
+          "hover:border-indigo-200/60 hover:shadow-md"
         )}
         style={{
           WebkitBackfaceVisibility: 'hidden',
@@ -498,7 +498,7 @@ function SkeletonStatCard() {
   return (
     <div className="w-full animate-pulse">
       <div 
-        className="relative bg-white/85 p-5 sm:p-6 rounded-2xl sm:rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 flex flex-col justify-between min-h-[142px] will-change-transform"
+        className="relative bg-white/85 p-5 sm:p-6 rounded-2xl sm:rounded-[2.25rem] shadow-sm border border-slate-200/60 flex flex-col justify-between min-h-[142px] will-change-transform"
         style={{
           WebkitBackfaceVisibility: 'hidden',
           backfaceVisibility: 'hidden'
@@ -1805,7 +1805,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
            {/* Performance Trend Card */}
            <motion.div 
              variants={stagger.itemFadeUp} 
-             className="lg:col-span-8 relative overflow-hidden bg-white/92 rounded-3xl sm:rounded-[2.5rem] p-4.5 sm:p-6 lg:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-[border-color,box-shadow] duration-500 group"
+             className="lg:col-span-8 relative overflow-hidden bg-white/92 rounded-3xl sm:rounded-[2.5rem] p-4.5 sm:p-6 lg:p-8 shadow-sm border border-slate-200/60 hover:border-brand-200/50 hover:shadow-md transition-[border-color,box-shadow] duration-500 group"
            >
               <div 
                 className="absolute -top-32 -right-32 w-72 h-72 pointer-events-none transition-transform duration-700 group-hover:scale-110" 
@@ -1828,8 +1828,8 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                    <div className={cn(
                      "px-2.5 py-1.5 rounded-xl flex items-center gap-1 text-[9px] font-sans font-black uppercase tracking-widest shadow-sm border transition-all duration-300 group-hover:scale-103",
                      stats.impScore > 0 
-                       ? "bg-emerald-500/8 text-emerald-700 border-emerald-200/50 shadow-[0_2px_10px_rgba(16,185,129,0.02)]" 
-                       : "bg-rose-500/8 text-rose-700 border-rose-200/50 shadow-[0_2px_10px_rgba(244,63,94,0.02)]"
+                       ? "bg-emerald-500/8 text-emerald-700 border-emerald-200/50" 
+                       : "bg-rose-500/8 text-rose-700 border-rose-200/50"
                    )}>
                       {stats.impScore > 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                       {Math.abs(Math.round(stats.impScore))}% {stats.impScore > 0 ? 'Improvement' : 'Drop'}
@@ -1849,7 +1849,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
            {/* Accuracy Breakdown Card */}
            <motion.div 
              variants={stagger.itemFadeUp} 
-             className="lg:col-span-4 relative overflow-hidden bg-white/92 rounded-3xl sm:rounded-[2.5rem] p-4.5 sm:p-6 lg:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-[border-color,box-shadow] duration-500 group"
+             className="lg:col-span-4 relative overflow-hidden bg-white/92 rounded-3xl sm:rounded-[2.5rem] p-4.5 sm:p-6 lg:p-8 shadow-sm border border-slate-200/60 hover:border-brand-200/50 hover:shadow-md transition-[border-color,box-shadow] duration-500 group"
            >
               <div 
                 className="absolute -bottom-24 -left-24 w-48 h-48 pointer-events-none" 
@@ -1877,7 +1877,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
             {/* Skill Radar Card */}
             <motion.div 
               variants={stagger.itemFadeUp} 
-              className="lg:col-span-12 relative overflow-hidden bg-white/92 rounded-3xl sm:rounded-[2.5rem] p-4.5 sm:p-6 lg:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-[border-color,box-shadow] duration-500 group"
+              className="lg:col-span-12 relative overflow-hidden bg-white/92 rounded-3xl sm:rounded-[2.5rem] p-4.5 sm:p-6 lg:p-8 shadow-sm border border-slate-200/60 hover:border-brand-200/50 hover:shadow-md transition-[border-color,box-shadow] duration-500 group"
             >
                <div 
                  className="absolute -bottom-24 -left-24 w-48 h-48 pointer-events-none" 
@@ -1944,7 +1944,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                          }
 
                          return (
-                            <div key={idx} className="p-3 bg-white/40 border border-slate-100/60 rounded-2xl flex flex-col gap-2 hover:bg-white/80 hover:border-slate-200/50 transition-all duration-350 shadow-[0_2px_8px_rgba(0,0,0,0.005)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.015)]">
+                            <div key={idx} className="p-3 bg-white/40 border border-slate-100/60 rounded-2xl flex flex-col gap-2 hover:bg-white/80 hover:border-slate-200/50 transition-all duration-350">
                                <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2.5">
                                      <div className={cn("p-1.5 rounded-xl border shrink-0", bgClass)}>
@@ -1999,7 +1999,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                  const uniqueSubjects = Array.from(uniqueMap.values());
 
                  return (
-                   <motion.div key={idx} variants={stagger.itemFadeUp} className="bg-white/92 rounded-3xl sm:rounded-[2.5rem] p-4.5 sm:p-6 lg:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] transition-[border-color,box-shadow] duration-500 relative overflow-hidden flex flex-col shrink-0">
+                   <motion.div key={idx} variants={stagger.itemFadeUp} className="bg-white/92 rounded-3xl sm:rounded-[2.5rem] p-4.5 sm:p-6 lg:p-8 shadow-sm border border-slate-200/60 hover:border-brand-200/50 hover:shadow-md transition-[border-color,box-shadow] duration-500 relative overflow-hidden flex flex-col shrink-0">
                      <div className="mb-6 relative z-10 flex flex-col gap-3">
                         <div>
                            <span className="px-3 py-1.5 bg-[#8a1c36]/8 text-[#8a1c36] text-[9px] font-sans font-black rounded-xl uppercase tracking-widest border border-[#8a1c36]/15 shadow-sm leading-none">
@@ -2066,7 +2066,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
 
            {/* Visual Action cards */}
            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-               <motion.div variants={stagger.itemFadeUp} whileHover={{ y: -3 }} className="bg-white/92 rounded-3xl sm:rounded-[2rem] p-4.5 sm:p-6 shadow-[0_8px_30px_rgba(15,23,42,0.015)] border border-slate-100/70 hover:border-slate-200 flex gap-4 sm:gap-5 items-start">
+               <motion.div variants={stagger.itemFadeUp} whileHover={{ y: -3 }} className="bg-white/92 rounded-3xl sm:rounded-[2rem] p-4.5 sm:p-6 shadow-sm border border-slate-200/60 hover:border-slate-300 flex gap-4 sm:gap-5 items-start">
                   <div className={cn("p-3 rounded-2xl shrink-0 shadow-sm border border-slate-100", stats.impScore >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600")}>
                      {stats.impScore >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
                  </div>
