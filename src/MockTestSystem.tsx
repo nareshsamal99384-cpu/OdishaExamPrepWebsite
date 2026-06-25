@@ -586,30 +586,30 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
         </header>
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto no-scrollbar px-4 sm:px-10 py-8 sm:py-12 pb-28 sm:pb-32 relative z-10">
-          <div className="max-w-6xl mx-auto space-y-8">
+        <div className="flex-1 overflow-y-auto no-scrollbar px-4 sm:px-10 py-5 sm:py-12 pb-24 sm:pb-32 relative z-10">
+          <div className="max-w-6xl mx-auto space-y-5 sm:space-y-8">
             
             {/* Motivation Header */}
-            <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <div className="text-center space-y-2 sm:space-y-3 max-w-2xl mx-auto">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#8a1c36]/5 border border-[#8a1c36]/15 rounded-full text-[#8a1c36] text-[10px] font-black uppercase tracking-widest">
                 <BookOpen className="w-3.5 h-3.5" /> {currentMode === 'practice' ? 'Practice Mode Active' : 'Official Mock Exam'}
               </div>
-              <h1 className="text-3xl sm:text-4xl font-serif font-black text-slate-900 tracking-tight leading-tight">
+              <h1 className="text-2xl sm:text-4xl font-serif font-black text-slate-900 tracking-tight leading-tight">
                 {test.title}
               </h1>
-              <p className="text-slate-500 text-sm sm:text-base font-medium leading-relaxed">
+              <p className="hidden sm:block text-slate-500 text-sm sm:text-base font-medium leading-relaxed">
                 Review the marking rubrics, select your preparation mode, analyze the distribution of topics, and initiate when ready.
               </p>
             </div>
 
             {/* Mode Selection Panel */}
-            <div className="bg-white border border-slate-200/60 rounded-[2rem] p-6 shadow-sm max-w-4xl mx-auto space-y-4">
+            <div className="bg-white border border-slate-200/60 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 shadow-sm max-w-4xl mx-auto space-y-3 sm:space-y-4">
               <div className="text-center">
                 <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest block leading-none">Select Session Style</span>
-                <h3 className="text-slate-800 text-base font-black tracking-tight mt-1.5">Choose How You Want to Study</h3>
+                <h3 className="text-slate-800 text-sm sm:text-base font-black tracking-tight mt-1">Choose How You Want to Study</h3>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-4">
                 {/* Exam Mode Option */}
                 <button
                   type="button"
@@ -618,28 +618,31 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                     setUntimedPractice(false);
                   }}
                   className={cn(
-                    "p-5 rounded-2xl border-2 text-left transition-all duration-300 flex flex-col justify-between space-y-3 cursor-pointer",
+                    "p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border-2 text-left transition-all duration-300 flex flex-row sm:flex-col items-center sm:items-start gap-3 sm:gap-0 sm:justify-between sm:space-y-3 cursor-pointer active:scale-[0.98]",
                     currentMode === 'mock'
                       ? "border-[#8a1c36] bg-[#8a1c36]/5 shadow-sm"
                       : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"
                   )}
                 >
-                  <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center justify-between w-full sm:w-auto sm:block">
                     <span className={cn(
-                      "px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded-md border",
+                      "px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded-md border whitespace-nowrap",
                       currentMode === 'mock'
                         ? "bg-[#8a1c36] border-[#8a1c36] text-white font-black"
                         : "bg-slate-100 border-slate-200 text-slate-500"
                     )}>
                       🏆 Exam Mode
                     </span>
-                    <span className="text-[10px] font-black uppercase text-slate-400">Strict Timed</span>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-extrabold text-slate-800">Official Exam Simulation</h4>
-                    <p className="text-[11px] text-slate-500 font-semibold leading-relaxed mt-1">
+                  <div className="flex-1 sm:flex-initial min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-extrabold text-slate-800">Official Exam Simulation</h4>
+                      <span className="text-[9px] font-black uppercase text-slate-400 sm:hidden ml-2 shrink-0">Strict Timed</span>
+                    </div>
+                    <p className="hidden sm:block text-[11px] text-slate-500 font-semibold leading-relaxed mt-1">
                       Strict countdown timer. Negative markings apply. Answers and explanations will be shown only after you submit the test.
                     </p>
+                    <p className="sm:hidden text-[10px] text-slate-500 font-semibold mt-0.5 leading-snug">Timer. Negative marking. Results after submission.</p>
                   </div>
                 </button>
 
@@ -648,28 +651,31 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                   type="button"
                   onClick={() => setCurrentMode('practice')}
                   className={cn(
-                    "p-5 rounded-2xl border-2 text-left transition-all duration-300 flex flex-col justify-between space-y-3 cursor-pointer",
+                    "p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border-2 text-left transition-all duration-300 flex flex-row sm:flex-col items-center sm:items-start gap-3 sm:gap-0 sm:justify-between sm:space-y-3 cursor-pointer active:scale-[0.98]",
                     currentMode === 'practice'
                       ? "border-emerald-500 bg-emerald-500/5 shadow-sm"
                       : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"
                   )}
                 >
-                  <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center justify-between w-full sm:w-auto sm:block">
                     <span className={cn(
-                      "px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded-md border",
+                      "px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded-md border whitespace-nowrap",
                       currentMode === 'practice'
                         ? "bg-emerald-500 border-emerald-500 text-white font-black"
                         : "bg-slate-100 border-slate-200 text-slate-500"
                     )}>
                       📖 Practice Mode
                     </span>
-                    <span className="text-[10px] font-black uppercase text-slate-400">Self-Paced</span>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-extrabold text-slate-800">Interactive Self-Study</h4>
-                    <p className="text-[11px] text-slate-500 font-semibold leading-relaxed mt-1">
+                  <div className="flex-1 sm:flex-initial min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-extrabold text-slate-800">Interactive Self-Study</h4>
+                      <span className="text-[9px] font-black uppercase text-slate-400 sm:hidden ml-2 shrink-0">Self-Paced</span>
+                    </div>
+                    <p className="hidden sm:block text-[11px] text-slate-500 font-semibold leading-relaxed mt-1">
                       Immediate feedback after each response. Detailed step-by-step solutions are shown instantly. Select timed or untimed practice.
                     </p>
+                    <p className="sm:hidden text-[10px] text-slate-500 font-semibold mt-0.5 leading-snug">Instant feedback. Step-by-step solutions.</p>
                   </div>
                 </button>
               </div>
@@ -691,28 +697,28 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
             </div>
 
             {/* Asymmetric Columns (3:2 split) */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 sm:gap-8 items-start">
               
               {/* Left Column: Brief details, rubrics, duration (Col Span 3) */}
-              <div className="lg:col-span-3 space-y-6">
+              <div className="lg:col-span-3 space-y-4 sm:space-y-6">
                 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
                   {[
                     { label: 'Questions', value: String(totalQs), sub: 'Total count' },
                     { label: 'Duration', value: currentMode === 'practice' && untimedPractice ? 'No Limit' : test.durationMinutes + ' min', sub: 'Countdown limit' },
                     { label: 'Total Marks', value: String(testTotalMarks), sub: 'Maximum raw' },
                   ].map(s => (
-                    <div key={s.label} className="bg-white border border-slate-200/60 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow">
-                      <div className="text-2xl sm:text-3xl font-serif font-extrabold text-[#8a1c36] tracking-tight">{s.value}</div>
-                      <div className="text-slate-800 text-[11px] font-extrabold uppercase tracking-wider mt-1.5">{s.label}</div>
-                      <div className="text-slate-400 text-[10px] font-medium mt-0.5">{s.sub}</div>
+                    <div key={s.label} className="bg-white border border-slate-200/60 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-sm">
+                      <div className="text-xl sm:text-3xl font-serif font-extrabold text-[#8a1c36] tracking-tight">{s.value}</div>
+                      <div className="text-slate-800 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider mt-1">{s.label}</div>
+                      <div className="text-slate-400 text-[9px] sm:text-[10px] font-medium mt-0.5 hidden sm:block">{s.sub}</div>
                     </div>
                   ))}
                 </div>
 
                 {/* Target Score & Attempts Planner */}
-                <div className="bg-white border border-slate-200/60 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
+                <div className="bg-white border border-slate-200/60 rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4 shadow-sm">
                   <h3 className="text-slate-900 font-serif font-black flex items-center gap-2.5 text-base sm:text-lg">
                     <Target className="w-5 h-5 text-[#8a1c36]" /> Target Score & Attempts Planner
                   </h3>
@@ -854,7 +860,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                 </div>
 
                 {/* Time Allocation details */}
-                <div className="bg-white border border-slate-200/60 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
+                <div className="bg-white border border-slate-200/60 rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4 shadow-sm">
                   <h3 className="text-slate-900 font-serif font-black flex items-center gap-2.5 text-base sm:text-lg">
                     <Zap className="w-5 h-5 text-[#8a1c36]" /> Pace & Time Budget
                   </h3>
@@ -940,10 +946,10 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
         </div>
 
         {/* Sticky Fixed Bottom Start Button Container */}
-        <div className="shrink-0 p-6 bg-white/80 backdrop-blur-md border-t border-slate-200/60 z-20 flex justify-center shadow-[0_-8px_30px_rgba(0,0,0,0.02)]">
+        <div className="shrink-0 px-4 py-3 sm:p-6 bg-white/80 backdrop-blur-md border-t border-slate-200/60 z-20 flex justify-center shadow-[0_-8px_30px_rgba(0,0,0,0.02)]">
           <button
             onClick={() => setIsStarted(true)}
-            className="max-w-3xl w-full py-4 sm:py-4.5 rounded-2xl bg-[#8a1c36] hover:bg-[#76142c] text-white font-black text-sm sm:text-base transition-all duration-300 shadow-lg shadow-[#8a1c36]/20 flex items-center justify-center gap-2.5 active:scale-[0.98] cursor-pointer premium-btn-transition"
+            className="max-w-3xl w-full py-3.5 sm:py-4.5 rounded-xl sm:rounded-2xl bg-[#8a1c36] hover:bg-[#76142c] text-white font-black text-sm sm:text-base transition-all duration-300 shadow-lg shadow-[#8a1c36]/20 flex items-center justify-center gap-2.5 active:scale-[0.98] cursor-pointer premium-btn-transition"
           >
             <Play className="w-4.5 h-4.5 fill-white" /> Initiate Session
           </button>
