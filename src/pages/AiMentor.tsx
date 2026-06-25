@@ -588,6 +588,7 @@ const MarkdownMathRenderer = ({ text, isUser = false }: { text: string; isUser?:
 export default function AiMentor({ user }: { user: any }) {
   // rotating exam tips index
   const [currentTipIdx, setCurrentTipIdx] = useState(0);
+  const [mobileTab, setMobileTab] = useState<'chat' | 'tools'>('chat');
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -1595,6 +1596,8 @@ export default function AiMentor({ user }: { user: any }) {
   // Chat Submission
   const handleSendMessage = async (textToSend: string) => {
     if (!textToSend.trim() || loading) return;
+
+    setMobileTab('chat');
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -3092,25 +3095,72 @@ JSON structure:
         )}
       </AnimatePresence>
       {/* Header and Chip */}
-      <div className="flex flex-col items-center text-center space-y-4">
-        <span className="section-chip">
-          <Sparkles className="w-3.5 h-3.5 animate-pulse text-[#8A1C36]" />
+      <div className="flex flex-col items-center text-center space-y-2 md:space-y-4 mb-2 md:mb-4">
+        <span className="section-chip text-[10px] md:text-xs">
+          <Sparkles className="w-3 md:w-3.5 h-3 md:h-3.5 animate-pulse text-[#8A1C36]" />
           Smart Study Suite
         </span>
-        <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-900 tracking-tight">
+        <h2 className="text-2xl md:text-5xl font-serif font-extrabold text-slate-900 tracking-tight">
           Personal Study <span className="premium-text-gradient font-serif font-extrabold">Coach</span>
         </h2>
         <div className="section-divider" />
-        <p className="text-slate-500 text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed">
+        <p className="text-slate-500 text-xs md:text-base sm:text-lg font-medium max-w-xl mx-auto leading-relaxed px-4 md:px-0">
           Ask questions, get core summaries, clear doubts, or schedule revision sessions directly with your personal tutor.
         </p>
+      </div>
+
+      {/* Mobile-only View Selector Tab (only visible on mobile lg:hidden) */}
+      <div className="lg:hidden flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/50 shadow-inner overflow-hidden max-w-[280px] sm:max-w-xs mx-auto mb-4 relative z-20">
+        <button
+          type="button"
+          onClick={() => setMobileTab('chat')}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-300 cursor-pointer relative",
+            mobileTab === 'chat' ? "text-[#8A1C36]" : "text-slate-500 hover:text-slate-800"
+          )}
+        >
+          {mobileTab === 'chat' && (
+            <motion.div
+              layoutId="mobileViewActiveTabBg"
+              className="absolute inset-0 bg-white border border-slate-200/60 rounded-lg shadow-md z-0"
+              transition={{ type: "spring", stiffness: 350, damping: 28 }}
+            />
+          )}
+          <span className="relative z-10 flex items-center gap-1">
+            <Sparkles className="w-3 h-3" />
+            <span>AI Chat</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab('tools')}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-300 cursor-pointer relative",
+            mobileTab === 'tools' ? "text-indigo-650" : "text-slate-500 hover:text-slate-800"
+          )}
+        >
+          {mobileTab === 'tools' && (
+            <motion.div
+              layoutId="mobileViewActiveTabBg"
+              className="absolute inset-0 bg-white border border-slate-200/60 rounded-lg shadow-md z-0"
+              transition={{ type: "spring", stiffness: 350, damping: 28 }}
+            />
+          )}
+          <span className="relative z-10 flex items-center gap-1">
+            <Calendar className="w-3 h-3" />
+            <span>Study Tools</span>
+          </span>
+        </button>
       </div>
 
       {/* Main Dual-pane Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* Left Pane: Chat Interface */}
-        <div id="chat-pane" className="lg:col-span-7 bg-white text-slate-700 border border-slate-200/60 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col h-[600px] lg:h-[720px] relative ">
+        <div id="chat-pane" className={cn(
+          "lg:col-span-7 bg-white text-slate-700 border border-slate-200/60 rounded-[2rem] overflow-hidden shadow-2xl flex-col h-[600px] lg:h-[720px] relative",
+          mobileTab === 'chat' ? "flex" : "hidden lg:flex"
+        )}>
           {/* Declaring dark color-scheme on the dark chat console to enable dark-themed scrollbars and select default popups */}
           <div style={{ colorScheme: 'light' }} className="absolute inset-0 flex flex-col">
             
@@ -3229,17 +3279,17 @@ JSON structure:
                 title="Clear Chat History"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Clear Chat</span>
+                <span className="hidden xs:inline">Clear Chat</span>
+                <span className="xs:hidden">Clear</span>
               </button>
             </div>
 
-            {/* Chat Messages Console */}
-            <div ref={chatConsoleRef} className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar smooth-scroll-gpu">
+            <div ref={chatConsoleRef} className="flex-1 overflow-y-auto p-3.5 md:p-6 space-y-3.5 md:space-y-4 no-scrollbar smooth-scroll-gpu">
               {messages.map((m, idx) => (
                 <div 
                   key={idx} 
                   className={cn(
-                    "flex flex-col max-w-[85%] rounded-2xl p-4 text-sm font-medium leading-relaxed shadow-md animate-fade-up",
+                    "flex flex-col max-w-[90%] sm:max-w-[85%] rounded-2xl p-3 md:p-4 text-[13px] md:text-sm font-medium leading-relaxed shadow-md animate-fade-up",
                     m.role === 'user' 
                       ? "bg-brand-500 text-white self-end rounded-tr-none" 
                       : "bg-slate-50 border border-slate-200/60 text-slate-800 self-start rounded-tl-none"
@@ -3408,7 +3458,10 @@ JSON structure:
         </div>
 
         {/* Right Pane: Interactive Study Suite */}
-        <div className="lg:col-span-5 bg-white text-slate-600 border border-slate-200/60 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col h-auto lg:h-[720px] relative ">
+        <div className={cn(
+          "lg:col-span-5 bg-white text-slate-600 border border-slate-200/60 rounded-[2rem] overflow-hidden shadow-2xl flex-col h-auto lg:h-[720px] relative",
+          mobileTab === 'tools' ? "flex" : "hidden lg:flex"
+        )}>
           
           {/* Ambient Glows */}
           <div className={cn(
@@ -3435,7 +3488,7 @@ JSON structure:
                   type="button"
                   onClick={() => setActiveRightTab(tab.id as any)}
                   className={cn(
-                    "flex-1 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-xl text-[8px] sm:text-[9px] md:text-[10px] font-black uppercase tracking-wider transition-all duration-200 cursor-pointer relative",
+                    "flex-1 flex flex-row items-center justify-center gap-1 py-2 px-1 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all duration-200 cursor-pointer relative",
                     isActive 
                       ? tab.color 
                       : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
@@ -3451,7 +3504,7 @@ JSON structure:
                   )}
 
                   {/* Icon and label wrapper to render on top of sliding background */}
-                  <span className="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5">
+                  <span className="relative z-10 flex flex-row items-center justify-center gap-1">
                     <Icon className="w-3.5 h-3.5 shrink-0" />
                     <span>{tab.label}</span>
                   </span>
