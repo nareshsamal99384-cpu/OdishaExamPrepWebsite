@@ -3364,11 +3364,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 </div>
                 
                 {/* Right Column: Metadata, List & Actions */}
-                <div className={cn("relative md:w-[62%] p-6 md:p-8 flex flex-col overflow-y-auto no-scrollbar max-h-full flex-1", !isMobile && "smooth-scroll-gpu")}>
+                <div className={cn("relative md:w-[62%] p-5 md:p-8 flex flex-col overflow-hidden no-scrollbar max-h-full flex-1 min-h-0", !isMobile && "overflow-y-auto smooth-scroll-gpu")}>
                   {/* Subtle grid background */}
                   <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" />
 
-                  <div className="space-y-6 relative z-10 flex-grow flex flex-col justify-between">
+                  <div className="space-y-4 sm:space-y-6 relative z-10 flex-grow flex flex-col justify-between h-full min-h-0">
                     <div className="space-y-4">
                       {/* Topic Title (Visible on mobile and laptop) */}
                       <div className="space-y-1.5 text-left md:text-left">
@@ -3411,8 +3411,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     </div>
 
                     {/* Study Materials */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between px-1">
+                    <div className="space-y-2 flex-1 flex flex-col min-h-0">
+                      <div className="flex items-center justify-between px-1 shrink-0">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Study Materials</p>
                         {selectedBankItem.pdfLinks && selectedBankItem.pdfLinks.length > 2 && (
                           <span className="text-[9px] font-bold text-[#8A1C36] animate-pulse">Scroll to view all</span>
@@ -3429,7 +3429,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                             transition: { staggerChildren: isMobile ? 0 : 0.08 }
                           }
                         }}
-                        className="max-h-[160px] overflow-y-auto pr-1 space-y-2 custom-scrollbar"
+                        className="overflow-y-auto flex-1 pr-1 space-y-2 custom-scrollbar min-h-[100px] max-h-[160px] sm:max-h-none"
                       >
                         {selectedBankItem.pdfLinks && selectedBankItem.pdfLinks.length > 0 ? (
                           selectedBankItem.pdfLinks.map((link: any, idx: number) => (
@@ -3526,7 +3526,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     </div>
 
                     {/* Bottom Action Button */}
-                    <div className="pt-2">
+                    <div className="pt-2 shrink-0">
                       <Button 
                         variant="primary" 
                         className={cn(
