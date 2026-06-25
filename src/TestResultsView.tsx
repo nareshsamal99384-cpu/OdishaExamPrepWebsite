@@ -356,29 +356,29 @@ export default function TestResultsView({ results, onClose }: { results: any, on
       </header>
 
       {/* TOP SECTION: Overall Performance & Results (Overview) */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mb-5 sm:mb-8 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8 lg:gap-6">
           
           {/* Overall Score Card */}
-          <div className="lg:col-span-1 relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 lg:border-white/85 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] flex flex-col justify-between group transition-all duration-500 cursor-default">
+          <div className="lg:col-span-1 relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl px-4 py-5 sm:p-8 rounded-2xl sm:rounded-[2.5rem] border border-slate-200/60 lg:border-white/85 shadow-[0_8px_32px_rgba(0,0,0,0.015)] flex flex-col justify-between group transition-all duration-500 cursor-default">
             {/* Background Glow */}
-            <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#8a1c36]/5 rounded-full blur-3xl pointer-events-none group-hover:bg-[#8a1c36]/10 transition-colors duration-500" />
-            <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-indigo-500/3 rounded-full blur-3xl pointer-events-none group-hover:bg-indigo-500/5 transition-colors duration-500" />
+            <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#8a1c36]/5 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-indigo-500/3 rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative z-10 text-center">
-              <h3 className="text-[10px] font-sans font-black text-slate-400/90 uppercase tracking-widest mb-4">Total Score</h3>
-              <div className="text-5xl sm:text-6xl font-serif font-black text-[#8a1c36] tracking-tight mb-2 drop-shadow-sm">
+              <h3 className="text-[10px] font-sans font-black text-slate-400/90 uppercase tracking-widest mb-2 sm:mb-4">Total Score</h3>
+              <div className="text-5xl sm:text-6xl font-serif font-black text-[#8a1c36] tracking-tight mb-1 sm:mb-2 drop-shadow-sm">
                 {Number.isInteger(finalScore) ? finalScore : finalScore.toFixed(2)}
                 <span className="text-xl sm:text-2xl font-sans font-extrabold text-slate-400"> / {totalMarks}</span>
               </div>
               
-              <div className="flex items-center justify-center gap-1.5 text-xs font-black text-emerald-700 bg-emerald-50/70 border border-emerald-100/60 px-3.5 py-1.5 rounded-2xl w-fit mx-auto mt-4 shadow-sm transition-transform duration-300 group-hover:scale-103">
+              <div className="flex items-center justify-center gap-1.5 text-xs font-black text-emerald-700 bg-emerald-50/70 border border-emerald-100/60 px-3.5 py-1.5 rounded-2xl w-fit mx-auto mt-3 sm:mt-4 shadow-sm">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500"/> {accuracy}% Accuracy
               </div>
             </div>
 
             {/* Performance Calculation Breakdown */}
-            <div className="relative z-10 bg-white/75 lg:bg-white/45 border border-slate-100 lg:border-white/60 backdrop-blur-none lg:backdrop-blur-md rounded-2xl p-4 text-left space-y-2.5 mt-8 hover:bg-white/80 transition-all duration-300">
+            <div className="relative z-10 bg-white/75 lg:bg-white/45 border border-slate-100 lg:border-white/60 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-left space-y-2 mt-4 sm:mt-8">
               <div className="flex justify-between items-center text-xs font-bold text-slate-500">
                 <span>Total Marks</span>
                 <span className="text-slate-800 font-extrabold">{totalMarks} Marks</span>
@@ -393,7 +393,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
                   <span className="text-rose-600 font-extrabold">-{Number.isInteger(penaltyDeduction) ? penaltyDeduction : penaltyDeduction.toFixed(2)}</span>
                 </div>
               )}
-              <div className="border-t border-slate-200/50 pt-2.5 flex justify-between items-center text-xs sm:text-sm font-black text-slate-700">
+              <div className="border-t border-slate-200/50 pt-2 flex justify-between items-center text-xs sm:text-sm font-black text-slate-700">
                 <span>Final Score</span>
                 <span className="text-[#8a1c36] font-black">{Number.isInteger(finalScore) ? finalScore : finalScore.toFixed(2)} / {totalMarks}</span>
               </div>
@@ -401,88 +401,88 @@ export default function TestResultsView({ results, onClose }: { results: any, on
           </div>
 
           {/* Performance Summary Cards Grid */}
-          <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
+          <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-6">
             
             {/* Time Taken */}
-            <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
-              <div className="absolute -top-12 -right-12 w-28 h-28 bg-[#8a1c36]/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
-              <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
-                <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Time Taken</span>
-                <div className="p-2 bg-[#8a1c36]/5 border border-[#8a1c36]/10 rounded-xl text-[#8a1c36] group-hover:scale-105 group-hover:rotate-2 transition-all duration-300">
-                  <Clock className="w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0"/>
+            <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl px-3.5 py-3.5 sm:p-6 rounded-xl sm:rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-sm hover:shadow-md flex flex-col justify-between group transition-all duration-300 cursor-default">
+              <div className="absolute -top-12 -right-12 w-28 h-28 bg-[#8a1c36]/5 rounded-full blur-2xl" />
+              <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-4 relative z-10">
+                <span className="text-[9px] sm:text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Time Taken</span>
+                <div className="p-1.5 sm:p-2 bg-[#8a1c36]/5 border border-[#8a1c36]/10 rounded-lg sm:rounded-xl text-[#8a1c36]">
+                  <Clock className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 shrink-0"/>
                 </div>
               </div>
-              <div className="text-2xl sm:text-3xl font-sans font-black text-slate-900 leading-none tracking-tight relative z-10 truncate">
+              <div className="text-xl sm:text-3xl font-sans font-black text-slate-900 leading-none tracking-tight relative z-10 truncate">
                 {formatTime(timeTaken)}
               </div>
             </div>
 
             {/* Average Speed */}
-            <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
-              <div className="absolute -top-12 -right-12 w-28 h-28 bg-[#8a1c36]/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
-              <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
-                <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Average Speed</span>
-                <div className="p-2 bg-[#8a1c36]/5 border border-[#8a1c36]/10 rounded-xl text-[#8a1c36] group-hover:scale-105 group-hover:rotate-2 transition-all duration-300">
-                  <BarChart className="w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0"/>
+            <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl px-3.5 py-3.5 sm:p-6 rounded-xl sm:rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-sm hover:shadow-md flex flex-col justify-between group transition-all duration-300 cursor-default">
+              <div className="absolute -top-12 -right-12 w-28 h-28 bg-[#8a1c36]/5 rounded-full blur-2xl" />
+              <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-4 relative z-10">
+                <span className="text-[9px] sm:text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Avg Speed</span>
+                <div className="p-1.5 sm:p-2 bg-[#8a1c36]/5 border border-[#8a1c36]/10 rounded-lg sm:rounded-xl text-[#8a1c36]">
+                  <BarChart className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 shrink-0"/>
                 </div>
               </div>
-              <div className="text-2xl sm:text-3xl font-sans font-black text-slate-900 leading-none tracking-tight relative z-10">
-                {avgSpeed}<span className="text-xs font-bold text-slate-400 ml-1">s / Q</span>
+              <div className="text-xl sm:text-3xl font-sans font-black text-slate-900 leading-none tracking-tight relative z-10">
+                {avgSpeed}<span className="text-[10px] sm:text-xs font-bold text-slate-400 ml-1">s/Q</span>
               </div>
             </div>
 
             {/* Marked Review */}
-            <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
-              <div className="absolute -top-12 -right-12 w-28 h-28 bg-amber-500/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
-              <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
-                <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Marked Review</span>
-                <div className="p-2 bg-amber-50/70 border border-amber-100/50 rounded-xl text-amber-600 group-hover:scale-105 group-hover:rotate-2 transition-all duration-300">
-                  <Flag className="w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0"/>
+            <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl px-3.5 py-3.5 sm:p-6 rounded-xl sm:rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-sm hover:shadow-md flex flex-col justify-between group transition-all duration-300 cursor-default">
+              <div className="absolute -top-12 -right-12 w-28 h-28 bg-amber-500/5 rounded-full blur-2xl" />
+              <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-4 relative z-10">
+                <span className="text-[9px] sm:text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Marked</span>
+                <div className="p-1.5 sm:p-2 bg-amber-50/70 border border-amber-100/50 rounded-lg sm:rounded-xl text-amber-600">
+                  <Flag className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 shrink-0"/>
                 </div>
               </div>
-              <div className="text-2xl sm:text-3xl font-sans font-black text-slate-900 leading-none tracking-tight relative z-10">
+              <div className="text-xl sm:text-3xl font-sans font-black text-slate-900 leading-none tracking-tight relative z-10">
                 {markedForReview.length}
               </div>
             </div>
 
             {/* Correct Answers */}
-            <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
-              <div className="absolute -top-12 -right-12 w-28 h-28 bg-emerald-500/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
-              <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
-                <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Correct Answers</span>
-                <div className="p-2 bg-emerald-50/70 border border-emerald-100/50 rounded-xl text-emerald-600 group-hover:scale-105 group-hover:rotate-2 transition-all duration-300">
-                  <CheckCircle2 className="w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0"/>
+            <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl px-3.5 py-3.5 sm:p-6 rounded-xl sm:rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-sm hover:shadow-md flex flex-col justify-between group transition-all duration-300 cursor-default">
+              <div className="absolute -top-12 -right-12 w-28 h-28 bg-emerald-500/5 rounded-full blur-2xl" />
+              <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-4 relative z-10">
+                <span className="text-[9px] sm:text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Correct</span>
+                <div className="p-1.5 sm:p-2 bg-emerald-50/70 border border-emerald-100/50 rounded-lg sm:rounded-xl text-emerald-600">
+                  <CheckCircle2 className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 shrink-0"/>
                 </div>
               </div>
-              <div className="text-2xl sm:text-3xl font-sans font-black text-emerald-600 leading-none tracking-tight relative z-10">
+              <div className="text-xl sm:text-3xl font-sans font-black text-emerald-600 leading-none tracking-tight relative z-10">
                 {correctCount}
               </div>
             </div>
 
             {/* Incorrect Answers */}
-            <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
-              <div className="absolute -top-12 -right-12 w-28 h-28 bg-rose-500/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
-              <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
-                <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Incorrect Answers</span>
-                <div className="p-2 bg-rose-50/70 border border-rose-100/50 rounded-xl text-rose-600 group-hover:scale-105 group-hover:rotate-2 transition-all duration-300">
-                  <XCircle className="w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0"/>
+            <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl px-3.5 py-3.5 sm:p-6 rounded-xl sm:rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-sm hover:shadow-md flex flex-col justify-between group transition-all duration-300 cursor-default">
+              <div className="absolute -top-12 -right-12 w-28 h-28 bg-rose-500/5 rounded-full blur-2xl" />
+              <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-4 relative z-10">
+                <span className="text-[9px] sm:text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Incorrect</span>
+                <div className="p-1.5 sm:p-2 bg-rose-50/70 border border-rose-100/50 rounded-lg sm:rounded-xl text-rose-600">
+                  <XCircle className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 shrink-0"/>
                 </div>
               </div>
-              <div className="text-2xl sm:text-3xl font-sans font-black text-rose-600 leading-none tracking-tight relative z-10">
+              <div className="text-xl sm:text-3xl font-sans font-black text-rose-600 leading-none tracking-tight relative z-10">
                 {incorrectCount}
               </div>
             </div>
 
             {/* Unanswered */}
-            <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
-              <div className="absolute -top-12 -right-12 w-28 h-28 bg-slate-500/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
-              <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
-                <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Unanswered</span>
-                <div className="p-2 bg-slate-50/70 border border-slate-200 rounded-xl text-slate-500 group-hover:scale-105 group-hover:rotate-2 transition-all duration-300">
-                  <AlertCircle className="w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0"/>
+            <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl px-3.5 py-3.5 sm:p-6 rounded-xl sm:rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-sm hover:shadow-md flex flex-col justify-between group transition-all duration-300 cursor-default">
+              <div className="absolute -top-12 -right-12 w-28 h-28 bg-slate-500/5 rounded-full blur-2xl" />
+              <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-4 relative z-10">
+                <span className="text-[9px] sm:text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Unanswered</span>
+                <div className="p-1.5 sm:p-2 bg-slate-50/70 border border-slate-200 rounded-lg sm:rounded-xl text-slate-500">
+                  <AlertCircle className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 shrink-0"/>
                 </div>
               </div>
-              <div className="text-2xl sm:text-3xl font-sans font-black text-slate-700 leading-none tracking-tight relative z-10">
+              <div className="text-xl sm:text-3xl font-sans font-black text-slate-700 leading-none tracking-tight relative z-10">
                 {unansweredCount}
               </div>
             </div>
@@ -493,21 +493,21 @@ export default function TestResultsView({ results, onClose }: { results: any, on
       </div>
 
       {/* SECTION DIVIDER & HEADING */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 mt-12">
-        <div className="border-t border-slate-200/60 my-8"></div>
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mb-4 sm:mb-8 mt-5 sm:mt-12">
+        <div className="border-t border-slate-200/60 my-4 sm:my-8"></div>
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Detailed Question Analysis</h2>
-          <p className="text-slate-500 text-sm font-semibold mt-1">Review each question, your answer, and detailed explanations below.</p>
+          <h2 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight">Detailed Question Analysis</h2>
+          <p className="text-slate-500 text-xs sm:text-sm font-semibold mt-1">Review each question, your answer, and detailed explanations below.</p>
         </div>
       </div>
 
       {/* BOTTOM SECTION: Detailed Question-by-Question Review */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-6">
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8 lg:gap-6">
         
         {/* Left Col: Quick Navigation (Question Navigator) */}
         <div className="lg:col-span-1">
-          <div className="glass px-2.5 py-4 sm:p-8 rounded-xl sm:rounded-[2rem] border border-slate-200 premium-shadow bg-white/60 lg:sticky lg:top-24">
-             <h3 className="font-extrabold text-slate-900 mb-6 text-lg sm:text-xl tracking-tight">Question Navigator</h3>
+          <div className="glass px-2.5 py-3 sm:p-8 rounded-xl sm:rounded-[2rem] border border-slate-200 premium-shadow bg-white/60 lg:sticky lg:top-24">
+             <h3 className="font-extrabold text-slate-900 mb-3 sm:mb-6 text-base sm:text-xl tracking-tight px-1">Question Navigator</h3>
               <div className="max-h-[300px] lg:max-h-[450px] overflow-y-auto p-1.5 custom-scrollbar">
                <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-7 gap-2 sm:gap-3 py-1">
                   {questions.map((q: any, i: number) => {
@@ -534,11 +534,11 @@ export default function TestResultsView({ results, onClose }: { results: any, on
                   })}
                </div>
              </div>
-             <div className="mt-8 lg:mt-6 space-y-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-               <div className="flex items-center gap-3 text-xs font-bold text-slate-600"><div className="w-3 h-3 bg-emerald-100 border border-emerald-200 rounded"></div> Correct</div>
-               <div className="flex items-center gap-3 text-xs font-bold text-slate-600"><div className="w-3 h-3 bg-rose-100 border border-rose-200 rounded"></div> Incorrect</div>
-               <div className="flex items-center gap-3 text-xs font-bold text-slate-600"><div className="w-3 h-3 bg-slate-100 border border-slate-200 rounded"></div> Unanswered</div>
-               <div className="flex items-center gap-3 text-xs font-bold text-slate-600"><div className="w-3 h-3 overflow-hidden rounded border border-slate-200 relative"><div className="absolute top-0 right-0 w-3 h-3 bg-amber-400 rotate-45 transform translate-x-1.5 -translate-y-1.5"></div></div> Marked for Review</div>
+             <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-3 p-3 sm:p-4 bg-slate-50 rounded-xl sm:rounded-2xl border border-slate-100">
+               <div className="flex items-center gap-2 sm:gap-3 text-xs font-bold text-slate-600"><div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-emerald-100 border border-emerald-200 rounded shrink-0"></div> Correct</div>
+               <div className="flex items-center gap-2 sm:gap-3 text-xs font-bold text-slate-600"><div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-rose-100 border border-rose-200 rounded shrink-0"></div> Incorrect</div>
+               <div className="flex items-center gap-2 sm:gap-3 text-xs font-bold text-slate-600"><div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-slate-100 border border-slate-200 rounded shrink-0"></div> Unanswered</div>
+               <div className="flex items-center gap-2 sm:gap-3 text-xs font-bold text-slate-600"><div className="w-2.5 h-2.5 sm:w-3 sm:h-3 overflow-hidden rounded border border-slate-200 relative shrink-0"><div className="absolute top-0 right-0 w-3 h-3 bg-amber-400 rotate-45 transform translate-x-1.5 -translate-y-1.5"></div></div> Marked</div>
              </div>
           </div>
         </div>
