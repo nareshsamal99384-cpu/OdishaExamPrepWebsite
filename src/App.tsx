@@ -7274,7 +7274,7 @@ const ExamDetailPage = () => {
 
 const tabVariants = {
   enter: (dir: number) => ({
-    x: dir === 0 ? 0 : (dir > 0 ? "100%" : "-100%"),
+    x: dir === 0 ? 0 : (dir > 0 ? 20 : -20),
     opacity: 0,
   }),
   center: {
@@ -7282,7 +7282,7 @@ const tabVariants = {
     opacity: 1,
   },
   exit: (dir: number) => ({
-    x: dir === 0 ? 0 : (dir > 0 ? "-100%" : "100%"),
+    x: dir === 0 ? 0 : (dir > 0 ? -20 : 20),
     opacity: 0,
   }),
 };
@@ -7599,7 +7599,7 @@ function AppContent() {
                     ? "pb-28 sm:pb-24 lg:pb-32" 
                     : "pb-12 sm:pb-16 lg:pb-20"
                 )}>
-                  <AnimatePresence mode="popLayout" initial={false}>
+                  <AnimatePresence mode="wait" initial={false}>
                     <motion.div
                       key={`${mainTab}-${dashboardKey}`}
                       custom={tabDirection}
@@ -7608,8 +7608,8 @@ function AppContent() {
                       animate="center"
                       exit="exit"
                       transition={{
-                        x: { type: "spring", stiffness: 260, damping: 28 },
-                        opacity: { duration: 0.22, ease: "easeInOut" }
+                        x: { type: "spring", stiffness: 350, damping: 30 },
+                        opacity: { duration: 0.18, ease: "easeInOut" }
                       }}
                       className="w-full"
                     >
