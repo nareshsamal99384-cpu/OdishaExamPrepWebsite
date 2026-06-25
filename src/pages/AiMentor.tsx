@@ -3584,11 +3584,11 @@ JSON structure:
                 </div>
 
                 {/* Circular Timer & Controls */}
-                <div className="flex flex-col sm:flex-row items-center gap-4 bg-white border border-slate-200/50 p-3.5 rounded-2xl premium-shadow relative overflow-hidden">
+                <div className="flex flex-col sm:flex-row lg:flex-col items-center gap-4 bg-white border border-slate-200/50 p-3.5 rounded-2xl premium-shadow relative overflow-hidden">
                   {/* Subtle decorative background pattern */}
                   <div className="absolute inset-0 grid-bg-fine opacity-20 pointer-events-none" />
                   
-                  <div className="relative flex items-center justify-center w-24 h-24 shrink-0 mx-auto sm:mx-0 bg-white/80 rounded-full border border-slate-200/40 p-1.5 shadow-inner relative z-10">
+                  <div className="relative flex items-center justify-center w-24 h-24 shrink-0 mx-auto sm:mx-0 lg:mx-auto bg-white/80 rounded-full border border-slate-200/40 p-1.5 shadow-inner relative z-10">
                     <svg className="w-full h-full transform -rotate-90" viewBox="0 0 96 96">
                       <defs>
                         <linearGradient id="studyTimerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -4064,11 +4064,11 @@ JSON structure:
                     )}
 
                     {/* Center Session Timer Widget */}
-                    <div className="flex flex-col sm:flex-row items-center gap-6 bg-slate-50 border border-slate-200/50 p-5 rounded-2xl">
+                    <div className="flex flex-col sm:flex-row lg:flex-col items-center gap-6 bg-slate-50 border border-slate-200/50 p-5 rounded-2xl">
                       
                       {/* Progress ring svg */}
-                      <div className="relative flex items-center justify-center w-28 h-28 shrink-0 mx-auto sm:mx-0">
-                        <svg className="w-full h-full transform -rotate-90">
+                      <div className="relative flex items-center justify-center w-28 h-28 shrink-0 mx-auto sm:mx-0 lg:mx-auto">
+                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 112 112">
                           <circle
                             cx="56"
                             cy="56"
