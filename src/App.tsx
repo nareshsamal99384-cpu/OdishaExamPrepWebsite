@@ -3270,7 +3270,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               />
 
               {/* Modal panel wrapper */}
-              <div className="fixed inset-0 z-[101] flex items-end md:items-center justify-center pointer-events-none px-4 pb-4 pt-16 md:p-4">
+              <div className="fixed inset-0 z-[101] flex items-end md:items-center justify-center pointer-events-none px-3 pb-3 md:p-4" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 56px)' }}>
                 <motion.div 
                   key="detail-modal"
                   initial={{ y: '100%', opacity: 0 }}
@@ -3282,8 +3282,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     damping: 32,
                     mass: 0.9,
                   }}
-                  className="bg-[#FAF8F5] rounded-[2rem] w-full md:w-full max-w-xl md:max-w-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] flex flex-col md:flex-row border border-slate-200/50 relative max-h-[92vh] md:max-h-[85vh] pointer-events-auto mx-auto"
-                  style={{ willChange: 'transform, opacity' }}
+                  className="bg-[#FAF8F5] rounded-[2rem] w-full md:w-full max-w-xl md:max-w-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] flex flex-col md:flex-row border border-slate-200/50 relative pointer-events-auto mx-auto"
+                  style={{ willChange: 'transform, opacity', maxHeight: 'min(92vh, calc(100dvh - max(env(safe-area-inset-top, 0px), 56px) - 12px))' }}
                 >
 
                 {/* Unified Close Button */}
