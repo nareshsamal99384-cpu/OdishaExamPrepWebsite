@@ -2511,7 +2511,9 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
               };
 
               // Check animation parameters
-              const dashProps = isPlayingAnimation && shape.animated !== false ? {
+              const isMobileOrTablet = isMobile || (typeof window !== 'undefined' && window.innerWidth < 1024);
+              const shouldAnimate = isPlayingAnimation && !isMobileOrTablet && shape.animated !== false;
+              const dashProps = shouldAnimate ? {
                 strokeDasharray: '2500',
                 strokeDashoffset: '2500',
                 className: 'animate-drawing-path'
