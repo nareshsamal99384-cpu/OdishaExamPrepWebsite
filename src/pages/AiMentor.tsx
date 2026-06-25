@@ -3165,23 +3165,40 @@ JSON structure:
           <div style={{ colorScheme: 'light' }} className="absolute inset-0 flex flex-col">
             
             {/* Header Control Panel */}
-            <div className="p-4 border-b border-slate-200/60 bg-slate-50   flex flex-wrap justify-between items-center gap-3 z-10">
-              <div className="flex items-center gap-3">
+            <div className="p-3.5 sm:p-4 border-b border-slate-200/60 bg-slate-50 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 z-10">
+              {/* Top Row on Mobile: Title and Mobile-only Clear Chat */}
+              <div className="flex justify-between items-center w-full sm:w-auto gap-3">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
                   <span className="text-xs font-black uppercase tracking-wider text-slate-800">OdishaExamPrep AI</span>
                 </div>
 
-                {/* Target Exam Custom Popover Selector */}
-                <div className="relative" ref={examDropdownRef}>
+                {/* Clear Chat Button (Visible only on mobile top-row) */}
+                <button 
+                  onClick={() => {
+                    setMessages([{ role: 'assistant', content: "Chat cleared! What shall we revise next?" }]);
+                    setLoading(false);
+                  }}
+                  className="flex sm:hidden items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-brand-50 text-slate-600 hover:text-[#8A1C36] border border-slate-200/60 hover:border-brand-200/40 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm"
+                  title="Clear Chat History"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-black uppercase tracking-wider">Clear</span>
+                </button>
+              </div>
+
+              {/* Bottom Row on Mobile / Main Row Inline on Desktop */}
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                {/* Target Exam Custom Popover Selector (Full-width on mobile, auto on desktop) */}
+                <div className="relative w-full sm:w-auto" ref={examDropdownRef}>
                   <button
                     type="button"
                     onClick={() => setIsExamDropdownOpen(!isExamDropdownOpen)}
-                    className="bg-white hover:bg-slate-100 hover:text-slate-800/90 border border-slate-200/60 hover:border-teal-500/30 text-brand-600 rounded-lg text-[9px] font-black uppercase tracking-wider py-1.5 pl-2.5 pr-7 focus:outline-none transition-all cursor-pointer flex items-center gap-1.5 min-w-[120px] justify-between shadow-md"
+                    className="bg-white hover:bg-slate-100 hover:text-slate-800/90 border border-slate-200/60 hover:border-teal-500/30 text-brand-600 rounded-lg text-[9px] font-black uppercase tracking-wider py-1.5 pl-2.5 pr-7 focus:outline-none transition-all cursor-pointer flex items-center gap-1.5 w-full sm:min-w-[120px] justify-between shadow-md"
                   >
                     <div className="flex items-center gap-1">
                       <Target className="w-3.5 h-3.5 text-brand-600" />
-                      <span className="truncate max-w-[80px]">
+                      <span className="truncate max-w-[140px] sm:max-w-[80px]">
                         {targetExam || 'Select Exam'}
                       </span>
                     </div>
@@ -3195,7 +3212,7 @@ JSON structure:
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: -10 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute right-0 sm:right-auto sm:left-0 mt-2 w-56 rounded-xl bg-white border border-slate-200/60   shadow-2xl p-1 z-50 overflow-hidden"
+                        className="absolute right-0 sm:right-auto sm:left-0 mt-2 w-56 rounded-xl bg-white border border-slate-200/60 shadow-2xl p-1 z-50 overflow-hidden"
                       >
                         <div className="max-h-64 overflow-y-auto pr-0.5 no-scrollbar">
                           {userExams.length === 0 ? (
@@ -3267,21 +3284,21 @@ JSON structure:
                     )}
                   </AnimatePresence>
                 </div>
-              </div>
 
-              {/* Clear Chat */}
-              <button 
-                onClick={() => {
-                  setMessages([{ role: 'assistant', content: "Chat cleared! What shall we revise next?" }]);
-                  setLoading(false);
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-brand-50 text-slate-600 hover:text-[#8A1C36] border border-slate-200/60 hover:border-brand-200/40 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                title="Clear Chat History"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">Clear Chat</span>
-                <span className="xs:hidden">Clear</span>
-              </button>
+                {/* Clear Chat Button (Visible only on desktop sm+) */}
+                <button 
+                  onClick={() => {
+                    setMessages([{ role: 'assistant', content: "Chat cleared! What shall we revise next?" }]);
+                    setLoading(false);
+                  }}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-brand-50 text-slate-600 hover:text-[#8A1C36] border border-slate-200/60 hover:border-brand-200/40 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm"
+                  title="Clear Chat History"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span className="hidden xs:inline">Clear Chat</span>
+                  <span className="xs:hidden">Clear</span>
+                </button>
+              </div>
             </div>
 
             <div ref={chatConsoleRef} className="flex-1 overflow-y-auto p-3.5 md:p-6 space-y-3.5 md:space-y-4 no-scrollbar smooth-scroll-gpu">
