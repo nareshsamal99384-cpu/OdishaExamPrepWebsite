@@ -217,6 +217,7 @@ const HistoryView = ({
       <div className="grid gap-4">
         {activities.map((a, i) => {
           const isTestResult = !!a.metadata && a.type !== 'question_bank_accessed';
+          const isAiQuiz = a.type === 'practice_test_completed';
           const isDownloadable = a.type === 'question_bank_accessed' && !!a.metadata?.pdfUrl;
           const isInteractive = isTestResult || isDownloadable || a.type === 'test_incomplete';
 
@@ -317,7 +318,7 @@ const HistoryView = ({
                    </div>
                  )}
                  
-                 {isTestResult && a.score !== undefined && a.score !== null && (
+                 {((isTestResult || isAiQuiz) && a.score !== undefined && a.score !== null) && (
                    <div className="flex flex-col text-left sm:text-right">
                       <div className="flex items-baseline gap-0.5">
                         <span className="font-extrabold text-slate-900 text-base sm:text-xl">
@@ -325,9 +326,11 @@ const HistoryView = ({
                         </span>
                         <span className="text-slate-400 text-[11px] sm:text-xs font-bold">/{a.totalMarks}</span>
                       </div>
-                      <span className="text-[10px] font-bold text-slate-500 mt-0.5">
-                        {Math.round(a.accuracy || 0)}% Accuracy
-                      </span>
+                      {!isAiQuiz && (
+                        <span className="text-[10px] font-bold text-slate-500 mt-0.5">
+                          {Math.round(a.accuracy || 0)}% Accuracy
+                        </span>
+                      )}
                    </div>
                  )}
                 
