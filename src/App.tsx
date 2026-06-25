@@ -3334,18 +3334,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       </div>
                     </div>
                     
-                    {/* Header title for mobile */}
+                    {/* Category tag for mobile */}
                     <div className="text-center md:hidden w-full px-2">
-                      <h2 
-                        className={cn(
-                          "font-serif font-extrabold text-white leading-tight line-clamp-2",
-                          selectedBankItem.title.length > 55 ? "text-lg" : "text-2xl"
-                        )}
-                        title={selectedBankItem.title}
-                      >
-                        {selectedBankItem.title}
-                      </h2>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-brand-400 mt-1">Question Bank Portal</p>
+                      <p className="text-xs font-black uppercase tracking-[0.2em] text-brand-400">Question Bank Portal</p>
                     </div>
 
                     {/* Branding label for laptop */}
@@ -3379,15 +3370,15 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
                   <div className="space-y-6 relative z-10 flex-grow flex flex-col justify-between">
                     <div className="space-y-4">
-                      {/* Topic Title (Laptop only) */}
-                      <div className="hidden md:block space-y-1">
+                      {/* Topic Title (Visible on mobile and laptop) */}
+                      <div className="space-y-1.5 text-left md:text-left">
                         <span className="inline-flex items-center px-2 py-0.5 bg-brand-50 text-[#8A1C36] rounded text-[9px] font-black uppercase tracking-wider border border-brand-100">
                           Topic Focus
                         </span>
                         <h2 
                           className={cn(
-                            "font-serif font-extrabold text-slate-900 leading-tight line-clamp-2 md:line-clamp-3",
-                            selectedBankItem.title.length > 55 ? "text-xl md:text-2xl" : "text-2xl md:text-3xl"
+                            "font-serif font-extrabold text-slate-900 leading-tight line-clamp-3 md:line-clamp-3",
+                            selectedBankItem.title.length > 55 ? "text-lg sm:text-xl md:text-2xl" : "text-xl sm:text-2xl md:text-3xl"
                           )}
                           title={selectedBankItem.title}
                         >
@@ -3449,8 +3440,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                 show: { opacity: 1, x: 0 }
                               }}
                               className={cn(
-                                "w-full flex items-center justify-between p-3.5 rounded-2xl bg-white border border-slate-200/60 shadow-sm cursor-pointer",
-                                !isMobile && "hover:bg-brand-50/50 hover:border-brand-200/60 transition-all group relative overflow-hidden"
+                                "w-full flex items-center justify-between p-3.5 rounded-2xl bg-white border border-slate-200/60 shadow-sm cursor-pointer relative overflow-hidden transition-all duration-300 group",
+                                isMobile 
+                                  ? "active:scale-[0.98] active:border-brand-200 active:shadow-md"
+                                  : "hover:bg-brand-50/50 hover:border-brand-200/60 transition-all"
                               )}
                               onClick={() => {
                                 if (isGuest) {
@@ -3493,26 +3486,34 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                 }
                               }}
                             >
-                              <div className="flex items-center gap-3 relative z-10">
+                              <div className="absolute inset-0 bg-gradient-to-r from-brand-500/0 via-brand-500/[0.012] to-brand-500/0 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none" />
+                              <div className="absolute left-0 top-3 bottom-3 w-1 bg-gradient-to-b from-brand-600 to-brand-500 rounded-r-md opacity-80" />
+
+                              <div className="flex items-center gap-3 relative z-10 min-w-0 flex-1 pl-1">
                                 <div className={cn(
-                                  "w-8.5 h-8.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[#8A1C36] shadow-sm",
+                                  "w-8.5 h-8.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[#8A1C36] shadow-sm shrink-0",
                                   !isMobile && "group-hover:scale-110 group-hover:bg-[#8A1C36] group-hover:text-white transition-all"
                                 )}>
                                   <Download className="w-4 h-4" />
                                 </div>
-                                <div className="text-left">
-                                  <p className="text-xs font-bold text-slate-800 truncate max-w-[140px] sm:max-w-[220px] md:max-w-[280px] lg:max-w-[340px]">
+                                <div className="text-left min-w-0 flex-1">
+                                  <p className="text-xs font-bold text-slate-800 line-clamp-2 pr-1 leading-snug">
                                     {link.title || 'Download PDF'}
                                   </p>
-                                  <p className="text-[9px] font-bold text-slate-400">PDF Document</p>
+                                  <p className="text-[9px] font-bold text-slate-400 mt-0.5">PDF Document</p>
                                 </div>
                               </div>
                               
-                              {selectedBankItem.isPremium && !hasAccessTo(selectedBankItem) ? (
-                                <Lock className={cn("w-4 h-4 text-slate-400", !isMobile && "group-hover:text-[#8A1C36] transition-colors")} />
-                              ) : (
-                                <ChevronRight className={cn("w-4 h-4 text-slate-400", !isMobile && "group-hover:text-[#8A1C36] group-hover:translate-x-1 transition-all")} />
-                              )}
+                              <div className={cn(
+                                "w-7 h-7 rounded-full bg-slate-50 border border-slate-100/50 flex items-center justify-center text-slate-400 shrink-0 shadow-2xs group-active:translate-x-0.5 transition-all duration-300",
+                                !isMobile && "group-hover:bg-[#8A1C36] group-hover:text-white group-hover:border-transparent"
+                              )}>
+                                {selectedBankItem.isPremium && !hasAccessTo(selectedBankItem) ? (
+                                  <Lock className="w-3.5 h-3.5" />
+                                ) : (
+                                  <ChevronRight className="w-4 h-4" />
+                                )}
+                              </div>
                             </motion.button>
                           ))
                         ) : (
