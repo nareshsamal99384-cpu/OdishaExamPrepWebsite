@@ -6567,32 +6567,57 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">Step 2: Custom Practice</h2>
         </div>
         
-          <Card 
-            onClick={() => setShowPracticeConfig(true)}
-            className="p-5 sm:p-6 md:p-8 bg-white border border-slate-200/60 shadow-xl shadow-brand-500/5 rounded-[1.5rem] md:rounded-[2rem] cursor-pointer group relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8 hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 hover:-translate-y-1 premium-shine-container"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-brand-50/50 via-white to-indigo-50/50" />
-            <VisualEffects />
-            <div className="absolute -right-20 -top-20 w-80 h-80 bg-brand-500/5 rounded-full blur-3xl group-hover:bg-brand-500/10 transition-colors duration-700 pointer-events-none" />
-            <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl group-hover:bg-indigo-500/10 transition-colors duration-700 pointer-events-none" />
-            
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 relative z-10 flex-1 w-full">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 shrink-0 premium-gradient rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/10 group-hover:scale-110 group-hover:premium-glow transition-all duration-500">
-                <Play className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-white fill-white/20 ml-1" />
+          {isMobile ? (
+            <div
+              onClick={() => setShowPracticeConfig(true)}
+              className="p-4 bg-white border border-slate-100 shadow-[0_4px_16px_-4px_rgba(79,70,229,0.06),0_1px_2px_rgba(79,70,229,0.02)] active:scale-[0.98] active:border-indigo-300 active:shadow-md rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/[0.012] to-indigo-500/0 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none" />
+              <div className="absolute left-0 top-3.5 bottom-3.5 w-1 bg-gradient-to-b from-indigo-500 to-indigo-700 rounded-r-md opacity-80" />
+              
+              <div className="flex items-center gap-3.5 min-w-0 flex-1 pl-1">
+                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-650 rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-indigo-500/10 relative">
+                  <Play className="w-5 h-5 text-white fill-white/20 ml-0.5" />
+                  <div className="absolute inset-0 border border-white/10 rounded-xl" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-extrabold text-[14.5px] text-slate-850 tracking-tight leading-snug">Start Practice Session</h4>
+                  <p className="text-[11.5px] text-slate-500 font-medium leading-relaxed mt-0.5 line-clamp-2 pr-1">Customize your practice based on targeted subjects and units.</p>
+                </div>
               </div>
-              <div className="space-y-1">
-                <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight group-hover:text-brand-600 transition-colors leading-snug">Start Practice Session</h3>
-                <p className="text-xs sm:text-sm lg:text-base text-slate-500 font-medium leading-relaxed max-w-xl">Customize your practice based on targeted subjects and units.</p>
+              
+              <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 shadow-2xs group-active:bg-indigo-50 group-active:border-indigo-100 group-active:text-indigo-600 group-active:translate-x-0.5 transition-all duration-300">
+                <ChevronRight className="w-4 h-4" />
               </div>
             </div>
+          ) : (
+            <Card 
+              onClick={() => setShowPracticeConfig(true)}
+              className="p-5 sm:p-6 md:p-8 bg-white border border-slate-200/60 shadow-xl shadow-brand-500/5 rounded-[1.5rem] md:rounded-[2rem] cursor-pointer group relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8 hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 hover:-translate-y-1 premium-shine-container"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-brand-50/50 via-white to-indigo-50/50" />
+              <VisualEffects />
+              <div className="absolute -right-20 -top-20 w-80 h-80 bg-brand-500/5 rounded-full blur-3xl group-hover:bg-brand-500/10 transition-colors duration-700 pointer-events-none" />
+              <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl group-hover:bg-indigo-500/10 transition-colors duration-700 pointer-events-none" />
+              
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 relative z-10 flex-1 w-full">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 shrink-0 premium-gradient rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/10 group-hover:scale-110 group-hover:premium-glow transition-all duration-500">
+                  <Play className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-white fill-white/20 ml-1" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight group-hover:text-brand-600 transition-colors leading-snug">Start Practice Session</h3>
+                  <p className="text-xs sm:text-sm lg:text-base text-slate-500 font-medium leading-relaxed max-w-xl">Customize your practice based on targeted subjects and units.</p>
+                </div>
+              </div>
 
-            <div className="relative z-10 w-full md:w-auto shrink-0 mt-2 md:mt-0">
-              <Button className="w-full md:w-auto px-8 h-[48px] sm:h-[56px] rounded-xl flex items-center justify-center gap-2 text-sm sm:text-base font-black premium-gradient text-white border-none shadow-lg shadow-brand-500/20 group-hover:shadow-brand-500/40 group-hover:premium-glow transition-all">
-                Start Practice
-                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 ml-1 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </div>
-          </Card>
+              <div className="relative z-10 w-full md:w-auto shrink-0 mt-2 md:mt-0">
+                <Button className="w-full md:w-auto px-8 h-[48px] sm:h-[56px] rounded-xl flex items-center justify-center gap-2 text-sm sm:text-base font-black premium-gradient text-white border-none shadow-lg shadow-brand-500/20 group-hover:shadow-brand-500/40 group-hover:premium-glow transition-all">
+                  Start Practice
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 ml-1 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </div>
+            </Card>
+          )}
 
       </section>
 
