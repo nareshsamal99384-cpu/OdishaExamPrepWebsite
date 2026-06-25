@@ -7172,83 +7172,107 @@ const ExamDetailPage = () => {
           <ChevronDown className="w-4 h-4 transition-transform group-hover:translate-y-0.5 duration-200" />
         </button>
 
-        <button onClick={handleHomeClick} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'home' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-          <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+        <button onClick={handleHomeClick} className={cn("flex flex-col items-center gap-1 sm:gap-1.5 group", mainTab === 'home' ? TAB_CONFIGS.home.textColor : "text-slate-500 hover:text-slate-800")}>
+          <div className="relative p-1.5 sm:p-2 rounded-t-full rounded-b-md group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
             {mainTab === 'home' && (
               <motion.div
                 layoutId="activeExamDetailBottomTabPill"
-                className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                className={cn(
+                  "absolute inset-0 rounded-t-full rounded-b-md shadow-2xs backdrop-blur-xs z-0 border",
+                  TAB_CONFIGS.home.pillBg,
+                  TAB_CONFIGS.home.pillBorder
+                )}
                 transition={{ type: "spring", stiffness: 380, damping: 25 }}
               />
             )}
             <LayoutDashboard className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
           </div>
-          <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'home' ? 'font-black' : 'font-extrabold'}`}>Home</span>
+          <span className={cn("text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest", mainTab === 'home' ? "font-black" : "font-extrabold")}>Home</span>
         </button>
-        <button onClick={() => handleTabClick('courses')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'courses' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-          <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+        <button onClick={() => handleTabClick('courses')} className={cn("flex flex-col items-center gap-1 sm:gap-1.5 group", mainTab === 'courses' ? TAB_CONFIGS.courses.textColor : "text-slate-500 hover:text-slate-800")}>
+          <div className="relative p-1.5 sm:p-2 rounded-t-full rounded-b-md group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
             {mainTab === 'courses' && (
               <motion.div
                 layoutId="activeExamDetailBottomTabPill"
-                className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                className={cn(
+                  "absolute inset-0 rounded-t-full rounded-b-md shadow-2xs backdrop-blur-xs z-0 border",
+                  TAB_CONFIGS.courses.pillBg,
+                  TAB_CONFIGS.courses.pillBorder
+                )}
                 transition={{ type: "spring", stiffness: 380, damping: 25 }}
               />
             )}
             <BookOpen className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
           </div>
-          <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'courses' ? 'font-black' : 'font-extrabold'}`}>Courses</span>
+          <span className={cn("text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest", mainTab === 'courses' ? "font-black" : "font-extrabold")}>Courses</span>
         </button>
-        <button onClick={() => handleTabClick('analytics')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'analytics' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-          <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+        <button onClick={() => handleTabClick('analytics')} className={cn("flex flex-col items-center gap-1 sm:gap-1.5 group", mainTab === 'analytics' ? TAB_CONFIGS.analytics.textColor : "text-slate-500 hover:text-slate-800")}>
+          <div className="relative p-1.5 sm:p-2 rounded-t-full rounded-b-md group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
             {mainTab === 'analytics' && (
               <motion.div
                 layoutId="activeExamDetailBottomTabPill"
-                className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                className={cn(
+                  "absolute inset-0 rounded-t-full rounded-b-md shadow-2xs backdrop-blur-xs z-0 border",
+                  TAB_CONFIGS.analytics.pillBg,
+                  TAB_CONFIGS.analytics.pillBorder
+                )}
                 transition={{ type: "spring", stiffness: 380, damping: 25 }}
               />
             )}
             <BarChart3 className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
           </div>
-          <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'analytics' ? 'font-black' : 'font-extrabold'}`}>Analytics</span>
+          <span className={cn("text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest", mainTab === 'analytics' ? "font-black" : "font-extrabold")}>Analytics</span>
         </button>
-        <button onClick={() => handleTabClick('history')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'history' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-          <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+        <button onClick={() => handleTabClick('history')} className={cn("flex flex-col items-center gap-1 sm:gap-1.5 group", mainTab === 'history' ? TAB_CONFIGS.history.textColor : "text-slate-500 hover:text-slate-800")}>
+          <div className="relative p-1.5 sm:p-2 rounded-t-full rounded-b-md group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
             {mainTab === 'history' && (
               <motion.div
                 layoutId="activeExamDetailBottomTabPill"
-                className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                className={cn(
+                  "absolute inset-0 rounded-t-full rounded-b-md shadow-2xs backdrop-blur-xs z-0 border",
+                  TAB_CONFIGS.history.pillBg,
+                  TAB_CONFIGS.history.pillBorder
+                )}
                 transition={{ type: "spring", stiffness: 380, damping: 25 }}
               />
             )}
             <History className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
           </div>
-          <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'history' ? 'font-black' : 'font-extrabold'}`}>History</span>
+          <span className={cn("text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest", mainTab === 'history' ? "font-black" : "font-extrabold")}>History</span>
         </button>
-        <button onClick={() => handleTabClick('library')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'library' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-          <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+        <button onClick={() => handleTabClick('library')} className={cn("flex flex-col items-center gap-1 sm:gap-1.5 group", mainTab === 'library' ? TAB_CONFIGS.library.textColor : "text-slate-500 hover:text-slate-800")}>
+          <div className="relative p-1.5 sm:p-2 rounded-t-full rounded-b-md group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
             {mainTab === 'library' && (
               <motion.div
                 layoutId="activeExamDetailBottomTabPill"
-                className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                className={cn(
+                  "absolute inset-0 rounded-t-full rounded-b-md shadow-2xs backdrop-blur-xs z-0 border",
+                  TAB_CONFIGS.library.pillBg,
+                  TAB_CONFIGS.library.pillBorder
+                )}
                 transition={{ type: "spring", stiffness: 380, damping: 25 }}
               />
             )}
             <BookMarked className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
           </div>
-          <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'library' ? 'font-black' : 'font-extrabold'}`}>Library</span>
+          <span className={cn("text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest", mainTab === 'library' ? "font-black" : "font-extrabold")}>Library</span>
         </button>
-        <button onClick={() => handleTabClick('ai_mentor')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'ai_mentor' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-          <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+        <button onClick={() => handleTabClick('ai_mentor')} className={cn("flex flex-col items-center gap-1 sm:gap-1.5 group", mainTab === 'ai_mentor' ? TAB_CONFIGS.ai_mentor.textColor : "text-slate-500 hover:text-slate-800")}>
+          <div className="relative p-1.5 sm:p-2 rounded-t-full rounded-b-md group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
             {mainTab === 'ai_mentor' && (
               <motion.div
                 layoutId="activeExamDetailBottomTabPill"
-                className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                className={cn(
+                  "absolute inset-0 rounded-t-full rounded-b-md shadow-2xs backdrop-blur-xs z-0 border",
+                  TAB_CONFIGS.ai_mentor.pillBg,
+                  TAB_CONFIGS.ai_mentor.pillBorder
+                )}
                 transition={{ type: "spring", stiffness: 380, damping: 25 }}
               />
             )}
             <Sparkles className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
           </div>
-          <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'ai_mentor' ? 'font-black' : 'font-extrabold'}`}>AI Mentor</span>
+          <span className={cn("text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest", mainTab === 'ai_mentor' ? "font-black" : "font-extrabold")}>AI Mentor</span>
         </button>
       </motion.nav>
 
@@ -7270,6 +7294,45 @@ const ExamDetailPage = () => {
       </AnimatePresence>
     </div>
   );
+};
+
+const TAB_CONFIGS = {
+  home: {
+    textColor: "text-[#8a1c36]",
+    pillBg: "bg-[#8a1c36]/10",
+    pillBorder: "border-[#8a1c36]/20",
+    label: "Home"
+  },
+  courses: {
+    textColor: "text-indigo-650",
+    pillBg: "bg-indigo-500/10",
+    pillBorder: "border-indigo-500/20",
+    label: "Courses"
+  },
+  analytics: {
+    textColor: "text-emerald-650",
+    pillBg: "bg-emerald-500/10",
+    pillBorder: "border-emerald-500/20",
+    label: "Analytics"
+  },
+  history: {
+    textColor: "text-amber-650",
+    pillBg: "bg-amber-500/10",
+    pillBorder: "border-amber-500/20",
+    label: "History"
+  },
+  library: {
+    textColor: "text-teal-650",
+    pillBg: "bg-teal-500/10",
+    pillBorder: "border-teal-500/20",
+    label: "Library"
+  },
+  ai_mentor: {
+    textColor: "text-purple-650",
+    pillBg: "bg-purple-500/10",
+    pillBorder: "border-purple-500/20",
+    label: "AI Mentor"
+  }
 };
 
 const tabVariants = {
@@ -7645,83 +7708,107 @@ function AppContent() {
                     <ChevronDown className="w-4 h-4 transition-transform group-hover:translate-y-0.5 duration-200" />
                   </button>
 
-                  <button onClick={handleHomeClick} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'home' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-                    <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+                  <button onClick={handleHomeClick} className={cn("flex flex-col items-center gap-1 sm:gap-1.5 group", mainTab === 'home' ? TAB_CONFIGS.home.textColor : "text-slate-500 hover:text-slate-800")}>
+                    <div className="relative p-1.5 sm:p-2 rounded-t-full rounded-b-md group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
                       {mainTab === 'home' && (
                         <motion.div
                           layoutId="activeAppContentBottomTabPill"
-                          className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                          className={cn(
+                            "absolute inset-0 rounded-t-full rounded-b-md shadow-2xs backdrop-blur-xs z-0 border",
+                            TAB_CONFIGS.home.pillBg,
+                            TAB_CONFIGS.home.pillBorder
+                          )}
                           transition={{ type: "spring", stiffness: 380, damping: 25 }}
                         />
                       )}
                       <LayoutDashboard className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
                     </div>
-                    <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'home' ? 'font-black' : 'font-extrabold'}`}>Home</span>
+                    <span className={cn("text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest", mainTab === 'home' ? "font-black" : "font-extrabold")}>Home</span>
                   </button>
-                  <button onClick={() => handleTabClick('courses')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'courses' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-                    <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+                  <button onClick={() => handleTabClick('courses')} className={cn("flex flex-col items-center gap-1 sm:gap-1.5 group", mainTab === 'courses' ? TAB_CONFIGS.courses.textColor : "text-slate-500 hover:text-slate-800")}>
+                    <div className="relative p-1.5 sm:p-2 rounded-t-full rounded-b-md group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
                       {mainTab === 'courses' && (
                         <motion.div
                           layoutId="activeAppContentBottomTabPill"
-                          className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                          className={cn(
+                            "absolute inset-0 rounded-t-full rounded-b-md shadow-2xs backdrop-blur-xs z-0 border",
+                            TAB_CONFIGS.courses.pillBg,
+                            TAB_CONFIGS.courses.pillBorder
+                          )}
                           transition={{ type: "spring", stiffness: 380, damping: 25 }}
                         />
                       )}
                       <BookOpen className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
                     </div>
-                    <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'courses' ? 'font-black' : 'font-extrabold'}`}>Courses</span>
+                    <span className={cn("text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest", mainTab === 'courses' ? "font-black" : "font-extrabold")}>Courses</span>
                   </button>
-                  <button onClick={() => handleTabClick('analytics')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'analytics' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-                    <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+                  <button onClick={() => handleTabClick('analytics')} className={cn("flex flex-col items-center gap-1 sm:gap-1.5 group", mainTab === 'analytics' ? TAB_CONFIGS.analytics.textColor : "text-slate-500 hover:text-slate-800")}>
+                    <div className="relative p-1.5 sm:p-2 rounded-t-full rounded-b-md group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
                       {mainTab === 'analytics' && (
                         <motion.div
                           layoutId="activeAppContentBottomTabPill"
-                          className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                          className={cn(
+                            "absolute inset-0 rounded-t-full rounded-b-md shadow-2xs backdrop-blur-xs z-0 border",
+                            TAB_CONFIGS.analytics.pillBg,
+                            TAB_CONFIGS.analytics.pillBorder
+                          )}
                           transition={{ type: "spring", stiffness: 380, damping: 25 }}
                         />
                       )}
                       <BarChart3 className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
                     </div>
-                    <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'analytics' ? 'font-black' : 'font-extrabold'}`}>Analytics</span>
+                    <span className={cn("text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest", mainTab === 'analytics' ? "font-black" : "font-extrabold")}>Analytics</span>
                   </button>
-                  <button onClick={() => handleTabClick('history')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'history' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-                    <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+                  <button onClick={() => handleTabClick('history')} className={cn("flex flex-col items-center gap-1 sm:gap-1.5 group", mainTab === 'history' ? TAB_CONFIGS.history.textColor : "text-slate-500 hover:text-slate-800")}>
+                    <div className="relative p-1.5 sm:p-2 rounded-t-full rounded-b-md group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
                       {mainTab === 'history' && (
                         <motion.div
                           layoutId="activeAppContentBottomTabPill"
-                          className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                          className={cn(
+                            "absolute inset-0 rounded-t-full rounded-b-md shadow-2xs backdrop-blur-xs z-0 border",
+                            TAB_CONFIGS.history.pillBg,
+                            TAB_CONFIGS.history.pillBorder
+                          )}
                           transition={{ type: "spring", stiffness: 380, damping: 25 }}
                         />
                       )}
                       <History className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
                     </div>
-                    <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'history' ? 'font-black' : 'font-extrabold'}`}>History</span>
+                    <span className={cn("text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest", mainTab === 'history' ? "font-black" : "font-extrabold")}>History</span>
                   </button>
-                  <button onClick={() => handleTabClick('library')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'library' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-                    <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+                  <button onClick={() => handleTabClick('library')} className={cn("flex flex-col items-center gap-1 sm:gap-1.5 group", mainTab === 'library' ? TAB_CONFIGS.library.textColor : "text-slate-500 hover:text-slate-800")}>
+                    <div className="relative p-1.5 sm:p-2 rounded-t-full rounded-b-md group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
                       {mainTab === 'library' && (
                         <motion.div
                           layoutId="activeAppContentBottomTabPill"
-                          className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                          className={cn(
+                            "absolute inset-0 rounded-t-full rounded-b-md shadow-2xs backdrop-blur-xs z-0 border",
+                            TAB_CONFIGS.library.pillBg,
+                            TAB_CONFIGS.library.pillBorder
+                          )}
                           transition={{ type: "spring", stiffness: 380, damping: 25 }}
                         />
                       )}
                       <BookMarked className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
                     </div>
-                    <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'library' ? 'font-black' : 'font-extrabold'}`}>Library</span>
+                    <span className={cn("text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest", mainTab === 'library' ? "font-black" : "font-extrabold")}>Library</span>
                   </button>
-                  <button onClick={() => handleTabClick('ai_mentor')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'ai_mentor' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-                    <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+                  <button onClick={() => handleTabClick('ai_mentor')} className={cn("flex flex-col items-center gap-1 sm:gap-1.5 group", mainTab === 'ai_mentor' ? TAB_CONFIGS.ai_mentor.textColor : "text-slate-500 hover:text-slate-800")}>
+                    <div className="relative p-1.5 sm:p-2 rounded-t-full rounded-b-md group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
                       {mainTab === 'ai_mentor' && (
                         <motion.div
                           layoutId="activeAppContentBottomTabPill"
-                          className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                          className={cn(
+                            "absolute inset-0 rounded-t-full rounded-b-md shadow-2xs backdrop-blur-xs z-0 border",
+                            TAB_CONFIGS.ai_mentor.pillBg,
+                            TAB_CONFIGS.ai_mentor.pillBorder
+                          )}
                           transition={{ type: "spring", stiffness: 380, damping: 25 }}
                         />
                       )}
                       <Sparkles className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
                     </div>
-                    <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'ai_mentor' ? 'font-black' : 'font-extrabold'}`}>AI Mentor</span>
+                    <span className={cn("text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest", mainTab === 'ai_mentor' ? "font-black" : "font-extrabold")}>AI Mentor</span>
                   </button>
                 </motion.nav>
 
