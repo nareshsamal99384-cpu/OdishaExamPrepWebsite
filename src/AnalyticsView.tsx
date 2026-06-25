@@ -1576,45 +1576,45 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                 </div>
 
                 {/* AI Panel Tabs Body */}
-                <div className="min-h-[220px]">
+                <div className="min-h-[180px] sm:min-h-[220px]">
                   {aiPanelTab === 'diagnostic' && (
                     <motion.div 
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center"
+                      className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start"
                     >
-                      <div className="lg:col-span-8 space-y-4">
+                      <div className="lg:col-span-8 space-y-3">
                         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                           <span className="px-2 py-0.5 bg-[#8A1C36]/10 border border-[#8A1C36]/20 text-[#8A1C36] text-[9px] font-black uppercase tracking-widest rounded-lg whitespace-nowrap">Performance Report</span>
                           <span className="text-[10px] font-bold text-slate-500 leading-normal">Targeting Odisha Competitive Exams</span>
                         </div>
-                        <p className="text-slate-700 text-sm sm:text-base font-medium leading-relaxed max-w-3xl">
+                        <p className="text-slate-700 text-[13px] sm:text-base font-medium leading-relaxed max-w-3xl">
                           {aiInsight}
                         </p>
                       </div>
 
                       {/* Visual metrics cards */}
-                      <div className="lg:col-span-4 space-y-3">
-                        <div className="p-4 bg-emerald-50/70 border border-emerald-100 rounded-2xl flex items-start gap-3.5 hover:bg-emerald-50/90 transition-colors">
-                          <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700 shadow-sm shrink-0">
-                            <Gauge className="w-5 h-5" />
+                      <div className="lg:col-span-4 grid grid-cols-2 lg:grid-cols-1 gap-2.5 sm:gap-3">
+                        <div className="p-3 sm:p-4 bg-emerald-50/70 border border-emerald-100 rounded-2xl flex items-start gap-2.5 sm:gap-3.5 hover:bg-emerald-50/90 transition-colors">
+                          <div className="p-1.5 sm:p-2 rounded-xl bg-emerald-100 text-emerald-700 shadow-sm shrink-0">
+                            <Gauge className="w-4 h-4 sm:w-5 sm:h-5" />
                           </div>
-                          <div>
-                            <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-0.5">Top Cognitive Strength</h4>
-                            <p className="text-slate-700 text-xs font-semibold leading-relaxed">
-                              {stats.avgAccuracy >= 70 ? 'Superior Accuracy thresholds under moderate test length pacing.' : 'Consistent performance stability in fundamental core topics.'}
+                          <div className="min-w-0">
+                            <h4 className="text-[9px] sm:text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-0.5">Top Strength</h4>
+                            <p className="text-slate-700 text-[11px] sm:text-xs font-semibold leading-snug sm:leading-relaxed">
+                              {stats.avgAccuracy >= 70 ? 'Superior Accuracy under moderate test pacing.' : 'Consistent performance in core topics.'}
                             </p>
                           </div>
                         </div>
 
-                        <div className="p-4 bg-amber-50/70 border border-amber-100 rounded-2xl flex items-start gap-3.5 hover:bg-amber-50/90 transition-colors">
-                          <div className="p-2 rounded-xl bg-amber-100 text-amber-700 shadow-sm shrink-0">
-                            <Activity className="w-5 h-5" />
+                        <div className="p-3 sm:p-4 bg-amber-50/70 border border-amber-100 rounded-2xl flex items-start gap-2.5 sm:gap-3.5 hover:bg-amber-50/90 transition-colors">
+                          <div className="p-1.5 sm:p-2 rounded-xl bg-amber-100 text-amber-700 shadow-sm shrink-0">
+                            <Activity className="w-4 h-4 sm:w-5 sm:h-5" />
                           </div>
-                          <div>
-                            <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-0.5">Primary Cognitive Blocker</h4>
-                            <p className="text-slate-700 text-xs font-semibold leading-relaxed">
-                              {stats.avgTimePerQuestion > 60 ? 'Solving speed decay. Pacing exceeds 60s limit on complex questions.' : 'Precision drop detected under high-speed snap answers.'}
+                          <div className="min-w-0">
+                            <h4 className="text-[9px] sm:text-[10px] font-black text-amber-600 uppercase tracking-widest mb-0.5">Main Blocker</h4>
+                            <p className="text-slate-700 text-[11px] sm:text-xs font-semibold leading-snug sm:leading-relaxed">
+                              {stats.avgTimePerQuestion > 60 ? 'Speed decay on complex questions.' : 'Precision drop under high-speed answers.'}
                             </p>
                           </div>
                         </div>
@@ -1633,41 +1633,35 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                         <span className="text-[10px] font-bold text-slate-500 leading-normal">Check off items as you complete them to lift your score</span>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
                         {actionItems.map((item, idx) => (
                           <div 
                             key={idx}
                             onClick={() => setCheckedActions(prev => ({ ...prev, [idx]: !prev[idx] }))}
                             className={cn(
-                              "p-5 bg-slate-50/70 border border-slate-200/60 rounded-2xl flex flex-col justify-between gap-4 cursor-pointer hover:bg-slate-100/50 hover:border-[#8A1C36]/30 hover:shadow-md transition-all duration-300 relative overflow-hidden group",
-                              checkedActions[idx] && "bg-[#8A1C36]/5 border-[#8A1C36]/20 hover:border-[#8A1C36]/35"
+                              "p-3 bg-slate-50/70 border border-slate-200/60 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-slate-100/50 hover:border-[#8A1C36]/30 transition-all duration-300 active:scale-[0.98]",
+                              checkedActions[idx] && "bg-[#8A1C36]/5 border-[#8A1C36]/20"
                             )}
                           >
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-[#8A1C36]/2 rounded-full blur-xl group-hover:bg-[#8A1C36]/5 transition-colors" />
-
-                            <div className="flex items-start gap-3">
-                              <div className={cn(
-                                "w-5 h-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-colors",
-                                checkedActions[idx] 
-                                  ? "bg-emerald-500 border-emerald-400 text-white" 
-                                  : "border-slate-300 text-transparent"
-                              )}>
-                                <span className="text-[10px] font-black leading-none">✓</span>
-                              </div>
+                            <div className={cn(
+                              "w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors",
+                              checkedActions[idx] 
+                                ? "bg-emerald-500 border-emerald-400 text-white" 
+                                : "border-slate-300 text-transparent"
+                            )}>
+                              <span className="text-[10px] font-black leading-none">✓</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
                               <p className={cn(
-                                "text-slate-700 text-xs sm:text-sm font-semibold leading-relaxed group-hover:text-slate-900 transition-colors",
-                                checkedActions[idx] && "line-through text-slate-400 group-hover:text-slate-400"
+                                "text-slate-700 text-xs font-semibold leading-snug truncate",
+                                checkedActions[idx] && "line-through text-slate-400"
                               )}>
                                 {item.task}
                               </p>
                             </div>
-
-                            <div className="flex items-center gap-2 mt-auto pt-2">
-                              <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-[9px] font-black rounded-lg border border-emerald-200/30 uppercase">
-                                Lift {item.boost || '+5%'}
-                              </span>
-                              <span className="px-2 py-1 bg-slate-100 text-slate-500 text-[9px] font-black rounded-lg border border-slate-200 uppercase">
-                                {item.timeframe || '3 days'}
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 text-[8px] font-black rounded-lg border border-emerald-200/30 uppercase">
+                                {item.boost || '+5%'}
                               </span>
                             </div>
                           </div>
@@ -1683,7 +1677,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                       className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch"
                     >
                       {/* Left: Chat Container */}
-                      <div className="lg:col-span-8 flex flex-col justify-between border border-slate-200 rounded-2xl bg-slate-50/50 overflow-hidden h-[480px] sm:h-[500px] lg:h-[520px]">
+                      <div className="lg:col-span-8 flex flex-col justify-between border border-slate-200 rounded-2xl bg-slate-50/50 overflow-hidden h-[340px] sm:h-[440px] lg:h-[520px]">
                         {/* Top bar with Clear Chat option */}
                         <div className="px-4 py-2.5 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
                           <div className="flex items-center gap-1.5">
@@ -1702,10 +1696,10 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
 
                         <div ref={chatContainerRef} className="p-4 overflow-y-auto space-y-3.5 flex-1 no-scrollbar text-xs" style={{ overscrollBehaviorY: 'contain' }}>
                           {chatHistory.length === 0 ? (
-                            <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 p-6">
-                              <Cpu className="w-10 h-10 text-slate-400 mb-3 animate-float-gentle" />
+                            <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 p-4 sm:p-6">
+                              <Cpu className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400 mb-2 sm:mb-3 animate-float-gentle" />
                               <p className="font-semibold text-sm text-slate-700 mb-1">Your AI Exam Coach is ready</p>
-                              <p className="text-[10px] font-medium leading-relaxed max-w-xs text-slate-500">Ask specific questions about your mock scores, speed problems, or request target study advice.</p>
+                              <p className="text-[10px] font-medium leading-relaxed max-w-xs text-slate-500">Ask about mock scores, speed problems, or study advice.</p>
                             </div>
                           ) : (
                             chatHistory.map((msg, i) => (
@@ -1767,28 +1761,29 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                       </div>
 
                       {/* Right: Quick Chips Panel */}
-                      <div className="lg:col-span-4 flex flex-col justify-between gap-3 bg-slate-50/50 border border-slate-200/80 p-4 rounded-2xl">
-                        <div>
-                          <h4 className="text-[10px] font-black text-[#8A1C36] uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                      <div className="lg:col-span-4 flex flex-col gap-2.5 sm:gap-3 bg-slate-50/50 border border-slate-200/80 p-3 sm:p-4 rounded-2xl">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-[10px] font-black text-[#8A1C36] uppercase tracking-widest flex items-center gap-1">
                             <Lightbulb className="w-3.5 h-3.5" /> Study Assistant
                           </h4>
-                          <p className="text-[10px] font-medium text-slate-500 leading-relaxed mb-3 sm:mb-4">Click any prompt to trigger instant diagnostics from your AI coach.</p>
+                          <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest hidden sm:block">Tap a prompt</span>
+                        </div>
+                        <p className="text-[10px] font-medium text-slate-500 leading-relaxed hidden sm:block">Click any prompt to trigger instant diagnostics from your AI coach.</p>
                           
-                          <div className="flex flex-row overflow-x-auto gap-2.5 no-scrollbar pb-1.5 whitespace-nowrap lg:flex-col lg:overflow-visible lg:whitespace-normal">
-                            {assistantChips.map((chip, idx) => (
-                              <button
-                                key={idx}
-                                onClick={() => sendMessage(chip)}
-                                disabled={chatLoading}
-                                className="text-left p-2.5 bg-white hover:bg-brand-50 border border-slate-200/60 hover:border-brand-200 rounded-xl text-[11px] font-semibold text-slate-600 hover:text-[#8A1C36] transition-all cursor-pointer leading-tight disabled:opacity-50 shadow-sm shrink-0 whitespace-nowrap lg:whitespace-normal"
-                              >
-                                {chip}
-                              </button>
-                            ))}
-                          </div>
+                        <div className="flex flex-row overflow-x-auto gap-2 no-scrollbar pb-1 whitespace-nowrap lg:flex-col lg:overflow-visible lg:whitespace-normal">
+                          {assistantChips.map((chip, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => sendMessage(chip)}
+                              disabled={chatLoading}
+                              className="text-left px-3 py-2 sm:p-2.5 bg-white hover:bg-brand-50 border border-slate-200/60 hover:border-brand-200 rounded-xl text-[10px] sm:text-[11px] font-semibold text-slate-600 hover:text-[#8A1C36] transition-all cursor-pointer leading-tight disabled:opacity-50 shadow-sm shrink-0 whitespace-nowrap lg:whitespace-normal active:scale-95"
+                            >
+                              {chip}
+                            </button>
+                          ))}
                         </div>
 
-                        <div className="text-[8.5px] font-bold text-slate-400 uppercase tracking-widest text-center mt-3 sm:mt-4">
+                        <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest text-center mt-auto pt-1 hidden sm:block">
                           OdishaExamPrep Cognitive Lab
                         </div>
                       </div>
