@@ -183,7 +183,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
     return `${Math.floor(secs/60)}m ${Math.floor(secs%60)}s`;
   };
 
-  const questionTextContent = (
+  const questionTextContent = React.useMemo(() => (
     <div
       ref={questionTextRef}
       className="text-lg sm:text-2xl md:text-3xl lg:text-2xl xl:text-3xl font-semibold sm:font-extrabold text-slate-900 leading-relaxed sm:leading-[1.3] tracking-tight break-words overflow-wrap-anywhere space-y-4"
@@ -206,9 +206,9 @@ export default function TestResultsView({ results, onClose }: { results: any, on
         </div>
       ) : null}
     </div>
-  );
+  ), [currentQ]);
 
-  const cardContent = (
+  const cardContent = React.useMemo(() => (
     <>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
@@ -323,13 +323,26 @@ export default function TestResultsView({ results, onClose }: { results: any, on
          <Button disabled={currentIdx === questions.length - 1} onClick={() => setCurrentIdx(p => p + 1)} className="flex-none justify-center gap-2 px-10 py-5 text-base rounded-2xl bg-slate-900 text-white hover:bg-slate-800">Next <ChevronRight className="w-5 h-5"/></Button>
       </div>
     </>
-  );
+  ), [
+    currentIdx,
+    isMobile,
+    isMarked,
+    isUnanswered,
+    isCorrect,
+    questionExpanded,
+    questionOverflows,
+    questionTextContent,
+    currentQ,
+    userAnswer,
+    timeSpent,
+    questions.length
+  ]);
 
   return (
     <div 
       ref={containerRef}
       className={cn(
-        "fixed inset-0 z-[200] overflow-y-auto bg-[#F8FAFC] font-sans transition-all duration-300",
+        "fixed inset-0 z-[200] overflow-y-auto bg-[#F8FAFC] font-sans",
         showQuestionNav ? "pb-18 sm:pb-20" : "pb-12"
       )}
     >

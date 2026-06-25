@@ -977,7 +977,7 @@ export interface DiagramRendererProps {
   isOption?: boolean;
 }
 
-export const DiagramRenderer: React.FC<DiagramRendererProps> = ({
+export const DiagramRenderer: React.FC<DiagramRendererProps> = React.memo(({
   content,
   data,
   diagram: diagramProp,
@@ -1008,7 +1008,7 @@ export const DiagramRenderer: React.FC<DiagramRendererProps> = ({
       </p>
     </div>
   );
-};
+});
 
 // ─────────────────────────────────────────────────────────────
 // Dynamic Text & Diagram parser
@@ -1158,7 +1158,7 @@ function renderTextAndDiagramsWithAscii(text: string, isOption: boolean, keyPref
 // Main Component
 // ─────────────────────────────────────────────────────────────
 
-export const MathTextRenderer: React.FC<MathTextRendererProps> = ({
+export const MathTextRenderer: React.FC<MathTextRendererProps> = React.memo(({
   text,
   isUser = false,
   className,
@@ -1205,4 +1205,4 @@ export const MathTextRenderer: React.FC<MathTextRendererProps> = ({
       })}
     </span>
   );
-};
+});
