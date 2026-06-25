@@ -3865,7 +3865,7 @@ JSON structure:
                         "font-mono font-black text-slate-800 transition-all duration-200",
                         formatTime(timerSeconds).length > 5 
                           ? (formatTime(timerSeconds).length > 6 ? "text-[15px] sm:text-[14px] tracking-tighter" : "text-lg sm:text-base tracking-tight")
-                          : "text-3xl sm:text-2xl tracking-wider"
+                          : "text-2xl sm:text-xl tracking-tight"
                       )}>
                         {formatTime(timerSeconds)}
                       </span>
@@ -4339,7 +4339,7 @@ JSON structure:
                             "font-mono font-black text-slate-800 transition-all duration-200",
                             formatTime(timerSeconds).length > 5
                               ? (formatTime(timerSeconds).length > 6 ? "text-[15px] sm:text-[14px] tracking-tighter" : "text-lg sm:text-base tracking-tight")
-                              : "text-3xl sm:text-2xl tracking-wider"
+                              : "text-2xl sm:text-xl tracking-tight"
                           )}>
                             {formatTime(timerSeconds)}
                           </span>

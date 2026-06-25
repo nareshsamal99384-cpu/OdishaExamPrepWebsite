@@ -7129,7 +7129,7 @@ const ExamDetailPage = () => {
       <Navbar user={user} isAdmin={isAdmin} onHomeClick={handleHomeClick} />
 
       <main className={cn(
-        "flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pt-4 md:pt-8 overflow-x-hidden transition-[padding-bottom] duration-500",
+        "relative flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pt-4 md:pt-8 overflow-x-hidden transition-[padding-bottom] duration-500",
         isBottomNavVisible 
           ? "pb-28 sm:pb-24 lg:pb-32" 
           : "pb-12 sm:pb-16 lg:pb-20"
@@ -7173,38 +7173,80 @@ const ExamDetailPage = () => {
         </button>
 
         <button onClick={handleHomeClick} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'home' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-          <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'home' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
-            <LayoutDashboard className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
+          <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+            {mainTab === 'home' && (
+              <motion.div
+                layoutId="activeExamDetailBottomTabPill"
+                className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                transition={{ type: "spring", stiffness: 380, damping: 25 }}
+              />
+            )}
+            <LayoutDashboard className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
           </div>
           <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'home' ? 'font-black' : 'font-extrabold'}`}>Home</span>
         </button>
         <button onClick={() => handleTabClick('courses')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'courses' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-          <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'courses' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
-            <BookOpen className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
+          <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+            {mainTab === 'courses' && (
+              <motion.div
+                layoutId="activeExamDetailBottomTabPill"
+                className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                transition={{ type: "spring", stiffness: 380, damping: 25 }}
+              />
+            )}
+            <BookOpen className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
           </div>
           <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'courses' ? 'font-black' : 'font-extrabold'}`}>Courses</span>
         </button>
         <button onClick={() => handleTabClick('analytics')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'analytics' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-          <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'analytics' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
-            <BarChart3 className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
+          <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+            {mainTab === 'analytics' && (
+              <motion.div
+                layoutId="activeExamDetailBottomTabPill"
+                className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                transition={{ type: "spring", stiffness: 380, damping: 25 }}
+              />
+            )}
+            <BarChart3 className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
           </div>
           <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'analytics' ? 'font-black' : 'font-extrabold'}`}>Analytics</span>
         </button>
         <button onClick={() => handleTabClick('history')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'history' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-          <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'history' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
-            <History className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
+          <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+            {mainTab === 'history' && (
+              <motion.div
+                layoutId="activeExamDetailBottomTabPill"
+                className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                transition={{ type: "spring", stiffness: 380, damping: 25 }}
+              />
+            )}
+            <History className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
           </div>
           <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'history' ? 'font-black' : 'font-extrabold'}`}>History</span>
         </button>
         <button onClick={() => handleTabClick('library')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'library' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-          <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'library' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
-            <BookMarked className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
+          <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+            {mainTab === 'library' && (
+              <motion.div
+                layoutId="activeExamDetailBottomTabPill"
+                className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                transition={{ type: "spring", stiffness: 380, damping: 25 }}
+              />
+            )}
+            <BookMarked className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
           </div>
           <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'library' ? 'font-black' : 'font-extrabold'}`}>Library</span>
         </button>
         <button onClick={() => handleTabClick('ai_mentor')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'ai_mentor' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-          <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'ai_mentor' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
-            <Sparkles className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
+          <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+            {mainTab === 'ai_mentor' && (
+              <motion.div
+                layoutId="activeExamDetailBottomTabPill"
+                className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                transition={{ type: "spring", stiffness: 380, damping: 25 }}
+              />
+            )}
+            <Sparkles className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
           </div>
           <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'ai_mentor' ? 'font-black' : 'font-extrabold'}`}>AI Mentor</span>
         </button>
@@ -7230,6 +7272,21 @@ const ExamDetailPage = () => {
   );
 };
 
+const tabVariants = {
+  enter: (dir: number) => ({
+    x: dir === 0 ? 0 : (dir > 0 ? "100%" : "-100%"),
+    opacity: 0,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+  },
+  exit: (dir: number) => ({
+    x: dir === 0 ? 0 : (dir > 0 ? "-100%" : "100%"),
+    opacity: 0,
+  }),
+};
+
 function AppContent() {
   const { user, loading, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
@@ -7242,6 +7299,21 @@ function AppContent() {
     }
     return 'home';
   });
+
+  // Track previous tab to determine slide direction
+  const prevTabRef = useRef(mainTab);
+  const prevTab = prevTabRef.current;
+  let tabDirection = 0;
+  if (prevTab !== mainTab) {
+    const tabsOrder = ['home', 'courses', 'analytics', 'history', 'library', 'ai_mentor'];
+    const prevIdx = tabsOrder.indexOf(prevTab);
+    const currentIdx = tabsOrder.indexOf(mainTab);
+    if (prevIdx !== -1 && currentIdx !== -1) {
+      tabDirection = currentIdx > prevIdx ? 1 : -1;
+    }
+    prevTabRef.current = mainTab;
+  }
+
   const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
 
   const handleTabClick = (tab: 'home' | 'courses' | 'analytics' | 'history' | 'library' | 'ai_mentor') => {
@@ -7522,18 +7594,23 @@ function AppContent() {
                 <Navbar user={user} isAdmin={isAdmin} onHomeClick={handleHomeClick} />
 
                 <main className={cn(
-                  "flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pt-4 md:pt-8 overflow-x-hidden transition-[padding-bottom] duration-500",
+                  "relative flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pt-4 md:pt-8 overflow-x-hidden transition-[padding-bottom] duration-500",
                   isBottomNavVisible 
                     ? "pb-28 sm:pb-24 lg:pb-32" 
                     : "pb-12 sm:pb-16 lg:pb-20"
                 )}>
-                  <AnimatePresence mode="wait">
+                  <AnimatePresence mode="popLayout" initial={false}>
                     <motion.div
                       key={`${mainTab}-${dashboardKey}`}
-                      initial={{ opacity: 0, scale: 0.99, y: 4 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.99, y: -4 }}
-                      transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+                      custom={tabDirection}
+                      variants={tabVariants}
+                      initial="enter"
+                      animate="center"
+                      exit="exit"
+                      transition={{
+                        x: { type: "spring", stiffness: 260, damping: 28 },
+                        opacity: { duration: 0.22, ease: "easeInOut" }
+                      }}
                       className="w-full"
                     >
                       <DashboardContent 
@@ -7569,38 +7646,80 @@ function AppContent() {
                   </button>
 
                   <button onClick={handleHomeClick} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'home' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'home' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
-                      <LayoutDashboard className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
+                    <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+                      {mainTab === 'home' && (
+                        <motion.div
+                          layoutId="activeAppContentBottomTabPill"
+                          className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                          transition={{ type: "spring", stiffness: 380, damping: 25 }}
+                        />
+                      )}
+                      <LayoutDashboard className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
                     </div>
                     <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'home' ? 'font-black' : 'font-extrabold'}`}>Home</span>
                   </button>
                   <button onClick={() => handleTabClick('courses')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'courses' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'courses' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
-                      <BookOpen className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
+                    <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+                      {mainTab === 'courses' && (
+                        <motion.div
+                          layoutId="activeAppContentBottomTabPill"
+                          className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                          transition={{ type: "spring", stiffness: 380, damping: 25 }}
+                        />
+                      )}
+                      <BookOpen className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
                     </div>
                     <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'courses' ? 'font-black' : 'font-extrabold'}`}>Courses</span>
                   </button>
                   <button onClick={() => handleTabClick('analytics')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'analytics' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'analytics' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
-                      <BarChart3 className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
+                    <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+                      {mainTab === 'analytics' && (
+                        <motion.div
+                          layoutId="activeAppContentBottomTabPill"
+                          className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                          transition={{ type: "spring", stiffness: 380, damping: 25 }}
+                        />
+                      )}
+                      <BarChart3 className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
                     </div>
                     <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'analytics' ? 'font-black' : 'font-extrabold'}`}>Analytics</span>
                   </button>
                   <button onClick={() => handleTabClick('history')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'history' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'history' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
-                      <History className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
+                    <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+                      {mainTab === 'history' && (
+                        <motion.div
+                          layoutId="activeAppContentBottomTabPill"
+                          className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                          transition={{ type: "spring", stiffness: 380, damping: 25 }}
+                        />
+                      )}
+                      <History className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
                     </div>
                     <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'history' ? 'font-black' : 'font-extrabold'}`}>History</span>
                   </button>
                   <button onClick={() => handleTabClick('library')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'library' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'library' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
-                      <BookMarked className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
+                    <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+                      {mainTab === 'library' && (
+                        <motion.div
+                          layoutId="activeAppContentBottomTabPill"
+                          className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                          transition={{ type: "spring", stiffness: 380, damping: 25 }}
+                        />
+                      )}
+                      <BookMarked className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
                     </div>
                     <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'library' ? 'font-black' : 'font-extrabold'}`}>Library</span>
                   </button>
                   <button onClick={() => handleTabClick('ai_mentor')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'ai_mentor' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
-                    <div className={`p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border ${mainTab === 'ai_mentor' ? 'bg-brand-500/10 border-brand-500/15 text-brand-650 shadow-sm' : 'bg-transparent border-transparent hover:bg-slate-500/5 hover:text-slate-800'}`}>
-                      <Sparkles className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
+                    <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+                      {mainTab === 'ai_mentor' && (
+                        <motion.div
+                          layoutId="activeAppContentBottomTabPill"
+                          className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                          transition={{ type: "spring", stiffness: 380, damping: 25 }}
+                        />
+                      )}
+                      <Sparkles className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
                     </div>
                     <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'ai_mentor' ? 'font-black' : 'font-extrabold'}`}>AI Mentor</span>
                   </button>
