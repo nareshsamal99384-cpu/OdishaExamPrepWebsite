@@ -1673,7 +1673,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
     }
 
     // Track cursor Cartesian coordinates
-    if (svgRef.current) {
+    if (showCoordinates && !isPanning && svgRef.current) {
       const rect = svgRef.current.getBoundingClientRect();
       const containerRect = e.currentTarget.getBoundingClientRect();
       
