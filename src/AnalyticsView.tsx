@@ -525,7 +525,7 @@ function SkeletonStatCard() {
 
 function AnalyticsSkeleton() {
   return (
-    <div className="w-full mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8 pb-32 sm:pb-24 relative z-10">
+    <div className="w-full mx-auto px-4 sm:px-0 pt-4 sm:pt-6 space-y-6 sm:space-y-8 pb-32 sm:pb-24 relative z-10">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
         <SkeletonStatCard />
         <SkeletonStatCard />
@@ -1369,7 +1369,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
         variants={stagger.containerDelay(0.1, 0.1)}
         initial="hidden"
         animate="show"
-        className="w-full mx-auto px-4 sm:px-0 space-y-6 sm:space-y-8 pb-32 sm:pb-24 relative z-10"
+        className="w-full mx-auto px-4 sm:px-0 pt-4 sm:pt-6 space-y-6 sm:space-y-8 pb-32 sm:pb-24 relative z-10"
       >
         {/* Redesigned Stat Cards Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
