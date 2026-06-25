@@ -5847,8 +5847,13 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-             <div className="relative w-full sm:w-64">
+          <div className={cn(
+            "w-full lg:w-auto",
+            isMobile
+              ? "flex flex-row items-center gap-2.5"
+              : "flex flex-col sm:flex-row items-center gap-3"
+          )}>
+             <div className="relative flex-1 sm:w-64">
                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                <input 
                  type="text" 
@@ -5858,18 +5863,18 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                  className="w-full pl-10 pr-4 py-3 sm:py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 text-sm font-medium outline-none transition-all shadow-sm"
                />
              </div>
-             <div className="relative w-full sm:w-auto">
+             <div className={cn("relative", isMobile ? "w-[135px] shrink-0" : "w-full sm:w-auto")}>
                <select 
                  value={bankSortBy}
                  onChange={e => setBankSortBy(e.target.value)}
-                 className="w-full sm:w-auto pl-4 pr-10 py-3 sm:py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 text-sm font-bold text-slate-700 outline-none transition-all cursor-pointer shadow-sm appearance-none"
+                 className="w-full sm:w-auto pl-3 pr-8 py-3 sm:py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 text-xs sm:text-sm font-bold text-slate-700 outline-none transition-all cursor-pointer shadow-sm appearance-none"
                >
-                  <option value="Name">Sort by Name</option>
-                  <option value="Most Questions">Most Questions</option>
-                  <option value="Least Questions">Least Questions</option>
+                  <option value="Name">{isMobile ? "Sort: Name" : "Sort by Name"}</option>
+                  <option value="Most Questions">{isMobile ? "Sort: Most Qs" : "Most Questions"}</option>
+                  <option value="Least Questions">{isMobile ? "Sort: Least Qs" : "Least Questions"}</option>
                </select>
-               <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                 <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+               <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                 <ChevronRight className="w-3.5 h-3.5 text-slate-400 rotate-90" />
                </div>
              </div>
           </div>
@@ -5897,10 +5902,14 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 hidden: { opacity: 0 },
                 show: {
                   opacity: 1,
-                  transition: { staggerChildren: isMobile ? 0 : 0.1 }
+                  transition: { staggerChildren: isMobile ? 0.05 : 0.1 }
                 }
               }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
+              className={cn(
+                isMobile
+                  ? "flex flex-col gap-3.5"
+                  : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
+              )}
             >
           {items.map((item) => {
             const isLocked = item.isPremium && !hasAccessTo(item);
@@ -5908,107 +5917,194 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               <motion.div
                 key={item.id}
                 variants={{
-                  hidden: { opacity: 0, y: 20 },
+                  hidden: { opacity: 0, y: 15 },
                   show: { opacity: 1, y: 0 }
                 }}
                 whileHover={isMobile ? undefined : whileHover.liftTap}
                 whileTap={isMobile ? undefined : whileTap.press}
+                className="w-full"
               >
-                <Card 
-                  onClick={() => setSelectedBankItem(item)}
-                  className={cn(
-                    "group cursor-pointer relative overflow-hidden rounded-[2rem] h-full border-slate-200/50 bg-white shadow-sm flex flex-col",
-                    !isMobile && "hover:border-brand-300/80 hover:-translate-y-1.5 transition-all duration-500 hover:shadow-xl hover:shadow-brand-500/5 premium-shine-container"
-                  )}
-                >
-                  {/* Ambient grid-bg inside the card */}
-                  <div className={cn("absolute inset-0 grid-bg opacity-[0.02] pointer-events-none", !isMobile && "group-hover:opacity-[0.04] transition-opacity duration-500")} />
-                  
-                  {/* Hero Image Section */}
-                  <div className={cn("h-44 overflow-hidden relative shrink-0 border-b border-slate-100", isLocked && "blur-[1px]")}>
-                    <img 
-                      src={getDirectImageUrl(item.image)} 
-                      alt={item.title} 
-                      loading="lazy"
-                      decoding="async"
-                      className={cn(
-                        "w-full h-full object-cover select-none pointer-events-none",
-                        !isMobile && "group-hover:scale-105 transition-transform duration-700"
-                      )}
-                      referrerPolicy="no-referrer"
-                    />
-                    
-                    {/* Linear contrast gradient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none opacity-60" />
-                    
-                    {isLocked && (
-                      <div className={cn("absolute inset-0 bg-slate-950/20 flex items-center justify-center", !isMobile && "backdrop-blur-[2px]")}>
-                        <div className="w-12 h-12 bg-white/95 rounded-2xl flex items-center justify-center shadow-lg border border-slate-200/50">
-                           <Lock className="w-5 h-5 text-[#8A1C36]" />
-                        </div>
-                      </div>
+                {isMobile ? (
+                  <div
+                    onClick={() => setSelectedBankItem(item)}
+                    className={cn(
+                      "p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300",
+                      isLocked 
+                        ? "shadow-[0_4px_16px_-4px_rgba(245,158,11,0.06),0_1px_2px_rgba(245,158,11,0.02)] active:border-amber-300"
+                        : "shadow-[0_4px_16px_-4px_rgba(138,28,54,0.06),0_1px_2px_rgba(138,28,54,0.02)] active:border-brand-300"
                     )}
-                  </div>
-                  
-                  {/* Card Content Body */}
-                  <div className={cn("p-6 flex flex-col flex-1 relative z-10 bg-white/90", !isMobile && "bg-white/50 backdrop-blur-sm", isLocked && "opacity-60")}>
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className={cn("text-lg font-serif font-extrabold text-slate-900 capitalize tracking-tight leading-snug line-clamp-1", !isMobile && "group-hover:text-brand-650 transition-colors")}>
-                        {item.title.toLowerCase()}
-                      </h3>
-                      {isLocked ? (
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <Lock className="w-3.5 h-3.5 text-[#8A1C36]" />
-                          <span className="px-2 py-0.5 bg-rose-50 text-[#8A1C36] text-[8px] font-black uppercase tracking-wider rounded border border-rose-200/40">
-                            Premium
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[8px] font-black uppercase tracking-wider rounded border border-emerald-200/40 shrink-0">
-                          Free
-                        </span>
-                      )}
-                    </div>
-                    
-                    {/* Stats and Highlights */}
-                    <div className="space-y-3.5 mb-6">
-                      <div className="flex items-center gap-2 text-slate-500">
-                        <div className={cn("w-6.5 h-6.5 rounded-lg bg-slate-50 border border-slate-100/60 flex items-center justify-center text-slate-400 shadow-sm", !isMobile && "group-hover:text-brand-500 group-hover:bg-brand-50/50 transition-all")}>
-                          <FileText className="w-3.5 h-3.5" />
-                        </div>
-                        <span className={cn("text-xs font-bold text-slate-500", !isMobile && "group-hover:text-slate-700 transition-colors")}>
-                          {item.questions} Practice Questions
-                        </span>
+                  >
+                    <div className={cn(
+                      "absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none",
+                      isLocked 
+                        ? "bg-gradient-to-r from-amber-500/0 via-amber-500/[0.012] to-amber-500/0"
+                        : "bg-gradient-to-r from-brand-500/0 via-brand-500/[0.012] to-brand-500/0"
+                    )} />
+                    <div className={cn(
+                      "absolute left-0 top-3.5 bottom-3.5 w-1 rounded-r-md opacity-80",
+                      isLocked 
+                        ? "bg-gradient-to-b from-amber-400 to-orange-500" 
+                        : "bg-gradient-to-b from-brand-500 to-brand-700"
+                    )} />
+
+                    <div className="flex items-center gap-3.5 min-w-0 flex-1 pl-1">
+                      <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 shadow-sm relative border border-slate-100">
+                        <img 
+                          src={getDirectImageUrl(item.image)} 
+                          alt={item.title} 
+                          loading="lazy"
+                          decoding="async"
+                          className={cn(
+                            "w-full h-full object-cover select-none pointer-events-none",
+                            isLocked && "blur-[1px]"
+                          )}
+                          referrerPolicy="no-referrer"
+                        />
+                        {isLocked && (
+                          <div className="absolute inset-0 bg-slate-950/20 flex items-center justify-center">
+                            <Lock className="w-3.5 h-3.5 text-white" />
+                          </div>
+                        )}
                       </div>
                       
-                      {item.tagline && (
-                        <div className="flex items-center gap-2 text-brand-650 bg-gradient-to-r from-brand-50/70 to-indigo-50/40 px-3 py-1.5 rounded-xl w-fit border border-brand-100/30">
-                          <Zap className="w-3.5 h-3.5 fill-brand-650 text-brand-650 shrink-0" />
-                          <span className="text-[10px] font-black uppercase tracking-wider">{item.tagline}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h4 className="font-extrabold text-[14.5px] text-slate-855 tracking-tight leading-snug line-clamp-2 capitalize">
+                            {item.title.toLowerCase()}
+                          </h4>
+                          {isLocked ? (
+                            <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 text-[8.5px] font-black rounded border border-amber-100 uppercase tracking-wider shrink-0">
+                              Premium
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 text-[8.5px] font-black rounded border border-emerald-100 uppercase tracking-wider shrink-0">
+                              Free
+                            </span>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-1.5 mt-1.5 text-[11px] font-bold text-slate-455 flex-wrap">
+                          <span className="flex items-center gap-0.5 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100/50">
+                            <FileText className="w-3 h-3 text-slate-400" />
+                            {item.questions} Qs
+                          </span>
+                          
+                          {item.tagline && (
+                            <span className="flex items-center gap-0.5 bg-brand-50/50 text-brand-650 px-1.5 py-0.5 rounded border border-brand-100/20 text-[9.5px] font-black uppercase tracking-wider">
+                              <Zap className="w-2.5 h-2.5 fill-brand-650 text-brand-650 shrink-0" />
+                              {item.tagline}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={cn(
+                      "w-8 h-8 rounded-full border flex items-center justify-center shrink-0 shadow-2xs group-active:translate-x-0.5 transition-all duration-300",
+                      isLocked
+                        ? "bg-amber-50 border-amber-100 text-amber-600 group-active:bg-amber-500 group-active:text-white"
+                        : "bg-slate-50 border-slate-100 text-slate-400 group-active:bg-brand-50 group-active:border-brand-100 group-active:text-brand-600"
+                    )}>
+                      {isLocked ? <Lock className="w-3.5 h-3.5" /> : <ChevronRight className="w-4 h-4" />}
+                    </div>
+                  </div>
+                ) : (
+                  <Card 
+                    onClick={() => setSelectedBankItem(item)}
+                    className={cn(
+                      "group cursor-pointer relative overflow-hidden rounded-[2rem] h-full border-slate-200/50 bg-white shadow-sm flex flex-col",
+                      !isMobile && "hover:border-brand-300/80 hover:-translate-y-1.5 transition-all duration-500 hover:shadow-xl hover:shadow-brand-500/5 premium-shine-container"
+                    )}
+                  >
+                    {/* Ambient grid-bg inside the card */}
+                    <div className={cn("absolute inset-0 grid-bg opacity-[0.02] pointer-events-none", !isMobile && "group-hover:opacity-[0.04] transition-opacity duration-500")} />
+                    
+                    {/* Hero Image Section */}
+                    <div className={cn("h-44 overflow-hidden relative shrink-0 border-b border-slate-100", isLocked && "blur-[1px]")}>
+                      <img 
+                        src={getDirectImageUrl(item.image)} 
+                        alt={item.title} 
+                        loading="lazy"
+                        decoding="async"
+                        className={cn(
+                          "w-full h-full object-cover select-none pointer-events-none",
+                          !isMobile && "group-hover:scale-105 transition-transform duration-700"
+                        )}
+                        referrerPolicy="no-referrer"
+                      />
+                      
+                      {/* Linear contrast gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none opacity-60" />
+                      
+                      {isLocked && (
+                        <div className={cn("absolute inset-0 bg-slate-950/20 flex items-center justify-center", !isMobile && "backdrop-blur-[2px]")}>
+                          <div className="w-12 h-12 bg-white/95 rounded-2xl flex items-center justify-center shadow-lg border border-slate-200/50">
+                             <Lock className="w-5 h-5 text-[#8A1C36]" />
+                          </div>
                         </div>
                       )}
                     </div>
                     
-                    {/* View Details Button */}
-                    <div className="mt-auto pt-2">
-                      <button 
-                        className={cn(
-                          "w-full py-3 px-6 rounded-xl font-black text-xs uppercase tracking-wider relative overflow-hidden flex items-center justify-center gap-2 border border-brand-100 bg-brand-50/40 text-brand-600 shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
-                          !isMobile && "transition-all duration-500 hover:scale-[1.02] active:scale-95 group-hover:bg-gradient-to-r group-hover:from-brand-600 group-hover:to-brand-500 group-hover:text-white group-hover:border-transparent group-hover:shadow-lg group-hover:shadow-brand-500/20"
+                    {/* Card Content Body */}
+                    <div className={cn("p-6 flex flex-col flex-1 relative z-10 bg-white/90", !isMobile && "bg-white/50 backdrop-blur-sm", isLocked && "opacity-60")}>
+                      <div className="flex justify-between items-start mb-3">
+                        <h3 className={cn("text-lg font-serif font-extrabold text-slate-900 capitalize tracking-tight leading-snug line-clamp-1", !isMobile && "group-hover:text-brand-650 transition-colors")}>
+                          {item.title.toLowerCase()}
+                        </h3>
+                        {isLocked ? (
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <Lock className="w-3.5 h-3.5 text-[#8A1C36]" />
+                            <span className="px-2 py-0.5 bg-rose-50 text-[#8A1C36] text-[8px] font-black uppercase tracking-wider rounded border border-rose-200/40">
+                              Premium
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[8px] font-black uppercase tracking-wider rounded border border-emerald-200/40 shrink-0">
+                            Free
+                          </span>
                         )}
-                      >
-                        {/* Button Shine Effect */}
-                        {!isMobile && (
-                          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
+                      </div>
+                      
+                      {/* Stats and Highlights */}
+                      <div className="space-y-3.5 mb-6">
+                        <div className="flex items-center gap-2 text-slate-500">
+                          <div className={cn("w-6.5 h-6.5 rounded-lg bg-slate-50 border border-slate-100/60 flex items-center justify-center text-slate-400 shadow-sm", !isMobile && "group-hover:text-brand-500 group-hover:bg-brand-50/50 transition-all")}>
+                            <FileText className="w-3.5 h-3.5" />
+                          </div>
+                          <span className={cn("text-xs font-bold text-slate-500", !isMobile && "group-hover:text-slate-700 transition-colors")}>
+                            {item.questions} Practice Questions
+                          </span>
+                        </div>
+                        
+                        {item.tagline && (
+                          <div className="flex items-center gap-2 text-brand-650 bg-gradient-to-r from-brand-50/70 to-indigo-50/40 px-3 py-1.5 rounded-xl w-fit border border-brand-100/30">
+                            <Zap className="w-3.5 h-3.5 fill-brand-650 text-brand-650 shrink-0" />
+                            <span className="text-[10px] font-black uppercase tracking-wider">{item.tagline}</span>
+                          </div>
                         )}
-                        <span className="relative z-10 flex items-center justify-center gap-1.5">
-                          {isLocked ? 'Unlock to View' : 'View Details'}
-                          <ArrowRight className={cn("w-3.5 h-3.5 relative -top-[0.5px]", !isMobile && "group-hover:translate-x-1 transition-transform")} />
-                        </span>
-                      </button>
+                      </div>
+                      
+                      {/* View Details Button */}
+                      <div className="mt-auto pt-2">
+                        <button 
+                          className={cn(
+                            "w-full py-3 px-6 rounded-xl font-black text-xs uppercase tracking-wider relative overflow-hidden flex items-center justify-center gap-2 border border-brand-100 bg-brand-50/40 text-brand-600 shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
+                            !isMobile && "transition-all duration-500 hover:scale-[1.02] active:scale-95 group-hover:bg-gradient-to-r group-hover:from-brand-600 group-hover:to-brand-500 group-hover:text-white group-hover:border-transparent group-hover:shadow-lg group-hover:shadow-brand-500/20"
+                          )}
+                        >
+                          {/* Button Shine Effect */}
+                          {!isMobile && (
+                            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
+                          )}
+                          <span className="relative z-10 flex items-center justify-center gap-1.5">
+                            {isLocked ? 'Unlock to View' : 'View Details'}
+                            <ArrowRight className={cn("w-3.5 h-3.5 relative -top-[0.5px]", !isMobile && "group-hover:translate-x-1 transition-transform")} />
+                          </span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </Card>
+                  </Card>
+                )}
               </motion.div>
             );
           })}
