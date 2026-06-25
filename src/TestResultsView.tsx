@@ -194,7 +194,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-6">
           
           {/* Overall Score Card */}
-          <div className="lg:col-span-1 relative overflow-hidden bg-white/65 backdrop-blur-xl p-6 sm:p-8 rounded-[2.5rem] border border-white/85 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] flex flex-col justify-between group transition-all duration-500 cursor-default">
+          <div className="lg:col-span-1 relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl p-6 sm:p-8 rounded-[2.5rem] border border-slate-200/60 lg:border-white/85 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/40 hover:shadow-[0_20px_50px_rgba(138,28,54,0.045)] flex flex-col justify-between group transition-all duration-500 cursor-default">
             {/* Background Glow */}
             <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#8a1c36]/5 rounded-full blur-3xl pointer-events-none group-hover:bg-[#8a1c36]/10 transition-colors duration-500" />
             <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-indigo-500/3 rounded-full blur-3xl pointer-events-none group-hover:bg-indigo-500/5 transition-colors duration-500" />
@@ -212,7 +212,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
             </div>
 
             {/* Performance Calculation Breakdown */}
-            <div className="relative z-10 bg-white/45 border border-white/60 backdrop-blur-md rounded-2xl p-4 text-left space-y-2.5 mt-8 hover:bg-white/80 transition-all duration-300">
+            <div className="relative z-10 bg-white/75 lg:bg-white/45 border border-slate-100 lg:border-white/60 backdrop-blur-none lg:backdrop-blur-md rounded-2xl p-4 text-left space-y-2.5 mt-8 hover:bg-white/80 transition-all duration-300">
               <div className="flex justify-between items-center text-xs font-bold text-slate-500">
                 <span>Total Marks</span>
                 <span className="text-slate-800 font-extrabold">{totalMarks} Marks</span>
@@ -238,7 +238,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
           <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
             
             {/* Time Taken */}
-            <div className="relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
+            <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
               <div className="absolute -top-12 -right-12 w-28 h-28 bg-[#8a1c36]/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
               <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
                 <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Time Taken</span>
@@ -252,7 +252,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
             </div>
 
             {/* Average Speed */}
-            <div className="relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
+            <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
               <div className="absolute -top-12 -right-12 w-28 h-28 bg-[#8a1c36]/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
               <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
                 <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Average Speed</span>
@@ -266,7 +266,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
             </div>
 
             {/* Marked Review */}
-            <div className="relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
+            <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
               <div className="absolute -top-12 -right-12 w-28 h-28 bg-amber-500/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
               <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
                 <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Marked Review</span>
@@ -280,7 +280,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
             </div>
 
             {/* Correct Answers */}
-            <div className="relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
+            <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
               <div className="absolute -top-12 -right-12 w-28 h-28 bg-emerald-500/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
               <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
                 <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Correct Answers</span>
@@ -294,7 +294,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
             </div>
 
             {/* Incorrect Answers */}
-            <div className="relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
+            <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
               <div className="absolute -top-12 -right-12 w-28 h-28 bg-rose-500/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
               <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
                 <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Incorrect Answers</span>
@@ -308,7 +308,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
             </div>
 
             {/* Unanswered */}
-            <div className="relative overflow-hidden bg-white/65 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
+            <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.015)] hover:border-brand-200/30 hover:shadow-[0_20px_45px_rgba(138,28,54,0.045)] hover:-translate-y-1 flex flex-col justify-between group transition-all duration-300 cursor-default">
               <div className="absolute -top-12 -right-12 w-28 h-28 bg-slate-500/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
               <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
                 <span className="text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Unanswered</span>
