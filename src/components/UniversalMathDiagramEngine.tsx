@@ -1257,6 +1257,27 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
   const prevPinchDistance = useRef<number | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
 
+  // Performance-optimized gesture tracking refs to bypass React render cycle
+  const currentZoom = useRef(zoom);
+  const currentOffset = useRef(offset);
+  const transformWrapperRef = useRef<HTMLDivElement>(null);
+  const rafId = useRef<number | null>(null);
+
+  // Sync refs when state changes from external triggers (e.g. toolbar buttons)
+  useEffect(() => {
+    currentZoom.current = zoom;
+  }, [zoom]);
+
+  useEffect(() => {
+    currentOffset.current = offset;
+  }, [offset]);
+
+  useEffect(() => {
+    return () => {
+      if (rafId.current) cancelAnimationFrame(rafId.current);
+    };
+  }, []);
+
   // Hover and Click selections
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -1644,8 +1665,8 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
     panStart.current = {
       x: e.clientX,
       y: e.clientY,
-      offsetX: offset.x,
-      offsetY: offset.y,
+      offsetX: currentOffset.current.x,
+      offsetY: currentOffset.current.y,
     };
     setIsPanning(true);
     e.preventDefault();
@@ -1666,7 +1687,15 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
         const factor = distance / prevPinchDistance.current;
         // Dampen scale change for smooth zooming
         const scaleChange = (factor - 1) * 0.45;
-        setZoom(prev => Math.min(3.0, Math.max(0.5, prev * (1 + scaleChange))));
+        const newZoom = Math.min(3.0, Math.max(0.5, currentZoom.current * (1 + scaleChange)));
+        currentZoom.current = newZoom;
+
+        if (rafId.current) cancelAnimationFrame(rafId.current);
+        rafId.current = requestAnimationFrame(() => {
+          if (transformWrapperRef.current) {
+            transformWrapperRef.current.style.transform = `translate3d(${currentOffset.current.x}px, ${currentOffset.current.y}px, 0) scale(${currentZoom.current})`;
+          }
+        });
       }
       prevPinchDistance.current = distance;
       return; // Skip standard panning and cursor coordinate tracking during pinch
@@ -1704,9 +1733,16 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
     if (isPanning && activePointers.current.size === 1) {
       const dx = e.clientX - panStart.current.x;
       const dy = e.clientY - panStart.current.y;
-      setOffset({
-        x: panStart.current.offsetX + dx / zoom,
-        y: panStart.current.offsetY + dy / zoom,
+      
+      const newX = panStart.current.offsetX + dx / currentZoom.current;
+      const newY = panStart.current.offsetY + dy / currentZoom.current;
+      currentOffset.current = { x: newX, y: newY };
+
+      if (rafId.current) cancelAnimationFrame(rafId.current);
+      rafId.current = requestAnimationFrame(() => {
+        if (transformWrapperRef.current) {
+          transformWrapperRef.current.style.transform = `translate3d(${currentOffset.current.x}px, ${currentOffset.current.y}px, 0) scale(${currentZoom.current})`;
+        }
       });
     }
   };
@@ -1716,6 +1752,15 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
     if (activePointers.current.size === 0) {
       activePointers.current.clear();
       prevPinchDistance.current = null;
+      
+      if (rafId.current) {
+        cancelAnimationFrame(rafId.current);
+        rafId.current = null;
+      }
+      
+      // Commit final values back to React state to ensure sync
+      setOffset(currentOffset.current);
+      setZoom(currentZoom.current);
     } else if (activePointers.current.size < 2) {
       prevPinchDistance.current = null;
     }
@@ -2120,17 +2165,20 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
  
         {/* The Animated/Panned Diagram Wrapper */}
         <div 
+          ref={transformWrapperRef}
           style={{ 
-            transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`, 
+            transform: `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${zoom})`, 
             transformOrigin: 'center center', 
-            transition: isPanning || draggedId ? 'none' : 'transform 0.15s cubic-bezier(0.1, 0.8, 0.25, 1)' 
+            transition: isPanning || draggedId ? 'none' : 'transform 0.15s cubic-bezier(0.1, 0.8, 0.25, 1)',
+            willChange: isPanning || draggedId ? 'transform' : 'auto',
+            touchAction: 'none'
           }}
           className="w-full max-w-[800px] flex justify-center items-center text-slate-800 dark:text-slate-200"
         >
           <svg
             ref={svgRef}
             width="100%"
-            style={{ aspectRatio: `${vWidth}/${vHeight}` }}
+            style={{ aspectRatio: `${vWidth}/${vHeight}`, touchAction: 'none' }}
             viewBox={`0 0 ${vWidth} ${vHeight}`}
             preserveAspectRatio={data.aspectRatio || "xMidYMid meet"}
             className="w-full h-auto pointer-events-auto"
