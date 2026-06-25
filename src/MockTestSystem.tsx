@@ -618,13 +618,13 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                     setUntimedPractice(false);
                   }}
                   className={cn(
-                    "p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border-2 text-left transition-all duration-300 flex flex-row sm:flex-col items-center sm:items-start gap-3 sm:gap-0 sm:justify-between sm:space-y-3 cursor-pointer active:scale-[0.98]",
+                    "p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border-2 text-left transition-all duration-300 flex flex-col gap-2 sm:gap-0 sm:space-y-3 cursor-pointer active:scale-[0.98]",
                     currentMode === 'mock'
                       ? "border-[#8a1c36] bg-[#8a1c36]/5 shadow-sm"
                       : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"
                   )}
                 >
-                  <div className="flex items-center justify-between w-full sm:w-auto sm:block">
+                  <div className="flex items-center justify-between w-full">
                     <span className={cn(
                       "px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded-md border whitespace-nowrap",
                       currentMode === 'mock'
@@ -633,16 +633,14 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                     )}>
                       🏆 Exam Mode
                     </span>
+                    <span className="text-[9px] font-black uppercase text-slate-400">Strict Timed</span>
                   </div>
-                  <div className="flex-1 sm:flex-initial min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-extrabold text-slate-800">Official Exam Simulation</h4>
-                      <span className="text-[9px] font-black uppercase text-slate-400 sm:hidden ml-2 shrink-0">Strict Timed</span>
-                    </div>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-slate-800">Official Exam Simulation</h4>
                     <p className="hidden sm:block text-[11px] text-slate-500 font-semibold leading-relaxed mt-1">
                       Strict countdown timer. Negative markings apply. Answers and explanations will be shown only after you submit the test.
                     </p>
-                    <p className="sm:hidden text-[10px] text-slate-500 font-semibold mt-0.5 leading-snug">Timer. Negative marking. Results after submission.</p>
+                    <p className="sm:hidden text-[10px] text-slate-500 font-semibold mt-0.5 leading-snug">Timer · Negative marking · Results after submission</p>
                   </div>
                 </button>
 
@@ -651,13 +649,13 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                   type="button"
                   onClick={() => setCurrentMode('practice')}
                   className={cn(
-                    "p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border-2 text-left transition-all duration-300 flex flex-row sm:flex-col items-center sm:items-start gap-3 sm:gap-0 sm:justify-between sm:space-y-3 cursor-pointer active:scale-[0.98]",
+                    "p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border-2 text-left transition-all duration-300 flex flex-col gap-2 sm:gap-0 sm:space-y-3 cursor-pointer active:scale-[0.98]",
                     currentMode === 'practice'
                       ? "border-emerald-500 bg-emerald-500/5 shadow-sm"
                       : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"
                   )}
                 >
-                  <div className="flex items-center justify-between w-full sm:w-auto sm:block">
+                  <div className="flex items-center justify-between w-full">
                     <span className={cn(
                       "px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded-md border whitespace-nowrap",
                       currentMode === 'practice'
@@ -666,19 +664,18 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                     )}>
                       📖 Practice Mode
                     </span>
+                    <span className="text-[9px] font-black uppercase text-slate-400">Self-Paced</span>
                   </div>
-                  <div className="flex-1 sm:flex-initial min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-extrabold text-slate-800">Interactive Self-Study</h4>
-                      <span className="text-[9px] font-black uppercase text-slate-400 sm:hidden ml-2 shrink-0">Self-Paced</span>
-                    </div>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-slate-800">Interactive Self-Study</h4>
                     <p className="hidden sm:block text-[11px] text-slate-500 font-semibold leading-relaxed mt-1">
                       Immediate feedback after each response. Detailed step-by-step solutions are shown instantly. Select timed or untimed practice.
                     </p>
-                    <p className="sm:hidden text-[10px] text-slate-500 font-semibold mt-0.5 leading-snug">Instant feedback. Step-by-step solutions.</p>
+                    <p className="sm:hidden text-[10px] text-slate-500 font-semibold mt-0.5 leading-snug">Instant feedback · Step-by-step solutions</p>
                   </div>
                 </button>
               </div>
+
 
               {/* Practice Mode Configurations */}
               {currentMode === 'practice' && (
