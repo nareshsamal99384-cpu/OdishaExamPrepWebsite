@@ -3965,7 +3965,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   <div className="absolute top-0 left-1/4 w-[180px] h-[180px] bg-brand-500/10 rounded-full blur-[50px] pointer-events-none" />
                   <div className="absolute bottom-0 right-1/4 w-[180px] h-[180px] bg-indigo-500/10 rounded-full blur-[50px] pointer-events-none" />
 
-                  <div className="bg-[#0B0F19] rounded-t-[2.45rem] sm:rounded-[2.45rem] p-5 sm:p-6 pb-6 sm:pb-7 relative overflow-hidden flex flex-col flex-1">
+                  <div className="bg-[#0B0F19] rounded-t-[2.45rem] sm:rounded-[2.45rem] p-4 sm:p-6 pb-5 sm:pb-7 relative overflow-hidden flex flex-col flex-1">
                     {/* Close button with subtle outline */}
                     {paymentState === 'idle' && (
                     <button 
@@ -3975,7 +3975,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         setPaymentState('idle');
                         setPaymentError(null);
                       }}
-                      className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 hover:scale-105 active:scale-95 transition-all z-20"
+                      className="absolute top-4 right-4 sm:top-5 sm:right-5 w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 hover:scale-105 active:scale-95 transition-all z-20"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -3989,20 +3989,20 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.25 }}
-                        className="text-center space-y-4 sm:space-y-5 flex flex-col flex-1 py-1 mt-2.5 overflow-visible"
+                        className="text-center space-y-3 sm:space-y-5 flex flex-col flex-1 py-1 mt-1 sm:mt-2.5 overflow-visible"
                       >
                         {/* Pulsing visual badge */}
                         <motion.div 
                           animate={{ y: [0, -4, 0] }}
                           transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-                          className="w-14 h-14 bg-gradient-to-tr from-brand-600 via-brand-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-[0_6px_20px_rgba(138,28,54,0.25)] border border-white/10 relative group shrink-0"
+                          className="w-11 h-11 sm:w-14 sm:h-14 bg-gradient-to-tr from-brand-600 via-brand-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-[0_6px_20px_rgba(138,28,54,0.25)] border border-white/10 relative group shrink-0"
                         >
-                          <Award className="text-white w-7 h-7 filter drop-shadow-[0_2px_6px_rgba(255,255,255,0.2)]" />
+                          <Award className="text-white w-5.5 h-5.5 sm:w-7 sm:h-7 filter drop-shadow-[0_2px_6px_rgba(255,255,255,0.2)]" />
                           <div className="absolute inset-0 border border-brand-400/25 rounded-2xl animate-ping opacity-25 pointer-events-none" />
                         </motion.div>
                         
-                        <div className="space-y-1.5 shrink-0">
-                          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight px-1 font-sans">
+                        <div className="space-y-1 sm:space-y-1.5 shrink-0">
+                          <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight leading-tight px-1 font-sans">
                             {paywallItemTitle.includes('Full Access') ? (
                               <>Unlock <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-pink-200 to-indigo-300">Full Access</span></>
                             ) : (
@@ -4028,7 +4028,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                               transition: { staggerChildren: 0.06 }
                             }
                           }}
-                          className="space-y-2 text-left bg-white/[0.02] border border-white/[0.06] p-4 rounded-[1.25rem] backdrop-blur-md shrink-0"
+                          className="space-y-1.5 sm:space-y-2 text-left bg-white/[0.02] border border-white/[0.06] p-3 sm:p-4 rounded-[1.25rem] backdrop-blur-md shrink-0"
                         >
                           {paywallFeatures.map((benefit, i) => (
                             <motion.div 
@@ -4037,25 +4037,31 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                 hidden: { opacity: 0, x: -8 },
                                 show: { opacity: 1, x: 0 }
                               }}
-                              className="flex items-center gap-2.5 text-slate-200 font-bold"
+                              className="flex items-center gap-2 sm:gap-2.5 text-slate-200 font-bold"
                             >
                               <div className="w-4.5 h-4.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0">
                                 <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                               </div>
-                              <span className="text-[11px] sm:text-xs tracking-wide">{benefit}</span>
+                              <span className="text-[10.5px] sm:text-xs tracking-wide">{benefit}</span>
                             </motion.div>
                           ))}
                         </motion.div>
 
                         {/* Pricing Block */}
-                        <div className="space-y-3 pt-0.5 shrink-0">
-                          <div className="flex flex-col items-center justify-center">
-                            <div className="flex items-end justify-center gap-2 mb-1">
-                              <span className="text-base sm:text-lg font-bold text-slate-500 line-through mb-0.5 font-mono">₹{paywallOriginalPrice}</span>
-                              <span className="text-3xl sm:text-4xl font-black text-white font-mono tracking-tighter">₹{paywallPrice}</span>
+                        <div className="space-y-2 sm:space-y-3 pt-0.5 shrink-0">
+                          <div className="flex flex-col items-center justify-center gap-1 sm:gap-0">
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="text-sm sm:text-lg font-bold text-slate-500 line-through font-mono">₹{paywallOriginalPrice}</span>
+                              <span className="text-2xl sm:text-4xl font-black text-white font-mono tracking-tighter">₹{paywallPrice}</span>
+                              <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 sm:hidden">
+                                {Math.round(((paywallOriginalPrice - paywallPrice) / paywallOriginalPrice) * 100)}% OFF
+                              </span>
                             </div>
-                            <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                            <span className="hidden sm:inline-block text-[9px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 mt-1">
                               {Math.round(((paywallOriginalPrice - paywallPrice) / paywallOriginalPrice) * 100)}% OFF • Lifetime Access
+                            </span>
+                            <span className="sm:hidden text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                              Lifetime Access Included
                             </span>
                           </div>
 
@@ -6439,7 +6445,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 ))}
               </div>
 
-              <div className="relative z-10 px-6 py-8 sm:p-10 lg:p-14 flex flex-col lg:flex-row items-center justify-between gap-10">
+              <div className="relative z-10 px-4 py-6 sm:p-10 lg:p-14 flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10">
                 <motion.div 
                   initial={isMobile ? "show" : "hidden"}
                   animate={isMobile ? "show" : undefined}
@@ -6454,7 +6460,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       }
                     }
                   }}
-                  className="flex flex-col sm:flex-row items-center gap-6 sm:gap-10 flex-1"
+                  className="flex flex-col sm:flex-row items-center gap-4 sm:gap-10 flex-1 w-full"
                 >
                   {/* Rotating Orbital Emblem */}
                   <motion.div 
@@ -6462,7 +6468,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       hidden: { scale: 0.8, opacity: 0 },
                       show: { scale: 1, opacity: 1 }
                     }}
-                    className="relative shrink-0 flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32"
+                    className="relative shrink-0 flex items-center justify-center w-14 h-14 sm:w-28 sm:h-28 lg:w-32 lg:h-32"
                   >
                     {/* Rotating Dashed Orbit 1 */}
                     <div className={cn(
@@ -6473,44 +6479,44 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     
                     {/* Rotating Dashed Orbit 2 (Counter-rotated) */}
                     <div className={cn(
-                      "absolute inset-2 rounded-full border border-dashed opacity-20 transform-gpu will-change-transform",
+                      "absolute inset-1 sm:inset-2 rounded-full border border-dashed opacity-20 transform-gpu will-change-transform",
                       isMobile ? "" : "animate-[spin_20s_linear_infinite_reverse]",
                       hasAccessTo(`exam_bundle_${selectedExam}`) ? "border-teal-300" : "border-indigo-400"
                     )} />
 
                     {/* Ring Pulse Glow */}
                     <div className={cn(
-                      "absolute inset-4 rounded-full border opacity-15 transform-gpu",
+                      "absolute inset-2 sm:inset-4 rounded-full border opacity-15 transform-gpu",
                       isMobile ? "" : "animate-[ping_4s_ease-in-out_infinite]",
                       hasAccessTo(`exam_bundle_${selectedExam}`) ? "border-emerald-400" : "border-brand-400"
                     )} />
 
                     {/* Core Glass Sphere */}
                     <div className={cn(
-                      "absolute inset-4 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-700 hover:scale-105",
+                      "absolute inset-2 sm:inset-4 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-700 hover:scale-105",
                       isMobile ? "" : "backdrop-blur-xl",
                       hasAccessTo(`exam_bundle_${selectedExam}`)
                         ? "bg-emerald-950/45 border border-emerald-400/30 text-emerald-400 shadow-emerald-900/30"
                         : "bg-brand-950/45 border border-brand-400/30 text-brand-300 shadow-brand-950/50"
                     )}>
                        {hasAccessTo(`exam_bundle_${selectedExam}`) ? (
-                         <CheckCircle2 className="w-8 h-8 sm:w-10 sm:h-10 lg:w-11 lg:h-11 text-emerald-300 filter drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]" />
+                         <CheckCircle2 className="w-5 h-5 sm:w-10 sm:h-10 lg:w-11 lg:h-11 text-emerald-300 filter drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]" />
                        ) : (
-                         <Award className="w-8 h-8 sm:w-10 sm:h-10 lg:w-11 lg:h-11 text-brand-200 filter drop-shadow-[0_0_8px_rgba(244,176,190,0.3)] animate-pulse" />
+                         <Award className="w-5 h-5 sm:w-10 sm:h-10 lg:w-11 lg:h-11 text-brand-200 filter drop-shadow-[0_0_8px_rgba(244,176,190,0.3)] animate-pulse" />
                        )}
                     </div>
                   </motion.div>
 
-                  <div className="text-center sm:text-left space-y-4">
+                  <div className="text-center sm:text-left space-y-2.5 sm:space-y-4 w-full">
                     <motion.div 
                       variants={{
                         hidden: { y: 8, opacity: 0 },
                         show: { y: 0, opacity: 1 }
                       }}
-                      className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5"
+                      className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2.5"
                     >
                       <span className={cn(
-                        "px-3.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.18em] border backdrop-blur-sm",
+                        "px-2.5 sm:px-3.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-[0.18em] border backdrop-blur-sm",
                         hasAccessTo(`exam_bundle_${selectedExam}`)
                           ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-300"
                           : "bg-brand-500/10 border-brand-500/25 text-brand-300"
@@ -6518,7 +6524,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         Selection Special
                       </span>
                       <span className={cn(
-                        "px-3.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.18em] border backdrop-blur-sm",
+                        "px-2.5 sm:px-3.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-[0.18em] border backdrop-blur-sm",
                         hasAccessTo(`exam_bundle_${selectedExam}`) 
                           ? "bg-teal-500/10 border-teal-400/30 text-teal-300" 
                           : "bg-indigo-500/10 border-indigo-400/25 text-indigo-300"
@@ -6533,7 +6539,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           hidden: { y: 8, opacity: 0 },
                           show: { y: 0, opacity: 1 }
                         }}
-                        className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight tracking-tight"
+                        className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight tracking-tight"
                       >
                         {hasAccessTo(`exam_bundle_${selectedExam}`) ? (
                           <>You have <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 drop-shadow-[0_2px_10px_rgba(52,211,153,0.15)]">Full Access</span> to {currentExam?.name}</>
@@ -6547,7 +6553,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           show: { y: 0, opacity: 1 }
                         }}
                         className={cn(
-                          "text-sm sm:text-base lg:text-[1.05rem] leading-relaxed font-normal tracking-wide max-w-xl transition-all duration-300",
+                          "text-xs sm:text-base lg:text-[1.05rem] leading-relaxed font-normal tracking-wide max-w-xl transition-all duration-300",
                           hasAccessTo(`exam_bundle_${selectedExam}`) ? "text-emerald-100/70" : "text-brand-100/70",
                           !isBannerDescExpanded && "line-clamp-2"
                         )}
@@ -6581,15 +6587,15 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.2 }}
-                    className="flex flex-col items-center lg:items-center gap-5 shrink-0 lg:border-l lg:border-white/5 lg:pl-12 lg:min-w-[280px] w-full lg:w-auto"
+                    className="flex flex-col items-center lg:items-center gap-4 sm:gap-5 shrink-0 lg:border-l lg:border-white/5 lg:pl-12 lg:min-w-[280px] w-full lg:w-auto"
                   >
                     <div className="text-center lg:text-center">
-                      <div className="flex flex-col sm:flex-row lg:flex-col items-center lg:items-center gap-1.5">
-                        <div className="flex items-center gap-3">
-                          <span className="text-brand-300/40 text-base lg:text-lg line-through font-bold">₹{bundleOriginalPrice}</span>
-                          <span className="text-4xl lg:text-5xl font-black text-white font-mono tracking-tighter">₹{bundlePrice}</span>
+                      <div className="flex flex-row sm:flex-row lg:flex-col items-center justify-center lg:items-center gap-2.5 sm:gap-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-brand-300/40 text-sm sm:text-base lg:text-lg line-through font-bold">₹{bundleOriginalPrice}</span>
+                          <span className="text-2xl sm:text-4xl lg:text-5xl font-black text-white font-mono tracking-tighter">₹{bundlePrice}</span>
                         </div>
-                        <span className="px-3 py-1 bg-amber-500/10 text-amber-300 text-[10px] font-black rounded-lg border border-amber-500/20 uppercase tracking-widest">
+                        <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-amber-500/10 text-amber-300 text-[9px] sm:text-[10px] font-black rounded-lg border border-amber-500/20 uppercase tracking-widest">
                           Save {Math.round(((bundleOriginalPrice - bundlePrice) / bundleOriginalPrice) * 100)}% Instant
                         </span>
                       </div>
@@ -6616,7 +6622,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         setPaywallProductType('exam_bundle');
                         setShowPaywall(true);
                       }}
-                      className="w-full sm:w-auto h-14 lg:h-16 px-10 rounded-2xl bg-gradient-to-r from-white via-slate-100 to-white hover:from-brand-100 hover:to-white text-brand-950 font-black text-base lg:text-lg shadow-xl shadow-brand-500/10 hover:shadow-brand-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 group/btn relative overflow-hidden"
+                      className="w-full sm:w-auto h-12 lg:h-16 px-8 rounded-2xl bg-gradient-to-r from-white via-slate-100 to-white hover:from-brand-100 hover:to-white text-brand-950 font-black text-base lg:text-lg shadow-xl shadow-brand-500/10 hover:shadow-brand-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 group/btn relative overflow-hidden"
                     >
                       {/* Button Shine Effect */}
                       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 z-10" />
@@ -6625,7 +6631,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-1.5 transition-transform relative z-10" />
                     </Button>
                     
-                    <div className="flex items-center gap-2 text-brand-300/60 font-bold text-[10px] uppercase tracking-widest">
+                    <div className="flex items-center gap-1.5 text-brand-300/60 font-bold text-[9px] sm:text-[10px] uppercase tracking-widest">
                       <Zap className="w-3.5 h-3.5 fill-brand-300/60 animate-pulse" />
                       Instant Activation
                     </div>
