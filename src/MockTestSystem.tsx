@@ -1015,21 +1015,21 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
         {/* Left Side: Question Pane */}
         <div className="flex-1 flex flex-col min-w-0 bg-transparent border-r border-slate-200/60">
           {/* Question Scoring Info Bar */}
-          <div className="h-10 sm:h-12 bg-slate-50/50 border-b border-slate-200/60 flex items-center justify-between px-4 sm:px-8 text-xs font-bold text-slate-500 shrink-0 select-none">
-            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <div className="h-9 sm:h-12 bg-slate-50/50 border-b border-slate-200/60 flex items-center justify-between px-3.5 sm:px-8 shrink-0 select-none">
+            <div className="flex items-center gap-2 min-w-0">
               <span className="w-1.5 h-1.5 rounded-full bg-[#8A1C36] shrink-0" />
               <span className="leading-tight truncate">
-                <span className="hidden sm:inline">Multiple Choice Question (MCQ)</span>
-                <span className="sm:hidden text-[10px] text-slate-600 font-extrabold uppercase tracking-wider">MCQ</span>
+                <span className="hidden sm:inline text-xs font-bold text-slate-500">Multiple Choice Question (MCQ)</span>
+                <span className="sm:hidden text-[10px] text-slate-600 font-extrabold uppercase tracking-widest">MCQ</span>
               </span>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
               <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-100/80">
                 Correct: +{marksPerQ.toFixed(2)}
               </span>
               {negMarkVal > 0 && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-rose-700 bg-rose-50 border border-rose-100/80">
-                  Negative: -{negMarkVal.toFixed(2)}
+                  Neg: -{negMarkVal.toFixed(2)}
                 </span>
               )}
             </div>
@@ -1048,7 +1048,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
 
             return (
               <main className={cn(
-                "flex-1 px-2 py-3 sm:p-5 lg:p-6 relative bg-[#FBF9F6] flex flex-col",
+                "flex-1 px-3 py-3 sm:p-5 lg:p-6 relative bg-[#FBF9F6] flex flex-col",
                 mathHeavy ? "overflow-y-auto no-scrollbar" : "overflow-hidden"
               )}>
                 <div className={cn(
@@ -1076,8 +1076,8 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                       )}>
                         {/* Question label + Math badge */}
                         <div className="flex items-center justify-between flex-shrink-0">
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-[#8A1C36] bg-[#8A1C36]/5 rounded-lg border border-[#8A1C36]/15">
-                            <FileText className="w-4 h-4 animate-pulse-soft" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] sm:text-xs font-bold text-[#8A1C36] bg-[#8A1C36]/5 rounded-lg border border-[#8A1C36]/15">
+                            <FileText className="w-3.5 h-3.5 animate-pulse-soft" />
                             Question {currentQuestionIndex + 1} of {test.questions.length}
                           </span>
                           {mathHeavy && (
@@ -1091,7 +1091,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                         <div
                           ref={questionTextRef}
                           className={cn(
-                            "text-base sm:text-lg lg:text-xl font-serif font-extrabold text-slate-900 leading-relaxed break-words overflow-wrap-anywhere",
+                            "text-[15px] sm:text-lg lg:text-xl font-serif font-extrabold text-slate-900 leading-relaxed break-words overflow-wrap-anywhere",
                             !mathHeavy && "flex-1 overflow-y-auto pr-2 no-scrollbar"
                           )}
                         >
@@ -1141,7 +1141,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                                 key={`q${currentQuestionIndex}-o${idx}`}
                                 onClick={() => handleAnswer(idx)}
                                 className={cn(
-                                  "mcq-option group w-full text-left py-2 px-3.5 sm:py-2.5 sm:px-4 rounded-xl border transition-all duration-300 relative cursor-pointer select-none flex items-center gap-3 sm:gap-4 shadow-sm",
+                                  "mcq-option group w-full text-left py-3 px-3.5 sm:py-2.5 sm:px-4 rounded-xl border transition-all duration-300 relative cursor-pointer select-none flex items-center gap-3 sm:gap-4 shadow-sm active:scale-[0.98]",
                                   showResult
                                     ? isCorrect 
                                       ? "border-emerald-500 bg-emerald-50 text-emerald-900 shadow-sm" 
@@ -1152,7 +1152,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                                 )}
                               >
                                 <div className={cn(
-                                  "w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center font-black text-xs shrink-0 transition-all duration-300 pointer-events-none",
+                                  "w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center font-black text-[11px] sm:text-xs shrink-0 transition-all duration-300 pointer-events-none",
                                   showResult
                                     ? isCorrect 
                                       ? "bg-emerald-600 text-white" 
@@ -1216,40 +1216,40 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
 
 
           {/* Bottom Official Exam Navigation Footer */}
-          <div className="shrink-0 bg-white border-t border-slate-200/80 py-2 px-4 sm:py-3 sm:px-8 shadow-sm">
+          <div className="shrink-0 bg-white border-t border-slate-200/80 py-2 px-3 sm:py-3 sm:px-8 shadow-sm">
             <div className="max-w-4xl lg:max-w-6xl mx-auto">
               
               {/* Mobile View Navigation (hidden on lg and above) */}
-              <div className="flex flex-col gap-3 lg:hidden w-full">
+              <div className="flex flex-col gap-2 lg:hidden w-full">
                 {/* Upper row: Utility functions */}
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-1.5">
                   <button 
                     onClick={toggleMarkForReview}
                     className={cn(
-                      "py-2.5 px-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border flex items-center justify-center gap-1.5 cursor-pointer",
+                      "py-2 px-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border flex items-center justify-center gap-1 cursor-pointer",
                       markedForReview.includes(currentQuestionIndex)
                         ? "bg-amber-50 border-amber-200 text-amber-700 shadow-sm"
                         : "bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-700"
                     )}
                   >
-                    <Flag className="w-3.5 h-3.5" />
-                    <span className="truncate">Mark</span>
+                    <Flag className="w-3 h-3 shrink-0" />
+                    <span>Mark</span>
                   </button>
                   
                   <button 
                     onClick={handleClearResponse}
-                    className="py-2.5 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-slate-700 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    className="py-2 px-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 hover:text-slate-700 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1"
                   >
-                    <X className="w-3.5 h-3.5" />
-                    <span className="truncate">Clear</span>
+                    <X className="w-3 h-3 shrink-0" />
+                    <span>Clear</span>
                   </button>
 
                   <button 
                     onClick={() => setShowMobilePalette(true)}
-                    className="py-2.5 px-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-slate-800 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    className="py-2 px-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 hover:text-slate-800 transition-all cursor-pointer flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-wider"
                   >
-                    <LayoutGrid className="w-3.5 h-3.5" />
-                    <span className="truncate">Palette</span>
+                    <LayoutGrid className="w-3 h-3 shrink-0" />
+                    <span>Palette</span>
                   </button>
                 </div>
 
@@ -1258,13 +1258,13 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                   <button 
                     disabled={currentQuestionIndex === 0}
                     onClick={prevQuestion}
-                    className="col-span-2 bg-white border border-slate-200 text-slate-600 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1"
+                    className="col-span-2 bg-white border border-slate-200 text-slate-600 py-3 sm:py-3 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1 active:scale-[0.97]"
                   >
                     <ChevronLeft className="w-4 h-4" /> Back
                   </button>
                   <button 
                     onClick={nextQuestion}
-                    className="col-span-3 bg-[#8a1c36] hover:bg-[#76142c] text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-[#8a1c36]/10 active:scale-95 flex items-center justify-center gap-1 cursor-pointer font-extrabold"
+                    className="col-span-3 bg-[#8a1c36] hover:bg-[#76142c] text-white py-3 rounded-xl text-[11px] font-extrabold uppercase tracking-wider transition-all shadow-md shadow-[#8a1c36]/10 active:scale-95 flex items-center justify-center gap-1 cursor-pointer"
                   >
                     {currentQuestionIndex === test.questions.length - 1 ? 'Save & Submit' : 'Save & Next'} <ChevronRight className="w-4 h-4" />
                   </button>
