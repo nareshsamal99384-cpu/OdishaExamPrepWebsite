@@ -2709,19 +2709,19 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
   const isFullAccess = profile.hasFullAccess || profile.role === 'admin';
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20 mt-4 md:mt-8">
+    <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-16 md:pb-20 mt-2 md:mt-8">
       {/* Header */}
-      <div className="flex flex-col space-y-4 text-center mb-8 relative">
-        <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-inner relative"
+      <div className="flex flex-col space-y-2 md:space-y-4 text-center mb-6 md:mb-8 relative">
+        <div className="w-14 h-14 md:w-20 md:h-20 rounded-full flex items-center justify-center mx-auto shadow-inner relative"
           style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}>
-          <BookMarked className="w-10 h-10 text-white" />
+          <BookMarked className="w-7 h-7 md:w-10 md:h-10 text-white" />
           <div className="absolute inset-0 rounded-full animate-ping opacity-20"
             style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }} />
         </div>
-        <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight">
+        <h2 className="text-2xl md:text-5xl font-black text-slate-900 tracking-tight">
           My <span className="premium-text-gradient">Library</span>
         </h2>
-        <p className="text-slate-500 font-medium text-lg">All your unlocked premium content in one place.</p>
+        <p className="text-slate-500 font-medium text-sm md:text-lg">All your unlocked premium content in one place.</p>
         <div className="flex justify-center mt-2">
           <button
             onClick={handleRefresh}
@@ -2740,17 +2740,17 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
         </div>
       ) : isFullAccess ? (
         /* Admin / Full Access Banner */
-        <div className="relative overflow-hidden rounded-[2rem] p-8 text-white"
+        <div className="relative overflow-hidden rounded-2xl md:rounded-[2rem] p-5 md:p-8 text-white"
           style={{ background: 'linear-gradient(135deg, #0f0a28 0%, #1e1151 50%, #0f172a 100%)' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-brand-500/20 to-purple-500/20 pointer-events-none" />
-          <div className="relative z-10 flex items-center gap-6">
-            <div className="w-16 h-16 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-8 h-8 text-emerald-400" />
+          <div className="relative z-10 flex items-center gap-4 md:gap-6">
+            <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-6 h-6 md:w-8 md:h-8 text-emerald-400" />
             </div>
             <div>
-              <div className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-1">Unlimited Access</div>
-              <h3 className="text-2xl font-black">All Content Unlocked</h3>
-              <p className="text-white/60 text-sm mt-1">You have full access to every exam, mock test, and question bank.</p>
+              <div className="text-[10px] md:text-xs font-black uppercase tracking-widest text-emerald-400 mb-0.5 md:mb-1">Unlimited Access</div>
+              <h3 className="text-lg md:text-2xl font-black">All Content Unlocked</h3>
+              <p className="text-white/60 text-[11px] md:text-sm mt-0.5">You have full access to every exam, mock test, and question bank.</p>
             </div>
           </div>
         </div>
@@ -2758,18 +2758,18 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
         <motion.div 
           initial={{ opacity: 0, y: 20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          className="premium-glass-card p-12 sm:p-16 rounded-[2.5rem] text-center max-w-2xl mx-auto mt-12 relative overflow-hidden"
+          className="premium-glass-card p-8 md:p-16 rounded-2xl md:rounded-[2.5rem] text-center max-w-2xl mx-auto mt-6 md:mt-12 relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/10 blur-[80px] rounded-full pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/10 blur-[80px] rounded-full pointer-events-none" />
           
           <motion.div 
-            className="w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200/50 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner inner-glow animate-float-gentle"
+            className="w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-slate-100 to-slate-200/50 rounded-2xl md:rounded-3xl flex items-center justify-center mx-auto mb-6 md:mb-8 shadow-inner inner-glow animate-float-gentle"
           >
-            <Lock className="w-10 h-10 text-slate-400" />
+            <Lock className="w-8 h-8 md:w-10 md:h-10 text-slate-400" />
           </motion.div>
-          <h2 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">Your Library is Empty</h2>
-          <p className="text-slate-500 mb-10 max-w-md mx-auto text-lg leading-relaxed">
+          <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-3 md:mb-4 tracking-tight">Your Library is Empty</h2>
+          <p className="text-slate-500 mb-6 md:mb-10 max-w-md mx-auto text-sm md:text-lg leading-relaxed">
             You haven't unlocked any premium content yet. Explore our comprehensive exams and test series to start your journey today.
           </p>
           <button
@@ -2782,7 +2782,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
           </button>
         </motion.div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-6 md:space-y-8">
           {sections.map((section, si) => {
             const { exam, isBundle, mockTests: sTests, questionBanks: sBanks } = section;
             const totalItems = sTests.length + sBanks.length;
@@ -2793,38 +2793,38 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: si * 0.08 }}
-                className="rounded-[2rem] overflow-hidden shadow-2xl shadow-slate-200/60"
+                className="rounded-2xl md:rounded-[2rem] overflow-hidden shadow-2xl shadow-slate-200/60"
               >
                 {/* Exam Header — dark premium strip */}
-                <div className="relative p-6 sm:p-8 text-white overflow-hidden"
+                <div className="relative p-5 md:p-8 text-white overflow-hidden"
                   style={{ background: 'linear-gradient(135deg, #0f0a28 0%, #1e1151 60%, #312e81 100%)' }}>
                   {/* Glow orb */}
                   <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full opacity-30 pointer-events-none"
                     style={{ background: 'radial-gradient(circle, #818cf8 0%, transparent 70%)' }} />
                   <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 sm:gap-5">
-                    <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+                    <div className="flex items-center gap-3.5 sm:gap-5 min-w-0">
                       {/* Exam icon */}
-                      <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
+                      <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
                         {isUrl(exam.icon)
                           ? <img src={getDirectImageUrl(exam.icon)} alt={exam.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={(e: any) => { e.target.style.display='none'; e.target.parentNode.textContent='📚'; }} />
-                          : <span className="text-2xl sm:text-4xl">{exam.icon || '📚'}</span>}
+                          : <span className="text-xl sm:text-4xl">{exam.icon || '📚'}</span>}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 sm:gap-2 mb-1 flex-wrap">
                           {isBundle && (
-                            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest bg-brand-500/30 border border-brand-400/40 text-brand-300 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg animate-pulse-soft">
+                            <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest bg-brand-500/30 border border-brand-400/40 text-brand-300 px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg animate-pulse-soft">
                               Exam Bundle
                             </span>
                           )}
-                          <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest bg-emerald-500/20 border border-emerald-400/30 text-emerald-400 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg flex items-center gap-1 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-                            <CheckCircle2 className="w-3 h-3" /> Premium Unlocked
+                          <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest bg-emerald-500/20 border border-emerald-400/30 text-emerald-400 px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg flex items-center gap-0.5 sm:gap-1 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                            <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Premium Unlocked
                           </span>
                         </div>
-                        <h3 className="text-lg sm:text-2xl font-black text-white leading-tight line-clamp-2">{exam.name}</h3>
+                        <h3 className="text-base sm:text-2xl font-black text-white leading-tight line-clamp-2">{exam.name}</h3>
                         {cleanDesc(exam.description) && (
-                          <p className="text-white/60 text-xs sm:text-sm mt-1 line-clamp-2 sm:line-clamp-1">{cleanDesc(exam.description)}</p>
+                          <p className="text-white/60 text-[11px] sm:text-sm mt-1 line-clamp-2 sm:line-clamp-1">{cleanDesc(exam.description)}</p>
                         )}
-                        <p className="text-white/40 text-[10px] sm:text-xs mt-1">
+                        <p className="text-white/40 text-[9px] sm:text-xs mt-1">
                           {totalItems} item{totalItems !== 1 ? 's' : ''} unlocked
                           {isBundle ? ' · Full Bundle Access' : ''}
                         </p>
@@ -2833,7 +2833,7 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                     {isBundle && (
                       <button
                         onClick={() => onViewExam(exam.id)}
-                        className="group shrink-0 w-full sm:w-auto px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white text-sm font-bold rounded-2xl transition-[transform,border-color,background-color,box-shadow] duration-300 flex items-center justify-center sm:justify-start gap-2 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] active:scale-[0.98] sm:active:scale-[1]"
+                        className="group shrink-0 w-full sm:w-auto px-4 py-2 md:px-5 md:py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white text-xs md:text-sm font-bold rounded-xl md:rounded-2xl transition-[transform,border-color,background-color,box-shadow] duration-300 flex items-center justify-center sm:justify-start gap-2 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] active:scale-[0.98] sm:active:scale-[1]"
                       >
                         Open <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </button>
@@ -2841,11 +2841,13 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                   </div>
                 </div>
 
-                {/* Content Items Grid */}
+                {/* Content Items Container */}
                 {totalItems > 0 && (
-                  <div className="bg-white/95 border-x border-b border-slate-100 p-6 rounded-b-[2rem]">
-                    <div className="max-h-[380px] overflow-y-auto custom-scrollbar pr-2 -mr-2">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-2">
+                  <div className="bg-white/95 border-x border-b border-slate-100 p-4 md:p-6 rounded-b-[1.5rem] md:rounded-b-[2rem]">
+                    <div className="md:max-h-[380px] md:overflow-y-auto overflow-y-visible custom-scrollbar pr-0 md:pr-2 -mr-0 md:-mr-2">
+                      
+                      {/* Desktop Grid Layout (visible on sm and up) */}
+                      <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-2">
                         {/* Mock Tests */}
                         {sTests.map((test: any, i: number) => (
                           <motion.div 
@@ -2926,6 +2928,80 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                           </motion.div>
                         ))}
                       </div>
+
+                      {/* Mobile List Layout (visible on mobile only) */}
+                      <div className="sm:hidden space-y-3">
+                        {/* Mock Tests */}
+                        {sTests.map((test: any) => (
+                          <div 
+                            key={test.id}
+                            onClick={() => onLaunchMockTest(test)}
+                            className="flex items-center justify-between gap-3 p-3.5 bg-slate-50/50 hover:bg-slate-50/80 border border-slate-200/50 rounded-2xl active:scale-[0.99] transition-all cursor-pointer"
+                          >
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+                                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+                                <Timer className="w-5 h-5 text-white" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="text-[9px] font-black uppercase tracking-wider text-brand-600">Mock Test</div>
+                                <h4 className="font-extrabold text-slate-900 text-sm leading-snug truncate mt-0.5">
+                                  {test.title}
+                                </h4>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="flex items-center gap-1 text-[10px] font-medium text-slate-500">
+                                    <Clock3 className="w-3 h-3 text-slate-400" />
+                                    {test.durationMinutes || 60} mins
+                                  </span>
+                                  <span className="w-1.5 h-1.5 rounded-full bg-slate-200" />
+                                  <span className="flex items-center gap-0.5 text-[10px] font-bold text-emerald-600">
+                                    <CheckCircle2 className="w-3 h-3" /> Unlocked
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-brand-50 text-brand-600 shrink-0">
+                              <ArrowRight className="w-4 h-4" />
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Question Banks */}
+                        {sBanks.map((bank: any) => (
+                          <div 
+                            key={bank.id}
+                            onClick={() => onLaunchBank(bank)}
+                            className="flex items-center justify-between gap-3 p-3.5 bg-slate-50/50 hover:bg-slate-50/80 border border-slate-200/50 rounded-2xl active:scale-[0.99] transition-all cursor-pointer"
+                          >
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+                                style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+                                <BookOpen className="w-5 h-5 text-white" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="text-[9px] font-black uppercase tracking-wider text-emerald-600">Question Bank</div>
+                                <h4 className="font-extrabold text-slate-900 text-sm leading-snug truncate mt-0.5">
+                                  {bank.title}
+                                </h4>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="flex items-center gap-1 text-[10px] font-medium text-slate-500">
+                                    <BookOpen className="w-3 h-3 text-slate-400" />
+                                    {bank.questions || '—'} Questions
+                                  </span>
+                                  <span className="w-1.5 h-1.5 rounded-full bg-slate-200" />
+                                  <span className="flex items-center gap-0.5 text-[10px] font-bold text-emerald-600">
+                                    <CheckCircle2 className="w-3 h-3" /> Unlocked
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-50 text-emerald-600 shrink-0">
+                              <ArrowRight className="w-4 h-4" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
                     </div>
                   </div>
                 )}
