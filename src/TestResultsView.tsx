@@ -493,11 +493,11 @@ export default function TestResultsView({ results, onClose }: { results: any, on
       </div>
 
       {/* SECTION DIVIDER & HEADING */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mb-4 sm:mb-8 mt-5 sm:mt-12">
-        <div className="border-t border-slate-200/60 my-4 sm:my-8"></div>
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mb-3 sm:mb-8 mt-3 sm:mt-12">
+        <div className="border-t border-slate-200/60 my-3 sm:my-8"></div>
         <div>
-          <h2 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight">Detailed Question Analysis</h2>
-          <p className="text-slate-500 text-xs sm:text-sm font-semibold mt-1">Review each question, your answer, and detailed explanations below.</p>
+          <h2 className="text-base sm:text-2xl font-black text-slate-900 tracking-tight">Detailed Question Analysis</h2>
+          <p className="text-slate-400 text-[11px] sm:text-sm font-semibold mt-0.5 sm:mt-1">Review each question, your answer, and explanations below.</p>
         </div>
       </div>
 
@@ -506,10 +506,10 @@ export default function TestResultsView({ results, onClose }: { results: any, on
         
         {/* Left Col: Quick Navigation (Question Navigator) */}
         <div className="lg:col-span-1">
-          <div className="glass px-2.5 py-3 sm:p-8 rounded-xl sm:rounded-[2rem] border border-slate-200 premium-shadow bg-white/60 lg:sticky lg:top-24">
-             <h3 className="font-extrabold text-slate-900 mb-3 sm:mb-6 text-base sm:text-xl tracking-tight px-1">Question Navigator</h3>
-              <div className="max-h-[300px] lg:max-h-[450px] overflow-y-auto p-1.5 custom-scrollbar">
-               <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-7 gap-2 sm:gap-3 py-1">
+          <div className="glass px-2.5 py-2.5 sm:p-8 rounded-xl sm:rounded-[2rem] border border-slate-200 premium-shadow bg-white/60 lg:sticky lg:top-24">
+            <h3 className="font-extrabold text-slate-900 mb-2 sm:mb-6 text-sm sm:text-xl tracking-tight px-1">Question Navigator</h3>
+              <div className="max-h-[220px] sm:max-h-[300px] lg:max-h-[450px] overflow-y-auto p-1 no-scrollbar">
+               <div className="grid grid-cols-6 sm:grid-cols-6 lg:grid-cols-7 gap-1.5 sm:gap-3 py-1">
                   {questions.map((q: any, i: number) => {
                     const uAns = answers ? answers[i] : undefined;
                     const isCorr = uAns === q.correctAnswerIndex;
@@ -520,25 +520,36 @@ export default function TestResultsView({ results, onClose }: { results: any, on
                         key={i}
                         onClick={() => setCurrentIdx(i)}
                         className={cn(
-                          "aspect-square rounded-xl font-bold flex items-center justify-center text-xs sm:text-sm transition-all relative overflow-hidden",
-                          currentIdx === i ? "ring-2 sm:ring-4 ring-slate-200 scale-105 z-10 shadow-lg" : "hover:scale-105 shadow-sm",
+                          "aspect-square rounded-lg sm:rounded-xl font-bold flex items-center justify-center text-[11px] sm:text-sm transition-all relative overflow-hidden",
+                          currentIdx === i ? "ring-2 ring-slate-300 scale-105 z-10 shadow-md" : "hover:scale-105 shadow-sm",
                           isUnans ? "bg-slate-100 text-slate-400 border border-slate-200" :
                           isCorr ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : 
                           "bg-rose-100 text-rose-700 border border-rose-200"
                         )}
                       >
-                        {isMarked && <div className="absolute top-0 right-0 w-4 h-4 bg-amber-400 rotate-45 transform translate-x-2 -translate-y-2"></div>}
+                        {isMarked && <div className="absolute top-0 right-0 w-3.5 h-3.5 bg-amber-400 rotate-45 transform translate-x-2 -translate-y-2"></div>}
                         {i + 1}
                       </button>
                     )
                   })}
                </div>
              </div>
-             <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-3 p-3 sm:p-4 bg-slate-50 rounded-xl sm:rounded-2xl border border-slate-100">
-               <div className="flex items-center gap-2 sm:gap-3 text-xs font-bold text-slate-600"><div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-emerald-100 border border-emerald-200 rounded shrink-0"></div> Correct</div>
-               <div className="flex items-center gap-2 sm:gap-3 text-xs font-bold text-slate-600"><div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-rose-100 border border-rose-200 rounded shrink-0"></div> Incorrect</div>
-               <div className="flex items-center gap-2 sm:gap-3 text-xs font-bold text-slate-600"><div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-slate-100 border border-slate-200 rounded shrink-0"></div> Unanswered</div>
-               <div className="flex items-center gap-2 sm:gap-3 text-xs font-bold text-slate-600"><div className="w-2.5 h-2.5 sm:w-3 sm:h-3 overflow-hidden rounded border border-slate-200 relative shrink-0"><div className="absolute top-0 right-0 w-3 h-3 bg-amber-400 rotate-45 transform translate-x-1.5 -translate-y-1.5"></div></div> Marked</div>
+             {/* Legend — 2×2 grid on mobile, vertical on desktop */}
+             <div className="mt-3 sm:mt-6 p-2.5 sm:p-4 bg-slate-50 rounded-lg sm:rounded-2xl border border-slate-100">
+               <div className="grid grid-cols-2 sm:grid-cols-1 gap-x-3 gap-y-1.5 sm:gap-y-3 sm:space-y-0">
+                 <div className="flex items-center gap-1.5 sm:gap-3 text-[10px] sm:text-xs font-bold text-slate-600">
+                   <div className="w-2.5 h-2.5 bg-emerald-100 border border-emerald-200 rounded shrink-0"></div> Correct
+                 </div>
+                 <div className="flex items-center gap-1.5 sm:gap-3 text-[10px] sm:text-xs font-bold text-slate-600">
+                   <div className="w-2.5 h-2.5 bg-rose-100 border border-rose-200 rounded shrink-0"></div> Incorrect
+                 </div>
+                 <div className="flex items-center gap-1.5 sm:gap-3 text-[10px] sm:text-xs font-bold text-slate-600">
+                   <div className="w-2.5 h-2.5 bg-slate-100 border border-slate-200 rounded shrink-0"></div> Unanswered
+                 </div>
+                 <div className="flex items-center gap-1.5 sm:gap-3 text-[10px] sm:text-xs font-bold text-slate-600">
+                   <div className="w-2.5 h-2.5 overflow-hidden rounded border border-slate-200 relative shrink-0"><div className="absolute top-0 right-0 w-3 h-3 bg-amber-400 rotate-45 transform translate-x-1.5 -translate-y-1.5"></div></div> Marked
+                 </div>
+               </div>
              </div>
           </div>
         </div>
