@@ -6665,70 +6665,146 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 exit={isMobile ? undefined : { opacity: 0, scale: 0.95 }}
                 whileHover={isMobile ? undefined : whileHover.liftTap}
                 whileTap={whileTap.press}
+                className="w-full"
               >
-                <Card 
-                  key={test.id} 
-                  className={cn("p-6 bg-white border-slate-200/60 shadow-lg shadow-slate-200/30 rounded-[1.5rem] hover:-translate-y-2 hover:shadow-2xl hover:shadow-brand-500/10 hover:border-brand-200 group transition-all duration-500 cursor-pointer flex flex-col gap-6 relative overflow-hidden premium-shine-container", isLocked && "border-amber-200/50 hover:border-amber-300", isPremiumUnlocked && "border-emerald-200/50 hover:border-emerald-300")}
-                  onClick={() => handleStartTest({ ...test, isPremium, price })}
-                >
-                  {isPremiumUnlocked && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none" />}
-                  <div className="flex items-start justify-between relative z-10 w-full">
-                    <div className="flex items-center gap-4">
-                      <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center shrink-0 shadow-md text-white transition-transform group-hover:scale-110 relative", isLocked ? "bg-gradient-to-br from-amber-400 to-orange-500" : isPremiumUnlocked ? "bg-gradient-to-br from-emerald-500 to-teal-600" : "bg-gradient-to-br from-indigo-500 to-purple-600")}>
-                        <Target className="w-6 h-6" />
-                        <div className="absolute inset-0 border-2 border-white/20 rounded-xl animate-pulse" />
-                      </div>
-                      <div className="text-left">
-                        <h4 className="font-black text-xl text-slate-950 tracking-tight group-hover:text-brand-600 transition-colors uppercase leading-tight">{test.title}</h4>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-100">Official Mock</span>
-                      </div>
-                    </div>
-                    {isPremium && (
-                      <div className="flex shrink-0">
-                        {isLocked ? (
-                          <div className="bg-amber-50 text-amber-600 p-2.5 rounded-xl border border-amber-100 flex items-center justify-center shadow-sm" aria-label="Premium Locked">
-                            <Lock className="w-5 h-5 fill-amber-500/20" />
-                          </div>
-                        ) : (
-                          <div className="bg-emerald-50 text-emerald-600 px-2.5 py-1 flex items-center gap-1.5 rounded-lg border border-emerald-100 text-[10px] font-black uppercase tracking-widest shadow-sm" aria-label="Premium Unlocked">
-                            <CheckCircle2 className="w-3 h-3" />
-                            Premium Active
-                          </div>
-                        )}
-                      </div>
+                {isMobile ? (
+                  <div
+                    onClick={() => handleStartTest({ ...test, isPremium, price })}
+                    className={cn(
+                      "p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300",
+                      isLocked 
+                        ? "shadow-[0_4px_16px_-4px_rgba(245,158,11,0.06),0_1px_2px_rgba(245,158,11,0.02)] active:border-amber-300"
+                        : isPremiumUnlocked
+                          ? "shadow-[0_4px_16px_-4px_rgba(16,185,129,0.06),0_1px_2px_rgba(16,185,129,0.02)] active:border-emerald-300"
+                          : "shadow-[0_4px_16px_-4px_rgba(138,28,54,0.06),0_1px_2px_rgba(138,28,54,0.02)] active:border-brand-300"
                     )}
-                  </div>
-                  
-                  <div className="space-y-4 flex-1 relative z-10 pt-2">
-                    <div className="flex gap-4 text-xs font-bold text-slate-500 flex-wrap">
-                      <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded"><Clock className="w-3.5 h-3.5 text-brand-500"/> {test.durationMinutes} Mins</span>
-                      <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded"><Award className="w-3.5 h-3.5 text-brand-500"/> {test.totalMarks} Marks</span>
-                      <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded"><FileText className="w-3.5 h-3.5 text-brand-500"/> {test.questions?.length || test._questionCount || 0} Qs</span>
+                  >
+                    <div className={cn(
+                      "absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none",
+                      isLocked 
+                        ? "bg-gradient-to-r from-amber-500/0 via-amber-500/[0.012] to-amber-500/0"
+                        : isPremiumUnlocked
+                          ? "bg-gradient-to-r from-emerald-500/0 via-emerald-500/[0.012] to-emerald-500/0"
+                          : "bg-gradient-to-r from-brand-500/0 via-brand-500/[0.012] to-brand-500/0"
+                    )} />
+                    <div className={cn(
+                      "absolute left-0 top-3.5 bottom-3.5 w-1 rounded-r-md opacity-80",
+                      isLocked 
+                        ? "bg-gradient-to-b from-amber-400 to-orange-500" 
+                        : isPremiumUnlocked 
+                          ? "bg-gradient-to-b from-emerald-400 to-teal-500" 
+                          : "bg-gradient-to-b from-indigo-500 to-purple-600"
+                    )} />
+
+                    <div className="flex items-center gap-3.5 min-w-0 flex-1 pl-1">
+                      <div className={cn(
+                        "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-md relative text-white",
+                        isLocked 
+                          ? "bg-gradient-to-br from-amber-400 to-orange-500 shadow-amber-500/10" 
+                          : isPremiumUnlocked 
+                            ? "bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-500/10" 
+                            : "bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-500/10"
+                      )}>
+                        <Target className="w-5.5 h-5.5 text-white" />
+                        <div className="absolute inset-0 border border-white/10 rounded-xl" />
+                      </div>
+                      
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h4 className="font-extrabold text-[14px] text-slate-850 tracking-tight leading-snug truncate uppercase">{test.title}</h4>
+                          {isPremium && (
+                            isLocked ? (
+                              <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 text-[8.5px] font-black rounded border border-amber-100 uppercase tracking-wider shrink-0">Premium</span>
+                            ) : (
+                              <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 text-[8.5px] font-black rounded border border-emerald-100 uppercase tracking-wider shrink-0">Active</span>
+                            )
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-1.5 mt-1 text-[11px] font-bold text-slate-455 flex-wrap">
+                          <span className="flex items-center gap-0.5 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100/50"><Clock className="w-3 h-3 text-slate-400" /> {test.durationMinutes}m</span>
+                          <span className="flex items-center gap-0.5 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100/50"><Award className="w-3 h-3 text-slate-400" /> {test.totalMarks} mks</span>
+                          <span className="flex items-center gap-0.5 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100/50"><FileText className="w-3 h-3 text-slate-400" /> {test.questions?.length || test._questionCount || 0} Qs</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={cn(
+                      "w-8 h-8 rounded-full border flex items-center justify-center shrink-0 shadow-2xs group-active:translate-x-0.5 transition-all duration-300",
+                      isLocked
+                        ? "bg-amber-50 border-amber-100 text-amber-600 group-active:bg-amber-500 group-active:text-white"
+                        : isPremiumUnlocked
+                          ? "bg-emerald-50 border-emerald-100 text-emerald-600 group-active:bg-emerald-500 group-active:text-white"
+                          : "bg-slate-50 border-slate-100 text-slate-400 group-active:bg-brand-50 group-active:border-brand-100 group-active:text-brand-600"
+                    )}>
+                      {isLocked ? <Lock className="w-3.5 h-3.5" /> : <ChevronRight className="w-4 h-4" />}
                     </div>
                   </div>
-                  
-                  <Button 
-                    variant={isLocked ? "outline" : "primary"}
-                    className={cn("w-full h-[48px] rounded-xl font-black text-sm relative z-10 transition-all overflow-hidden group/btn", !isLocked && "premium-gradient text-white shadow-lg shadow-brand-500/20 group-hover:premium-glow", isLocked && "border-amber-200 text-amber-600 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-700")}
+                ) : (
+                  <Card 
+                    key={test.id} 
+                    className={cn("p-6 bg-white border-slate-200/60 shadow-lg shadow-slate-200/30 rounded-[1.5rem] hover:-translate-y-2 hover:shadow-2xl hover:shadow-brand-500/10 hover:border-brand-200 group transition-all duration-500 cursor-pointer flex flex-col gap-6 relative overflow-hidden premium-shine-container", isLocked && "border-amber-200/50 hover:border-amber-300", isPremiumUnlocked && "border-emerald-200/50 hover:border-emerald-300")}
+                    onClick={() => handleStartTest({ ...test, isPremium, price })}
                   >
-                    {/* Button Shine Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
-
-                    <span className="relative z-10 flex items-center justify-center gap-2">
-                      {isLocked ? (
-                        <>
-                          <Lock className="w-4 h-4 mr-2" />
-                          Unlock to Access
-                        </>
-                      ) : (
-                        <>
-                          Start Test Now
-                          <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 duration-300" />
-                        </>
+                    {isPremiumUnlocked && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none" />}
+                    <div className="flex items-start justify-between relative z-10 w-full">
+                      <div className="flex items-center gap-4">
+                        <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center shrink-0 shadow-md text-white transition-transform group-hover:scale-110 relative", isLocked ? "bg-gradient-to-br from-amber-400 to-orange-500" : isPremiumUnlocked ? "bg-gradient-to-br from-emerald-500 to-teal-600" : "bg-gradient-to-br from-indigo-500 to-purple-600")}>
+                          <Target className="w-6 h-6" />
+                          <div className="absolute inset-0 border-2 border-white/20 rounded-xl animate-pulse" />
+                        </div>
+                        <div className="text-left">
+                          <h4 className="font-black text-xl text-slate-950 tracking-tight group-hover:text-brand-600 transition-colors uppercase leading-tight">{test.title}</h4>
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-100">Official Mock</span>
+                        </div>
+                      </div>
+                      {isPremium && (
+                        <div className="flex shrink-0">
+                          {isLocked ? (
+                            <div className="bg-amber-50 text-amber-600 p-2.5 rounded-xl border border-amber-100 flex items-center justify-center shadow-sm" aria-label="Premium Locked">
+                              <Lock className="w-5 h-5 fill-amber-500/20" />
+                            </div>
+                          ) : (
+                            <div className="bg-emerald-50 text-emerald-600 px-2.5 py-1 flex items-center gap-1.5 rounded-lg border border-emerald-100 text-[10px] font-black uppercase tracking-widest shadow-sm" aria-label="Premium Unlocked">
+                              <CheckCircle2 className="w-3 h-3" />
+                              Premium Active
+                            </div>
+                          )}
+                        </div>
                       )}
-                    </span>
-                  </Button>
-                </Card>
+                    </div>
+                    
+                    <div className="space-y-4 flex-1 relative z-10 pt-2">
+                      <div className="flex gap-4 text-xs font-bold text-slate-500 flex-wrap">
+                        <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded"><Clock className="w-3.5 h-3.5 text-brand-500"/> {test.durationMinutes} Mins</span>
+                        <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded"><Award className="w-3.5 h-3.5 text-brand-500"/> {test.totalMarks} Marks</span>
+                        <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded"><FileText className="w-3.5 h-3.5 text-brand-500"/> {test.questions?.length || test._questionCount || 0} Qs</span>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      variant={isLocked ? "outline" : "primary"}
+                      className={cn("w-full h-[48px] rounded-xl font-black text-sm relative z-10 transition-all overflow-hidden group/btn", !isLocked && "premium-gradient text-white shadow-lg shadow-brand-500/20 group-hover:premium-glow", isLocked && "border-amber-200 text-amber-600 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-700")}
+                    >
+                      {/* Button Shine Effect */}
+                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
+
+                      <span className="relative z-10 flex items-center justify-center gap-2">
+                        {isLocked ? (
+                          <>
+                            <Lock className="w-4 h-4 mr-2" />
+                            Unlock to Access
+                          </>
+                        ) : (
+                          <>
+                            Start Test Now
+                            <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 duration-300" />
+                          </>
+                        )}
+                      </span>
+                    </Button>
+                  </Card>
+                )}
               </motion.div>
             );
           };
@@ -6741,64 +6817,118 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   hidden: { opacity: 0 },
                   show: {
                     opacity: 1,
-                    transition: { staggerChildren: isMobile ? 0 : 0.1 }
+                    transition: { staggerChildren: isMobile ? 0.05 : 0.1 }
                   }
                 }}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:gap-8 gap-4 sm:gap-6"
+                className={cn(
+                  isMobile
+                    ? "flex flex-col gap-3.5"
+                    : "grid grid-cols-1 sm:grid-cols-2 lg:gap-8 gap-4 sm:gap-6"
+                )}
               >
                 {[
                   { id: 'full-length', title: 'Full-Length Mock Tests', desc: 'Complete exam simulation with real-time ranking.', icon: <Award className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'from-amber-400 to-orange-500', tag: 'Most Popular' },
                   { id: 'sectional', title: 'Sectional Tests', desc: 'Focus on specific sections to improve your score.', icon: <Target className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'from-blue-400 to-indigo-500', tag: 'Recommended' },
                   { id: 'pyq', title: 'PYQ Tests', desc: 'Practice with actual previous year papers.', icon: <History className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'from-purple-400 to-pink-500', tag: 'High Yield' },
                   { id: 'daily', title: 'Daily / Weekly Tests', desc: 'Regular assessments to track your progress.', icon: <Clock className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'from-emerald-400 to-teal-500', tag: 'Consistency' },
-                ].map((test, i) => (
-                  <motion.div
-                    key={i}
-                    variants={{
-                      hidden: { opacity: 0, scale: 0.95, y: 10 },
-                      show: { opacity: 1, scale: 1, y: 0 }
-                    }}
-                    whileHover={isMobile ? undefined : whileHover.liftTap}
-                    whileTap={whileTap.press}
-                  >
-                    <Card 
-                      className="p-5 sm:p-6 lg:p-8 bg-white border-slate-200/60 shadow-lg shadow-slate-200/30 rounded-[2rem] hover:-translate-y-2 hover:shadow-2xl hover:shadow-brand-500/10 hover:border-brand-200 group transition-all duration-500 cursor-pointer flex flex-col gap-4 sm:gap-6 relative overflow-hidden h-full premium-shine-container"
-                      onClick={() => {
-                        setSelectedMockCategory(test.id);
-                        scrollToElement('test-series', { block: 'start', delay: 50 });
-                      }}
-                    >
-                      <div className="flex items-center gap-3 sm:gap-4 relative z-10">
-                        <div className={cn(
-                          "w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shrink-0 shadow-md bg-gradient-to-br text-white transition-transform group-hover:scale-110 relative",
-                          test.color
-                        )}>
-                          {test.icon}
-                          <div className="absolute inset-0 border-2 border-white/20 rounded-2xl animate-pulse" />
-                        </div>
-                        <h4 className="font-black text-xl sm:text-2xl text-slate-950 tracking-tight leading-tight group-hover:text-brand-600 transition-colors uppercase">{test.title}</h4>
-                      </div>
-                      
-                      <div className="space-y-4 flex-1 relative z-10">
-                        <p className="text-slate-500 font-medium text-xs sm:text-sm leading-relaxed">{test.desc}</p>
-                        <div className="flex">
-                          <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 bg-slate-50 text-slate-400 rounded-lg border border-slate-100 group-hover:bg-brand-50 group-hover:text-brand-600 group-hover:border-brand-100 transition-colors">
-                            {test.tag}
-                          </span>
-                        </div>
-                      </div>
+                ].map((test, i) => {
+                  const styleMap = {
+                    'full-length': { shadow: 'rgba(245,158,11,0.06)', borderActive: 'active:border-orange-300', textActive: 'group-active:bg-orange-50 group-active:border-orange-100 group-active:text-orange-600' },
+                    'sectional': { shadow: 'rgba(79,70,229,0.06)', borderActive: 'active:border-indigo-300', textActive: 'group-active:bg-indigo-50 group-active:border-indigo-100 group-active:text-indigo-600' },
+                    'pyq': { shadow: 'rgba(236,72,153,0.06)', borderActive: 'active:border-pink-300', textActive: 'group-active:bg-pink-50 group-active:border-pink-100 group-active:text-pink-600' },
+                    'daily': { shadow: 'rgba(16,185,129,0.06)', borderActive: 'active:border-emerald-300', textActive: 'group-active:bg-emerald-50 group-active:border-emerald-100 group-active:text-emerald-600' }
+                  };
+                  const style = styleMap[test.id] || styleMap['full-length'];
 
-                      <Button 
-                        className="w-full h-[48px] sm:h-[56px] mt-2 rounded-xl flex items-center justify-center gap-2 font-black text-sm sm:text-base premium-gradient text-white shadow-lg shadow-brand-500/20 group-hover:premium-glow transition-all relative z-10 pointer-events-none overflow-hidden"
-                      >
-                        {/* Button Shine Effect */}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
-                        <span className="relative z-10">Explore Tests</span>
-                        <ChevronRight className="w-4 h-4 sm:ml-1 group-hover:translate-x-1 transition-transform relative z-10" />
-                      </Button>
-                    </Card>
-                  </motion.div>
-                ))}
+                  return (
+                    <motion.div
+                      key={i}
+                      variants={{
+                        hidden: { opacity: 0, scale: 0.95, y: 10 },
+                        show: { opacity: 1, scale: 1, y: 0 }
+                      }}
+                      whileHover={isMobile ? undefined : whileHover.liftTap}
+                      whileTap={whileTap.press}
+                      className="w-full"
+                    >
+                      {isMobile ? (
+                        <div
+                          onClick={() => {
+                            setSelectedMockCategory(test.id);
+                            scrollToElement('test-series', { block: 'start', delay: 50 });
+                          }}
+                          className={cn(
+                            "p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300",
+                            style.borderActive
+                          )}
+                          style={{ boxShadow: `0 4px 16px -4px ${style.shadow}, 0 1px 2px rgba(0,0,0,0.02)` }}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-slate-500/0 via-slate-500/[0.01] to-slate-500/0 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none" />
+                          <div className={cn("absolute left-0 top-3.5 bottom-3.5 w-1 rounded-r-md opacity-80 bg-gradient-to-b", test.color)} />
+                          
+                          <div className="flex items-center gap-3.5 min-w-0 flex-1 pl-1">
+                            <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-md relative text-white bg-gradient-to-br", test.color)}>
+                              {React.cloneElement(test.icon, { className: "w-5.5 h-5.5 text-white" })}
+                              <div className="absolute inset-0 border border-white/10 rounded-xl" />
+                            </div>
+                            
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <h4 className="font-extrabold text-[14.5px] text-slate-855 tracking-tight leading-snug">{test.title}</h4>
+                                <span className="px-1.5 py-0.5 bg-slate-50 text-slate-400 text-[8.5px] font-black rounded border border-slate-100 uppercase tracking-wider shrink-0">{test.tag}</span>
+                              </div>
+                              <p className="text-[11.5px] text-slate-500 font-medium leading-relaxed mt-0.5 line-clamp-2 pr-1">{test.desc}</p>
+                            </div>
+                          </div>
+                          
+                          <div className={cn(
+                            "w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-455 shrink-0 shadow-2xs group-active:translate-x-0.5 transition-all duration-300",
+                            style.textActive
+                          )}>
+                            <ChevronRight className="w-4 h-4" />
+                          </div>
+                        </div>
+                      ) : (
+                        <Card 
+                          className="p-5 sm:p-6 lg:p-8 bg-white border-slate-200/60 shadow-lg shadow-slate-200/30 rounded-[2rem] hover:-translate-y-2 hover:shadow-2xl hover:shadow-brand-500/10 hover:border-brand-200 group transition-all duration-500 cursor-pointer flex flex-col gap-4 sm:gap-6 relative overflow-hidden h-full premium-shine-container"
+                          onClick={() => {
+                            setSelectedMockCategory(test.id);
+                            scrollToElement('test-series', { block: 'start', delay: 50 });
+                          }}
+                        >
+                          <div className="flex items-center gap-3 sm:gap-4 relative z-10">
+                            <div className={cn(
+                              "w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shrink-0 shadow-md bg-gradient-to-br text-white transition-transform group-hover:scale-110 relative",
+                              test.color
+                            )}>
+                              {test.icon}
+                              <div className="absolute inset-0 border-2 border-white/20 rounded-2xl animate-pulse" />
+                            </div>
+                            <h4 className="font-black text-xl sm:text-2xl text-slate-950 tracking-tight leading-tight group-hover:text-brand-600 transition-colors uppercase">{test.title}</h4>
+                          </div>
+                          
+                          <div className="space-y-4 flex-1 relative z-10">
+                            <p className="text-slate-500 font-medium text-xs sm:text-sm leading-relaxed">{test.desc}</p>
+                            <div className="flex">
+                              <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 bg-slate-50 text-slate-400 rounded-lg border border-slate-100 group-hover:bg-brand-50 group-hover:text-brand-600 group-hover:border-brand-100 transition-colors">
+                                {test.tag}
+                              </span>
+                            </div>
+                          </div>
+
+                          <Button 
+                            className="w-full h-[48px] sm:h-[56px] mt-2 rounded-xl flex items-center justify-center gap-2 font-black text-sm sm:text-base premium-gradient text-white shadow-lg shadow-brand-500/20 group-hover:premium-glow transition-all relative z-10 pointer-events-none overflow-hidden"
+                          >
+                            {/* Button Shine Effect */}
+                            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
+                            <span className="relative z-10">Explore Tests</span>
+                            <ChevronRight className="w-4 h-4 sm:ml-1 group-hover:translate-x-1 transition-transform relative z-10" />
+                          </Button>
+                        </Card>
+                      )}
+                    </motion.div>
+                  );
+                })}
               </motion.div>
             );
 
