@@ -3588,8 +3588,8 @@ JSON structure:
                   {/* Subtle decorative background pattern */}
                   <div className="absolute inset-0 grid-bg-fine opacity-20 pointer-events-none" />
                   
-                  <div className="relative flex items-center justify-center w-24 h-24 shrink-0 mx-auto sm:mx-0 lg:mx-auto bg-white/80 rounded-full border border-slate-200/40 p-1.5 shadow-inner relative z-10">
-                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 96 96">
+                  <div className="relative flex items-center justify-center w-28 h-28 shrink-0 mx-auto sm:mx-0 lg:mx-auto bg-white/80 rounded-full border border-slate-200/40 p-1.5 shadow-inner relative z-10">
+                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 112 112">
                       <defs>
                         <linearGradient id="studyTimerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                           <stop offset="0%" stopColor="#8a1c36" />
@@ -3601,21 +3601,21 @@ JSON structure:
                         </linearGradient>
                       </defs>
                       <circle
-                        cx="48"
-                        cy="48"
-                        r="40"
+                        cx="56"
+                        cy="56"
+                        r="48"
                         className="text-slate-100"
                         strokeWidth="5.5"
                         stroke="currentColor"
                         fill="transparent"
                       />
                       <circle
-                        cx="48"
-                        cy="48"
-                        r="40"
+                        cx="56"
+                        cy="56"
+                        r="48"
                         strokeWidth="5.5"
-                        strokeDasharray="251.32"
-                        strokeDashoffset={251.32 * (1 - (timerSeconds / (timerMode === 'study' ? timerMaxSeconds : breakMaxSeconds)))}
+                        strokeDasharray="301.59"
+                        strokeDashoffset={301.59 * (1 - (timerSeconds / (timerMode === 'study' ? timerMaxSeconds : breakMaxSeconds)))}
                         strokeLinecap="round"
                         stroke={timerMode === 'study' ? "url(#studyTimerGrad)" : "url(#breakTimerGrad)"}
                         fill="transparent"
@@ -3626,8 +3626,8 @@ JSON structure:
                       <span className={cn(
                         "font-mono font-black text-slate-800 transition-all duration-200",
                         formatTime(timerSeconds).length > 5 
-                          ? (formatTime(timerSeconds).length > 6 ? "text-[12px] tracking-tighter" : "text-[14px] tracking-tight")
-                          : "text-xl tracking-wider"
+                          ? (formatTime(timerSeconds).length > 6 ? "text-[14px] tracking-tighter" : "text-base tracking-tight")
+                          : "text-2xl tracking-wider"
                       )}>
                         {formatTime(timerSeconds)}
                       </span>
