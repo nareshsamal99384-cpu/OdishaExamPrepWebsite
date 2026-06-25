@@ -202,7 +202,7 @@ const StatCard = React.memo(({ icon, title, value, suffix = "", trend, decimals 
     >
       <div
         className={cn(
-          "relative w-full bg-white p-4 sm:p-6 rounded-2xl sm:rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 flex flex-col justify-between group transition-[transform,box-shadow,border-color,background-color] duration-300 ease-out cursor-default hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.98] min-h-[146px] sm:min-h-[170px]",
+          "relative w-full bg-white p-4 sm:p-6 rounded-2xl sm:rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 flex flex-col justify-between group transition-[transform,box-shadow,border-color,background-color] duration-300 ease-out cursor-default hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.98] min-h-[146px] sm:min-h-[170px] will-change-transform",
           color === "brand" ? "hover:shadow-[0_20px_40px_rgba(138,28,54,0.065)] hover:border-brand-200/50" :
           color === "success" ? "hover:shadow-[0_20px_40px_rgba(16,185,129,0.065)] hover:border-emerald-200/50" :
           color === "warning" ? "hover:shadow-[0_20px_40px_rgba(217,119,6,0.065)] hover:border-amber-200/50" :
@@ -211,8 +211,6 @@ const StatCard = React.memo(({ icon, title, value, suffix = "", trend, decimals 
         style={{
           WebkitBackfaceVisibility: 'hidden',
           backfaceVisibility: 'hidden',
-          WebkitTransform: 'translate3d(0,0,0)',
-          transform: 'translate3d(0,0,0)',
           isolation: 'isolate'
         }}
       >
@@ -500,12 +498,10 @@ function SkeletonStatCard() {
   return (
     <div className="w-full animate-pulse">
       <div 
-        className="relative bg-white/85 p-5 sm:p-6 rounded-2xl sm:rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 flex flex-col justify-between min-h-[142px]"
+        className="relative bg-white/85 p-5 sm:p-6 rounded-2xl sm:rounded-[2.25rem] shadow-[0_8px_32px_rgba(0,0,0,0.015)] border border-slate-100/70 flex flex-col justify-between min-h-[142px] will-change-transform"
         style={{
           WebkitBackfaceVisibility: 'hidden',
-          backfaceVisibility: 'hidden',
-          WebkitTransform: 'translate3d(0,0,0)',
-          transform: 'translate3d(0,0,0)'
+          backfaceVisibility: 'hidden'
         }}
       >
         <div className="absolute inset-0 rounded-2xl sm:rounded-[2.25rem] overflow-hidden pointer-events-none z-0">
