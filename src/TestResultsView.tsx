@@ -15,6 +15,14 @@ export default function TestResultsView({ results, onClose }: { results: any, on
   const [questionExpanded, setQuestionExpanded] = useState(false);
   const [questionOverflows, setQuestionOverflows] = useState(false);
   const questionTextRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  React.useEffect(() => {
+    setIsMobile(window.innerWidth < 1024);
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   React.useEffect(() => {
     document.body.setAttribute('data-review-mode', 'true');
@@ -122,7 +130,10 @@ export default function TestResultsView({ results, onClose }: { results: any, on
       const containerRect = containerRef.current.getBoundingClientRect();
       const offset = window.innerWidth < 1024 ? 80 : 100;
       const targetY = containerRef.current.scrollTop + cardRect.top - containerRect.top - offset;
-      containerRef.current.scrollTo({ top: targetY, behavior: 'smooth' });
+      containerRef.current.scrollTo({ 
+        top: targetY, 
+        behavior: window.innerWidth < 1024 ? 'auto' : 'smooth' 
+      });
     }
   }, [currentIdx]);
 
@@ -171,6 +182,148 @@ export default function TestResultsView({ results, onClose }: { results: any, on
     if (secs < 60) return `${Math.floor(secs)}s`;
     return `${Math.floor(secs/60)}m ${Math.floor(secs%60)}s`;
   };
+
+  const questionTextContent = (
+    <div
+      ref={questionTextRef}
+      className="text-lg sm:text-2xl md:text-3xl lg:text-2xl xl:text-3xl font-semibold sm:font-extrabold text-slate-900 leading-relaxed sm:leading-[1.3] tracking-tight break-words overflow-wrap-anywhere space-y-4"
+    >
+      {(currentQ?.questionText || '').split('\n\n').map((para, i) => (
+        <p key={i}>
+          <MathTextRenderer text={para} />
+        </p>
+      ))}
+      {(() => {
+        const question = currentQ;
+        console.log("QUESTION", question);
+        console.log("DIAGRAM", question?.diagram);
+        console.log("TYPE", question?.diagram?.type);
+        return null;
+      })()}
+      {currentQ?.diagram ? (
+        <div className="mt-5 sm:mt-6 w-full block">
+          <DiagramRenderer diagram={currentQ.diagram} data={currentQ.diagram} />
+        </div>
+      ) : null}
+    </div>
+  );
+
+  const cardContent = (
+    <>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
+         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+           <span className="px-4 sm:px-5 py-1.5 sm:py-2 bg-slate-100 text-slate-600 rounded-lg sm:rounded-xl text-xs sm:text-sm font-extrabold tracking-widest uppercase border border-slate-200">
+             Question {currentIdx + 1}
+           </span>
+           <span className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4"/> Time Spent: {formatTime(timeSpent[currentIdx] || 0)}
+           </span>
+         </div>
+         
+         <div className="flex items-center gap-2 flex-wrap">
+           {isMarked && (
+             <span className="flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 bg-amber-50 text-amber-600 rounded-lg sm:rounded-xl text-xs sm:text-sm font-extrabold border border-amber-200">
+               <Flag className="w-4 h-4 text-amber-500 fill-amber-500" /> Marked for Review
+             </span>
+           )}
+           {isUnanswered ? (
+              <span className="flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 bg-slate-100 text-slate-500 rounded-lg sm:rounded-xl text-xs sm:text-sm font-extrabold border border-slate-200"><div className="w-2 h-2 rounded-full bg-slate-400"/> Unanswered</span>
+           ) : isCorrect ? (
+              <span className="flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 bg-emerald-50 text-emerald-600 rounded-lg sm:rounded-xl text-xs sm:text-sm font-extrabold border border-emerald-100"><CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5"/> Correct</span>
+           ) : (
+              <span className="flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 bg-rose-50 text-rose-600 rounded-lg sm:rounded-xl text-xs sm:text-sm font-extrabold border border-rose-100"><XCircle className="w-4 h-4 sm:w-5 sm:h-5"/> Incorrect</span>
+           )}
+         </div>
+      </div>
+
+       {/* Question text with expand/collapse */}
+       <div className="bg-white rounded-xl sm:rounded-3xl px-3 py-4 sm:p-8 border border-slate-200/50 shadow-[0_10px_30px_rgba(0,0,0,0.02)] mb-8 sm:mb-10 relative overflow-hidden">
+         <div className="absolute top-0 right-0 w-40 h-40 bg-brand-500/[0.04] rounded-full blur-3xl -mr-12 -mt-12 pointer-events-none" />
+         <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-500/[0.03] rounded-full blur-3xl -ml-10 -mb-10 pointer-events-none" />
+         {isMobile ? (
+           <div className="relative overflow-hidden" style={{ maxHeight: questionExpanded ? 'none' : 280 }}>
+             {questionTextContent}
+           </div>
+         ) : (
+           <motion.div
+             animate={{ maxHeight: questionExpanded ? 9999 : 280 }}
+             transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+             className="relative overflow-hidden"
+           >
+             {questionTextContent}
+           </motion.div>
+         )}
+
+         {/* Gradient fade overlay when collapsed */}
+         {!questionExpanded && questionOverflows && (
+           <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
+         )}
+
+         {/* Expand/collapse button */}
+         {questionOverflows && (
+           <button
+             onClick={() => setQuestionExpanded(prev => !prev)}
+             className="mt-3 text-sm font-bold text-brand-600 hover:text-brand-700 transition-colors flex items-center gap-1.5 group"
+           >
+             <span>{questionExpanded ? 'Show less' : 'Show more'}</span>
+             <ChevronDown className={cn("w-4 h-4 transition-transform duration-300", questionExpanded && "rotate-180")} />
+           </button>
+         )}
+       </div>
+
+      <div className="space-y-3 sm:space-y-4 mb-8 sm:mb-10">
+         {(currentQ?.options || []).map((opt: string, i: number) => {
+           const isThisSelected = userAnswer === i;
+           const isThisCorrect = currentQ?.correctAnswerIndex === i;
+           
+           let ringClass = "border-slate-100 bg-slate-50";
+           let icon = null;
+           
+           if (isThisCorrect) {
+               ringClass = "border-emerald-500 bg-emerald-50/50 text-emerald-900";
+               icon = <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 lg:w-5 lg:h-5 text-emerald-500 ml-auto shrink-0" />;
+            } else if (isThisSelected && !isThisCorrect) {
+               ringClass = "border-rose-500 bg-rose-50/50 text-rose-900";
+               icon = <XCircle className="w-5 h-5 sm:w-6 sm:h-6 lg:w-5 lg:h-5 text-rose-500 ml-auto shrink-0" />;
+           }
+
+           return (
+             <div key={i} className={cn("mcq-option px-3 py-3.5 sm:p-6 lg:p-5 rounded-xl sm:rounded-2xl border-2 flex items-center gap-3 sm:gap-5 lg:gap-4 transition-all text-left w-full", ringClass)}>
+                <div className={cn(
+                   "w-8 h-8 sm:w-10 sm:h-10 lg:w-9 lg:h-9 rounded-lg sm:rounded-xl flex items-center justify-center font-extrabold text-sm sm:text-base lg:text-sm shrink-0",
+                  isThisCorrect ? "bg-emerald-500 text-white" :
+                  isThisSelected ? "bg-rose-500 text-white" : "bg-slate-200 text-slate-600"
+                )}>
+                  {String.fromCharCode(65 + i)}
+                </div>
+                 <span className="text-base sm:text-xl lg:text-lg font-bold leading-tight">
+                   <MathTextRenderer text={opt} isOption />
+                 </span>
+                {icon}
+             </div>
+           )
+         })}
+      </div>
+
+      {currentQ?.explanation && (
+          <div className="math-explanation bg-brand-50 px-3 py-4 sm:p-8 lg:p-6 rounded-xl sm:rounded-3xl border border-brand-100 mb-2 lg:mb-10">
+           <h4 className="font-extrabold text-brand-900 flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 text-base sm:text-lg">
+             <div className="bg-white p-1.5 sm:p-2 rounded-lg sm:rounded-xl shadow-sm"><AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-brand-600"/></div> 
+             Detailed Explanation
+           </h4>
+           <p className="text-brand-800 font-medium leading-relaxed text-sm sm:text-lg">
+             <MathTextRenderer text={currentQ.explanation} />
+           </p>
+         </div>
+      )}
+      
+      {/* Desktop inline nav - hidden on mobile */}
+       <div className="hidden lg:flex mt-6 justify-between gap-4">
+         <Button variant="outline" disabled={currentIdx === 0} onClick={() => setCurrentIdx(p => p - 1)} className="flex-none justify-center gap-2 px-8 py-5 text-base rounded-2xl border-2 border-slate-200"><ChevronLeft className="w-5 h-5"/> Previous</Button>
+         <Button disabled={currentIdx === questions.length - 1} onClick={() => setCurrentIdx(p => p + 1)} className="flex-none justify-center gap-2 px-10 py-5 text-base rounded-2xl bg-slate-900 text-white hover:bg-slate-800">Next <ChevronRight className="w-5 h-5"/></Button>
+      </div>
+    </>
+  );
 
   return (
     <div 
@@ -380,145 +533,18 @@ export default function TestResultsView({ results, onClose }: { results: any, on
         {/* Right Col: Detailed Question Card */}
         <div className="lg:col-span-2 space-y-6">
           <div ref={questionCardRef} className="glass px-2.5 py-5 sm:p-10 lg:p-8 rounded-2xl sm:rounded-[2.5rem] border border-slate-200 premium-shadow bg-white">
-            <motion.div 
-               key={currentIdx}
-               {...fadeSlideUpSm}
-             >
-             
-             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
-                <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-                  <span className="px-4 sm:px-5 py-1.5 sm:py-2 bg-slate-100 text-slate-600 rounded-lg sm:rounded-xl text-xs sm:text-sm font-extrabold tracking-widest uppercase border border-slate-200">
-                    Question {currentIdx + 1}
-                  </span>
-                  <span className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                     <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4"/> Time Spent: {formatTime(timeSpent[currentIdx] || 0)}
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-2 flex-wrap">
-                  {isMarked && (
-                    <span className="flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 bg-amber-50 text-amber-600 rounded-lg sm:rounded-xl text-xs sm:text-sm font-extrabold border border-amber-200">
-                      <Flag className="w-4 h-4 text-amber-500 fill-amber-500" /> Marked for Review
-                    </span>
-                  )}
-                  {isUnanswered ? (
-                     <span className="flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 bg-slate-100 text-slate-500 rounded-lg sm:rounded-xl text-xs sm:text-sm font-extrabold border border-slate-200"><div className="w-2 h-2 rounded-full bg-slate-400"/> Unanswered</span>
-                  ) : isCorrect ? (
-                     <span className="flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 bg-emerald-50 text-emerald-600 rounded-lg sm:rounded-xl text-xs sm:text-sm font-extrabold border border-emerald-100"><CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5"/> Correct</span>
-                  ) : (
-                     <span className="flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 bg-rose-50 text-rose-600 rounded-lg sm:rounded-xl text-xs sm:text-sm font-extrabold border border-rose-100"><XCircle className="w-4 h-4 sm:w-5 sm:h-5"/> Incorrect</span>
-                  )}
-                </div>
-             </div>
-
-              {/* Question text with expand/collapse */}
-              <div className="bg-white rounded-xl sm:rounded-3xl px-3 py-4 sm:p-8 border border-slate-200/50 shadow-[0_10px_30px_rgba(0,0,0,0.02)] mb-8 sm:mb-10 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-brand-500/[0.04] rounded-full blur-3xl -mr-12 -mt-12 pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-500/[0.03] rounded-full blur-3xl -ml-10 -mb-10 pointer-events-none" />
-                <motion.div
-                  animate={{ maxHeight: questionExpanded ? 9999 : 280 }}
-                  transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                  className="relative overflow-hidden"
-                >
-                  <div
-                    ref={questionTextRef}
-                    className="text-lg sm:text-2xl md:text-3xl lg:text-2xl xl:text-3xl font-semibold sm:font-extrabold text-slate-900 leading-relaxed sm:leading-[1.3] tracking-tight break-words overflow-wrap-anywhere space-y-4"
-                  >
-                    {(currentQ?.questionText || '').split('\n\n').map((para, i) => (
-                      <p key={i}>
-                        <MathTextRenderer text={para} />
-                      </p>
-                    ))}
-                    {(() => {
-                      const question = currentQ;
-                      console.log("QUESTION", question);
-                      console.log("DIAGRAM", question?.diagram);
-                      console.log("TYPE", question?.diagram?.type);
-                      return null;
-                    })()}
-                    {currentQ?.diagram ? (
-                      <div className="mt-5 sm:mt-6 w-full block">
-                        <DiagramRenderer diagram={currentQ.diagram} data={currentQ.diagram} />
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {/* Gradient fade overlay when collapsed */}
-                  {!questionExpanded && questionOverflows && (
-                    <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
-                  )}
-                </motion.div>
-
-                {/* Expand/collapse button */}
-                {questionOverflows && (
-                  <button
-                    onClick={() => setQuestionExpanded(prev => !prev)}
-                    className="mt-3 text-sm font-bold text-brand-600 hover:text-brand-700 transition-colors flex items-center gap-1.5 group"
-                  >
-                    <span>{questionExpanded ? 'Show less' : 'Show more'}</span>
-                    <motion.div
-                      animate={{ rotate: questionExpanded ? 180 : 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <ChevronDown className="w-4 h-4" />
-                    </motion.div>
-                  </button>
-                )}
+            {isMobile ? (
+              <div key={currentIdx}>
+                {cardContent}
               </div>
-
-             <div className="space-y-3 sm:space-y-4 mb-8 sm:mb-10">
-                {(currentQ?.options || []).map((opt: string, i: number) => {
-                  const isThisSelected = userAnswer === i;
-                  const isThisCorrect = currentQ?.correctAnswerIndex === i;
-                  
-                  let ringClass = "border-slate-100 bg-slate-50";
-                  let icon = null;
-                  
-                  if (isThisCorrect) {
-                      ringClass = "border-emerald-500 bg-emerald-50/50 text-emerald-900";
-                      icon = <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 lg:w-5 lg:h-5 text-emerald-500 ml-auto shrink-0" />;
-                   } else if (isThisSelected && !isThisCorrect) {
-                      ringClass = "border-rose-500 bg-rose-50/50 text-rose-900";
-                      icon = <XCircle className="w-5 h-5 sm:w-6 sm:h-6 lg:w-5 lg:h-5 text-rose-500 ml-auto shrink-0" />;
-                  }
-
-                  return (
-                    <div key={i} className={cn("mcq-option px-3 py-3.5 sm:p-6 lg:p-5 rounded-xl sm:rounded-2xl border-2 flex items-center gap-3 sm:gap-5 lg:gap-4 transition-all text-left w-full", ringClass)}>
-                       <div className={cn(
-                          "w-8 h-8 sm:w-10 sm:h-10 lg:w-9 lg:h-9 rounded-lg sm:rounded-xl flex items-center justify-center font-extrabold text-sm sm:text-base lg:text-sm shrink-0",
-                         isThisCorrect ? "bg-emerald-500 text-white" :
-                         isThisSelected ? "bg-rose-500 text-white" : "bg-slate-200 text-slate-600"
-                       )}>
-                         {String.fromCharCode(65 + i)}
-                       </div>
-                        <span className="text-base sm:text-xl lg:text-lg font-bold leading-tight">
-                          <MathTextRenderer text={opt} isOption />
-                        </span>
-                       {icon}
-                    </div>
-                  )
-                })}
-             </div>
-
-             {currentQ?.explanation && (
-                 <div className="math-explanation bg-brand-50 px-3 py-4 sm:p-8 lg:p-6 rounded-xl sm:rounded-3xl border border-brand-100 mb-2 lg:mb-10">
-                  <h4 className="font-extrabold text-brand-900 flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 text-base sm:text-lg">
-                    <div className="bg-white p-1.5 sm:p-2 rounded-lg sm:rounded-xl shadow-sm"><AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-brand-600"/></div> 
-                    Detailed Explanation
-                  </h4>
-                  <p className="text-brand-800 font-medium leading-relaxed text-sm sm:text-lg">
-                    <MathTextRenderer text={currentQ.explanation} />
-                  </p>
-                </div>
-             )}
-             
-             {/* Desktop inline nav - hidden on mobile */}
-              <div className="hidden lg:flex mt-6 justify-between gap-4">
-                <Button variant="outline" disabled={currentIdx === 0} onClick={() => setCurrentIdx(p => p - 1)} className="flex-none justify-center gap-2 px-8 py-5 text-base rounded-2xl border-2 border-slate-200"><ChevronLeft className="w-5 h-5"/> Previous</Button>
-                <Button disabled={currentIdx === questions.length - 1} onClick={() => setCurrentIdx(p => p + 1)} className="flex-none justify-center gap-2 px-10 py-5 text-base rounded-2xl bg-slate-900 text-white hover:bg-slate-800">Next <ChevronRight className="w-5 h-5"/></Button>
-             </div>
-
-            </motion.div>
+            ) : (
+              <motion.div 
+                 key={currentIdx}
+                 {...fadeSlideUpSm}
+               >
+                 {cardContent}
+              </motion.div>
+            )}
           </div>
         </div>
 
