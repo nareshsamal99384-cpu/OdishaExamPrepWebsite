@@ -6669,13 +6669,13 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             )}>
               <VisualEffects />
               
-              {/* Premium Close Button */}
+              {/* Premium Close Button — positioned absolute but with enough top/right clearance */}
               <button
                 onClick={() => setIsBannerDismissed(true)}
-                className="absolute top-4 right-4 sm:top-5 sm:right-5 z-20 p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white/60 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 group focus:outline-none cursor-pointer"
+                className="absolute top-3 right-3 sm:top-5 sm:right-5 z-30 p-1.5 sm:p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 hover:border-white/30 text-white/70 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 group focus:outline-none cursor-pointer"
                 aria-label="Dismiss banner"
               >
-                <X className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:rotate-90" />
+                <X className="w-3.5 h-3.5 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:rotate-90" />
               </button>
               
               {/* Dynamic Glowing Ambient Mesh / Orbs */}
@@ -6719,7 +6719,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   />
                 ))}
               </div>
-              <div className="relative z-10 px-4 py-5 sm:px-10 sm:py-8 lg:p-14 flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10">
+              <div className="relative z-10 px-4 pt-8 pb-5 sm:px-10 sm:py-8 lg:p-14 flex flex-col lg:flex-row items-center justify-between gap-5 lg:gap-10">
                 <motion.div 
                   initial={isMobile ? "show" : "hidden"}
                   animate={isMobile ? "show" : undefined}
@@ -6787,7 +6787,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         hidden: { y: 8, opacity: 0 },
                         show: { y: 0, opacity: 1 }
                       }}
-                      className="flex flex-wrap items-center justify-start gap-1.5 sm:gap-2.5"
+                      className="flex flex-wrap items-center justify-start gap-1.5 sm:gap-2.5 pr-8 sm:pr-0"
                     >
                       <span className={cn(
                         "px-2.5 sm:px-3.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-[0.18em] border backdrop-blur-sm",
@@ -6864,12 +6864,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     className="flex flex-col items-start sm:items-center gap-4 sm:gap-5 shrink-0 lg:border-l lg:border-white/5 lg:pl-12 lg:min-w-[280px] w-full lg:w-auto"
                   >
                     <div className="text-left sm:text-center w-full">
-                      <div className="flex flex-row items-center justify-start sm:justify-center gap-3 sm:gap-1.5 flex-wrap">
+                      <div className="flex flex-row items-center justify-start sm:justify-center gap-2.5 flex-wrap">
                         <div className="flex items-center gap-2">
-                          <span className="text-brand-300/40 text-sm sm:text-base lg:text-lg line-through font-bold">₹{bundleOriginalPrice}</span>
-                          <span className="text-2xl sm:text-4xl lg:text-5xl font-black text-white font-mono tracking-tighter">₹{bundlePrice}</span>
+                          <span className="text-brand-300/40 text-sm line-through font-bold">₹{bundleOriginalPrice}</span>
+                          <span className="text-3xl sm:text-4xl lg:text-5xl font-black text-white font-mono tracking-tighter">₹{bundlePrice}</span>
                         </div>
-                        <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-amber-500/10 text-amber-300 text-[9px] sm:text-[10px] font-black rounded-lg border border-amber-500/20 uppercase tracking-widest">
+                        <span className="px-2 py-0.5 bg-amber-500/10 text-amber-300 text-[9px] sm:text-[10px] font-black rounded-lg border border-amber-500/20 uppercase tracking-widest whitespace-nowrap">
                           Save {Math.round(((bundleOriginalPrice - bundlePrice) / bundleOriginalPrice) * 100)}% Instant
                         </span>
                       </div>
