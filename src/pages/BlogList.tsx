@@ -243,10 +243,10 @@ export default function BlogList() {
                 transition={{ duration: durations.slow }}
                 className="group relative"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-brand-600/5 to-indigo-600/5 rounded-[2.5rem] blur-2xl -z-10 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-r from-brand-600/5 to-indigo-600/5 rounded-[1.75rem] sm:rounded-[2.5rem] blur-2xl -z-10 group-hover:opacity-100 transition-opacity" />
                 <Link 
                   to={`/blog/${featuredBlog.id}`} 
-                  className="flex flex-col lg:flex-row bg-white rounded-[2.5rem] border border-slate-200/80 shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-350 min-h-[420px]"
+                  className="flex flex-col lg:flex-row bg-white rounded-[1.75rem] sm:rounded-[2.5rem] border border-slate-200/80 shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-350 min-h-[420px]"
                 >
                   {/* Featured Image */}
                   <div className="w-full lg:w-[55%] h-64 sm:h-80 lg:h-auto bg-slate-100 relative overflow-hidden shrink-0">
@@ -263,13 +263,13 @@ export default function BlogList() {
                       </div>
                     )}
                     {/* Category Overlay */}
-                    <div className="absolute top-6 left-6 bg-brand-600 text-white font-black text-xs uppercase tracking-widest px-4 py-2 rounded-xl shadow-md">
+                    <div className="absolute top-4 left-4 sm:top-6 sm:left-6 bg-brand-600 text-white font-black text-xs uppercase tracking-widest px-4 py-2 rounded-xl shadow-md">
                       Featured • {getBlogCategory(featuredBlog)}
                     </div>
                   </div>
 
                   {/* Featured Content details */}
-                  <div className="p-8 sm:p-12 lg:w-[45%] flex flex-col justify-between space-y-6">
+                  <div className="p-5 sm:p-8 md:p-12 lg:w-[45%] flex flex-col justify-between space-y-6">
                     <div className="space-y-4">
                       {/* Meta information */}
                       <div className="flex items-center gap-4 text-xs font-bold text-slate-400">
@@ -285,7 +285,7 @@ export default function BlogList() {
                       </div>
 
                       {/* Title */}
-                      <h2 className="text-2xl sm:text-3xl font-black text-slate-900 group-hover:text-brand-600 transition-colors leading-tight tracking-tight">
+                      <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 group-hover:text-brand-600 transition-colors leading-tight tracking-tight font-serif">
                         {featuredBlog.name}
                       </h2>
 
@@ -313,7 +313,7 @@ export default function BlogList() {
                   </h3>
                 )}
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 md:gap-10">
                   {gridBlogs.map((blog, idx) => {
                     const category = getBlogCategory(blog);
                     const readTime = calculateReadingTime(blog.description);
@@ -328,7 +328,7 @@ export default function BlogList() {
                       >
                         <Link 
                           to={`/blog/${blog.id}`} 
-                          className="group flex flex-col bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-md hover:shadow-2xl transition-all duration-350 w-full"
+                          className="group flex flex-col bg-white rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden border border-slate-200/80 shadow-md hover:shadow-2xl transition-all duration-350 w-full"
                         >
                           {/* Card Image */}
                           <div className="h-48 sm:h-52 bg-slate-100 overflow-hidden relative shrink-0">
@@ -352,7 +352,7 @@ export default function BlogList() {
                           </div>
 
                           {/* Card Content details */}
-                          <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                          <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-4">
                             <div className="space-y-3">
                               {/* Metadata */}
                               <div className="flex items-center gap-3 text-[11px] font-bold text-slate-400">
@@ -368,12 +368,12 @@ export default function BlogList() {
                               </div>
 
                               {/* Title */}
-                              <h4 className="text-lg font-extrabold text-slate-900 group-hover:text-brand-600 transition-colors leading-snug line-clamp-2">
+                              <h4 className="text-base sm:text-lg font-extrabold font-serif text-slate-900 group-hover:text-brand-600 transition-colors leading-snug line-clamp-2">
                                 {blog.name}
                               </h4>
 
                               {/* Text Excerpt */}
-                              <p className="text-xs sm:text-sm text-slate-400 font-semibold leading-relaxed line-clamp-2">
+                              <p className="text-xs sm:text-sm text-slate-500 font-semibold leading-relaxed line-clamp-2">
                                 {excerpt}
                               </p>
                             </div>

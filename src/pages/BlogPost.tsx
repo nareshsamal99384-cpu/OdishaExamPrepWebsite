@@ -286,25 +286,29 @@ export default function BlogPost() {
         {blog.icon ? <img src={getDirectImageUrl(blog.icon)} alt={blog.name} className="absolute inset-0 w-full h-full object-cover opacity-35" /> : <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-indigo-950 opacity-90" />}
         <div className="absolute inset-0 bg-gradient-to-t from-[#F8FAFC] via-[#F8FAFC]/30 to-slate-950/20" />
       </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-32 sm:-mt-52 relative z-10 pb-20">
-        <div className="flex flex-col sm:flex-row justify-between gap-4 mb-8">
-          <nav className="flex items-center gap-2 text-xs font-black bg-white/90 backdrop-blur px-4 py-2.5 rounded-2xl shadow-sm border border-slate-100 w-fit">
-            <Link to="/">Home</Link><ChevronRight className="w-3.5 h-3.5" /><Link to="/blog">Blog</Link><ChevronRight className="w-3.5 h-3.5" /><span className="text-slate-400">{blog.name}</span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 sm:-mt-40 relative z-10 pb-20">
+        <div className="flex flex-row items-center justify-between gap-3 mb-6 sm:mb-8">
+          <nav className="flex items-center gap-1.5 text-[10px] sm:text-xs font-black bg-white/90 backdrop-blur px-3 py-2 rounded-xl shadow-sm border border-slate-100/80 min-w-0">
+            <Link to="/" className="hover:text-brand-600 shrink-0">Home</Link>
+            <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />
+            <Link to="/blog" className="hover:text-brand-600 shrink-0">Blog</Link>
+            <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />
+            <span className="text-slate-400 truncate max-w-[80px] xs:max-w-[120px] sm:max-w-[200px]">{blog.name}</span>
           </nav>
-          <Link to="/blog" className="inline-flex items-center gap-2 text-slate-600 hover:text-brand-600 font-extrabold bg-white px-4 py-2.5 rounded-2xl shadow-sm border border-slate-100 text-sm">
-            <ChevronLeft className="w-4 h-4" /> Back to Articles
+          <Link to="/blog" className="inline-flex items-center gap-1 text-slate-650 hover:text-brand-600 font-extrabold bg-white/95 backdrop-blur px-3 py-2 rounded-xl shadow-sm border border-slate-100 text-xs sm:text-sm shrink-0">
+            <ChevronLeft className="w-3.5 h-3.5" /> <span className="hidden xs:inline">Back</span><span className="hidden sm:inline"> to Articles</span>
           </Link>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
           <div className="lg:col-span-8 space-y-8">
-            <motion.article {...fadeSlideDown} className="bg-white rounded-[2.5rem] p-6 sm:p-14 shadow-xl border border-slate-100">
-              <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-slate-400 mb-6 uppercase tracking-wider">
+            <motion.article {...fadeSlideDown} className="bg-white rounded-[1.75rem] sm:rounded-[2.5rem] p-5 sm:p-10 md:p-14 shadow-xl border border-slate-100">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs font-bold text-slate-400 mb-5 sm:mb-6 uppercase tracking-wider">
                 <span className="bg-brand-50 text-brand-700 px-3 py-1 rounded-xl">{category}</span>
                 <div className="flex items-center gap-1.5"><Calendar className="w-4 h-4" /> {blog.examDate ? new Date(blog.examDate).toLocaleDateString() : 'Recent Update'}</div>
                 <div className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> {readingTime} min read</div>
               </div>
-              <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight mb-8 leading-tight">{blog.name}</h1>
-              <div className="prose prose-slate max-w-none prose-headings:font-black prose-p:text-slate-600 prose-img:rounded-3xl" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(processedDescription || blog.description) }} />
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-6 sm:mb-8 leading-tight font-serif">{blog.name}</h1>
+              <div className="prose max-w-none prose-headings:font-black prose-p:text-slate-600 prose-img:rounded-3xl" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(processedDescription || blog.description) }} />
             </motion.article>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Share Box */}
