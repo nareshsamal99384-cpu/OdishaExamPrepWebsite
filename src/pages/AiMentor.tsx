@@ -5034,7 +5034,7 @@ JSON structure:
                     })}
  
                     {/* Submit / Restart Quiz action */}
-                    <div className="flex gap-2 pt-2">
+                    <div className="flex flex-col sm:flex-row gap-2.5 pt-4 border-t border-slate-200/40">
                       {!quizSubmitted ? (
                         <>
                           <button
@@ -5062,8 +5062,9 @@ JSON structure:
                                 setQuizSubmitted(true);
                               }
                             }}
-                            className="flex-[2] py-3.5 sm:py-2.5 bg-teal-500 hover:bg-emerald-400 text-slate-900 rounded-xl text-xs font-black uppercase tracking-widest transition-colors cursor-pointer shadow-md active:translate-y-0.5"
+                            className="w-full sm:flex-[2] py-3.5 sm:py-3 bg-gradient-to-r from-teal-500 to-teal-650 hover:from-teal-400 hover:to-teal-550 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 cursor-pointer shadow-md shadow-teal-500/10 active:translate-y-0.5 flex items-center justify-center gap-2"
                           >
+                            <CheckCircle2 className="w-4 h-4 text-white" />
                             Submit Quiz
                           </button>
                           <button
@@ -5080,8 +5081,9 @@ JSON structure:
                                 }
                               });
                             }}
-                            className="flex-1 py-3.5 sm:py-2.5 bg-red-500/10 border border-red-500/20 hover:bg-red-500/25 text-red-400 rounded-xl text-xs font-black uppercase tracking-widest transition-colors cursor-pointer active:translate-y-0.5"
+                            className="w-full sm:flex-1 py-3.5 sm:py-3 border border-slate-200 bg-white hover:bg-slate-50 text-slate-650 hover:text-slate-800 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-200 cursor-pointer active:translate-y-0.5 flex items-center justify-center gap-1.5 shadow-sm"
                           >
+                            <X className="w-4 h-4 text-slate-400" />
                             Cancel
                           </button>
                         </>
@@ -5092,8 +5094,9 @@ JSON structure:
                             setQuizSubmitted(false);
                             setSelectedAnswers({});
                           }}
-                          className="flex-1 py-3.5 sm:py-2.5 border border-slate-200/60 hover:bg-slate-100 text-slate-700 hover:text-slate-900 rounded-xl text-xs font-black uppercase tracking-widest transition-colors cursor-pointer active:translate-y-0.5"
+                          className="w-full py-3.5 sm:py-3 border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-200 cursor-pointer active:translate-y-0.5 flex items-center justify-center gap-2 shadow-sm"
                         >
+                          <RotateCcw className="w-4 h-4 text-slate-500" />
                           Retry / New Quiz
                         </button>
                       )}
