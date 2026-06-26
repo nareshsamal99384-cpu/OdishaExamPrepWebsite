@@ -377,6 +377,7 @@ const FormulaRenderer = ({ formula }: { formula: string }) => {
         html = katex.renderToString(formula, {
           throwOnError: false,
           displayMode: false, // inline fits inside card paddings better
+          output: 'html',
         });
         formulaCache.set(formula, html);
       }
@@ -3655,7 +3656,7 @@ JSON structure:
 
         {/* Right Pane: Interactive Study Suite */}
         <div className={cn(
-          "lg:col-span-5 bg-white text-slate-600 border border-slate-200/60 rounded-[2rem] overflow-hidden shadow-2xl flex-col h-auto lg:h-[720px] relative",
+          "lg:col-span-5 bg-white text-slate-600 border border-slate-200/60 rounded-[2rem] overflow-hidden shadow-2xl flex-col h-[600px] lg:h-[720px] relative",
           mobileTab === 'tools' ? "flex" : "hidden lg:flex"
         )}>
           

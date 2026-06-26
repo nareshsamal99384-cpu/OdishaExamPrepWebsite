@@ -106,6 +106,7 @@ function renderKatex(math: string, display: boolean): { html: string; ok: boolea
       displayMode: display,
       trust: false,
       strict: false,
+      output: 'html',
     });
     result = { html, ok: true };
   } catch (_) {
@@ -117,6 +118,7 @@ function renderKatex(math: string, display: boolean): { html: string; ok: boolea
         displayMode: display,
         trust: false,
         strict: 'ignore',
+        output: 'html',
       });
       // KaTeX adds class="katex-error" for parse failures
       const ok = !html.includes('katex-error');

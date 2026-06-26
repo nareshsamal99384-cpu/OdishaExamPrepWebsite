@@ -192,7 +192,7 @@ const RenderLatexLabel: React.FC<{
           try {
             let html = diagramKatexCache.get(part);
             if (!html) {
-              html = katex.renderToString(part, { displayMode: false, throwOnError: false });
+              html = katex.renderToString(part, { displayMode: false, throwOnError: false, output: 'html' });
               diagramKatexCache.set(part, html);
             }
             return (
