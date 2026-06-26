@@ -866,13 +866,6 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
       const scrollHeight = document.documentElement.scrollHeight;
       const clientHeight = window.innerHeight;
 
-      // Only apply this dynamic hide on scroll behavior in the AI Mentor tab on mobile/tablet
-      const isAiMentorTab = activeTab === 'ai_mentor';
-      if (!isAiMentorTab) {
-        setIsVisible(true);
-        lastScrollY.current = Math.max(0, scrollTop);
-        return;
-      }
 
       // 1. Check if we are near the bottom of the page (within 60px)
       const isAtBottom = scrollHeight - scrollTop - clientHeight < 60;
