@@ -33,6 +33,7 @@ import {
   ChevronUp,
   Edit3,
   X,
+  XCircle,
   Plus
 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -3710,7 +3711,7 @@ JSON structure:
           </div>
 
           {/* Scrollable content pane */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-2.5 pb-6 sm:p-3.5 sm:pb-8 no-scrollbar relative z-10 flex flex-col smooth-scroll-gpu" style={{ contain: 'layout paint' }}>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-2.5 pb-32 sm:p-3.5 sm:pb-8 no-scrollbar relative z-10 flex flex-col smooth-scroll-gpu" style={{ contain: 'layout paint' }}>
             <AnimatePresence mode="wait">
               {activeRightTab === 'planner' && (
                 <motion.div
@@ -4603,53 +4604,61 @@ JSON structure:
                 ) : (
                   <div className="space-y-4">
                     {bookmarkedQuestions.map((bq) => (
-                      <div key={bq.id} className="p-3.5 sm:p-4 bg-slate-50 border border-slate-200/50 rounded-2xl space-y-3.5 sm:space-y-3 text-left relative">
-                        <button
-                          onClick={() => toggleBookmark(bq)}
-                          className="absolute top-3.5 right-3.5 p-1.5 bg-red-500/10 border border-red-500/20 hover:bg-red-500 hover:text-white text-red-400 rounded-lg transition-all cursor-pointer"
-                          title="Remove bookmark"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                        <div className="space-y-1">
-                          <span className="text-[10px] sm:text-[9px] font-black uppercase tracking-wider text-brand-600 bg-teal-500/5 px-2 py-0.5 rounded border border-teal-500/10">
-                            {bq.subject}
-                          </span>
-                          <p className="text-xs sm:text-xs text-slate-500 font-bold block pt-1">Saved: {bq.bookmarkedAt}</p>
+                      <div key={bq.id} className="bg-slate-50/70 border border-slate-200/60 rounded-2xl p-4 sm:p-5 space-y-4 text-left relative transition-all duration-200 shadow-sm hover:shadow-md animate-fade-in">
+                        <div className="flex justify-between items-center border-b border-slate-200/40 pb-2.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] sm:text-[9px] font-black uppercase tracking-wider text-brand-600 bg-brand-50 px-2.5 py-1 rounded border border-brand-100">
+                              {bq.subject}
+                            </span>
+                            <span className="text-[10px] sm:text-[9px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200/50">
+                              Saved: {bq.bookmarkedAt}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => toggleBookmark(bq)}
+                            className="p-1.5 bg-red-50/80 border border-red-200 hover:bg-red-500 hover:border-red-500 hover:text-white text-red-500 rounded-lg transition-all cursor-pointer shrink-0"
+                            title="Remove bookmark"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                        <h5 className="text-[13px] sm:text-xs font-bold text-slate-800 pr-8 leading-relaxed">
+                        <h5 className="text-[14px] sm:text-sm font-bold text-slate-800 leading-relaxed">
                           Q. <MathTextRenderer text={bq.question} />
                         </h5>
-                        {(() => {
-                          const question = bq;
-                          console.log("QUESTION", question);
-                          console.log("DIAGRAM", question.diagram);
-                          console.log("TYPE", question.diagram?.type);
-                          return null;
-                        })()}
                         {bq.diagram ? (
-                          <div className="mt-4 sm:mt-5 w-full block">
+                          <div className="mt-2 w-full block">
                             <DiagramRenderer diagram={bq.diagram} data={bq.diagram} />
                           </div>
                         ) : null}
-                        <div className="space-y-1.5">
-                          {bq.options.map((opt: string, oIdx: number) => (
-                            <div 
-                              key={oIdx} 
-                              className={cn(
-                                "p-2.5 sm:p-2 rounded-lg border text-xs sm:text-[11px] font-semibold leading-relaxed flex items-center justify-between",
-                                bq.correctOption === oIdx 
-                                  ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-650" 
-                                  : "bg-slate-50 border-slate-200/50 text-slate-500"
-                              )}
-                            >
-                              <span><MathTextRenderer text={opt} isOption /></span>
-                              {bq.correctOption === oIdx && <CheckCircle2 className="w-3 h-3 text-emerald-650 shrink-0" />}
-                            </div>
-                          ))}
+                        <div className="grid grid-cols-1 gap-2.5">
+                          {bq.options.map((opt: string, oIdx: number) => {
+                            const isCorrect = bq.correctOption === oIdx;
+                            return (
+                              <div 
+                                key={oIdx} 
+                                className={cn(
+                                  "p-3 sm:p-2.5 rounded-xl border text-xs sm:text-[11px] font-medium leading-relaxed flex items-center gap-3 relative",
+                                  isCorrect 
+                                    ? "bg-emerald-50 border-emerald-500/50 text-emerald-800 font-semibold ring-1 ring-emerald-500/10" 
+                                    : "bg-white border-slate-200/60 text-slate-500"
+                                )}
+                              >
+                                <span className={cn(
+                                  "w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] sm:text-[9px] font-black border shrink-0",
+                                  isCorrect 
+                                    ? "bg-emerald-500 text-white border-emerald-500" 
+                                    : "bg-slate-50 text-slate-400 border-slate-200"
+                                )}>
+                                  {['A', 'B', 'C', 'D'][oIdx] || String.fromCharCode(65 + oIdx)}
+                                </span>
+                                <span className="flex-1 pr-6"><MathTextRenderer text={opt} isOption /></span>
+                                {isCorrect && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-650 shrink-0 absolute right-3" />}
+                              </div>
+                            );
+                          })}
                         </div>
-                        <div className="text-xs sm:text-[10px] text-slate-500 bg-slate-50 border border-slate-200/50 rounded-xl p-3 font-medium leading-relaxed">
-                          <span className="font-bold text-brand-600 block mb-0.5 text-xs sm:text-[10px]">Explanation:</span>
+                        <div className="text-xs sm:text-[11px] text-slate-600 bg-slate-100/50 border border-slate-200/50 rounded-xl p-3.5 sm:p-3 font-medium leading-relaxed">
+                          <span className="font-bold text-brand-600 block mb-1 text-xs sm:text-[11px]">Explanation:</span>
                           <MathTextRenderer text={bq.explanation} />
                         </div>
                       </div>
@@ -4917,58 +4926,79 @@ JSON structure:
                     {activeQuiz.map((q, qIdx) => {
                       const isBookmarked = bookmarkedQuestions.some(bq => bq.question === q.question);
                       return (
-                        <div key={qIdx} className="space-y-3 border-b border-slate-200/50 pb-4 last:border-0 last:pb-0 text-left relative">
-                          <div className="flex justify-between items-start gap-4">
-                            <h5 className="text-[15px] sm:text-sm font-bold text-slate-800 leading-relaxed pr-8">
-                              Q{qIdx + 1}. <MathTextRenderer text={q.question} />
-                            </h5>
+                        <div key={qIdx} className="bg-slate-50/70 border border-slate-200/60 rounded-2xl p-4 sm:p-5 space-y-4 text-left relative transition-all duration-200 shadow-sm hover:shadow-md animate-fade-in">
+                          <div className="flex justify-between items-center border-b border-slate-200/40 pb-2.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] sm:text-[9px] font-black uppercase tracking-wider text-brand-600 bg-brand-50 px-2.5 py-1 rounded border border-brand-100">
+                                Question {qIdx + 1}
+                              </span>
+                              {quizSubmitted && (
+                                <span className={cn(
+                                  "text-[10px] sm:text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded border",
+                                  selectedAnswers[qIdx] === q.correctOption
+                                    ? "bg-emerald-50 text-emerald-650 border-emerald-100"
+                                    : "bg-red-50 text-red-400 border-red-100"
+                                )}>
+                                  {selectedAnswers[qIdx] === q.correctOption ? "Correct" : "Incorrect"}
+                                </span>
+                              )}
+                            </div>
                             <button
                               onClick={() => toggleBookmark(q)}
                               className={cn(
-                                "w-8.5 h-8.5 sm:w-7 sm:h-7 rounded-full flex items-center justify-center border transition-all cursor-pointer shrink-0 group",
+                                "w-8 h-8 sm:w-7 sm:h-7 rounded-full flex items-center justify-center border transition-all cursor-pointer shrink-0 group",
                                 isBookmarked 
                                   ? "bg-amber-500/10 border-amber-500/30 text-amber-650 shadow-md shadow-amber-500/5" 
-                                  : "bg-slate-50 border-slate-200/50 text-slate-500 hover:border-amber-500/20 hover:bg-amber-500/5 hover:text-amber-650"
+                                  : "bg-white border-slate-200/60 text-slate-500 hover:border-amber-500/20 hover:bg-amber-500/5 hover:text-amber-650"
                               )}
                               title={isBookmarked ? "Bookmarked!" : "Bookmark question"}
                             >
                               <Star className={cn(
-                                "w-4.5 h-4.5 sm:w-3.5 sm:h-3.5 transition-all duration-300",
+                                "w-4 h-4 sm:w-3.5 sm:h-3.5 transition-all duration-300",
                                 isBookmarked 
                                   ? "fill-amber-400 text-amber-650 scale-110 drop-shadow-[0_0_4px_rgba(245,158,11,0.4)]" 
                                   : "fill-none text-slate-500 group-hover:text-amber-300 group-hover:scale-110"
                               )} />
                             </button>
                           </div>
-                          {(() => {
-                            const question = q;
-                            console.log("QUESTION", question);
-                            console.log("DIAGRAM", question.diagram);
-                            console.log("TYPE", question.diagram?.type);
-                            return null;
-                          })()}
+                          
+                          <h5 className="text-[14px] sm:text-sm font-bold text-slate-800 leading-relaxed">
+                            <MathTextRenderer text={q.question} />
+                          </h5>
+
                           {q.diagram ? (
-                            <div className="mt-4 sm:mt-5 w-full block">
+                            <div className="mt-2 w-full block">
                               <DiagramRenderer diagram={q.diagram} data={q.diagram} />
                             </div>
                           ) : null}
-                          <div className="grid grid-cols-1 gap-2">
+                          
+                          <div className="grid grid-cols-1 gap-2.5">
                             {q.options.map((opt: string, optIdx: number) => {
                               const isSelected = selectedAnswers[qIdx] === optIdx;
                               const isCorrect = q.correctOption === optIdx;
+                              const isWrongSelection = isSelected && !isCorrect;
                               
-                              let optionStyle = "bg-slate-50 border-slate-200/50 hover:border-slate-300/60 text-slate-700";
+                              let containerStyle = "bg-white border-slate-200/60 text-slate-700 hover:border-slate-300/85 hover:bg-slate-50";
+                              let badgeStyle = "bg-slate-50 text-slate-500 border-slate-200/80";
+                              
                               if (isSelected) {
-                                optionStyle = "bg-[#8A1C36] border-[#8A1C36] text-white shadow-md shadow-brand-500/10 ring-1 ring-brand-500/30";
+                                containerStyle = "bg-brand-50 border-brand-500 text-brand-900 ring-1 ring-brand-500/20 font-bold shadow-sm shadow-brand-500/5";
+                                badgeStyle = "bg-brand-500 text-white border-brand-500";
                               }
+                              
                               if (quizSubmitted) {
-                                  if (isCorrect) {
-                                    optionStyle = "bg-emerald-500/10 border-emerald-500/50 text-emerald-650 font-bold ring-1 ring-emerald-500/20";
-                                  } else if (isSelected) {
-                                    optionStyle = "bg-red-500/10 border-red-500/50 text-red-400 ring-1 ring-red-500/20";
-                                  }
+                                if (isCorrect) {
+                                  containerStyle = "bg-emerald-50 border-emerald-500/50 text-emerald-800 font-bold ring-1 ring-emerald-500/10";
+                                  badgeStyle = "bg-emerald-500 text-white border-emerald-500";
+                                } else if (isSelected) {
+                                  containerStyle = "bg-red-50 border-red-500/50 text-red-800 ring-1 ring-red-500/10";
+                                  badgeStyle = "bg-red-500 text-white border-red-500";
+                                } else {
+                                  containerStyle = "bg-white/40 border-slate-200/30 text-slate-400 opacity-60";
+                                  badgeStyle = "bg-slate-50 text-slate-300 border-slate-100";
+                                }
                               }
- 
+
                               return (
                                 <button
                                   key={optIdx}
@@ -4976,21 +5006,28 @@ JSON structure:
                                   disabled={quizSubmitted}
                                   onClick={() => setSelectedAnswers(prev => ({ ...prev, [qIdx]: optIdx }))}
                                   className={cn(
-                                    "text-left p-3.5 sm:p-2.5 rounded-xl border text-xs transition-all duration-300 cursor-pointer flex items-center justify-between",
-                                    optionStyle
+                                    "text-left p-3.5 sm:p-2.5 rounded-xl border text-xs sm:text-[11px] transition-all duration-200 cursor-pointer flex items-center gap-3 w-full relative",
+                                    containerStyle
                                   )}
                                 >
-                                  <span><MathTextRenderer text={opt} isOption /></span>
-                                  {quizSubmitted && isCorrect && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-650 shrink-0" />}
+                                  <span className={cn(
+                                    "w-6 h-6 rounded-full flex items-center justify-center text-[10.5px] sm:text-[9.5px] font-black border shrink-0 transition-all duration-200",
+                                    badgeStyle
+                                  )}>
+                                    {['A', 'B', 'C', 'D'][optIdx] || String.fromCharCode(65 + optIdx)}
+                                  </span>
+                                  <span className="flex-1 pr-6 leading-relaxed"><MathTextRenderer text={opt} isOption /></span>
+                                  {quizSubmitted && isCorrect && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-650 shrink-0 absolute right-3" />}
+                                  {quizSubmitted && isWrongSelection && <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0 absolute right-3" />}
                                 </button>
                               );
                             })}
                           </div>
                           {quizSubmitted && (
-                            <p className="text-xs sm:text-[11px] text-slate-500 bg-slate-50 border border-slate-200/50 rounded-xl p-3.5 sm:p-3 mt-2 font-medium leading-relaxed">
-                              <span className="font-bold text-brand-600 block mb-0.5 text-xs sm:text-[11px]">Explanation:</span>
+                            <div className="text-xs sm:text-[11px] text-slate-600 bg-slate-100/50 border border-slate-200/50 rounded-xl p-3.5 sm:p-3 mt-1 font-medium leading-relaxed">
+                              <span className="font-bold text-brand-600 block mb-1 text-xs sm:text-[11px]">Explanation:</span>
                               <MathTextRenderer text={q.explanation} />
-                            </p>
+                            </div>
                           )}
                         </div>
                       );
