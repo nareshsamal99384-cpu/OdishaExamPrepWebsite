@@ -849,11 +849,53 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
   }, []);
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 640);
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 639px)');
+    setIsMobile(mediaQuery.matches);
+    const handleMediaChange = (e: any) => {
+      setIsMobile(e.matches);
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleMediaChange);
+    } else {
+      mediaQuery.addListener(handleMediaChange);
+    }
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleMediaChange);
+      } else {
+        mediaQuery.removeListener(handleMediaChange);
+      }
+    };
+  }, []);
+
+  const scrollHeightRef = useRef(0);
+  const clientHeightRef = useRef(0);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const updateDimensions = () => {
+      scrollHeightRef.current = document.documentElement.scrollHeight;
+      clientHeightRef.current = window.innerHeight;
+    };
+
+    updateDimensions();
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateDimensions();
+    });
+
+    if (document.body) {
+      resizeObserver.observe(document.body);
+    }
+
+    window.addEventListener('resize', updateDimensions);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateDimensions);
+    };
   }, []);
 
   const [isVisible, setIsVisible] = useState(true);
@@ -863,12 +905,14 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.scrollY || document.documentElement.scrollTop;
-      const scrollHeight = document.documentElement.scrollHeight;
-      const clientHeight = window.innerHeight;
+      
+      // Use cached dimensions to prevent Forced Synchronous Layout on scroll
+      const currentScrollHeight = scrollHeightRef.current || document.documentElement.scrollHeight;
+      const currentClientHeight = clientHeightRef.current || window.innerHeight;
 
 
       // 1. Check if we are near the bottom of the page (within 60px)
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 60;
+      const isAtBottom = currentScrollHeight - scrollTop - currentClientHeight < 60;
 
       // 2. Track scroll direction
       const isScrollingDown = scrollTop > lastScrollY.current;

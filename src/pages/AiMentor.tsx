@@ -3711,7 +3711,7 @@ JSON structure:
           </div>
 
           {/* Scrollable content pane */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-2.5 pb-6 sm:p-3.5 sm:pb-8 no-scrollbar relative z-10 flex flex-col smooth-scroll-gpu" style={{ contain: 'layout paint' }}>
+          <div className="flex-1 overflow-y-visible lg:overflow-y-auto overflow-x-hidden p-2.5 pb-6 sm:p-3.5 sm:pb-8 no-scrollbar relative z-10 flex flex-col lg:smooth-scroll-gpu" style={{ contain: 'layout paint' }}>
             <AnimatePresence mode="wait">
               {activeRightTab === 'planner' && (
                 <motion.div
@@ -4604,7 +4604,7 @@ JSON structure:
                 ) : (
                   <div className="space-y-4">
                     {bookmarkedQuestions.map((bq) => (
-                      <div key={bq.id} className="bg-slate-50/70 border border-slate-200/60 rounded-2xl p-4 sm:p-5 space-y-4 text-left relative transition-[border-color,background-color,box-shadow] duration-200 shadow-sm hover:shadow-md animate-fade-in content-visibility-auto">
+                      <div key={bq.id} className="bg-slate-50/70 border border-slate-200/60 rounded-2xl p-4 sm:p-5 space-y-4 text-left relative transition-[border-color,background-color,box-shadow] duration-200 shadow-sm hover:shadow-md animate-fade-in">
                         <div className="flex justify-between items-center border-b border-slate-200/40 pb-2.5">
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] sm:text-[9px] font-black uppercase tracking-wider text-brand-600 bg-brand-50 px-2.5 py-1 rounded border border-brand-100">
@@ -4926,7 +4926,7 @@ JSON structure:
                     {activeQuiz.map((q, qIdx) => {
                       const isBookmarked = bookmarkedQuestions.some(bq => bq.question === q.question);
                       return (
-                        <div key={qIdx} className="bg-slate-50/70 border border-slate-200/60 rounded-2xl p-4 sm:p-5 space-y-4 text-left relative transition-[border-color,background-color,box-shadow] duration-200 shadow-sm hover:shadow-md animate-fade-in content-visibility-auto">
+                        <div key={qIdx} className="bg-slate-50/70 border border-slate-200/60 rounded-2xl p-4 sm:p-5 space-y-4 text-left relative transition-[border-color,background-color,box-shadow] duration-200 shadow-sm hover:shadow-md animate-fade-in">
                           <div className="flex justify-between items-center border-b border-slate-200/40 pb-2.5">
                             <div className="flex items-center gap-2">
                               <span className="text-[10px] sm:text-[9px] font-black uppercase tracking-wider text-brand-600 bg-brand-50 px-2.5 py-1 rounded border border-brand-100">

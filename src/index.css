@@ -274,6 +274,8 @@ body {
   .smooth-scroll-gpu {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
+    will-change: transform;
+    transform: translateZ(0);
     overscroll-behavior: auto;
   }
 
