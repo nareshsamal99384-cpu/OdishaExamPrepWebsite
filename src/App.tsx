@@ -494,6 +494,15 @@ const EXAM_REGISTRY_STATUS_MAP: Record<string, { label: string; color: string }>
   'upcoming':     { label: 'Upcoming',              color: 'bg-slate-50 text-slate-600 border-slate-200' },
 };
 
+const EXAM_REGISTRY_STATUS_COLOR_MAP: Record<string, string> = {
+  'notification': 'border-l-emerald-500',
+  'admit-card':   'border-l-amber-500',
+  'applications': 'border-l-blue-500',
+  'result':       'border-l-purple-500',
+  'postponed':    'border-l-rose-500',
+  'upcoming':     'border-l-slate-400',
+};
+
 const EXAM_REGISTRY_DEFAULT = [
   { exam: 'OPSC Civil Services Examination (OCS)', status: 'notification', date: 'Prelims: July 15, 2026', actionLabel: 'Practice OPSC', examKey: 'opsc' },
   { exam: 'OSSC Combined Graduate Level (CGL)', status: 'admit-card', date: 'Exam: June 28, 2026', actionLabel: 'Practice OSSC', examKey: 'ossc' },
@@ -560,18 +569,18 @@ const ExamRegistrySection = ({
     else if (key === 'opsc' || (item.exam || '').toLowerCase().includes('opsc')) setSelectedExam('opsc-aio');
   };
   return (
-    <section id="exam-registry" className="py-12 md:py-16 bg-[#FAF8F5] border-y border-slate-200/50 scroll-mt-24">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6 md:space-y-12">
+    <section id="exam-registry" className={cn("bg-[#FAF8F5] border-y border-slate-200/50 scroll-mt-24", isMobile ? "py-10" : "py-12 md:py-16")}>
+      <div className={cn("max-w-6xl mx-auto space-y-6 md:space-y-12", isMobile ? "px-4" : "px-6")}>
         <div className="flex flex-col items-center space-y-4 text-center">
           <span className="section-chip">
             ⏰ ODISHA RECRUITMENT BULLETIN
           </span>
-          <h2 className="text-3xl md:text-5xl font-serif font-extrabold text-slate-955 tracking-tight leading-tight">
+          <h2 className={cn("font-serif font-extrabold text-slate-955 tracking-tight leading-tight", isMobile ? "text-2xl" : "text-3xl md:text-5xl")}>
             Official Exam Notifications <span className="premium-text-gradient font-serif font-extrabold">& Targeted <span className="whitespace-nowrap">Mock Tests</span></span>
           </h2>
           {isMobile ? null : <div className="section-divider" />}
           {/* Mobile Version (Shorter & Punchier) */}
-          <p className="block md:hidden text-base leading-relaxed text-gray-600 font-medium max-w-xl mx-auto">
+          <p className="block md:hidden text-xs leading-relaxed text-slate-500 font-medium max-w-xl mx-auto px-2">
             Never miss an OPSC, OSSC, or OSSSC deadline. Get real-time updates and <span className="whitespace-nowrap">syllabus-specific</span> tests.
           </p>
           {/* Desktop Version (Optimized) */}
@@ -580,22 +589,28 @@ const ExamRegistrySection = ({
           </p>
         </div>
 
-        <div className="flex flex-col items-center gap-6 md:items-stretch md:gap-0 md:bg-white md:border-2 md:border-slate-900/80 md:rounded-[2.5rem] md:overflow-hidden md:shadow-[6px_6px_0px_rgba(138,28,54,0.15)] md:divide-y-2 md:divide-slate-100">
+        <div className={cn(
+          "flex flex-col items-center w-full",
+          isMobile ? "gap-4" : "gap-6 md:items-stretch md:gap-0 md:bg-white md:border-2 md:border-slate-900/80 md:rounded-[2.5rem] md:overflow-hidden md:shadow-[6px_6px_0px_rgba(138,28,54,0.15)] md:divide-y-2 md:divide-slate-100"
+        )}>
           {announcements.map((item, idx) => {
             const statusMeta = EXAM_REGISTRY_STATUS_MAP[item.status] || {
               label: item.status,
               color: 'bg-slate-50 text-slate-600 border-slate-200'
             };
+            const statusBorderColor = EXAM_REGISTRY_STATUS_COLOR_MAP[item.status] || 'border-l-slate-400';
             return (
               <div 
                 key={idx} 
                 className={cn(
-                  "w-full p-6 sm:p-8 flex flex-col items-center text-center md:flex-row md:items-center md:text-left md:justify-between gap-6 bg-white border-2 border-slate-900/80 rounded-3xl md:rounded-none md:border-none shadow-[4px_4px_0px_rgba(138,28,54,0.15)] md:shadow-none",
-                  !isMobile && "hover:bg-slate-50/50 transition-colors"
+                  "w-full flex flex-col items-center text-center md:flex-row md:items-center md:text-left md:justify-between bg-white",
+                  isMobile 
+                    ? cn("p-5 border border-slate-250/60 border-l-4 rounded-2xl shadow-sm gap-5", statusBorderColor)
+                    : "p-6 sm:p-8 border-2 border-slate-900/80 rounded-3xl md:rounded-none md:border-none shadow-[4px_4px_0px_rgba(138,28,54,0.15)] md:shadow-none hover:bg-slate-50/50 transition-colors gap-6"
                 )}
               >
-                <div className="space-y-3 w-full">
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
+                <div className={cn("w-full", isMobile ? "space-y-2.5" : "space-y-3")}>
+                  <div className={cn("flex flex-wrap items-center gap-2.5", isMobile ? "justify-start" : "justify-center md:justify-start")}>
                     <span className={cn("px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider border", statusMeta.color)}>
                       {statusMeta.label}
                     </span>
@@ -603,15 +618,17 @@ const ExamRegistrySection = ({
                       {item.date}
                     </span>
                   </div>
-                  <h3 className="text-lg sm:text-xl font-serif font-extrabold text-slate-900 text-center md:text-left">
+                  <h3 className={cn("font-serif font-extrabold text-slate-900", isMobile ? "text-base text-left leading-snug" : "text-lg sm:text-xl text-center md:text-left")}>
                     {item.exam}
                   </h3>
                 </div>
                 <button 
                   onClick={() => handlePracticeClick(item)}
                   className={cn(
-                    "inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-slate-900 text-xs font-black uppercase tracking-widest text-slate-900 transition-all cursor-pointer w-full md:w-auto shadow-[4px_4px_0px_rgba(0,0,0,1)]",
-                    !isMobile && "hover:bg-slate-900 hover:text-white hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5"
+                    "inline-flex items-center justify-center gap-2 px-5 py-3 transition-all cursor-pointer w-full md:w-auto",
+                    isMobile
+                      ? "rounded-xl bg-[#8A1C36] text-white text-xs font-black uppercase tracking-widest border border-[#8A1C36] shadow-sm active:scale-[0.97]"
+                      : "rounded-xl border-2 border-slate-900 text-xs font-black uppercase tracking-widest text-slate-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] hover:bg-slate-900 hover:text-white hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5"
                   )}
                 >
                   {item.actionLabel}
@@ -687,18 +704,18 @@ const SYLLABUS_ROADMAPS_DEFAULT = [
   const activeTab = tabs[activeTabIdx] || tabs[0];
 
   return (
-    <section id="syllabus-paths" className="py-12 md:py-16 scroll-mt-24 border-b border-slate-200/50">
-      <div className="max-w-6xl mx-auto px-6 space-y-6 md:space-y-12">
+    <section id="syllabus-paths" className={cn("scroll-mt-24 border-b border-slate-200/50", isMobile ? "py-10" : "py-12 md:py-16")}>
+      <div className={cn("max-w-6xl mx-auto space-y-6 md:space-y-12", isMobile ? "px-4" : "px-6")}>
         <div className="flex flex-col items-center space-y-4 text-center">
           <span className="section-chip">
             🎯 SYLLABUS-MAPPED PREPARATION
           </span>
-          <h2 className="text-3xl md:text-4xl font-serif font-extrabold text-slate-955 tracking-tight leading-tight max-w-5xl">
+          <h2 className={cn("font-serif font-extrabold text-slate-955 tracking-tight leading-tight max-w-5xl", isMobile ? "text-2xl" : "text-3xl md:text-4xl")}>
             Master Every Topic with <span className="premium-text-gradient font-serif font-extrabold">Targeted <span className="whitespace-nowrap">Chapter-Wise</span> Tests</span>
           </h2>
           {!isMobile && <div className="section-divider" />}
           {/* Mobile Version (Shorter) */}
-          <p className="block md:hidden text-base leading-relaxed text-gray-600 font-medium max-w-2xl mx-auto">
+          <p className="block md:hidden text-xs leading-relaxed text-slate-500 font-medium max-w-2xl mx-auto px-1">
             Stop blindly studying. Unlock full-length mock tests and PYQs designed exactly for the OPSC and OSSC curriculum.
           </p>
           {/* Desktop Version (Optimized) */}
@@ -708,7 +725,12 @@ const SYLLABUS_ROADMAPS_DEFAULT = [
         </div>
 
         {/* Tab switcher */}
-        <div className="flex justify-center gap-2 sm:gap-4 p-1.5 bg-slate-100/60 rounded-2xl max-w-2xl mx-auto border border-slate-200/50 flex-wrap relative z-10">
+        <div className={cn(
+          "flex justify-center max-w-2xl mx-auto relative z-10",
+          isMobile 
+            ? "gap-1.5 p-1 bg-slate-100/50 rounded-xl border border-slate-200/30 flex-nowrap overflow-x-auto no-scrollbar w-full"
+            : "gap-2 sm:gap-4 p-1.5 bg-slate-100/60 rounded-2xl border border-slate-200/50 flex-wrap"
+        )}>
           {tabs.map((tab, i) => {
             const isTabActive = activeTabIdx === i;
             return (
@@ -716,7 +738,10 @@ const SYLLABUS_ROADMAPS_DEFAULT = [
                 key={tab.id || i}
                 onClick={() => setActiveTabIdx(i)}
                 className={cn(
-                  "flex-1 min-w-[100px] py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer relative focus:outline-none",
+                  "py-2.5 transition-all cursor-pointer relative focus:outline-none shrink-0",
+                  isMobile
+                    ? "flex-1 px-3 rounded-lg text-[10px] font-black uppercase tracking-wider"
+                    : "flex-grow min-w-[100px] rounded-xl text-xs font-black uppercase tracking-widest",
                   isTabActive
                     ? "text-slate-900"
                     : "text-slate-400 hover:text-slate-700"
@@ -725,7 +750,10 @@ const SYLLABUS_ROADMAPS_DEFAULT = [
                 {isTabActive && (
                   <motion.div
                     layoutId="activeSyllabusTabBg"
-                    className="absolute inset-0 bg-white rounded-xl shadow-sm border border-slate-200 z-0"
+                    className={cn(
+                      "absolute inset-0 bg-white shadow-sm border z-0",
+                      isMobile ? "rounded-lg border-slate-200/60" : "rounded-xl border-slate-200"
+                    )}
                     transition={{ type: "spring", stiffness: 380, damping: 30 }}
                   />
                 )}
@@ -761,18 +789,31 @@ const SYLLABUS_ROADMAPS_DEFAULT = [
                     hidden: { opacity: 0, y: 12 },
                     show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 25 } }
                   }}
-                  className="bg-white border-2 border-slate-900/80 rounded-2xl p-5 sm:p-6 shadow-[4px_4px_0px_rgba(0,0,0,1)] flex items-start justify-between gap-4"
+                  className={cn(
+                    isMobile 
+                      ? "bg-white border border-slate-250/60 border-l-4 border-l-[#8A1C36] rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3 relative active:scale-[0.98] transition-transform duration-200"
+                      : "bg-white border-2 border-slate-900/80 rounded-2xl p-5 sm:p-6 shadow-[4px_4px_0px_rgba(0,0,0,1)] flex items-start justify-between gap-4"
+                  )}
                 >
-                  <div className="space-y-1.5">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-[#8A1C36]">
+                  <div className="space-y-1">
+                    <p className={cn(
+                      "font-black uppercase text-[#8A1C36]",
+                      isMobile ? "text-[9px] tracking-wider" : "text-[10px] tracking-wider"
+                    )}>
                       {topic.label}
                     </p>
-                    <h3 className="text-base sm:text-lg font-serif font-extrabold text-slate-900 leading-tight">
+                    <h3 className={cn(
+                      "font-serif font-extrabold text-slate-900 leading-tight",
+                      isMobile ? "text-[14px]" : "text-base sm:text-lg"
+                    )}>
                       {topic.name}
                     </h3>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="inline-flex px-2.5 py-1 bg-brand-50 text-[#8A1C36] rounded font-mono text-xs font-black uppercase border border-brand-100">
+                    <span className={cn(
+                      "inline-flex bg-brand-50 text-[#8A1C36] rounded font-mono font-black uppercase border border-brand-100",
+                      isMobile ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs"
+                    )}>
                       {topic.count} Sets
                     </span>
                   </div>
@@ -840,18 +881,18 @@ const AchieversJournalSection = () => {
   }, [activeFilter, searchQuery]);
 
   return (
-    <section id="achievers-journal" className="py-12 md:py-16 bg-slate-50 border-y border-slate-200/60 scroll-mt-24">
-      <div className="max-w-6xl mx-auto px-6 space-y-6 md:space-y-10">
+    <section id="achievers-journal" className={cn("bg-slate-50 border-y border-slate-200/60 scroll-mt-24", isMobile ? "py-10" : "py-12 md:py-16")}>
+      <div className={cn("max-w-6xl mx-auto space-y-6 md:space-y-10", isMobile ? "px-4" : "px-6")}>
         <div className="flex flex-col items-center space-y-4 text-center">
           <span className="section-chip">
             🏆 VERIFIED SUCCESS STORIES
           </span>
-          <h2 className="text-3xl md:text-4xl font-serif font-extrabold text-slate-955 tracking-tight leading-tight max-w-5xl">
+          <h2 className={cn("font-serif font-extrabold text-slate-955 tracking-tight leading-tight max-w-5xl", isMobile ? "text-2xl" : "text-3xl md:text-4xl")}>
             Join Hundreds of Aspirants <span className="premium-text-gradient font-serif font-extrabold">Who Cracked Their Target Exams</span>
           </h2>
           {!isMobile && <div className="section-divider" />}
           {/* Mobile Version (Shorter) */}
-          <p className="block md:hidden text-base leading-relaxed text-gray-600 font-medium max-w-2xl mx-auto">
+          <p className="block md:hidden text-xs leading-relaxed text-slate-500 font-medium max-w-2xl mx-auto px-1">
             Explore real preparation strategies and test scores from students who conquered OPSC, OSSC, and OSSSC.
           </p>
           {/* Desktop Version (Optimized) */}
@@ -861,9 +902,14 @@ const AchieversJournalSection = () => {
         </div>
 
         {/* Search and Filters bar */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 max-w-5xl mx-auto pt-2">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3 max-w-5xl mx-auto pt-2">
           {/* Category Filter */}
-          <div className="border-2 border-slate-900 bg-white p-1 rounded-2xl flex flex-nowrap w-full sm:w-auto justify-between gap-1 shrink-0 shadow-[4px_4px_0px_rgba(138,28,54,0.15)] relative z-10">
+          <div className={cn(
+            "bg-white p-1 flex flex-nowrap w-full sm:w-auto justify-between gap-1 shrink-0 relative z-10",
+            isMobile
+              ? "border border-slate-200/60 rounded-xl shadow-sm"
+              : "border-2 border-slate-900 rounded-2xl shadow-[4px_4px_0px_rgba(138,28,54,0.15)]"
+          )}>
             {(['all', 'opsc', 'ossc', 'osssc'] as const).map(filter => {
               const isFilterActive = activeFilter === filter;
               return (
@@ -871,7 +917,8 @@ const AchieversJournalSection = () => {
                   key={filter}
                   onClick={() => setActiveFilter(filter)}
                   className={cn(
-                    "flex-1 sm:flex-initial text-center px-1.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider sm:tracking-widest transition-all duration-200 cursor-pointer relative focus:outline-none",
+                    "flex-1 sm:flex-initial text-center py-1.5 sm:py-2 rounded-xl font-black uppercase transition-all duration-200 cursor-pointer relative focus:outline-none",
+                    isMobile ? "px-2 text-[10px] tracking-wide" : "px-1.5 sm:px-4 text-[10px] sm:text-xs tracking-wider sm:tracking-widest",
                     isFilterActive 
                       ? "text-white" 
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
@@ -880,7 +927,10 @@ const AchieversJournalSection = () => {
                   {isFilterActive && (
                     <motion.div
                       layoutId="activeAchieverFilterBg"
-                      className="absolute inset-0 bg-[#8A1C36] rounded-xl shadow-[2px_2px_0px_#0f172a] z-0"
+                      className={cn(
+                        "absolute inset-0 bg-[#8A1C36] rounded-xl z-0",
+                        isMobile ? "shadow-none" : "shadow-[2px_2px_0px_#0f172a]"
+                      )}
                       transition={{ type: "spring", stiffness: 380, damping: 30 }}
                     />
                   )}
@@ -907,12 +957,17 @@ const AchieversJournalSection = () => {
               placeholder="Search by name, district, keyword..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-slate-900 bg-white font-bold text-xs sm:text-sm shadow-[3px_3px_0px_rgba(138,28,54,0.1)] focus:shadow-[4px_4px_0px_#8A1C36] focus:outline-none transition-all duration-200"
+              className={cn(
+                "w-full pl-10 pr-4 py-2.5 rounded-xl bg-white font-bold text-xs sm:text-sm focus:outline-none transition-all duration-200",
+                isMobile
+                  ? "border border-slate-200/70 shadow-sm focus:border-[#8A1C36] focus:ring-1 focus:ring-[#8A1C36]/20"
+                  : "border-2 border-slate-900 shadow-[3px_3px_0px_rgba(138,28,54,0.1)] focus:shadow-[4px_4px_0px_#8A1C36]"
+              )}
             />
           </div>
         </div>
 
-        <div className="max-w-5xl mx-auto pt-4">
+        <div className={cn("max-w-5xl mx-auto", isMobile ? "pt-1" : "pt-4")}>
           <AnimatePresence mode="wait">
             <motion.div
               key={activeFilter}
@@ -928,7 +983,7 @@ const AchieversJournalSection = () => {
                   }
                 }
               }}
-              className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8"
+              className={cn("grid grid-cols-1 md:grid-cols-2", isMobile ? "gap-3" : "gap-6 sm:gap-8")}
             >
               {filteredStories.length === 0 ? (
                 <motion.div
@@ -937,7 +992,12 @@ const AchieversJournalSection = () => {
                     hidden: { opacity: 0, y: 10 },
                     show: { opacity: 1, y: 0 }
                   }}
-                  className="col-span-1 md:col-span-2 text-center py-12 bg-white border-2 border-slate-900 rounded-3xl p-6 shadow-[4px_4px_0px_rgba(138,28,54,0.15)] flex flex-col items-center justify-center gap-2"
+                  className={cn(
+                    "col-span-1 md:col-span-2 text-center py-12 bg-white flex flex-col items-center justify-center gap-2",
+                    isMobile
+                      ? "border border-slate-200/60 rounded-2xl p-5 shadow-sm"
+                      : "border-2 border-slate-900 rounded-3xl p-6 shadow-[4px_4px_0px_rgba(138,28,54,0.15)]"
+                  )}
                 >
                   <div className="text-3xl">📝</div>
                   <h4 className="font-serif font-bold text-slate-900 text-lg">No Achiever Logs Found</h4>
@@ -951,15 +1011,24 @@ const AchieversJournalSection = () => {
                       hidden: { opacity: 0, y: 12 },
                       show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 25 } }
                     }}
-                    className="bg-white border-2 border-slate-900 rounded-[2rem] p-6 sm:p-8 shadow-[6px_6px_0px_rgba(138,28,54,0.1)] md:hover:shadow-[8px_8px_0px_#8A1C36] md:hover:-translate-y-1 md:hover:-translate-x-1 transition-all duration-300 flex flex-col justify-between"
+                    className={cn(
+                      "bg-white flex flex-col justify-between transition-all duration-300",
+                      isMobile
+                        ? "border border-slate-200/60 rounded-2xl p-4 shadow-md shadow-slate-100/80 active:scale-[0.99]"
+                        : "border-2 border-slate-900 rounded-[2rem] p-6 sm:p-8 shadow-[6px_6px_0px_rgba(138,28,54,0.1)] md:hover:shadow-[8px_8px_0px_#8A1C36] md:hover:-translate-y-1 md:hover:-translate-x-1"
+                    )}
                   >
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
+                    <div className={cn(isMobile ? "space-y-3" : "space-y-4")}>
+                      {/* Avatar + Name Row */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
                           <img 
                             src={item.avatar?.includes('dicebear.com') ? item.avatar : item.avatar?.replace(/\.(png|jpg|jpeg)$/i, '.webp')} 
                             alt={`${item.name} ${item.rank} Achiever Profile`} 
-                            className="w-12 h-12 rounded-full border border-slate-200 object-cover shrink-0" 
+                            className={cn(
+                              "rounded-full border border-slate-200 object-cover shrink-0",
+                              isMobile ? "w-10 h-10" : "w-12 h-12"
+                            )}
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               if (target.src !== item.avatar) {
@@ -967,16 +1036,22 @@ const AchieversJournalSection = () => {
                               }
                             }}
                           />
-                          <div>
-                            <h3 className="font-serif font-extrabold text-slate-900 text-base leading-none">{item.name}</h3>
-                            <p className="text-[10px] font-black uppercase text-[#8A1C36] tracking-widest mt-1.5">{item.rank}</p>
+                          <div className="min-w-0">
+                            <h3 className={cn(
+                              "font-serif font-extrabold text-slate-900 leading-snug",
+                              isMobile ? "text-[14px] truncate" : "text-base leading-none"
+                            )}>{item.name}</h3>
+                            <p className="text-[9px] font-black uppercase text-[#8A1C36] tracking-widest mt-0.5">{item.rank}</p>
                           </div>
                         </div>
-                        <div className="flex flex-col items-end gap-1 shrink-0 text-right">
-                          <span className="text-[10px] font-mono font-black text-slate-500 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-md uppercase tracking-tight">
+                        <div className="flex flex-col items-end gap-0.5 shrink-0 text-right">
+                          <span className={cn(
+                            "font-mono font-black text-slate-500 bg-slate-50 border border-slate-100 rounded uppercase tracking-tight",
+                            isMobile ? "text-[9px] px-1.5 py-0.5" : "text-[10px] px-2.5 py-1 rounded-md"
+                          )}>
                             📍 {item.district}
                           </span>
-                          <span className="text-[9px] font-extrabold text-slate-400 flex items-center gap-1 select-none">
+                          <span className="text-[9px] font-extrabold text-slate-400 flex items-center gap-1 select-none mt-0.5">
                             <Clock className="w-2.5 h-2.5 text-slate-400" />
                             {(() => {
                               try {
@@ -991,24 +1066,33 @@ const AchieversJournalSection = () => {
                           </span>
                         </div>
                       </div>
-                      <p className="text-slate-600 font-serif text-sm leading-relaxed italic">
+
+                      {/* Quote */}
+                      <p className={cn(
+                        "font-serif leading-relaxed italic text-slate-600",
+                        isMobile
+                          ? "text-[12.5px] pl-3 border-l-2 border-l-brand-200/70 py-0.5"
+                          : "text-sm"
+                      )}>
                         "{item.story}"
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2.5 pt-4 mt-6 border-t border-slate-100 text-center text-slate-800">
-                      <div className="p-2 bg-slate-50 rounded-xl border border-slate-100">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Score</p>
-                        <p className="text-xs font-black text-slate-900">{item.stats.score}</p>
-                      </div>
-                      <div className="p-2 bg-slate-50 rounded-xl border border-slate-100">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Accuracy</p>
-                        <p className="text-xs font-black text-slate-900">{item.stats.accuracy}</p>
-                      </div>
-                      <div className="p-2 bg-slate-50 rounded-xl border border-slate-100">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Timeline</p>
-                        <p className="text-xs font-black text-slate-900">{item.stats.time}</p>
-                      </div>
+                    {/* Stats Grid */}
+                    <div className={cn(
+                      "grid grid-cols-3 text-center text-slate-800 border-t border-slate-100",
+                      isMobile ? "gap-2 pt-3 mt-3" : "gap-2.5 pt-4 mt-6"
+                    )}>
+                      {[
+                        { label: 'Score', value: item.stats.score },
+                        { label: 'Accuracy', value: item.stats.accuracy },
+                        { label: 'Timeline', value: item.stats.time },
+                      ].map(stat => (
+                        <div key={stat.label} className={cn("rounded-xl border", isMobile ? "p-2 bg-slate-50/60 border-slate-100/50" : "p-2 bg-slate-50 border-slate-100")}>
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-0.5">{stat.label}</p>
+                          <p className={cn("font-black text-slate-900", isMobile ? "text-[11px]" : "text-xs")}>{stat.value}</p>
+                        </div>
+                      ))}
                     </div>
                   </motion.div>
                 ))
@@ -1022,7 +1106,12 @@ const AchieversJournalSection = () => {
           <div className="flex justify-center pt-4">
             <button 
               onClick={() => setVisibleCount(prev => prev + 6)}
-              className="px-6 py-3 rounded-xl border-2 border-slate-900 bg-white hover:bg-slate-50 text-xs sm:text-sm font-extrabold uppercase tracking-widest text-slate-900 shadow-[3px_3px_0px_#8A1C36] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all duration-200 cursor-pointer"
+              className={cn(
+                "transition-all duration-200 cursor-pointer font-extrabold uppercase tracking-widest text-xs sm:text-sm",
+                isMobile
+                  ? "w-full py-3 rounded-xl border border-[#8A1C36]/30 text-[#8A1C36] bg-white shadow-sm active:bg-brand-50/40 active:scale-[0.98]"
+                  : "px-6 py-3 rounded-xl border-2 border-slate-900 bg-white hover:bg-slate-50 text-slate-900 shadow-[3px_3px_0px_#8A1C36] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5"
+              )}
             >
               Load More preparation journals (+{filteredStories.length - visibleCount} remaining)
             </button>
@@ -1036,6 +1125,14 @@ const AchieversJournalSection = () => {
 export const Footer = () => {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1066,7 +1163,7 @@ export const Footer = () => {
   };
 
   return (
-    <footer id="contact" className="bg-[#080b11] text-slate-300 py-16 md:py-24 mt-20 relative overflow-hidden noise-overlay">
+    <footer id="contact" className={cn("bg-[#080b11] text-slate-300 relative overflow-hidden noise-overlay", isMobile ? "py-10 mt-12" : "py-16 md:py-24 mt-20")}>
       {/* Decorative background grid and orbs */}
       <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#8a1c36_1px,transparent_1px),linear-gradient(to_bottom,#8a1c36_1px,transparent_1px)] bg-[size:3.5rem_3.5rem]" />
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
@@ -1075,10 +1172,10 @@ export const Footer = () => {
       <div className="absolute -top-20 right-1/4 w-[500px] h-[500px] bg-brand-500/10 rounded-full blur-[120px] pointer-events-none animate-pulse-soft" />
       <div className="absolute -bottom-40 left-10 w-[400px] h-[400px] bg-slate-500/10 rounded-full blur-[100px] pointer-events-none animate-pulse-soft" style={{ animationDelay: '-2s' }} />
 
-      <div className="max-w-6xl mx-auto px-6 relative z-10">
+      <div className={cn("max-w-6xl mx-auto relative z-10", isMobile ? "px-4" : "px-6")}>
         
         {/* Pre-footer Stats Dashboard */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pb-16 mb-16 border-b border-slate-800/60">
+        <div className={cn("grid grid-cols-2 lg:grid-cols-4 border-b border-slate-800/60", isMobile ? "gap-3 pb-8 mb-8" : "gap-4 sm:gap-6 pb-16 mb-16")}>
           {[
             { label: "Mock Tests Attempted", value: "10,000+", icon: BarChart3, color: "text-blue-400 bg-blue-500/10", desc: "Real exam simulations" },
             { label: "Syllabus Coverage", value: "98.4%", icon: Target, color: "text-rose-400 bg-rose-500/10", desc: "Mapped to state boards" },
@@ -1087,18 +1184,21 @@ export const Footer = () => {
           ].map((stat, idx) => (
             <div 
               key={idx}
-              className="bg-slate-900/30 backdrop-blur-md border border-slate-800/80 rounded-2xl p-5 hover:border-brand-500/30 hover:bg-slate-900/60 transition-all duration-300 group hover:-translate-y-1"
+              className={cn(
+                "bg-slate-900/30 backdrop-blur-md border rounded-2xl hover:border-brand-500/30 hover:bg-slate-900/60 transition-all duration-300 group hover:-translate-y-1",
+                isMobile ? "p-3.5 border-slate-800/50" : "p-5 border-slate-800/80"
+              )}
             >
-              <div className="flex items-center gap-3 mb-3">
-                <div className={`p-2 rounded-lg ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
-                  <stat.icon className="w-4 h-4" />
+              <div className={cn("flex items-center", isMobile ? "gap-2 mb-2" : "gap-3 mb-3")}>
+                <div className={cn(`p-1.5 rounded-lg ${stat.color} group-hover:scale-110 transition-transform duration-300`, isMobile ? "shrink-0" : "p-2")}>
+                  <stat.icon className={cn(isMobile ? "w-3.5 h-3.5" : "w-4 h-4")} />
                 </div>
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">{stat.label}</h3>
+                <h3 className={cn("font-black uppercase text-slate-500 leading-snug", isMobile ? "text-[9px] tracking-wide" : "text-xs tracking-wider")}>{stat.label}</h3>
               </div>
-              <h5 className="font-serif font-black text-xl sm:text-2xl text-white tracking-tight leading-none mb-1">
+              <h5 className={cn("font-serif font-black text-white tracking-tight leading-none mb-1", isMobile ? "text-lg" : "text-xl sm:text-2xl")}>
                 {stat.value}
               </h5>
-              <p className="text-[11px] font-medium text-slate-400">
+              <p className={cn("font-medium text-slate-400", isMobile ? "text-[10px]" : "text-[11px]")}>
                 {stat.desc}
               </p>
             </div>
@@ -1106,20 +1206,20 @@ export const Footer = () => {
         </div>
 
         {/* Core footer layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 sm:gap-16">
+        <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4", isMobile ? "gap-8" : "gap-12 sm:gap-16")}>
           
           {/* Logo & Tagline column */}
-          <div className="col-span-1 md:col-span-2 space-y-6">
+          <div className={cn("col-span-1 md:col-span-2", isMobile ? "space-y-4" : "space-y-6")}>
             <div className="flex items-center gap-3">
-              <div role="img" aria-label="OdishaExamPrep Platform Logo" className="w-12 h-12 premium-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-[#8a1c36]/10 animate-float-sm">
-                <BookOpen className="text-white w-6 h-6" />
+              <div role="img" aria-label="OdishaExamPrep Platform Logo" className={cn("premium-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-[#8a1c36]/10 animate-float-sm", isMobile ? "w-10 h-10 shrink-0" : "w-12 h-12")}>
+                <BookOpen className={cn("text-white", isMobile ? "w-5 h-5" : "w-6 h-6")} />
               </div>
-              <span className="font-serif font-black text-3xl tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
+              <span className={cn("font-serif font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent", isMobile ? "text-2xl" : "text-3xl")}>
                 Odisha<span className="text-brand-400 font-serif font-black">Exam</span>Prep
               </span>
             </div>
             {/* Mobile Version (Shorter) */}
-            <p className="block md:hidden text-sm leading-relaxed text-gray-400 font-medium max-w-sm">
+            <p className="block md:hidden text-xs leading-relaxed text-slate-400/90 font-medium max-w-sm">
               Master OPSC, OSSC, and OSSSC exams with verified PYQs and a 24/7 AI Mentor.
             </p>
             {/* Desktop Version (Original) */}
@@ -1128,22 +1228,22 @@ export const Footer = () => {
             </p>
             
             {/* Newsletter update form */}
-            <div className="space-y-3 pt-4">
+            <div className={cn("space-y-2.5", isMobile ? "pt-2" : "space-y-3 pt-4")}>
               <h2 className="text-xs font-black uppercase tracking-wider text-slate-200">Never Miss an Odisha Exam Update</h2>
-              <form onSubmit={handleSubscribe} className="flex gap-2 max-w-md">
+              <form onSubmit={handleSubscribe} className={cn("flex max-w-md", isMobile ? "gap-1.5" : "gap-2")}>
                 <input 
                   type="email" 
                   required
-                  placeholder="Enter email to get notified..." 
+                  placeholder={isMobile ? "Email address…" : "Enter email to get notified..."}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="flex-1 bg-slate-950/80 border border-slate-800/80 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-500/50 transition-all font-bold placeholder:text-slate-600"
+                  className="flex-1 min-w-0 bg-slate-950/80 border border-slate-800/80 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-brand-500/50 transition-all font-bold placeholder:text-slate-600"
                 />
                 <button 
                   type="submit"
-                  className="px-4 py-2.5 bg-[#8A1C36] hover:bg-[#76142c] border border-brand-500/20 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer shadow-lg shadow-brand-500/10"
+                  className="shrink-0 px-4 py-2.5 bg-[#8A1C36] hover:bg-[#76142c] border border-brand-500/20 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer shadow-lg shadow-brand-500/10"
                 >
-                  {subscribed ? "Subscribed!" : (
+                  {subscribed ? "Done!" : (
                     <>
                       <span>Join</span>
                       <ArrowRight className="w-3 h-3" />
@@ -1152,8 +1252,8 @@ export const Footer = () => {
                 </button>
               </form>
               {/* Mobile Version (Shorter) */}
-              <p className="block md:hidden text-sm leading-relaxed text-gray-400 font-medium">
-                Get instant alerts for OPSC, OSSC, and OSSSC notifications and admit card drops.
+              <p className="block md:hidden text-[10px] leading-relaxed text-slate-500 font-medium">
+                Get instant alerts for OPSC, OSSC &amp; OSSSC notifications and admit card drops.
               </p>
               {/* Desktop Version (Original) */}
               <p className="hidden md:block text-[10px] text-slate-500 font-medium">
@@ -1162,16 +1262,19 @@ export const Footer = () => {
             </div>
           </div>
           
+          {/* Platform + Contact — side-by-side on mobile */}
+          <div className={cn(isMobile ? "col-span-1 grid grid-cols-2 gap-6" : "contents")}>
+
           {/* Platform navigation */}
-          <div className="space-y-6">
-            <h4 className="text-white font-black tracking-widest uppercase text-xs mb-6 relative after:content-[''] after:absolute after:-bottom-2.5 after:left-0 after:w-8 after:h-[2px] after:bg-[#8a1c36]">
+          <div className={cn(isMobile ? "" : "space-y-6")}>
+            <h4 className={cn("text-white font-black tracking-widest uppercase text-xs relative after:content-[''] after:absolute after:-bottom-2.5 after:left-0 after:w-8 after:h-[2px] after:bg-[#8a1c36]", isMobile ? "mb-4" : "mb-6")}>
               Platform
             </h4>
-            <ul className="space-y-4 font-semibold text-slate-400">
+            <ul className={cn("font-semibold text-slate-400", isMobile ? "space-y-3" : "space-y-4")}>
               {[
                 { to: "/blog", label: "Official Blog", icon: BookOpen },
                 { to: "/privacy-policy", label: "Privacy Policy", icon: ShieldCheck },
-                { to: "/terms-of-service", label: "Terms of Service", icon: Scale },
+                { to: "/terms-of-service", label: "Terms", icon: Scale },
                 { to: "/refund-policy", label: "Refund Policy", icon: Receipt }
               ].map((link, idx) => (
                 <li key={idx}>
@@ -1179,8 +1282,8 @@ export const Footer = () => {
                     to={link.to} 
                     className="hover:text-brand-400 transition-all duration-300 flex items-center gap-2 group hover:translate-x-1.5"
                   >
-                    <link.icon className="w-4 h-4 text-slate-700 group-hover:text-brand-500 transition-colors" />
-                    <span className="text-sm">{link.label}</span>
+                    <link.icon className={cn("text-slate-700 group-hover:text-brand-500 transition-colors shrink-0", isMobile ? "w-3.5 h-3.5" : "w-4 h-4")} />
+                    <span className={cn(isMobile ? "text-xs" : "text-sm")}>{link.label}</span>
                   </Link>
                 </li>
               ))}
@@ -1188,49 +1291,51 @@ export const Footer = () => {
           </div>
 
           {/* Contact details */}
-          <div className="space-y-6">
-            <h4 className="text-white font-black tracking-widest uppercase text-xs mb-6 relative after:content-[''] after:absolute after:-bottom-2.5 after:left-0 after:w-8 after:h-[2px] after:bg-[#8a1c36]">
-              Contact Us
+          <div className={cn(isMobile ? "" : "space-y-6")}>
+            <h4 className={cn("text-white font-black tracking-widest uppercase text-xs relative after:content-[''] after:absolute after:-bottom-2.5 after:left-0 after:w-8 after:h-[2px] after:bg-[#8a1c36]", isMobile ? "mb-4" : "mb-6")}>
+              Contact
             </h4>
-            <ul className="space-y-3.5 font-medium text-slate-400">
+            <ul className={cn("font-medium text-slate-400", isMobile ? "space-y-3" : "space-y-3.5")}>
               <li>
                 <a 
                   href="https://mail.google.com/mail/?view=cm&fs=1&to=odishaexamprep365@gmail.com" 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="flex items-center gap-3 group"
+                  className="flex items-center gap-2.5 group"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center shrink-0 group-hover:border-brand-500/50 group-hover:bg-[#8a1c36]/10 transition-all duration-300">
-                    <Mail className="w-4 h-4 text-slate-400 group-hover:text-brand-400 transition-colors" />
+                  <div className={cn("rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center shrink-0 group-hover:border-brand-500/50 group-hover:bg-[#8a1c36]/10 transition-all duration-300", isMobile ? "w-8 h-8" : "w-10 h-10")}>
+                    <Mail className={cn("text-slate-400 group-hover:text-brand-400 transition-colors", isMobile ? "w-3.5 h-3.5" : "w-4 h-4")} />
                   </div>
-                  <span className="break-words lg:whitespace-nowrap text-sm group-hover:text-white transition-colors duration-300">
-                    odishaexamprep365@gmail.com
+                  <span className={cn("break-all group-hover:text-white transition-colors duration-300", isMobile ? "text-[10px] leading-snug" : "text-sm lg:whitespace-nowrap")}>
+                    odishaexamprep365
+                    {isMobile ? <br /> : ""}
+                    @gmail.com
                   </span>
                 </a>
               </li>
               <li>
                 <a 
                   href="tel:+917377431715" 
-                  className="flex items-center gap-3 group"
+                  className="flex items-center gap-2.5 group"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center shrink-0 group-hover:border-[#25D366]/50 group-hover:bg-[#25D366]/10 transition-all duration-300">
-                    <Phone className="w-4 h-4 text-slate-400 group-hover:text-[#25D366] transition-colors" />
+                  <div className={cn("rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center shrink-0 group-hover:border-[#25D366]/50 group-hover:bg-[#25D366]/10 transition-all duration-300", isMobile ? "w-8 h-8" : "w-10 h-10")}>
+                    <Phone className={cn("text-slate-400 group-hover:text-[#25D366] transition-colors", isMobile ? "w-3.5 h-3.5" : "w-4 h-4")} />
                   </div>
-                  <span className="text-sm group-hover:text-white transition-colors duration-300">
+                  <span className={cn("group-hover:text-white transition-colors duration-300", isMobile ? "text-xs" : "text-sm")}>
                     +91 7377431715
                   </span>
                 </a>
               </li>
               
               {/* Social links */}
-              <li className="flex gap-3 pt-3">
+              <li className={cn("flex", isMobile ? "gap-2 pt-1" : "gap-3 pt-3")}>
                 <a 
                   href="https://www.youtube.com/@OdishaExamPrep365" 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="w-11 h-11 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center hover:bg-[#FF0000] hover:border-[#FF0000] hover:-translate-y-1 transition-all duration-300 text-slate-400 hover:text-white shadow-lg hover:shadow-red-600/10 group"
+                  className={cn("rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center hover:bg-[#FF0000] hover:border-[#FF0000] hover:-translate-y-1 transition-all duration-300 text-slate-400 hover:text-white shadow-lg hover:shadow-red-600/10 group", isMobile ? "w-9 h-9" : "w-11 h-11")}
                 >
-                  <svg role="img" aria-label="OdishaExamPrep YouTube Channel" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 group-hover:scale-110 transition-transform">
+                  <svg role="img" aria-label="OdishaExamPrep YouTube Channel" viewBox="0 0 24 24" fill="currentColor" className={cn("group-hover:scale-110 transition-transform", isMobile ? "w-4 h-4" : "w-5 h-5")}>
                     <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                   </svg>
                 </a>
@@ -1238,9 +1343,9 @@ export const Footer = () => {
                   href="https://wa.me/917377431715" 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="w-11 h-11 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center hover:bg-[#25D366] hover:border-[#25D366] hover:-translate-y-1 transition-all duration-300 text-slate-400 hover:text-white shadow-lg hover:shadow-[#25D366]/10 group"
+                  className={cn("rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center hover:bg-[#25D366] hover:border-[#25D366] hover:-translate-y-1 transition-all duration-300 text-slate-400 hover:text-white shadow-lg hover:shadow-[#25D366]/10 group", isMobile ? "w-9 h-9" : "w-11 h-11")}
                 >
-                  <svg role="img" aria-label="OdishaExamPrep WhatsApp Contact" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 group-hover:scale-110 transition-transform">
+                  <svg role="img" aria-label="OdishaExamPrep WhatsApp Contact" viewBox="0 0 24 24" fill="currentColor" className={cn("group-hover:scale-110 transition-transform", isMobile ? "w-4 h-4" : "w-5 h-5")}>
                     <path d="M12.031 0C5.385 0 0 5.385 0 12.029a12.022 12.022 0 001.6 6.02L0 24l6.15-1.611a12.012 12.012 0 005.881 1.523h.004c6.645 0 12.03-5.386 12.03-12.031S18.675 0 12.031 0zm0 21.936a9.988 9.988 0 01-5.086-1.385l-.364-.216-3.774.99.998-3.682-.236-.376A9.957 9.957 0 012.064 12.03c0-5.497 4.475-9.972 9.972-9.972 5.497 0 9.97 4.475 9.97 9.972s-4.473 9.97-9.97 9.97z"/>
                     <path d="M17.481 14.159c-.297-.149-1.758-.868-2.03-.968-.27-.099-.467-.149-.665.149-.198.298-.767.967-.94 1.165-.173.198-.346.223-.644.074a8.214 8.214 0 01-4.041-2.518c-.282-.326.319-.314.901-1.479.098-.198.05-.371-.025-.52-.075-.149-.665-1.605-.91-2.196-.241-.578-.485-.5-.665-.509-.174-.01-.371-.01-.57-.01-.198 0-.52.074-.792.371C6.822 7.027 6 7.82 6 9.381c0 1.56 1.015 3.07 1.164 3.268.149.198 2.228 3.4 5.397 4.76 2.656 1.139 3.554 1.259 4.314 1.05.76-.208 2.03-.896 2.316-1.761.286-.865.286-1.605.2-1.76-.086-.15-.286-.24-.584-.388z"/>
                   </svg>
@@ -1248,11 +1353,13 @@ export const Footer = () => {
               </li>
             </ul>
           </div>
+
+          </div>{/* end mobile 2-col wrapper */}
         </div>
       </div>
       
       {/* Bottom bar */}
-      <div className="max-w-6xl mx-auto px-6 mt-16 md:mt-24">
+      <div className={cn("max-w-6xl mx-auto", isMobile ? "px-4 mt-10" : "px-6 mt-16 md:mt-24")}>
         <div className="pt-8 border-t border-slate-800/60 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
           <p className="text-xs font-mono font-bold tracking-widest text-slate-500 uppercase">
             © 2026 OdishaExamPrep. All rights reserved.
@@ -1641,9 +1748,9 @@ export const Navbar = ({
               className="absolute top-full left-0 right-0 bg-white border-b border-slate-200/80 shadow-2xl overflow-y-auto no-scrollbar md:hidden max-h-[calc(100vh-80px)] rounded-b-[2.25rem] z-[60]"
             >
               {/* Content Container */}
-              <div className="p-5 flex flex-col gap-3">
+              <div className="p-4 flex flex-col gap-1.5">
                 {!user && onSignIn && (
-                  <div className="p-4 rounded-2xl border-2 border-slate-900 bg-gradient-to-br from-slate-50 to-white shadow-[4px_4px_0px_#0f172a] mb-2">
+                  <div className="p-3.5 rounded-2xl border-2 border-slate-900 bg-gradient-to-br from-slate-50 to-white shadow-[4px_4px_0px_#0f172a] mb-1">
                     <p className="text-[10px] font-black text-[#8A1C36] uppercase tracking-widest mb-1">Welcome Aspirant</p>
                     <h4 className="text-xs font-serif font-black text-slate-800 mb-3.5 leading-snug">Master the OPSC, OSSC, and OSSSC syllabus with precision-crafted test series.</h4>
                     <Button variant="primary" className="w-full py-2.5 rounded-xl font-black text-[10px] uppercase tracking-wider border-2 border-slate-900 shadow-[2px_2px_0px_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all" onClick={() => { onSignIn(); setMobileMenuOpen(false); }}>
@@ -1657,7 +1764,7 @@ export const Navbar = ({
                   variants={drawerContainerVariants}
                   initial="hidden"
                   animate="show"
-                  className="flex flex-col gap-2"
+                  className="flex flex-col gap-1"
                 >
                   {!user && (
                     <>
@@ -1666,14 +1773,14 @@ export const Navbar = ({
                           href="#exams" 
                           onClick={(e) => scrollToSection(e, 'exams')} 
                           className={cn(
-                            "flex items-center gap-3 text-sm font-extrabold p-3.5 rounded-2xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
+                            "flex items-center gap-3 text-sm font-extrabold p-2.5 rounded-xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
                             activeSection === 'exams'
                               ? "bg-emerald-50 text-emerald-800 font-black border-emerald-100 shadow-xs"
                               : "text-slate-700 hover:bg-slate-50 active:bg-slate-100"
                           )}
                         >
-                          <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 shadow-xs">
-                             <Target className="w-4.5 h-4.5" />
+                          <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 shadow-xs">
+                             <Target className="w-4 h-4" />
                           </div>
                           <span className="tracking-wide">Exams</span>
                           <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", activeSection === 'exams' ? "text-emerald-500 translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
@@ -1685,14 +1792,14 @@ export const Navbar = ({
                           href="#syllabus-paths" 
                           onClick={(e) => scrollToSection(e, 'syllabus-paths')} 
                           className={cn(
-                            "flex items-center gap-3 text-sm font-extrabold p-3.5 rounded-2xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
+                            "flex items-center gap-3 text-sm font-extrabold p-2.5 rounded-xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
                             activeSection === 'syllabus-paths'
                               ? "bg-blue-50 text-blue-800 font-black border-blue-100 shadow-xs"
                               : "text-slate-700 hover:bg-slate-50 active:bg-slate-100"
                           )}
                         >
-                          <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0 shadow-xs">
-                             <BookOpen className="w-4.5 h-4.5" />
+                          <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0 shadow-xs">
+                             <BookOpen className="w-4 h-4" />
                           </div>
                           <span className="tracking-wide">Syllabus</span>
                           <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", activeSection === 'syllabus-paths' ? "text-blue-500 translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
@@ -1704,14 +1811,14 @@ export const Navbar = ({
                           href="#exam-registry" 
                           onClick={(e) => scrollToSection(e, 'exam-registry')} 
                           className={cn(
-                            "flex items-center gap-3 text-sm font-extrabold p-3.5 rounded-2xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
+                            "flex items-center gap-3 text-sm font-extrabold p-2.5 rounded-xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
                             activeSection === 'exam-registry'
                               ? "bg-[#fce7eb] text-[#8A1C36] font-black border-[#fbe1e6] shadow-xs"
                               : "text-slate-700 hover:bg-slate-50 active:bg-slate-100"
                           )}
                         >
-                          <div className="w-9 h-9 rounded-xl bg-[#fce7eb] border border-[#fbe1e6] flex items-center justify-center text-[#8A1C36] shrink-0 shadow-xs">
-                             <Clock3 className="w-4.5 h-4.5" />
+                          <div className="w-8 h-8 rounded-xl bg-[#fce7eb] border border-[#fbe1e6] flex items-center justify-center text-[#8A1C36] shrink-0 shadow-xs">
+                             <Clock3 className="w-4 h-4" />
                           </div>
                           <span className="tracking-wide">Notifications</span>
                           <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", activeSection === 'exam-registry' ? "text-[#8A1C36] translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
@@ -1723,14 +1830,14 @@ export const Navbar = ({
                           href="#achievers-journal" 
                           onClick={(e) => scrollToSection(e, 'achievers-journal')} 
                           className={cn(
-                            "flex items-center gap-3 text-sm font-extrabold p-3.5 rounded-2xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
+                            "flex items-center gap-3 text-sm font-extrabold p-2.5 rounded-xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
                             activeSection === 'achievers-journal'
                               ? "bg-amber-50 text-amber-800 font-black border-amber-600 shadow-xs"
                               : "text-slate-700 hover:bg-amber-50/50 hover:text-amber-700 border-transparent hover:border-amber-600/35"
                           )}
                         >
-                          <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0 shadow-xs">
-                             <Award className="w-4.5 h-4.5" />
+                          <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0 shadow-xs">
+                             <Award className="w-4 h-4" />
                           </div>
                           <span className="tracking-wide">Achievers</span>
                           <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", activeSection === 'achievers-journal' ? "text-amber-500 translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
@@ -1744,16 +1851,16 @@ export const Navbar = ({
                       to="/blog"
                       onClick={() => setMobileMenuOpen(false)}
                       className={cn(
-                        "flex items-center gap-3 text-sm font-extrabold p-3.5 rounded-2xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
+                        "flex items-center gap-3 text-sm font-extrabold p-2.5 rounded-xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
                         isBlogActive
                           ? "bg-[#fce7eb] text-[#8A1C36] font-black border-[#fbe1e6] shadow-xs"
                           : "text-slate-700 hover:bg-slate-50 active:bg-slate-100"
                       )}
                     >
-                      <div className="w-9 h-9 rounded-xl bg-[#fce7eb] border border-[#fbe1e6] flex items-center justify-center text-[#8A1C36] shrink-0 shadow-xs">
-                         <FileText className="w-4.5 h-4.5" />
+                      <div className="w-8 h-8 rounded-xl bg-[#fce7eb] border border-[#fbe1e6] flex items-center justify-center text-[#8A1C36] shrink-0 shadow-xs">
+                         <FileText className="w-4 h-4" />
                       </div>
-                      <span className="tracking-wide">Latest Updates & Blog</span>
+                      <span className="tracking-wide">Latest Updates &amp; Blog</span>
                       <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", isBlogActive ? "text-[#8A1C36] translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
                     </Link>
                   </motion.div>
@@ -1765,12 +1872,12 @@ export const Navbar = ({
                         target="_blank" 
                         rel="noopener noreferrer"
                         onClick={() => setMobileMenuOpen(false)}
-                        className="flex items-center gap-3 text-sm font-extrabold p-3.5 rounded-2xl transition-all border border-transparent group relative hover:bg-slate-50 active:bg-slate-100 active:scale-[0.98] select-none"
+                        className="flex items-center gap-3 text-sm font-extrabold p-2.5 rounded-xl transition-all border border-transparent group relative hover:bg-slate-50 active:bg-slate-100 active:scale-[0.98] select-none"
                       >
-                        <div className="w-9 h-9 rounded-xl bg-[#fce7eb]/50 border border-[#fce7eb]/80 flex items-center justify-center text-[#8A1C36] shrink-0 shadow-xs">
-                           <HelpCircle className="w-4.5 h-4.5" />
+                        <div className="w-8 h-8 rounded-xl bg-[#fce7eb]/50 border border-[#fce7eb]/80 flex items-center justify-center text-[#8A1C36] shrink-0 shadow-xs">
+                           <HelpCircle className="w-4 h-4" />
                         </div>
-                        <span className="tracking-wide">Help & Support</span>
+                        <span className="tracking-wide">Help &amp; Support</span>
                         <ChevronRight className="w-4 h-4 ml-auto text-slate-400 group-hover:translate-x-0.5 transition-transform" />
                       </a>
                     </motion.div>
@@ -2483,15 +2590,15 @@ const LandingPage = () => {
               >
                 <div className="space-y-6">
                   {/* Premium Badge */}
-                  <div className="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-white shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 mb-2">
-                    <div className="flex -space-x-2">
+                  <div className="inline-flex items-center gap-2 md:gap-3 px-2.5 md:px-4 py-1.5 md:py-2 rounded-2xl bg-white shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 mb-2 max-w-full">
+                    <div className="flex -space-x-2 shrink-0">
                       {[1,2,3].map(i => (
-                        <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-brand-600 shadow-sm">
-                          {i === 1 ? <Target className="w-4 h-4" /> : i === 2 ? <Award className="w-4 h-4" /> : <Star className="w-4 h-4" />}
+                        <div key={i} className="w-7 h-7 md:w-8 md:h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-brand-600 shadow-sm">
+                          {i === 1 ? <Target className="w-3.5 h-3.5 md:w-4 md:h-4" /> : i === 2 ? <Award className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <Star className="w-3.5 h-3.5 md:w-4 md:h-4" />}
                         </div>
                       ))}
                     </div>
-                    <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">🎯 TRUSTED BY 10K+ ODISHA ASPIRANTS</span>
+                    <span className="text-[9.5px] md:text-[11px] font-black text-slate-500 uppercase tracking-wider md:tracking-widest truncate">🎯 TRUSTED BY 10K+ ODISHA ASPIRANTS</span>
                   </div>
 
                   <div className="space-y-4 md:space-y-5">
@@ -2510,9 +2617,9 @@ const LandingPage = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 justify-center lg:justify-start pt-2 sm:pt-4 lg:pt-6">
+                <div className="flex flex-col sm:flex-row gap-3.5 sm:gap-5 justify-center lg:justify-start pt-2 sm:pt-4 lg:pt-6">
                   <Button 
-                    className="w-full sm:w-auto h-14 sm:h-16 px-8 sm:px-12 text-lg sm:text-xl rounded-2xl shadow-2xl shadow-brand-500/30 group relative overflow-hidden" 
+                    className="w-full sm:w-auto h-12.5 sm:h-16 px-6 sm:px-12 text-base sm:text-xl rounded-2xl shadow-2xl shadow-brand-500/30 group relative overflow-hidden" 
                     onClick={() => {
                       setShowGuideToast(true);
                       setTimeout(() => setShowGuideToast(false), 6000);
@@ -2524,7 +2631,7 @@ const LandingPage = () => {
                   </Button>
                   <Button 
                     variant="outline" 
-                    className="w-full sm:w-auto h-14 sm:h-16 px-8 sm:px-12 text-lg sm:text-xl rounded-2xl border-slate-200 bg-white hover:bg-slate-50 transition-all font-bold"
+                    className="w-full sm:w-auto h-12.5 sm:h-16 px-6 sm:px-12 text-base sm:text-xl rounded-2xl border-slate-200 bg-white hover:bg-slate-50 transition-all font-bold"
                     onClick={() => {
                       scrollToElement('syllabus-paths');
                     }}
@@ -2534,30 +2641,37 @@ const LandingPage = () => {
                 </div>
 
                 {/* Localized Exam Categories */}
-                <div className="pt-6 sm:pt-10 space-y-4">
-                  <p className="text-[10px] sm:text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] lg:text-left">Focused Preparation For:</p>
-                  <div className="flex flex-wrap justify-center lg:justify-start gap-2 sm:gap-3">
-                    {focusedPrepTags.map((tag, idx) => {
-                      const hasLink = !!tag.examId;
-                      return (
-                        <button 
-                          key={idx} 
-                          onClick={() => {
-                            if (hasLink) {
-                              setSelectedExam(tag.examId);
-                            }
-                          }}
-                          className={cn(
-                            "px-3.5 py-1.5 rounded-xl border text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-300 whitespace-nowrap shadow-sm select-none",
-                            hasLink 
-                              ? "bg-brand-50/80 border-brand-100/80 text-brand-800 hover:bg-brand-100 hover:text-brand-900 hover:scale-[1.03] active:scale-95 cursor-pointer" 
-                              : "bg-brand-50/30 border-brand-100/40 text-brand-700/70 cursor-default"
-                          )}
-                        >
-                          {tag.label}
-                        </button>
-                      );
-                    })}
+                <div className="pt-6 sm:pt-10 space-y-3 sm:space-y-4">
+                  <p className="text-[10px] sm:text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] lg:text-left px-4 sm:px-0">Focused Preparation For:</p>
+                  
+                  {/* Horizontal scrolling row on mobile, wrapping grid on desktop */}
+                  <div className="relative w-full overflow-hidden">
+                    <div className="absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#FAF8F5] to-transparent z-10 pointer-events-none sm:hidden" />
+                    <div className="absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-[#FAF8F5] to-transparent z-10 pointer-events-none sm:hidden" />
+                    
+                    <div className="flex sm:flex-wrap overflow-x-auto sm:overflow-x-visible no-scrollbar justify-start sm:justify-center lg:justify-start gap-2.5 sm:gap-3 px-4 sm:px-0 -mx-4 sm:mx-0 snap-x snap-mandatory">
+                      {focusedPrepTags.map((tag, idx) => {
+                        const hasLink = !!tag.examId;
+                        return (
+                          <button 
+                            key={idx} 
+                            onClick={() => {
+                              if (hasLink) {
+                                setSelectedExam(tag.examId);
+                              }
+                            }}
+                            className={cn(
+                              "px-4 py-2 sm:px-3.5 sm:py-1.5 rounded-xl border text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-300 whitespace-nowrap shadow-sm select-none snap-center shrink-0",
+                              hasLink 
+                                ? "bg-brand-50/80 border-brand-100/80 text-brand-800 hover:bg-brand-100 hover:text-brand-900 hover:scale-[1.03] active:scale-95 cursor-pointer" 
+                                : "bg-brand-50/30 border-brand-100/40 text-brand-700/70 cursor-default"
+                            )}
+                          >
+                            {tag.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -3370,19 +3484,18 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     mass: 0.9,
                   }}
                   className="bg-[#FAF8F5] rounded-[2rem] w-full md:w-full max-w-xl md:max-w-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] flex flex-col md:flex-row border border-slate-200/50 relative pointer-events-auto mx-auto"
-                  style={{ willChange: 'transform, opacity', maxHeight: 'min(92vh, calc(100dvh - max(env(safe-area-inset-top, 0px), 56px) - 12px))' }}
+                  style={{ willChange: 'transform' }}
                 >
-
-                {/* Unified Close Button */}
-                <button 
-                  onClick={() => setSelectedBankItem(null)}
-                  className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/30 text-white md:bg-slate-100 md:hover:bg-slate-200 md:text-slate-500 rounded-xl transition-all z-50 hover:scale-105 active:scale-95 border-none cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
+                  {/* Unified Close Button */}
+                  <button 
+                    onClick={() => setSelectedBankItem(null)}
+                    className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/30 text-white md:bg-slate-100 md:hover:bg-slate-200 md:text-slate-500 rounded-xl transition-all z-50 hover:scale-105 active:scale-95 border-none cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
                 </button>
 
                 {/* Left Column: Premium Visual Branding & Stats (Fixed height on mobile, full-height banner on laptop) */}
-                <div className="relative h-48 md:h-auto md:min-h-[440px] md:w-[38%] bg-gradient-to-br from-[#12040b]/98 via-[#08020a]/99 to-[#030005]/100 border-b md:border-b-0 md:border-r border-slate-200/50 flex flex-col justify-center md:justify-between items-center p-6 md:p-8 overflow-hidden shrink-0">
+                <div className="relative h-28 md:h-auto md:min-h-[440px] md:w-[38%] bg-gradient-to-br from-[#12040b]/98 via-[#08020a]/99 to-[#030005]/100 border-b md:border-b-0 md:border-r border-slate-200/50 flex flex-col justify-center md:justify-between items-center p-4 md:p-8 overflow-hidden shrink-0">
                   {/* Ambient background grid and glowing orb */}
                   <div className="absolute inset-0 grid-bg opacity-[0.06] pointer-events-none" />
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-brand-500/10 rounded-full blur-[60px] pointer-events-none" />
@@ -3403,18 +3516,18 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/25 z-[1] pointer-events-none" />
 
                   {/* Interactive Orbital Study Seal */}
-                  <div className="relative flex flex-col items-center justify-center space-y-3 md:space-y-4 w-full md:my-auto z-10">
-                    <div className="relative w-16 h-16 md:w-28 md:h-28 flex items-center justify-center shrink-0">
+                  <div className="relative flex flex-col items-center justify-center space-y-2 md:space-y-4 w-full md:my-auto z-10">
+                    <div className="relative w-12 h-12 md:w-28 md:h-28 flex items-center justify-center shrink-0">
                       {/* Outermost pulsing ambient glow */}
-                      <div className="absolute inset-[-6px] rounded-full bg-brand-500/10 animate-ping opacity-60 pointer-events-none" style={{ animationDuration: '3s' }} />
+                      <div className="absolute inset-[-4px] md:inset-[-6px] rounded-full bg-brand-500/10 animate-ping opacity-60 pointer-events-none" style={{ animationDuration: '3s' }} />
                       {/* Outer dashed spinning ring */}
-                      <div className="absolute inset-0 rounded-full border border-dashed border-brand-500/40 animate-[spin_20s_linear_infinite]" />
+                      <div className="absolute inset-0 rounded-full border border-dashed border-brand-500/40 animate-[spin_20s_linear_infinite] hidden md:block" />
                       {/* Inner accent ring spinning in reverse */}
-                      <div className="absolute inset-1 md:inset-2 rounded-full border border-brand-500/15 border-t-brand-500/60 animate-[spin_5s_linear_infinite_reverse]" />
+                      <div className="absolute inset-1 md:inset-2 rounded-full border border-brand-500/15 border-t-brand-500/60 animate-[spin_5s_linear_infinite_reverse] hidden md:block" />
                       {/* Mid subtle ring */}
-                      <div className="absolute inset-2 md:inset-4 rounded-full border border-white/5 animate-[spin_12s_linear_infinite]" />
+                      <div className="absolute inset-2 md:inset-4 rounded-full border border-white/5 animate-[spin_12s_linear_infinite] hidden md:block" />
                       {/* Icon container with glow */}
-                      <div className="w-9 h-9 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center shadow-2xl shadow-brand-500/30 backdrop-blur-md relative overflow-hidden">
+                      <div className="w-8 h-8 md:w-16 md:h-16 rounded-lg md:rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center shadow-2xl shadow-brand-500/30 backdrop-blur-md relative overflow-hidden">
                         {/* Shine sweep */}
                         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent animate-[shimmer_3s_ease-in-out_infinite]" />
                         <BookOpen className="w-4 h-4 md:w-7 md:h-7 text-brand-400 relative z-10 animate-[pulse_3s_ease-in-out_infinite]" />
@@ -3423,7 +3536,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     
                     {/* Category tag for mobile */}
                     <div className="text-center md:hidden w-full px-2">
-                      <p className="text-xs font-black uppercase tracking-[0.2em] text-brand-400">Question Bank Portal</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-brand-400">Question Bank Portal</p>
                     </div>
 
                     {/* Branding label for laptop */}
@@ -3516,7 +3629,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                             transition: { staggerChildren: isMobile ? 0 : 0.08 }
                           }
                         }}
-                        className="overflow-y-auto flex-1 pr-1 space-y-2 custom-scrollbar min-h-[100px] max-h-[160px] sm:max-h-none"
+                        className="overflow-y-auto flex-1 pr-1 space-y-2 custom-scrollbar min-h-[100px] max-h-[280px] sm:max-h-none"
                       >
                         {selectedBankItem.pdfLinks && selectedBankItem.pdfLinks.length > 0 ? (
                           selectedBankItem.pdfLinks.map((link: any, idx: number) => (
@@ -3527,7 +3640,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                 show: { opacity: 1, x: 0 }
                               }}
                               className={cn(
-                                "w-full flex items-center justify-between p-3.5 rounded-2xl bg-white border border-slate-200/60 shadow-sm cursor-pointer relative overflow-hidden transition-all duration-300 group",
+                                "w-full flex items-center justify-between p-4 sm:p-3.5 rounded-2xl bg-white border border-slate-200/60 shadow-sm cursor-pointer relative overflow-hidden transition-all duration-300 group",
                                 isMobile 
                                   ? "active:scale-[0.98] active:border-brand-200 active:shadow-md"
                                   : "hover:bg-brand-50/50 hover:border-brand-200/60 transition-all"
@@ -5817,7 +5930,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               }}
             >
               <motion.div 
-                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-4 md:gap-6 px-1"
+                className={cn(
+                  isMobile 
+                    ? "flex flex-col gap-3" 
+                    : "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-4 md:gap-6 px-1"
+                )}
               >
                 <AnimatePresence mode="wait">
                   {loadingExams ? (
@@ -5859,7 +5976,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           displayDesc = meta.description || 'Practice mock tests and quizzes';
                         } catch(e) {}
                       }
-
+ 
                       // Replace generic AI placeholder descriptions if empty
                       if (!displayDesc || displayDesc.trim() === '') {
                         const nameLower = exam.name.toLowerCase();
@@ -5879,7 +5996,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           displayDesc = 'Access specialized syllabus-aligned mock exams, topic-wise practice questions, and previous year papers.';
                         }
                       }
-
+ 
                       return (
                         <motion.div 
                           key={exam.id}
@@ -5892,39 +6009,59 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           }}
                           className="cursor-pointer h-full group/card"
                         >
-                          <div className="p-3 sm:p-5 md:p-6 h-full bg-white border sm:border-2 border-slate-100/90 sm:border-slate-900 rounded-2xl sm:rounded-3xl flex flex-col items-center text-center justify-center space-y-2 sm:space-y-4 md:space-y-5 relative shadow-[0_4px_16px_rgba(0,0,0,0.035)] sm:shadow-[4px_4px_0px_#8A1C36] md:group-hover/card:shadow-[8px_8px_0px_#8A1C36] md:group-hover/card:-translate-y-1 md:group-hover/card:-translate-x-1 transition-all duration-300 active:scale-[0.98] sm:active:scale-100 active:bg-slate-50/70 sm:active:bg-white">
-                            {/* Corner arrow - structured circle */}
-                            {!isMobile && (
+                          {isMobile ? (
+                            // Sleek Premium Mobile Row Item
+                            <div className="p-3.5 bg-white border border-slate-100/90 rounded-2xl flex flex-row items-center justify-between gap-3.5 relative shadow-[0_4px_16px_rgba(0,0,0,0.035)] active:scale-[0.98] active:border-brand-300 transition-all duration-300">
+                              {/* Soft brand left indicator */}
+                              <div className="absolute left-0 top-3.5 bottom-3.5 w-1 bg-gradient-to-b from-[#8A1C36] to-brand-700 rounded-r-md opacity-80" />
+                              
+                              {/* Left Content (Icon & Text) */}
+                              <div className="flex items-center gap-3.5 min-w-0 flex-1 pl-1.5">
+                                {/* Icon container */}
+                                <div className="w-12 h-12 rounded-xl border border-brand-100/20 bg-brand-50/50 flex justify-center items-center shrink-0 shadow-sm relative overflow-hidden">
+                                  {(exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/'))) ? (
+                                    <img src={getDirectImageUrl(exam.icon)} alt={`Odisha Exam Prep Icon: ${exam.name}`} className="w-8/12 h-8/12 object-contain relative z-10" referrerPolicy="no-referrer" />
+                                  ) : (
+                                    <span className="text-xl relative z-10">{exam.icon || '📚'}</span>
+                                  )}
+                                </div>
+                                
+                                {/* Title and Subtitle */}
+                                <div className="min-w-0 flex-1">
+                                  <h3 className="text-[13.5px] font-extrabold text-slate-900 leading-snug tracking-tight uppercase line-clamp-1">
+                                    {exam.name}
+                                  </h3>
+                                  <p className="text-slate-455 text-[11px] font-medium leading-normal mt-0.5 line-clamp-1 pr-1">
+                                    {displayDesc}
+                                  </p>
+                                </div>
+                              </div>
+ 
+                              {/* Right Icon Chevron */}
+                              <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 shadow-2xs">
+                                <ChevronRight className="w-4 h-4" />
+                              </div>
+                            </div>
+                          ) : (
+                            // Desktop Card
+                            <div className="p-3 sm:p-5 md:p-6 h-full bg-white border sm:border-2 border-slate-900 rounded-2xl sm:rounded-3xl flex flex-col items-center text-center justify-center space-y-2 sm:space-y-4 md:space-y-5 relative shadow-[0_4px_16px_rgba(0,0,0,0.035)] sm:shadow-[4px_4px_0px_#8A1C36] md:group-hover/card:shadow-[8px_8px_0px_#8A1C36] md:group-hover/card:-translate-y-1 md:group-hover/card:-translate-x-1 transition-all duration-300 active:scale-[0.98] sm:active:scale-100 active:bg-slate-50/70 sm:active:bg-white">
+                              {/* Corner arrow - structured circle */}
                               <div className="absolute top-2 right-2 sm:top-4 sm:right-4 md:top-5 md:right-5 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full border-2 border-slate-900 bg-white flex items-center justify-center transition-all duration-300 shadow-[2px_2px_0px_#8A1C36] group-hover/card:bg-[#8A1C36] group-hover/card:shadow-none group-hover/card:translate-x-0.5 group-hover/card:translate-y-0.5">
                                 <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-slate-900 group-hover/card:text-white transition-colors" />
                               </div>
-                            )}
-
-                            {/* Icon Container */}
-                            <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl border sm:border-2 border-brand-100/20 sm:border-slate-900 bg-brand-50/60 sm:bg-[#FAF8F5] flex justify-center items-center shrink-0 shadow-none sm:shadow-[3px_3px_0px_rgba(138,28,54,0.15)] md:group-hover/card:shadow-[4px_4px_0px_#8A1C36] transition-all duration-300 relative overflow-hidden">
-                              {(exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/'))) ? (
-                                <img src={getDirectImageUrl(exam.icon)} alt={`Odisha Exam Prep Icon: ${exam.name}`} className="w-8/12 h-8/12 object-contain relative z-10" referrerPolicy="no-referrer" />
-                              ) : (
-                                <span className="text-xl sm:text-2xl md:text-4xl relative z-10">{exam.icon || '📚'}</span>
-                              )}
-                            </div>
-                            
-                            <div className="flex-1 w-full flex flex-col justify-start">
-                              <h3 
-                                className="text-[12px] sm:text-base md:text-lg lg:text-xl font-serif font-black text-slate-900 md:group-hover/card:text-[#8A1C36] transition-all duration-300 leading-snug tracking-tight uppercase"
-                                style={{
-                                  display: '-webkit-box',
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: 'vertical',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis'
-                                }}
-                              >
-                                {exam.name}
-                              </h3>
-                              <div className="w-full mt-2">
-                                <p 
-                                  className="text-slate-400 sm:text-slate-500 text-[10px] sm:text-xs font-medium sm:font-bold leading-normal sm:leading-relaxed opacity-85 md:group-hover/card:opacity-100 transition-opacity"
+ 
+                              {/* Icon Container */}
+                              <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl border sm:border-2 border-brand-100/20 sm:border-slate-900 bg-brand-50/60 sm:bg-[#FAF8F5] flex justify-center items-center shrink-0 shadow-none sm:shadow-[3px_3px_0px_rgba(138,28,54,0.15)] md:group-hover/card:shadow-[4px_4px_0px_#8A1C36] transition-all duration-300 relative overflow-hidden">
+                                {(exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/'))) ? (
+                                  <img src={getDirectImageUrl(exam.icon)} alt={`Odisha Exam Prep Icon: ${exam.name}`} className="w-8/12 h-8/12 object-contain relative z-10" referrerPolicy="no-referrer" />
+                                ) : (
+                                  <span className="text-xl sm:text-2xl md:text-4xl relative z-10">{exam.icon || '📚'}</span>
+                                )}
+                              </div>
+                              
+                              <div className="flex-1 w-full flex flex-col justify-start">
+                                <h3 
+                                  className="text-[12px] sm:text-base md:text-lg lg:text-xl font-serif font-black text-slate-900 md:group-hover/card:text-[#8A1C36] transition-all duration-300 leading-snug tracking-tight uppercase"
                                   style={{
                                     display: '-webkit-box',
                                     WebkitLineClamp: 2,
@@ -5933,11 +6070,25 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                     textOverflow: 'ellipsis'
                                   }}
                                 >
-                                  {displayDesc}
-                                </p>
+                                  {exam.name}
+                                </h3>
+                                <div className="w-full mt-2">
+                                  <p 
+                                    className="text-slate-400 sm:text-slate-500 text-[10px] sm:text-xs font-medium sm:font-bold leading-normal sm:leading-relaxed opacity-85 md:group-hover/card:opacity-100 transition-opacity"
+                                    style={{
+                                      display: '-webkit-box',
+                                      WebkitLineClamp: 2,
+                                      WebkitBoxOrient: 'vertical',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis'
+                                    }}
+                                  >
+                                    {displayDesc}
+                                  </p>
+                                </div>
                               </div>
                             </div>
-                          </div>
+                          )}
                         </motion.div>
                       )})
                   )}
@@ -6361,39 +6512,39 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-3 gap-2.5 sm:hidden w-full mt-1"
+            className="grid grid-cols-3 gap-3 sm:hidden w-full mt-2"
           >
             <button 
               onClick={() => scrollToElement('question-bank-section', { block: 'start' })}
-              className="flex flex-col items-center justify-center p-3.5 rounded-2xl border border-slate-200/80 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.015)] active:scale-95 transition-all text-center min-h-[96px] cursor-pointer group hover:border-brand-300"
+              className="flex flex-col items-center justify-center p-3 rounded-2xl border border-brand-100/40 bg-white shadow-[0_4px_16px_rgba(138,28,54,0.03)] active:scale-95 active:border-brand-300 transition-all text-center min-h-[90px] cursor-pointer group relative overflow-hidden"
             >
-              <div className="w-9 h-9 rounded-full bg-brand-50 flex items-center justify-center mb-1.5 border border-brand-100/30">
+              <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand-500 to-brand-700" />
+              <div className="w-9 h-9 rounded-xl bg-brand-50/70 flex items-center justify-center mb-1.5 border border-brand-100/30 group-active:scale-110 transition-transform">
                 <Layers className="w-4 h-4 text-brand-600" />
               </div>
-              <span className="text-[10px] font-black font-sans text-slate-800 tracking-wide uppercase">Question</span>
-              <span className="text-[10px] font-black font-sans text-slate-800 tracking-wide uppercase -mt-0.5">Bank</span>
+              <span className="text-[10px] font-black text-slate-800 tracking-wide uppercase leading-none">Question Bank</span>
             </button>
 
             <button 
               onClick={() => scrollToElement('practice-mode-section', { block: 'start' })}
-              className="flex flex-col items-center justify-center p-3.5 rounded-2xl border border-slate-200/80 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.015)] active:scale-95 transition-all text-center min-h-[96px] cursor-pointer group hover:border-indigo-300"
+              className="flex flex-col items-center justify-center p-3 rounded-2xl border border-indigo-100/40 bg-white shadow-[0_4px_16px_rgba(79,70,229,0.03)] active:scale-95 active:border-indigo-300 transition-all text-center min-h-[90px] cursor-pointer group relative overflow-hidden"
             >
-              <div className="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center mb-1.5 border border-indigo-100/30">
+              <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-indigo-500 to-indigo-700" />
+              <div className="w-9 h-9 rounded-xl bg-indigo-50/70 flex items-center justify-center mb-1.5 border border-indigo-100/30 group-active:scale-110 transition-transform">
                 <Dumbbell className="w-4 h-4 text-indigo-600" />
               </div>
-              <span className="text-[10px] font-black font-sans text-slate-800 tracking-wide uppercase">Practice</span>
-              <span className="text-[10px] font-black font-sans text-slate-800 tracking-wide uppercase -mt-0.5">Mode</span>
+              <span className="text-[10px] font-black text-slate-800 tracking-wide uppercase leading-none">Practice Mode</span>
             </button>
 
             <button 
               onClick={() => scrollToElement('test-series', { block: 'start' })}
-              className="flex flex-col items-center justify-center p-3.5 rounded-2xl border border-slate-200/80 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.015)] active:scale-95 transition-all text-center min-h-[96px] cursor-pointer group hover:border-amber-300"
+              className="flex flex-col items-center justify-center p-3 rounded-2xl border border-amber-100/40 bg-white shadow-[0_4px_16px_rgba(245,158,11,0.03)] active:scale-95 active:border-amber-300 transition-all text-center min-h-[90px] cursor-pointer group relative overflow-hidden"
             >
-              <div className="w-9 h-9 rounded-full bg-amber-50 flex items-center justify-center mb-1.5 border border-amber-100/30">
+              <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-amber-500 to-orange-500" />
+              <div className="w-9 h-9 rounded-xl bg-amber-50/70 flex items-center justify-center mb-1.5 border border-amber-100/30 group-active:scale-110 transition-transform">
                 <Award className="w-4 h-4 text-amber-600" />
               </div>
-              <span className="text-[10px] font-black font-sans text-slate-800 tracking-wide uppercase">Mock</span>
-              <span className="text-[10px] font-black font-sans text-slate-800 tracking-wide uppercase -mt-0.5">Tests</span>
+              <span className="text-[10px] font-black text-slate-800 tracking-wide uppercase leading-none">Mock Tests</span>
             </button>
           </motion.div>
         </div>
@@ -6565,15 +6716,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       "absolute w-1 h-1 rounded-full blur-[0.5px] transform-gpu",
                       hasAccessTo(`exam_bundle_${selectedExam}`) ? "bg-emerald-300" : "bg-brand-300"
                     )}
-                    style={{ 
-                      left: sparkle.left, 
-                      top: sparkle.top 
-                    }}
                   />
                 ))}
               </div>
-
-              <div className="relative z-10 px-4 py-6 sm:p-10 lg:p-14 flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10">
+              <div className="relative z-10 px-4 py-5 sm:px-10 sm:py-8 lg:p-14 flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10">
                 <motion.div 
                   initial={isMobile ? "show" : "hidden"}
                   animate={isMobile ? "show" : undefined}
@@ -6588,7 +6734,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       }
                     }
                   }}
-                  className="flex flex-col sm:flex-row items-center gap-4 sm:gap-10 flex-1 w-full"
+                  className="flex flex-row items-start gap-4 sm:gap-10 flex-1 w-full"
                 >
                   {/* Rotating Orbital Emblem */}
                   <motion.div 
@@ -6596,7 +6742,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       hidden: { scale: 0.8, opacity: 0 },
                       show: { scale: 1, opacity: 1 }
                     }}
-                    className="relative shrink-0 flex items-center justify-center w-14 h-14 sm:w-28 sm:h-28 lg:w-32 lg:h-32"
+                    className="relative shrink-0 flex items-center justify-center w-12 h-12 sm:w-28 sm:h-28 lg:w-32 lg:h-32"
                   >
                     {/* Rotating Dashed Orbit 1 */}
                     <div className={cn(
@@ -6628,20 +6774,20 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         : "bg-brand-950/45 border border-brand-400/30 text-brand-300 shadow-brand-950/50"
                     )}>
                        {hasAccessTo(`exam_bundle_${selectedExam}`) ? (
-                         <CheckCircle2 className="w-5 h-5 sm:w-10 sm:h-10 lg:w-11 lg:h-11 text-emerald-300 filter drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]" />
+                          <CheckCircle2 className="w-5 h-5 sm:w-10 sm:h-10 lg:w-11 lg:h-11 text-emerald-300 filter drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]" />
                        ) : (
-                         <Award className="w-5 h-5 sm:w-10 sm:h-10 lg:w-11 lg:h-11 text-brand-200 filter drop-shadow-[0_0_8px_rgba(244,176,190,0.3)] animate-pulse" />
+                          <Award className="w-5 h-5 sm:w-10 sm:h-10 lg:w-11 lg:h-11 text-brand-200 filter drop-shadow-[0_0_8px_rgba(244,176,190,0.3)] animate-pulse" />
                        )}
                     </div>
                   </motion.div>
 
-                  <div className="text-center sm:text-left space-y-2.5 sm:space-y-4 w-full">
+                  <div className="text-left space-y-2 sm:space-y-4 w-full">
                     <motion.div 
                       variants={{
                         hidden: { y: 8, opacity: 0 },
                         show: { y: 0, opacity: 1 }
                       }}
-                      className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2.5"
+                      className="flex flex-wrap items-center justify-start gap-1.5 sm:gap-2.5"
                     >
                       <span className={cn(
                         "px-2.5 sm:px-3.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-[0.18em] border backdrop-blur-sm",
@@ -6661,13 +6807,13 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       </span>
                     </motion.div>
 
-                    <div className="max-w-2xl space-y-2.5">
+                    <div className="max-w-2xl space-y-2">
                       <motion.h2 
                         variants={{
                           hidden: { y: 8, opacity: 0 },
                           show: { y: 0, opacity: 1 }
                         }}
-                        className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight tracking-tight"
+                        className="text-lg sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight tracking-tight"
                       >
                         {hasAccessTo(`exam_bundle_${selectedExam}`) ? (
                           <>You have <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 drop-shadow-[0_2px_10px_rgba(52,211,153,0.15)]">Full Access</span> to {currentExam?.name}</>
@@ -6715,10 +6861,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.2 }}
-                    className="flex flex-col items-center lg:items-center gap-4 sm:gap-5 shrink-0 lg:border-l lg:border-white/5 lg:pl-12 lg:min-w-[280px] w-full lg:w-auto"
+                    className="flex flex-col items-start sm:items-center gap-4 sm:gap-5 shrink-0 lg:border-l lg:border-white/5 lg:pl-12 lg:min-w-[280px] w-full lg:w-auto"
                   >
-                    <div className="text-center lg:text-center">
-                      <div className="flex flex-row sm:flex-row lg:flex-col items-center justify-center lg:items-center gap-2.5 sm:gap-1.5">
+                    <div className="text-left sm:text-center w-full">
+                      <div className="flex flex-row items-center justify-start sm:justify-center gap-3 sm:gap-1.5 flex-wrap">
                         <div className="flex items-center gap-2">
                           <span className="text-brand-300/40 text-sm sm:text-base lg:text-lg line-through font-bold">₹{bundleOriginalPrice}</span>
                           <span className="text-2xl sm:text-4xl lg:text-5xl font-black text-white font-mono tracking-tighter">₹{bundlePrice}</span>
@@ -6759,7 +6905,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-1.5 transition-transform relative z-10" />
                     </Button>
                     
-                    <div className="flex items-center gap-1.5 text-brand-300/60 font-bold text-[9px] sm:text-[10px] uppercase tracking-widest">
+                    <div className="flex items-center gap-1.5 text-brand-300/60 font-bold text-[9px] sm:text-[10px] uppercase tracking-widest self-start sm:self-auto">
                       <Zap className="w-3.5 h-3.5 fill-brand-300/60 animate-pulse" />
                       Instant Activation
                     </div>
@@ -6770,7 +6916,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.2 }}
-                    className="flex flex-col items-center lg:items-center gap-4 shrink-0 lg:border-l lg:border-emerald-500/10 lg:pl-12 lg:min-w-[280px] w-full lg:w-auto"
+                    className="flex flex-col items-start sm:items-center gap-4 shrink-0 lg:border-l lg:border-emerald-500/10 lg:pl-12 lg:min-w-[280px] w-full lg:w-auto"
                   >
                      {/* Elegant Gold/Emerald Security Seal */}
                      <div className="w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-400/20 flex items-center justify-center relative shadow-[0_0_30px_rgba(16,185,129,0.15)] group-hover:scale-105 transition-transform duration-500">
@@ -6778,7 +6924,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                        <ShieldCheck className="w-10 h-10 text-emerald-400 filter drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]" />
                        <div className="absolute inset-0 rounded-full border border-emerald-400/20 animate-ping opacity-30" style={{ animationDuration: '3s' }} />
                      </div>
-                     <span className="text-emerald-300 font-bold uppercase tracking-[0.2em] text-[10px] bg-emerald-950/60 hover:bg-emerald-950/80 px-4.5 py-1.5 rounded-full border border-emerald-500/25 flex items-center gap-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all">
+                     <span className="text-emerald-300 font-bold uppercase tracking-[0.2em] text-[10px] bg-emerald-950/60 hover:bg-emerald-950/80 px-4.5 py-1.5 rounded-full border border-emerald-500/25 flex items-center gap-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all self-start sm:self-auto">
                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-[pulse_1.5s_ease-in-out_infinite]" />
                        Bundle Active
                      </span>
@@ -6942,7 +7088,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <h4 className="font-extrabold text-[14px] text-slate-850 tracking-tight leading-snug truncate uppercase">{test.title}</h4>
+                          <h4 className="font-extrabold text-[13.5px] text-slate-900 tracking-tight leading-snug line-clamp-2 uppercase pr-2">{test.title}</h4>
                           {isPremium && (
                             isLocked ? (
                               <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 text-[8.5px] font-black rounded border border-amber-100 uppercase tracking-wider shrink-0">Premium</span>
@@ -6952,10 +7098,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           )}
                         </div>
                         
-                        <div className="flex items-center gap-1.5 mt-1 text-[11px] font-bold text-slate-455 flex-wrap">
-                          <span className="flex items-center gap-0.5 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100/50"><Clock className="w-3 h-3 text-slate-400" /> {test.durationMinutes}m</span>
-                          <span className="flex items-center gap-0.5 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100/50"><Award className="w-3 h-3 text-slate-400" /> {test.totalMarks} mks</span>
-                          <span className="flex items-center gap-0.5 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100/50"><FileText className="w-3 h-3 text-slate-400" /> {test.questions?.length || test._questionCount || 0} Qs</span>
+                        <div className="flex items-center gap-2 mt-2 text-[10px] font-extrabold text-slate-500 flex-wrap">
+                          <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100/60"><Clock className="w-3 h-3 text-slate-400" /> {test.durationMinutes} Mins</span>
+                          <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100/60"><Award className="w-3 h-3 text-slate-400" /> {test.totalMarks} Marks</span>
+                          <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100/60"><FileText className="w-3 h-3 text-slate-400" /> {test.questions?.length || test._questionCount || 0} Qs</span>
                         </div>
                       </div>
                     </div>
