@@ -6669,13 +6669,13 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             )}>
               <VisualEffects />
               
-              {/* Premium Close Button — positioned absolute but with enough top/right clearance */}
+              {/* Premium Close Button */}
               <button
                 onClick={() => setIsBannerDismissed(true)}
-                className="absolute top-3 right-3 sm:top-5 sm:right-5 z-30 p-1.5 sm:p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 hover:border-white/30 text-white/70 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 group focus:outline-none cursor-pointer"
+                className="absolute top-4 right-4 sm:top-5 sm:right-5 z-20 p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white/60 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 group focus:outline-none cursor-pointer"
                 aria-label="Dismiss banner"
               >
-                <X className="w-3.5 h-3.5 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:rotate-90" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:rotate-90" />
               </button>
               
               {/* Dynamic Glowing Ambient Mesh / Orbs */}
@@ -6719,7 +6719,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   />
                 ))}
               </div>
-              <div className="relative z-10 px-4 pt-8 pb-5 sm:px-10 sm:py-8 lg:p-14 flex flex-col lg:flex-row items-center justify-between gap-5 lg:gap-10">
+              <div className="relative z-10 px-4 py-6 sm:p-10 lg:p-14 flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10">
                 <motion.div 
                   initial={isMobile ? "show" : "hidden"}
                   animate={isMobile ? "show" : undefined}
@@ -6734,7 +6734,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       }
                     }
                   }}
-                  className="flex flex-row items-start gap-4 sm:gap-10 flex-1 w-full"
+                  className="flex flex-col sm:flex-row items-center gap-4 sm:gap-10 flex-1 w-full"
                 >
                   {/* Rotating Orbital Emblem */}
                   <motion.div 
@@ -6742,7 +6742,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       hidden: { scale: 0.8, opacity: 0 },
                       show: { scale: 1, opacity: 1 }
                     }}
-                    className="relative shrink-0 flex items-center justify-center w-12 h-12 sm:w-28 sm:h-28 lg:w-32 lg:h-32"
+                    className="relative shrink-0 flex items-center justify-center w-14 h-14 sm:w-28 sm:h-28 lg:w-32 lg:h-32"
                   >
                     {/* Rotating Dashed Orbit 1 */}
                     <div className={cn(
@@ -6781,13 +6781,13 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     </div>
                   </motion.div>
 
-                  <div className="text-left space-y-2 sm:space-y-4 w-full">
+                  <div className="text-center sm:text-left space-y-2.5 sm:space-y-4 w-full">
                     <motion.div 
                       variants={{
                         hidden: { y: 8, opacity: 0 },
                         show: { y: 0, opacity: 1 }
                       }}
-                      className="flex flex-wrap items-center justify-start gap-1.5 sm:gap-2.5 pr-8 sm:pr-0"
+                      className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2.5"
                     >
                       <span className={cn(
                         "px-2.5 sm:px-3.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-[0.18em] border backdrop-blur-sm",
@@ -6807,13 +6807,13 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       </span>
                     </motion.div>
 
-                    <div className="max-w-2xl space-y-2">
+                    <div className="max-w-2xl space-y-2.5">
                       <motion.h2 
                         variants={{
                           hidden: { y: 8, opacity: 0 },
                           show: { y: 0, opacity: 1 }
                         }}
-                        className="text-lg sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight tracking-tight"
+                        className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight tracking-tight"
                       >
                         {hasAccessTo(`exam_bundle_${selectedExam}`) ? (
                           <>You have <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 drop-shadow-[0_2px_10px_rgba(52,211,153,0.15)]">Full Access</span> to {currentExam?.name}</>
@@ -6861,15 +6861,15 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.2 }}
-                    className="flex flex-col items-start sm:items-center gap-4 sm:gap-5 shrink-0 lg:border-l lg:border-white/5 lg:pl-12 lg:min-w-[280px] w-full lg:w-auto"
+                    className="flex flex-col items-center lg:items-center gap-4 sm:gap-5 shrink-0 lg:border-l lg:border-white/5 lg:pl-12 lg:min-w-[280px] w-full lg:w-auto"
                   >
-                    <div className="text-left sm:text-center w-full">
-                      <div className="flex flex-row items-center justify-start sm:justify-center gap-2.5 flex-wrap">
+                    <div className="text-center lg:text-center">
+                      <div className="flex flex-row sm:flex-row lg:flex-col items-center justify-center lg:items-center gap-2.5 sm:gap-1.5">
                         <div className="flex items-center gap-2">
-                          <span className="text-brand-300/40 text-sm line-through font-bold">₹{bundleOriginalPrice}</span>
-                          <span className="text-3xl sm:text-4xl lg:text-5xl font-black text-white font-mono tracking-tighter">₹{bundlePrice}</span>
+                          <span className="text-brand-300/40 text-sm sm:text-base lg:text-lg line-through font-bold">₹{bundleOriginalPrice}</span>
+                          <span className="text-2xl sm:text-4xl lg:text-5xl font-black text-white font-mono tracking-tighter">₹{bundlePrice}</span>
                         </div>
-                        <span className="px-2 py-0.5 bg-amber-500/10 text-amber-300 text-[9px] sm:text-[10px] font-black rounded-lg border border-amber-500/20 uppercase tracking-widest whitespace-nowrap">
+                        <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-amber-500/10 text-amber-300 text-[9px] sm:text-[10px] font-black rounded-lg border border-amber-500/20 uppercase tracking-widest">
                           Save {Math.round(((bundleOriginalPrice - bundlePrice) / bundleOriginalPrice) * 100)}% Instant
                         </span>
                       </div>
@@ -6905,18 +6905,18 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-1.5 transition-transform relative z-10" />
                     </Button>
                     
-                    <div className="flex items-center gap-1.5 text-brand-300/60 font-bold text-[9px] sm:text-[10px] uppercase tracking-widest self-start sm:self-auto">
+                    <div className="flex items-center gap-1.5 text-brand-300/60 font-bold text-[9px] sm:text-[10px] uppercase tracking-widest">
                       <Zap className="w-3.5 h-3.5 fill-brand-300/60 animate-pulse" />
                       Instant Activation
                     </div>
                   </motion.div>
                 ) : (
-                  <motion.div
+                  <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.2 }}
-                    className="flex flex-col items-start sm:items-center gap-4 shrink-0 lg:border-l lg:border-emerald-500/10 lg:pl-12 lg:min-w-[280px] w-full lg:w-auto"
+                    className="flex flex-col items-center lg:items-center gap-4 shrink-0 lg:border-l lg:border-emerald-500/10 lg:pl-12 lg:min-w-[280px] w-full lg:w-auto"
                   >
                      {/* Elegant Gold/Emerald Security Seal */}
                      <div className="w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-400/20 flex items-center justify-center relative shadow-[0_0_30px_rgba(16,185,129,0.15)] group-hover:scale-105 transition-transform duration-500">
@@ -6924,7 +6924,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                        <ShieldCheck className="w-10 h-10 text-emerald-400 filter drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]" />
                        <div className="absolute inset-0 rounded-full border border-emerald-400/20 animate-ping opacity-30" style={{ animationDuration: '3s' }} />
                      </div>
-                     <span className="text-emerald-300 font-bold uppercase tracking-[0.2em] text-[10px] bg-emerald-950/60 hover:bg-emerald-950/80 px-4.5 py-1.5 rounded-full border border-emerald-500/25 flex items-center gap-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all self-start sm:self-auto">
+                     <span className="text-emerald-300 font-bold uppercase tracking-[0.2em] text-[10px] bg-emerald-950/60 hover:bg-emerald-950/80 px-4.5 py-1.5 rounded-full border border-emerald-500/25 flex items-center gap-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all">
                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-[pulse_1.5s_ease-in-out_infinite]" />
                        Bundle Active
                      </span>
