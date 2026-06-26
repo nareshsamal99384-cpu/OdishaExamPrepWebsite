@@ -1,4 +1,4 @@
-import React, { Component, ReactNode, useMemo } from 'react';
+import React, { Component, ReactNode } from 'react';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { cn } from '../lib/utils';
@@ -89,11 +89,16 @@ function classifyPart(part: string): MathPart {
   return { raw: part, math: part, display: 'text' };
 }
 
-// ─────────────────────────────────────────────────────────────
-// KaTeX render helper — never throws, always returns HTML + flag
-// ─────────────────────────────────────────────────────────────
+// Cache map for rendered KaTeX output to bypass parser overhead for duplicate strings
+const katexCache = new Map<string, { html: string; ok: boolean }>();
 
 function renderKatex(math: string, display: boolean): { html: string; ok: boolean } {
+  const cacheKey = `${display ? 'block' : 'inline'}:${math}`;
+  const cached = katexCache.get(cacheKey);
+  if (cached) return cached;
+
+  let result: { html: string; ok: boolean };
+
   // First attempt: strict render — produces clean output for valid LaTeX
   try {
     const html = katex.renderToString(math, {
@@ -102,27 +107,28 @@ function renderKatex(math: string, display: boolean): { html: string; ok: boolea
       trust: false,
       strict: false,
     });
-    return { html, ok: true };
+    result = { html, ok: true };
   } catch (_) {
-    // ignore
+    // Second attempt: lenient render — KaTeX inlines its own error highlight
+    // and returns partial HTML without crashing the page
+    try {
+      const html = katex.renderToString(math, {
+        throwOnError: false,
+        displayMode: display,
+        trust: false,
+        strict: 'ignore',
+      });
+      // KaTeX adds class="katex-error" for parse failures
+      const ok = !html.includes('katex-error');
+      result = { html, ok };
+    } catch (e) {
+      console.warn('[MathTextRenderer] KaTeX render failed:', math, e);
+      result = { html: '', ok: false };
+    }
   }
 
-  // Second attempt: lenient render — KaTeX inlines its own error highlight
-  // and returns partial HTML without crashing the page
-  try {
-    const html = katex.renderToString(math, {
-      throwOnError: false,
-      displayMode: display,
-      trust: false,
-      strict: 'ignore',
-    });
-    // KaTeX adds class="katex-error" for parse failures
-    const ok = !html.includes('katex-error');
-    return { html, ok };
-  } catch (e) {
-    console.warn('[MathTextRenderer] KaTeX render failed:', math, e);
-    return { html: '', ok: false };
-  }
+  katexCache.set(cacheKey, result);
+  return result;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -983,13 +989,11 @@ export const DiagramRenderer: React.FC<DiagramRendererProps> = React.memo(({
   diagram: diagramProp,
   isOption = false,
 }) => {
-  const diagram = useMemo(() => {
-    let diag = data || diagramProp || (content ? tryParseJsonDiagram(content) : null);
-    if (typeof diag === 'string') {
-      diag = tryParseJsonDiagram(diag);
-    }
-    return diagramValidator(diag);
-  }, [data, diagramProp, content]);
+  let diagram = data || diagramProp || (content ? tryParseJsonDiagram(content) : null);
+  if (typeof diagram === 'string') {
+    diagram = tryParseJsonDiagram(diagram);
+  }
+  diagram = diagramValidator(diagram);
 
   if (diagram) {
     return (

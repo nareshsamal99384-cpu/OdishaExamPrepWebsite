@@ -167,9 +167,7 @@ const mapY = (y: number, yRange: [number, number], height: number): number => {
   return (height - 60) - ((y - minY) / (maxY - minY)) * (height - 120);
 };
 
-// ─────────────────────────────────────────────────────────────
-// KaTeX Label Renderer with foreignObject
-// ─────────────────────────────────────────────────────────────
+const diagramKatexCache = new Map<string, string>();
 
 const RenderLatexLabel: React.FC<{
   text: string;
@@ -192,7 +190,11 @@ const RenderLatexLabel: React.FC<{
         const isMathPart = index % 2 === 1;
         if (isMathPart) {
           try {
-            const html = katex.renderToString(part, { displayMode: false, throwOnError: false });
+            let html = diagramKatexCache.get(part);
+            if (!html) {
+              html = katex.renderToString(part, { displayMode: false, throwOnError: false });
+              diagramKatexCache.set(part, html);
+            }
             return (
               <span 
                 key={index}
@@ -1172,7 +1174,7 @@ const normalizeDiagramData = (raw: any): any => {
 // Main Diagram Component
 // ─────────────────────────────────────────────────────────────
 
-const UniversalMathDiagramEngine = React.memo(function UniversalMathDiagramEngine({ data: rawData }: UniversalMathDiagramProps) {
+export default function UniversalMathDiagramEngine({ data: rawData }: UniversalMathDiagramProps) {
   const data = useMemo(() => normalizeDiagramData(rawData), [rawData]);
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -1193,23 +1195,12 @@ const UniversalMathDiagramEngine = React.memo(function UniversalMathDiagramEngin
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const mediaQuery = window.matchMedia('(max-width: 639px)');
-    setIsMobile(mediaQuery.matches);
-    const handleMediaChange = (e: any) => {
-      setIsMobile(e.matches);
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
     };
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleMediaChange);
-    } else {
-      mediaQuery.addListener(handleMediaChange);
-    }
-    return () => {
-      if (mediaQuery.removeEventListener) {
-        mediaQuery.removeEventListener('change', handleMediaChange);
-      } else {
-        mediaQuery.removeListener(handleMediaChange);
-      }
-    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   useEffect(() => {
@@ -2156,7 +2147,7 @@ const UniversalMathDiagramEngine = React.memo(function UniversalMathDiagramEngin
         className="canvas-viewport p-3.5 sm:p-10 flex justify-center items-center bg-slate-50/50 dark:bg-[#070b12] overflow-hidden w-full select-none relative min-h-[260px] sm:min-h-[420px]"
         style={{ 
           cursor: isPanning ? 'grabbing' : (draggedId ? 'grabbing' : 'grab'),
-          touchAction: isPanning || draggedId ? 'none' : 'pan-y'
+          touchAction: 'none'
         }}
       >
         {/* Real-time Cartesian plane coordinate tooltip */}
@@ -2182,14 +2173,14 @@ const UniversalMathDiagramEngine = React.memo(function UniversalMathDiagramEngin
             transformOrigin: 'center center', 
             transition: isPanning || draggedId ? 'none' : 'transform 0.15s cubic-bezier(0.1, 0.8, 0.25, 1)',
             willChange: isPanning || draggedId ? 'transform' : 'auto',
-            touchAction: isPanning || draggedId ? 'none' : 'pan-y'
+            touchAction: 'none'
           }}
           className="w-full max-w-[800px] flex justify-center items-center text-slate-800 dark:text-slate-200"
         >
           <svg
             ref={svgRef}
             width="100%"
-            style={{ aspectRatio: `${vWidth}/${vHeight}`, touchAction: isPanning || draggedId ? 'none' : 'pan-y' }}
+            style={{ aspectRatio: `${vWidth}/${vHeight}`, touchAction: 'none' }}
             viewBox={`0 0 ${vWidth} ${vHeight}`}
             preserveAspectRatio={data.aspectRatio || "xMidYMid meet"}
             className="w-full h-auto pointer-events-auto"
@@ -4311,6 +4302,4 @@ const UniversalMathDiagramEngine = React.memo(function UniversalMathDiagramEngin
       `}} />
     </div>
   );
-});
-
-export default UniversalMathDiagramEngine;
+}
