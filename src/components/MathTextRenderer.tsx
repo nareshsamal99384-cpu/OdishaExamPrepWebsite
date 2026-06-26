@@ -1,4 +1,4 @@
-import React, { Component, ReactNode } from 'react';
+import React, { Component, ReactNode, useMemo } from 'react';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { cn } from '../lib/utils';
@@ -983,11 +983,13 @@ export const DiagramRenderer: React.FC<DiagramRendererProps> = React.memo(({
   diagram: diagramProp,
   isOption = false,
 }) => {
-  let diagram = data || diagramProp || (content ? tryParseJsonDiagram(content) : null);
-  if (typeof diagram === 'string') {
-    diagram = tryParseJsonDiagram(diagram);
-  }
-  diagram = diagramValidator(diagram);
+  const diagram = useMemo(() => {
+    let diag = data || diagramProp || (content ? tryParseJsonDiagram(content) : null);
+    if (typeof diag === 'string') {
+      diag = tryParseJsonDiagram(diag);
+    }
+    return diagramValidator(diag);
+  }, [data, diagramProp, content]);
 
   if (diagram) {
     return (

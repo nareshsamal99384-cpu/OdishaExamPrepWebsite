@@ -274,8 +274,6 @@ body {
   .smooth-scroll-gpu {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
-    will-change: transform;
-    transform: translateZ(0);
     overscroll-behavior: auto;
   }
 
@@ -283,6 +281,21 @@ body {
     .smooth-scroll-gpu {
       overscroll-behavior: contain;
     }
+  }
+
+  .content-visibility-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 300px;
+  }
+
+  .radial-glow-indigo {
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0) 70%);
+  }
+  .radial-glow-rose {
+    background: radial-gradient(circle, rgba(244, 63, 94, 0.1) 0%, rgba(244, 63, 94, 0) 70%);
+  }
+  .radial-glow-teal {
+    background: radial-gradient(circle, rgba(20, 184, 166, 0.08) 0%, rgba(20, 184, 166, 0) 70%);
   }
 
   .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }

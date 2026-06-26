@@ -2952,7 +2952,7 @@ JSON structure:
 
     return (
       <div className="bg-gradient-to-b from-slate-50 to-white/70 border border-slate-200/50 rounded-2xl p-3.5 sm:p-4 mt-2.5 text-left space-y-3 sm:space-y-3.5 flex-1 flex flex-col justify-between relative overflow-hidden shadow-xs hover:shadow-sm transition-all duration-300 animate-scale-in">
-        <div className="absolute top-0 right-0 w-16 h-16 bg-rose-500/5 rounded-full blur-xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-24 h-24 radial-glow-rose pointer-events-none" />
         
         <div className="space-y-2">
           <div className="flex justify-between items-center text-xs sm:text-[10px] font-bold text-slate-500">
@@ -3093,7 +3093,7 @@ JSON structure:
 
     return (
       <div className="bg-gradient-to-b from-indigo-50/50 to-white/70 border border-indigo-100/40 rounded-2xl p-3.5 sm:p-4 mt-2.5 text-left space-y-3 sm:space-y-3.5 flex-1 flex flex-col justify-between relative overflow-hidden shadow-xs hover:shadow-sm transition-all duration-300 animate-scale-in">
-        <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-500/5 rounded-full blur-xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-24 h-24 radial-glow-indigo pointer-events-none" />
         
         <div className="space-y-2">
           <div className="flex justify-between items-center text-xs sm:text-[10px] font-bold text-slate-500">
@@ -3154,7 +3154,7 @@ JSON structure:
   const renderPracticeAnalyticsHUD = () => {
     return (
       <div className="bg-slate-50   border border-slate-200/50 rounded-2xl p-4 mt-4 text-left space-y-3 relative overflow-hidden">
-        <div className="absolute bottom-0 left-0 w-16 h-16 bg-teal-500/5 rounded-full blur-xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 radial-glow-teal pointer-events-none" />
 
         <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
           <Cpu className="w-3.5 h-3.5 text-brand-600" /> Practice Performance HUD
@@ -3225,7 +3225,7 @@ JSON structure:
               transition={{ duration: 0.2, ease: "easeOut" }}
               className="bg-white border border-slate-200/60 rounded-[2rem] max-w-sm w-full p-6 shadow-2xl space-y-6 text-left relative overflow-hidden "
             >
-              <div className="absolute -top-10 -right-10 w-20 h-20 bg-amber-500/5 rounded-full blur-xl pointer-events-none" />
+              <div className="absolute -top-10 -right-10 w-32 h-32 radial-glow-rose pointer-events-none" />
               
               <div className="space-y-2">
                 <h4 className="font-serif font-extrabold text-slate-900 text-base flex items-center gap-2">
@@ -3655,12 +3655,12 @@ JSON structure:
           
           {/* Ambient Glows */}
           <div className={cn(
-            "absolute -top-10 -right-10 w-24 h-24 rounded-full blur-xl pointer-events-none transition-all duration-500",
+            "absolute -top-10 -right-10 w-36 h-36 rounded-full pointer-events-none transition-all duration-500",
             activeRightTab === 'planner'
-              ? (coachMode === 'ai' ? "bg-indigo-500/10" : "bg-rose-500/5")
-              : "bg-rose-500/5"
+              ? (coachMode === 'ai' ? "radial-glow-indigo" : "radial-glow-rose")
+              : "radial-glow-rose"
           )} />
-          <div className="absolute -bottom-10 -left-10 w-20 h-20 bg-teal-500/5 rounded-full blur-xl pointer-events-none" />
+          <div className="absolute -bottom-10 -left-10 w-32 h-32 radial-glow-teal pointer-events-none" />
 
           {/* Glassmorphic Tab Bar */}
           <div className="flex border-b border-slate-200/60 bg-slate-50   p-1.5 px-4 gap-1 shrink-0 z-10">
@@ -3723,8 +3723,8 @@ JSON structure:
                   className="space-y-2.5 sm:space-y-3 text-left flex-1 flex flex-col min-h-full"
                 >
             <div className={cn(
-              "absolute -top-10 -right-10 w-24 h-24 rounded-full blur-xl pointer-events-none transition-all duration-500",
-              coachMode === 'ai' ? "bg-indigo-500/15" : "bg-rose-500/10"
+              "absolute -top-10 -right-10 w-36 h-36 rounded-full pointer-events-none transition-all duration-500",
+              coachMode === 'ai' ? "radial-glow-indigo" : "radial-glow-rose"
             )} />
             
             {/* Header Selector */}
@@ -4299,7 +4299,7 @@ JSON structure:
                     {/* AI Coaching Strategy Box */}
                     {coachStrategy && (
                       <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-2xl p-4 sm:p-3.5 text-[11px] sm:text-[10px] text-indigo-800 font-semibold text-left leading-relaxed relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-500/5 rounded-full blur-lg pointer-events-none" />
+                        <div className="absolute top-0 right-0 w-24 h-24 radial-glow-indigo pointer-events-none" />
                         <span className="font-black text-indigo-650 uppercase tracking-widest block mb-1 text-[9px] sm:text-[8px] flex items-center gap-1">
                           <Sparkles className="w-3.5 h-3.5 animate-pulse text-indigo-650" /> AI Coach Strategy
                         </span>
@@ -4604,7 +4604,7 @@ JSON structure:
                 ) : (
                   <div className="space-y-4">
                     {bookmarkedQuestions.map((bq) => (
-                      <div key={bq.id} className="bg-slate-50/70 border border-slate-200/60 rounded-2xl p-4 sm:p-5 space-y-4 text-left relative transition-all duration-200 shadow-sm hover:shadow-md animate-fade-in">
+                      <div key={bq.id} className="bg-slate-50/70 border border-slate-200/60 rounded-2xl p-4 sm:p-5 space-y-4 text-left relative transition-[border-color,background-color,box-shadow] duration-200 shadow-sm hover:shadow-md animate-fade-in content-visibility-auto">
                         <div className="flex justify-between items-center border-b border-slate-200/40 pb-2.5">
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] sm:text-[9px] font-black uppercase tracking-wider text-brand-600 bg-brand-50 px-2.5 py-1 rounded border border-brand-100">
@@ -4926,7 +4926,7 @@ JSON structure:
                     {activeQuiz.map((q, qIdx) => {
                       const isBookmarked = bookmarkedQuestions.some(bq => bq.question === q.question);
                       return (
-                        <div key={qIdx} className="bg-slate-50/70 border border-slate-200/60 rounded-2xl p-4 sm:p-5 space-y-4 text-left relative transition-all duration-200 shadow-sm hover:shadow-md animate-fade-in">
+                        <div key={qIdx} className="bg-slate-50/70 border border-slate-200/60 rounded-2xl p-4 sm:p-5 space-y-4 text-left relative transition-[border-color,background-color,box-shadow] duration-200 shadow-sm hover:shadow-md animate-fade-in content-visibility-auto">
                           <div className="flex justify-between items-center border-b border-slate-200/40 pb-2.5">
                             <div className="flex items-center gap-2">
                               <span className="text-[10px] sm:text-[9px] font-black uppercase tracking-wider text-brand-600 bg-brand-50 px-2.5 py-1 rounded border border-brand-100">
@@ -5006,12 +5006,12 @@ JSON structure:
                                   disabled={quizSubmitted}
                                   onClick={() => setSelectedAnswers(prev => ({ ...prev, [qIdx]: optIdx }))}
                                   className={cn(
-                                    "text-left p-3.5 sm:p-2.5 rounded-xl border text-xs sm:text-[11px] transition-all duration-200 cursor-pointer flex items-center gap-3 w-full relative",
+                                    "text-left p-3.5 sm:p-2.5 rounded-xl border text-xs sm:text-[11px] transition-[border-color,background-color,box-shadow,color] duration-200 cursor-pointer flex items-center gap-3 w-full relative",
                                     containerStyle
                                   )}
                                 >
                                   <span className={cn(
-                                    "w-6 h-6 rounded-full flex items-center justify-center text-[10.5px] sm:text-[9.5px] font-black border shrink-0 transition-all duration-200",
+                                    "w-6 h-6 rounded-full flex items-center justify-center text-[10.5px] sm:text-[9.5px] font-black border shrink-0 transition-[border-color,background-color,box-shadow,color] duration-200",
                                     badgeStyle
                                   )}>
                                     {['A', 'B', 'C', 'D'][optIdx] || String.fromCharCode(65 + optIdx)}
@@ -6088,7 +6088,7 @@ JSON structure:
                 return (
                   <div className="relative py-14 px-6 text-center bg-slate-50 border border-slate-200/60 rounded-[2rem] space-y-6 overflow-hidden shadow-2xl">
                     {/* Ambient background glow */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 radial-glow-indigo pointer-events-none" />
                     
                     {/* Dot grid pattern overlay */}
                     <div 

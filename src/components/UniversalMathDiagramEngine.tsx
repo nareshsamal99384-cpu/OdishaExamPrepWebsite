@@ -1172,7 +1172,7 @@ const normalizeDiagramData = (raw: any): any => {
 // Main Diagram Component
 // ─────────────────────────────────────────────────────────────
 
-export default function UniversalMathDiagramEngine({ data: rawData }: UniversalMathDiagramProps) {
+const UniversalMathDiagramEngine = React.memo(function UniversalMathDiagramEngine({ data: rawData }: UniversalMathDiagramProps) {
   const data = useMemo(() => normalizeDiagramData(rawData), [rawData]);
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -1193,12 +1193,23 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640);
+    const mediaQuery = window.matchMedia('(max-width: 639px)');
+    setIsMobile(mediaQuery.matches);
+    const handleMediaChange = (e: any) => {
+      setIsMobile(e.matches);
     };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleMediaChange);
+    } else {
+      mediaQuery.addListener(handleMediaChange);
+    }
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleMediaChange);
+      } else {
+        mediaQuery.removeListener(handleMediaChange);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -2145,7 +2156,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
         className="canvas-viewport p-3.5 sm:p-10 flex justify-center items-center bg-slate-50/50 dark:bg-[#070b12] overflow-hidden w-full select-none relative min-h-[260px] sm:min-h-[420px]"
         style={{ 
           cursor: isPanning ? 'grabbing' : (draggedId ? 'grabbing' : 'grab'),
-          touchAction: 'none'
+          touchAction: isPanning || draggedId ? 'none' : 'pan-y'
         }}
       >
         {/* Real-time Cartesian plane coordinate tooltip */}
@@ -2171,14 +2182,14 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
             transformOrigin: 'center center', 
             transition: isPanning || draggedId ? 'none' : 'transform 0.15s cubic-bezier(0.1, 0.8, 0.25, 1)',
             willChange: isPanning || draggedId ? 'transform' : 'auto',
-            touchAction: 'none'
+            touchAction: isPanning || draggedId ? 'none' : 'pan-y'
           }}
           className="w-full max-w-[800px] flex justify-center items-center text-slate-800 dark:text-slate-200"
         >
           <svg
             ref={svgRef}
             width="100%"
-            style={{ aspectRatio: `${vWidth}/${vHeight}`, touchAction: 'none' }}
+            style={{ aspectRatio: `${vWidth}/${vHeight}`, touchAction: isPanning || draggedId ? 'none' : 'pan-y' }}
             viewBox={`0 0 ${vWidth} ${vHeight}`}
             preserveAspectRatio={data.aspectRatio || "xMidYMid meet"}
             className="w-full h-auto pointer-events-auto"
@@ -4300,4 +4311,6 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
       `}} />
     </div>
   );
-}
+});
+
+export default UniversalMathDiagramEngine;
