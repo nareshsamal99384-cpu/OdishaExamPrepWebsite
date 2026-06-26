@@ -1409,7 +1409,12 @@ export const Navbar = ({
   const isBlogActive = location.pathname.startsWith('/blog') || activeSection === 'blog';
 
   return (
-    <header className={cn("sticky top-0 z-[60] w-full transition-all duration-500", scrolled ? "navbar-scrolled" : "navbar-glass")}>
+    <header className={cn(
+      "sticky top-0 z-[60] w-full transition-all duration-500", 
+      mobileMenuOpen 
+        ? "bg-white border-b border-slate-200/60" 
+        : (scrolled ? "navbar-scrolled" : "navbar-glass")
+    )}>
       <div className="max-w-7xl mx-auto px-4 h-16 sm:h-20 flex items-center justify-between relative z-[65]">
         <div
           className="flex items-center gap-2 sm:gap-3 group cursor-pointer"
@@ -1614,210 +1619,207 @@ export const Navbar = ({
       </div>
 
       {/* Mobile Menu */}
-      {typeof document !== 'undefined' && createPortal(
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <>
-              {/* Dark Backdrop Overlay */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="fixed inset-0 bg-slate-950/50 backdrop-blur-[3px] z-[80] md:hidden"
-                onClick={() => setMobileMenuOpen(false)}
-              />
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            {/* Dark Backdrop Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-slate-950/50 backdrop-blur-[3px] z-[55] md:hidden"
+              onClick={() => setMobileMenuOpen(false)}
+            />
 
-              {/* Mobile Menu Drawer */}
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                className="fixed top-16 sm:top-20 left-0 right-0 bg-white border-b border-slate-200/80 shadow-2xl overflow-y-auto no-scrollbar md:hidden max-h-[calc(100dvh-80px)] rounded-b-[2.25rem] z-[90] border-t border-slate-100"
-              >
-                {/* Content Container */}
-                <div className="p-5 flex flex-col gap-3">
-                  {!user && onSignIn && (
-                    <div className="p-4 rounded-2xl border-2 border-slate-900 bg-gradient-to-br from-slate-50 to-white shadow-[4px_4px_0px_#0f172a] mb-2">
-                      <p className="text-[10px] font-black text-[#8A1C36] uppercase tracking-widest mb-1">Welcome Aspirant</p>
-                      <h4 className="text-xs font-serif font-black text-slate-800 mb-3.5 leading-snug">Master the OPSC, OSSC, and OSSSC syllabus with precision-crafted test series.</h4>
-                      <Button variant="primary" className="w-full py-2.5 rounded-xl font-black text-[10px] uppercase tracking-wider border-2 border-slate-900 shadow-[2px_2px_0px_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all" onClick={() => { onSignIn(); setMobileMenuOpen(false); }}>
-                        Sign In to Account
-                      </Button>
-                    </div>
-                  )}
-                  
-                  {/* Staggered Links Container */}
-                  <motion.div 
-                    variants={drawerContainerVariants}
-                    initial="hidden"
-                    animate="show"
-                    className="flex flex-col gap-2"
-                  >
-                    {!user && (
-                      <>
-                        <motion.div variants={drawerItemVariants}>
-                          <a 
-                            href="#exams" 
-                            onClick={(e) => scrollToSection(e, 'exams')} 
-                            className={cn(
-                              "flex items-center gap-3 text-sm font-extrabold p-3.5 rounded-2xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
-                              activeSection === 'exams'
-                                ? "bg-emerald-50 text-emerald-800 font-black border-emerald-100 shadow-xs"
-                                : "text-slate-700 hover:bg-slate-50 active:bg-slate-100"
-                            )}
-                          >
-                            <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 shadow-xs">
-                               <Target className="w-4.5 h-4.5" />
-                            </div>
-                            <span className="tracking-wide">Exams</span>
-                            <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", activeSection === 'exams' ? "text-emerald-500 translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
-                          </a>
-                        </motion.div>
-
-                        <motion.div variants={drawerItemVariants}>
-                          <a 
-                            href="#syllabus-paths" 
-                            onClick={(e) => scrollToSection(e, 'syllabus-paths')} 
-                            className={cn(
-                              "flex items-center gap-3 text-sm font-extrabold p-3.5 rounded-2xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
-                              activeSection === 'syllabus-paths'
-                                ? "bg-blue-50 text-blue-800 font-black border-blue-100 shadow-xs"
-                                : "text-slate-700 hover:bg-slate-50 active:bg-slate-100"
-                            )}
-                          >
-                            <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0 shadow-xs">
-                               <BookOpen className="w-4.5 h-4.5" />
-                            </div>
-                            <span className="tracking-wide">Syllabus</span>
-                            <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", activeSection === 'syllabus-paths' ? "text-blue-500 translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
-                          </a>
-                        </motion.div>
-
-                        <motion.div variants={drawerItemVariants}>
-                          <a 
-                            href="#exam-registry" 
-                            onClick={(e) => scrollToSection(e, 'exam-registry')} 
-                            className={cn(
-                              "flex items-center gap-3 text-sm font-extrabold p-3.5 rounded-2xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
-                              activeSection === 'exam-registry'
-                                ? "bg-[#fce7eb] text-[#8A1C36] font-black border-[#fbe1e6] shadow-xs"
-                                : "text-slate-700 hover:bg-slate-50 active:bg-slate-100"
-                            )}
-                          >
-                            <div className="w-9 h-9 rounded-xl bg-[#fce7eb] border border-[#fbe1e6] flex items-center justify-center text-[#8A1C36] shrink-0 shadow-xs">
-                               <Clock3 className="w-4.5 h-4.5" />
-                            </div>
-                            <span className="tracking-wide">Notifications</span>
-                            <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", activeSection === 'exam-registry' ? "text-[#8A1C36] translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
-                          </a>
-                        </motion.div>
-
-                        <motion.div variants={drawerItemVariants}>
-                          <a 
-                            href="#achievers-journal" 
-                            onClick={(e) => scrollToSection(e, 'achievers-journal')} 
-                            className={cn(
-                              "flex items-center gap-3 text-sm font-extrabold p-3.5 rounded-2xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
-                              activeSection === 'achievers-journal'
-                                ? "bg-amber-50 text-amber-800 font-black border-amber-600 shadow-xs"
-                                : "text-slate-700 hover:bg-amber-50/50 hover:text-amber-700 border-transparent hover:border-amber-600/35"
-                            )}
-                          >
-                            <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0 shadow-xs">
-                               <Award className="w-4.5 h-4.5" />
-                            </div>
-                            <span className="tracking-wide">Achievers</span>
-                            <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", activeSection === 'achievers-journal' ? "text-amber-500 translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
-                          </a>
-                        </motion.div>
-                      </>
-                    )}
-
-                    <motion.div variants={drawerItemVariants}>
-                      <Link 
-                        to="/blog"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={cn(
-                          "flex items-center gap-3 text-sm font-extrabold p-3.5 rounded-2xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
-                          isBlogActive
-                            ? "bg-[#fce7eb] text-[#8A1C36] font-black border-[#fbe1e6] shadow-xs"
-                            : "text-slate-700 hover:bg-slate-50 active:bg-slate-100"
-                        )}
-                      >
-                        <div className="w-9 h-9 rounded-xl bg-[#fce7eb] border border-[#fbe1e6] flex items-center justify-center text-[#8A1C36] shrink-0 shadow-xs">
-                           <FileText className="w-4.5 h-4.5" />
-                        </div>
-                        <span className="tracking-wide">Latest Updates & Blog</span>
-                        <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", isBlogActive ? "text-[#8A1C36] translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
-                      </Link>
-                    </motion.div>
-
-                    {user && (
+            {/* Mobile Menu Drawer */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute top-full left-0 right-0 bg-white border-b border-slate-200/80 shadow-2xl overflow-y-auto no-scrollbar md:hidden max-h-[calc(100vh-80px)] rounded-b-[2.25rem] z-[60]"
+            >
+              {/* Content Container */}
+              <div className="p-5 flex flex-col gap-3">
+                {!user && onSignIn && (
+                  <div className="p-4 rounded-2xl border-2 border-slate-900 bg-gradient-to-br from-slate-50 to-white shadow-[4px_4px_0px_#0f172a] mb-2">
+                    <p className="text-[10px] font-black text-[#8A1C36] uppercase tracking-widest mb-1">Welcome Aspirant</p>
+                    <h4 className="text-xs font-serif font-black text-slate-800 mb-3.5 leading-snug">Master the OPSC, OSSC, and OSSSC syllabus with precision-crafted test series.</h4>
+                    <Button variant="primary" className="w-full py-2.5 rounded-xl font-black text-[10px] uppercase tracking-wider border-2 border-slate-900 shadow-[2px_2px_0px_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all" onClick={() => { onSignIn(); setMobileMenuOpen(false); }}>
+                      Sign In to Account
+                    </Button>
+                  </div>
+                )}
+                
+                {/* Staggered Links Container */}
+                <motion.div 
+                  variants={drawerContainerVariants}
+                  initial="hidden"
+                  animate="show"
+                  className="flex flex-col gap-2"
+                >
+                  {!user && (
+                    <>
                       <motion.div variants={drawerItemVariants}>
                         <a 
-                          href={supportUrl}
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-3 text-sm font-extrabold p-3.5 rounded-2xl transition-all border border-transparent group relative hover:bg-slate-50 active:bg-slate-100 active:scale-[0.98] select-none"
+                          href="#exams" 
+                          onClick={(e) => scrollToSection(e, 'exams')} 
+                          className={cn(
+                            "flex items-center gap-3 text-sm font-extrabold p-3.5 rounded-2xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
+                            activeSection === 'exams'
+                              ? "bg-emerald-50 text-emerald-800 font-black border-emerald-100 shadow-xs"
+                              : "text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+                          )}
                         >
-                          <div className="w-9 h-9 rounded-xl bg-[#fce7eb]/50 border border-[#fce7eb]/80 flex items-center justify-center text-[#8A1C36] shrink-0 shadow-xs">
-                             <HelpCircle className="w-4.5 h-4.5" />
+                          <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 shadow-xs">
+                             <Target className="w-4.5 h-4.5" />
                           </div>
-                          <span className="tracking-wide">Help & Support</span>
-                          <ChevronRight className="w-4 h-4 ml-auto text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                          <span className="tracking-wide">Exams</span>
+                          <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", activeSection === 'exams' ? "text-emerald-500 translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
                         </a>
                       </motion.div>
-                    )}
+
+                      <motion.div variants={drawerItemVariants}>
+                        <a 
+                          href="#syllabus-paths" 
+                          onClick={(e) => scrollToSection(e, 'syllabus-paths')} 
+                          className={cn(
+                            "flex items-center gap-3 text-sm font-extrabold p-3.5 rounded-2xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
+                            activeSection === 'syllabus-paths'
+                              ? "bg-blue-50 text-blue-800 font-black border-blue-100 shadow-xs"
+                              : "text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+                          )}
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0 shadow-xs">
+                             <BookOpen className="w-4.5 h-4.5" />
+                          </div>
+                          <span className="tracking-wide">Syllabus</span>
+                          <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", activeSection === 'syllabus-paths' ? "text-blue-500 translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
+                        </a>
+                      </motion.div>
+
+                      <motion.div variants={drawerItemVariants}>
+                        <a 
+                          href="#exam-registry" 
+                          onClick={(e) => scrollToSection(e, 'exam-registry')} 
+                          className={cn(
+                            "flex items-center gap-3 text-sm font-extrabold p-3.5 rounded-2xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
+                            activeSection === 'exam-registry'
+                              ? "bg-[#fce7eb] text-[#8A1C36] font-black border-[#fbe1e6] shadow-xs"
+                              : "text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+                          )}
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-[#fce7eb] border border-[#fbe1e6] flex items-center justify-center text-[#8A1C36] shrink-0 shadow-xs">
+                             <Clock3 className="w-4.5 h-4.5" />
+                          </div>
+                          <span className="tracking-wide">Notifications</span>
+                          <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", activeSection === 'exam-registry' ? "text-[#8A1C36] translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
+                        </a>
+                      </motion.div>
+
+                      <motion.div variants={drawerItemVariants}>
+                        <a 
+                          href="#achievers-journal" 
+                          onClick={(e) => scrollToSection(e, 'achievers-journal')} 
+                          className={cn(
+                            "flex items-center gap-3 text-sm font-extrabold p-3.5 rounded-2xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
+                            activeSection === 'achievers-journal'
+                              ? "bg-amber-50 text-amber-800 font-black border-amber-600 shadow-xs"
+                              : "text-slate-700 hover:bg-amber-50/50 hover:text-amber-700 border-transparent hover:border-amber-600/35"
+                          )}
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0 shadow-xs">
+                             <Award className="w-4.5 h-4.5" />
+                          </div>
+                          <span className="tracking-wide">Achievers</span>
+                          <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", activeSection === 'achievers-journal' ? "text-amber-500 translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
+                        </a>
+                      </motion.div>
+                    </>
+                  )}
+
+                  <motion.div variants={drawerItemVariants}>
+                    <Link 
+                      to="/blog"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 text-sm font-extrabold p-3.5 rounded-2xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
+                        isBlogActive
+                          ? "bg-[#fce7eb] text-[#8A1C36] font-black border-[#fbe1e6] shadow-xs"
+                          : "text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+                      )}
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-[#fce7eb] border border-[#fbe1e6] flex items-center justify-center text-[#8A1C36] shrink-0 shadow-xs">
+                         <FileText className="w-4.5 h-4.5" />
+                      </div>
+                      <span className="tracking-wide">Latest Updates & Blog</span>
+                      <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", isBlogActive ? "text-[#8A1C36] translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
+                    </Link>
                   </motion.div>
 
                   {user && (
-                    <div className="mt-3 p-4 rounded-[1.75rem] bg-[#FAF8F5] border border-slate-200/60 shadow-md shadow-slate-200/30 flex flex-col gap-3.5">
-                      <div className="flex items-center gap-3.5 px-1.5">
-                        <UserAvatar profile={profile} user={user} className="w-10 h-10 border-2 border-white shadow-md shrink-0 rounded-2xl" />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-black text-slate-800 truncate leading-snug">{profile?.displayName || user?.email?.split('@')[0]}</p>
-                          <p className="text-[11px] font-semibold text-slate-400 truncate leading-none mt-0.5">{user?.email}</p>
+                    <motion.div variants={drawerItemVariants}>
+                      <a 
+                        href={supportUrl}
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 text-sm font-extrabold p-3.5 rounded-2xl transition-all border border-transparent group relative hover:bg-slate-50 active:bg-slate-100 active:scale-[0.98] select-none"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#fce7eb]/50 border border-[#fce7eb]/80 flex items-center justify-center text-[#8A1C36] shrink-0 shadow-xs">
+                           <HelpCircle className="w-4.5 h-4.5" />
                         </div>
-                      </div>
-                      
-                      <div className="h-px bg-slate-200/60" />
+                        <span className="tracking-wide">Help & Support</span>
+                        <ChevronRight className="w-4 h-4 ml-auto text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                      </a>
+                    </motion.div>
+                  )}
+                </motion.div>
 
-                      <div className="flex flex-col gap-2">
-                        {isAdmin && (
-                          <Link 
-                            to="/admin" 
-                            onClick={() => setMobileMenuOpen(false)} 
-                            className="flex items-center gap-3 text-xs font-black text-slate-700 py-3 px-4 bg-white border border-slate-200/80 hover:bg-slate-50 rounded-xl transition-all w-full shadow-xs active:scale-[0.98]"
-                          >
-                            <Settings className="w-4 h-4 text-slate-400" /> 
-                            <span>Admin Panel</span>
-                            <ChevronRight className="w-3.5 h-3.5 ml-auto text-slate-400" />
-                          </Link>
-                        )}
-                        <button 
-                          onClick={async () => {
-                            setMobileMenuOpen(false);
-                            await logout();
-                            navigate('/');
-                          }} 
-                          className="flex items-center gap-3 text-xs font-black text-rose-600 py-3 px-4 bg-rose-50/50 hover:bg-rose-50 border border-rose-100/50 rounded-xl transition-all w-full text-left active:scale-[0.98]"
-                        >
-                          <LogOut className="w-4 h-4" /> 
-                          <span>Sign Out</span>
-                        </button>
+                {user && (
+                  <div className="mt-3 p-4 rounded-[1.75rem] bg-[#FAF8F5] border border-slate-200/60 shadow-md shadow-slate-200/30 flex flex-col gap-3.5">
+                    <div className="flex items-center gap-3.5 px-1.5">
+                      <UserAvatar profile={profile} user={user} className="w-10 h-10 border-2 border-white shadow-md shrink-0 rounded-2xl" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-black text-slate-800 truncate leading-snug">{profile?.displayName || user?.email?.split('@')[0]}</p>
+                        <p className="text-[11px] font-semibold text-slate-400 truncate leading-none mt-0.5">{user?.email}</p>
                       </div>
                     </div>
-                  )}
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
+                    
+                    <div className="h-px bg-slate-200/60" />
+
+                    <div className="flex flex-col gap-2">
+                      {isAdmin && (
+                        <Link 
+                          to="/admin" 
+                          onClick={() => setMobileMenuOpen(false)} 
+                          className="flex items-center gap-3 text-xs font-black text-slate-700 py-3 px-4 bg-white border border-slate-200/80 hover:bg-slate-50 rounded-xl transition-all w-full shadow-xs active:scale-[0.98]"
+                        >
+                          <Settings className="w-4 h-4 text-slate-400" /> 
+                          <span>Admin Panel</span>
+                          <ChevronRight className="w-3.5 h-3.5 ml-auto text-slate-400" />
+                        </Link>
+                      )}
+                      <button 
+                        onClick={async () => {
+                          setMobileMenuOpen(false);
+                          await logout();
+                          navigate('/');
+                        }} 
+                        className="flex items-center gap-3 text-xs font-black text-rose-600 py-3 px-4 bg-rose-50/50 hover:bg-rose-50 border border-rose-100/50 rounded-xl transition-all w-full text-left active:scale-[0.98]"
+                      >
+                        <LogOut className="w-4 h-4" /> 
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </header>
   );
 };
