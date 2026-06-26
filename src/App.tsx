@@ -2579,47 +2579,47 @@ const LandingPage = () => {
           <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full -z-10 animate-orb" style={{background: 'radial-gradient(circle, rgba(138,28,54,0.06) 0%, transparent 70%)', filter: 'blur(40px)'}} />
           <div className="absolute bottom-0 -left-40 w-[500px] h-[500px] rounded-full -z-10 animate-orb" style={{background: 'radial-gradient(circle, rgba(0,0,0,0.02) 0%, transparent 70%)', filter: 'blur(50px)', animationDelay: '2.5s'}} />
           
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 overflow-hidden">
             <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-12 lg:gap-16">
               {/* Specialized Content Column */}
               <motion.div 
-                initial={{ opacity: 0, x: -40 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
-                className="flex-1 text-center lg:text-left space-y-6 md:space-y-8 lg:space-y-10 max-w-2xl lg:max-w-[600px] xl:max-w-[640px] mx-auto lg:mx-0"
+                className="w-full lg:flex-1 text-center lg:text-left space-y-6 md:space-y-8 lg:space-y-10 lg:max-w-[600px] xl:max-w-[640px] lg:mx-0"
               >
                 <div className="space-y-6">
                   {/* Premium Badge */}
-                  <div className="inline-flex items-center gap-2 md:gap-3 px-2.5 md:px-4 py-1.5 md:py-2 rounded-2xl bg-white shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 mb-2 max-w-full">
+                  <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-2xl bg-white shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 mb-2 max-w-full overflow-hidden">
                     <div className="flex -space-x-2 shrink-0">
                       {[1,2,3].map(i => (
-                        <div key={i} className="w-7 h-7 md:w-8 md:h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-brand-600 shadow-sm">
-                          {i === 1 ? <Target className="w-3.5 h-3.5 md:w-4 md:h-4" /> : i === 2 ? <Award className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <Star className="w-3.5 h-3.5 md:w-4 md:h-4" />}
+                        <div key={i} className="w-7 h-7 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-brand-600 shadow-sm">
+                          {i === 1 ? <Target className="w-3.5 h-3.5" /> : i === 2 ? <Award className="w-3.5 h-3.5" /> : <Star className="w-3.5 h-3.5" />}
                         </div>
                       ))}
                     </div>
-                    <span className="text-[9.5px] md:text-[11px] font-black text-slate-500 uppercase tracking-wider md:tracking-widest truncate">🎯 TRUSTED BY 10K+ ODISHA ASPIRANTS</span>
+                    <span className="text-[9px] sm:text-[11px] font-black text-slate-500 uppercase tracking-wide truncate">🎯 Trusted by 10K+ Odisha Aspirants</span>
                   </div>
 
-                  <div className="space-y-4 md:space-y-5">
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-serif font-extrabold text-slate-955 tracking-tight leading-tight">
+                  <div className="space-y-3 md:space-y-5">
+                    <h1 className="text-[1.75rem] sm:text-4xl md:text-5xl xl:text-6xl font-serif font-extrabold text-slate-955 tracking-tight leading-tight break-words">
                       Crack Your Odisha Govt Exams with{" "}
                       <span className="premium-text-gradient font-serif font-extrabold">Realistic Mock Tests</span>
                     </h1>
                     {/* Mobile Version (Shorter) */}
-                    <h2 className="block md:hidden text-lg leading-relaxed text-slate-500 max-w-xl mx-auto lg:mx-0 font-normal">
+                    <p className="block md:hidden text-sm leading-relaxed text-slate-500 max-w-xl mx-auto lg:mx-0 font-normal">
                       Master OPSC, OSSC, and OSSSC with verified PYQs and a 24/7 AI mentor.
-                    </h2>
+                    </p>
                     {/* Desktop Version (Original) */}
-                    <h2 className="hidden md:block text-slate-500 text-sm sm:text-base md:text-lg max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
+                    <p className="hidden md:block text-slate-500 text-sm sm:text-base md:text-lg max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
                       Stop guessing your rank. Master the OPSC, OSSC, and OSSSC syllabus with timed test series, verified PYQs, and a 24/7 AI mentor.
-                    </h2>
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3.5 sm:gap-5 justify-center lg:justify-start pt-2 sm:pt-4 lg:pt-6">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-5 justify-center lg:justify-start pt-2 sm:pt-4 lg:pt-6 w-full">
                   <Button 
-                    className="w-full sm:w-auto h-12.5 sm:h-16 px-6 sm:px-12 text-base sm:text-xl rounded-2xl shadow-2xl shadow-brand-500/30 group relative overflow-hidden" 
+                    className="w-full sm:w-auto h-12 sm:h-16 px-6 sm:px-12 text-sm sm:text-xl rounded-2xl shadow-2xl shadow-brand-500/30 group relative overflow-hidden" 
                     onClick={() => {
                       setShowGuideToast(true);
                       setTimeout(() => setShowGuideToast(false), 6000);
@@ -2631,7 +2631,7 @@ const LandingPage = () => {
                   </Button>
                   <Button 
                     variant="outline" 
-                    className="w-full sm:w-auto h-12.5 sm:h-16 px-6 sm:px-12 text-base sm:text-xl rounded-2xl border-slate-200 bg-white hover:bg-slate-50 transition-all font-bold"
+                    className="w-full sm:w-auto h-12 sm:h-16 px-6 sm:px-12 text-sm sm:text-xl rounded-2xl border-slate-200 bg-white hover:bg-slate-50 transition-all font-bold"
                     onClick={() => {
                       scrollToElement('syllabus-paths');
                     }}
