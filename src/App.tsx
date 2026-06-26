@@ -7578,6 +7578,10 @@ const ExamDetailPage = () => {
   }, [user?.id]);
 
   useEffect(() => {
+    window.dispatchEvent(new CustomEvent('oep-bottom-nav-visible', { detail: isBottomNavVisible }));
+  }, [isBottomNavVisible]);
+
+  useEffect(() => {
     const fetchUpdates = async () => {
       try {
         const fetchedExams = await examService.getAllExams();
@@ -7680,7 +7684,7 @@ const ExamDetailPage = () => {
       <Navbar user={user} isAdmin={isAdmin} onHomeClick={handleHomeClick} />
 
       <main className={cn(
-        "relative flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pt-4 md:pt-8 overflow-x-hidden transition-[padding-bottom] duration-500",
+        "relative flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pt-4 md:pt-8 overflow-x-hidden",
         isBottomNavVisible 
           ? "pb-28 sm:pb-24 lg:pb-32" 
           : "pb-12 sm:pb-16 lg:pb-20"
@@ -7866,6 +7870,10 @@ function AppContent() {
   }
 
   const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('oep-bottom-nav-visible', { detail: isBottomNavVisible }));
+  }, [isBottomNavVisible]);
 
   const handleTabClick = (tab: 'home' | 'courses' | 'analytics' | 'history' | 'library' | 'ai_mentor') => {
     setMainTab(tab);
@@ -8145,7 +8153,7 @@ function AppContent() {
                 <Navbar user={user} isAdmin={isAdmin} onHomeClick={handleHomeClick} />
 
                 <main className={cn(
-                  "relative flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pt-4 md:pt-8 overflow-x-hidden transition-[padding-bottom] duration-500",
+                  "relative flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pt-4 md:pt-8 overflow-x-hidden",
                   isBottomNavVisible 
                     ? "pb-28 sm:pb-24 lg:pb-32" 
                     : "pb-12 sm:pb-16 lg:pb-20"

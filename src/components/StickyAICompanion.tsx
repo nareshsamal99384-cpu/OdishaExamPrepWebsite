@@ -828,7 +828,117 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   
-  const effectiveBottomNavVisible = (isBottomNavVisible && !isReviewMode) || isReviewBottomNav;
+  const [bottomNavVisible, setBottomNavVisible] = useState(isBottomNavVisible);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+
+  useEffect(() => {
+    setBottomNavVisible(isBottomNavVisible);
+  }, [isBottomNavVisible]);
+
+  useEffect(() => {
+    const handleToggle = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (typeof customEvent.detail === 'boolean') {
+        setBottomNavVisible(customEvent.detail);
+      }
+    };
+    window.addEventListener('oep-bottom-nav-visible', handleToggle);
+    return () => {
+      window.removeEventListener('oep-bottom-nav-visible', handleToggle);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const [isVisible, setIsVisible] = useState(true);
+  const [isDismissed, setIsDismissed] = useState(false);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight;
+      const clientHeight = window.innerHeight;
+
+      // Only apply this dynamic hide on scroll behavior in the AI Mentor tab on mobile/tablet
+      const isAiMentorTab = activeTab === 'ai_mentor';
+      if (!isAiMentorTab) {
+        setIsVisible(true);
+        lastScrollY.current = Math.max(0, scrollTop);
+        return;
+      }
+
+      // 1. Check if we are near the bottom of the page (within 60px)
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 60;
+
+      // 2. Track scroll direction
+      const isScrollingDown = scrollTop > lastScrollY.current;
+
+      if (window.innerWidth < 1024) {
+        if (isAtBottom) {
+          setIsVisible(false);
+        } else if (scrollTop <= 10) {
+          setIsVisible(true);
+        } else {
+          setIsVisible(!isScrollingDown);
+        }
+      } else {
+        setIsVisible(true);
+      }
+
+      lastScrollY.current = Math.max(0, scrollTop);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [activeTab]);
+
+  const effectiveBottomNavVisible = (bottomNavVisible && !isReviewMode) || isReviewBottomNav;
+
+  const triggerYOffset = hasModalActive 
+    ? 100 
+    : (effectiveBottomNavVisible 
+        ? 0 
+        : (isMobileBannerVisible 
+            ? 70 
+            : (isMobile ? 64 : 80)
+          )
+      );
+
+  const widgetYOffset = hasModalActive 
+    ? 120 
+    : (isOpen && !isMinimized && isMobile
+        ? 0 // Docked bottom sheet doesn't translate
+        : (effectiveBottomNavVisible 
+            ? 0 
+            : (isMobileBannerVisible 
+                ? 70 
+                : (isMobile ? 64 : 80)
+              )
+          )
+      );
+
+  const getBaseCompanionBottomClass = (forOpenFullChat = false) => {
+    if (isMobileBannerVisible) {
+      if (forOpenFullChat) {
+        return "sm:bottom-28";
+      }
+      return "bottom-[calc(162px+env(safe-area-inset-bottom))]";
+    } else {
+      if (forOpenFullChat) {
+        return "sm:bottom-28";
+      }
+      return "bottom-24 sm:bottom-28";
+    }
+  };
 
   const getCompanionBottomClass = (forOpenFullChat = false) => {
     if (isMobileBannerVisible) {
@@ -1658,6 +1768,8 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
     setShowBadge(false);
   };
 
+  if (isDismissed) return null;
+
   return (
     <>
       {/* ── Floating Trigger Button ── */}
@@ -1667,21 +1779,34 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
             key="trigger"
             initial={{ opacity: 0, scale: 0.5, y: 40 }}
             animate={{ 
-              opacity: hasModalActive ? 0 : 1, 
-              scale: hasModalActive ? 0.5 : 1, 
-              y: hasModalActive ? 100 : 0 
+              opacity: (hasModalActive || !isVisible) ? 0 : 1, 
+              scale: (hasModalActive || !isVisible) ? 0.5 : 1, 
+              y: triggerYOffset 
             }}
             exit={{ opacity: 0, scale: 0.5, y: 40 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             onClick={handleOpen}
             className={cn(
-              "fixed right-4 sm:right-6 z-[80] group focus:outline-none transition-[bottom] duration-300",
-              getCompanionBottomClass()
+              "fixed right-4 sm:right-6 z-[80] group focus:outline-none",
+              getBaseCompanionBottomClass(false)
             )}
-            style={{ pointerEvents: hasModalActive ? 'none' : 'auto' }}
+            style={{ pointerEvents: (hasModalActive || !isVisible) ? 'none' : 'auto' }}
             title="Ask OEP Buddy"
             aria-label="Open AI Companion"
           >
+            {/* Close/Dismiss Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDismissed(true);
+              }}
+              className="absolute -top-1.5 -left-1.5 w-5 h-5 bg-slate-900 text-white rounded-full flex items-center justify-center border border-white/20 shadow-md hover:bg-slate-800 hover:scale-110 active:scale-95 transition-all duration-200 z-[90] cursor-pointer"
+              title="Dismiss AI Companion"
+              aria-label="Dismiss AI Companion"
+            >
+              <X className="w-3 h-3 text-slate-300" strokeWidth={3} />
+            </button>
             <span className="absolute inset-0 rounded-2xl bg-brand-500 animate-ping opacity-20 group-hover:opacity-30 transition-opacity" />
             <div className="relative w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl flex items-center justify-center shadow-[0_8px_30px_rgba(138,28,54,0.4)] group-hover:shadow-[0_14px_40px_rgba(138,28,54,0.55)] transition-[box-shadow] duration-300 overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
@@ -1712,24 +1837,29 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
             animate={{ 
               opacity: hasModalActive ? 0 : 1, 
               scale: hasModalActive ? 0.9 : 1, 
-              y: hasModalActive ? 120 : 0 
+              y: widgetYOffset 
             }}
             exit={{ opacity: 0, scale: 0.9, y: 30 }}
-            transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className={cn(
-              'fixed z-[80] bg-white transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col overflow-hidden',
+              'fixed z-[80] bg-white flex flex-col overflow-hidden',
               isMinimized 
-                ? 'rounded-3xl shadow-lg left-3 right-3 sm:left-auto sm:right-6 w-auto sm:w-[390px] h-auto border border-slate-200/50 ' + getCompanionBottomClass(false)
+                ? 'rounded-3xl shadow-lg left-3 right-3 sm:left-auto sm:right-6 w-auto sm:w-[390px] h-auto border border-slate-200/50 ' + getBaseCompanionBottomClass(false)
                 : cn(
                     // Mobile open style: docked bottom sheet
                     'left-0 right-0 bottom-0 rounded-t-[1.75rem] rounded-b-none w-full h-[78dvh] max-h-[85dvh] shadow-[0_-8px_30px_rgba(0,0,0,0.08)] border-t border-slate-200/40',
                     // Desktop open style: floating card
                     'sm:left-auto sm:right-6 sm:bottom-auto sm:w-[390px] sm:rounded-3xl sm:shadow-[0_24px_70px_rgba(0,0,0,0.12),0_8px_24px_rgba(138,28,54,0.04)] sm:border sm:border-slate-200/50',
                     effectiveBottomNavVisible ? 'sm:h-[540px]' : 'sm:h-[570px]',
-                    getCompanionBottomClass(true)
+                    getBaseCompanionBottomClass(true)
                   )
             )}
-            style={{ pointerEvents: hasModalActive ? 'none' : 'auto' }}
+            style={{ 
+              pointerEvents: hasModalActive ? 'none' : 'auto',
+              transitionProperty: 'width, height, border-radius, box-shadow, border-color',
+              transitionDuration: '300ms',
+              transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
           >
             {/* ── Header ── */}
             <div className="shrink-0 bg-gradient-to-r from-brand-800 via-brand-700 to-brand-600 px-4 py-3 sm:py-3.5 flex flex-col gap-1.5 sm:gap-0 relative overflow-hidden">
