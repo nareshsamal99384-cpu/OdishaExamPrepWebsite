@@ -895,10 +895,20 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
       lastScrollY.current = Math.max(0, scrollTop);
     };
 
+    const handleSubtabChange = () => {
+      handleScroll();
+      requestAnimationFrame(handleScroll);
+      setTimeout(handleScroll, 50);
+    };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('oep-aimentor-subtab-changed', handleSubtabChange);
     handleScroll();
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('oep-aimentor-subtab-changed', handleSubtabChange);
+    };
   }, [activeTab]);
 
   const effectiveBottomNavVisible = (bottomNavVisible && !isReviewMode) || isReviewBottomNav;

@@ -594,6 +594,10 @@ export default function AiMentor({ user }: { user: any }) {
   const [mobileTab, setMobileTab] = useState<'chat' | 'tools'>('chat');
 
   useEffect(() => {
+    window.dispatchEvent(new CustomEvent('oep-aimentor-subtab-changed', { detail: mobileTab }));
+  }, [mobileTab]);
+
+  useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTipIdx((prev) => (prev + 1) % ODISHA_STUDY_TIPS.length);
     }, 15000);
