@@ -1517,10 +1517,10 @@ export const Navbar = ({
 
   return (
     <header className={cn(
-      "sticky top-0 z-[60] w-full transition-[background-color,border-color,box-shadow,transform] duration-300", 
+      "w-full transition-[background-color,border-color,box-shadow,transform] duration-300", 
       mobileMenuOpen 
-        ? "bg-white border-b border-slate-200/60" 
-        : (scrolled ? "navbar-scrolled" : "navbar-glass")
+        ? "fixed top-0 left-0 z-[60] bg-white border-b border-slate-200/60" 
+        : (scrolled ? "sticky top-0 z-[60] navbar-scrolled" : "sticky top-0 z-[60] navbar-glass")
     )}>
       <div className="max-w-7xl mx-auto px-4 h-16 sm:h-20 flex items-center justify-between relative z-[65]">
         <div
