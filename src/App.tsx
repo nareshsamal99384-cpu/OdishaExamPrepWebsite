@@ -1410,7 +1410,7 @@ export const Navbar = ({
 
   return (
     <header className={cn(
-      "sticky top-0 z-[60] w-full transition-all duration-500", 
+      "sticky top-0 z-[60] w-full transition-[background-color,border-color,box-shadow,transform] duration-300", 
       mobileMenuOpen 
         ? "bg-white border-b border-slate-200/60" 
         : (scrolled ? "navbar-scrolled" : "navbar-glass")
