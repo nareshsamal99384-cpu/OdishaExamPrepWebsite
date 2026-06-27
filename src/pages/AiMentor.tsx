@@ -3218,7 +3218,7 @@ JSON structure:
   };
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 md:space-y-10">
 
 
       {/* Premium Custom Confirmation Dialog */}
@@ -3718,7 +3718,7 @@ JSON structure:
           </div>
 
           {/* Scrollable content pane */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-2.5 pb-6 sm:p-3.5 sm:pb-8 no-scrollbar relative z-10 flex flex-col smooth-scroll-gpu" style={{ contain: 'layout paint' }}>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 pb-12 sm:p-6 sm:pb-12 no-scrollbar relative z-10 flex flex-col smooth-scroll-gpu" style={{ contain: 'layout paint' }}>
             <AnimatePresence mode="wait">
               {activeRightTab === 'planner' && (
                 <motion.div
@@ -4545,7 +4545,7 @@ JSON structure:
                   className="space-y-5 text-left"
                 >
 
-            <div className="flex justify-between items-start gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3.5">
               <div className="space-y-1">
                 <span className="inline-flex px-2.5 py-0.5 bg-teal-500/10 border border-teal-500/20 text-brand-600 rounded text-[10px] sm:text-[9px] font-black uppercase tracking-wider">
                   Self-Assessment
@@ -6363,6 +6363,9 @@ JSON structure:
               )}
             </AnimatePresence>
           </div>
+
+          {/* Bottom Gradient Fade for Scroll Affordance on Mobile */}
+          <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-white via-white/85 to-transparent pointer-events-none z-20 rounded-b-[2rem] lg:hidden" />
 
         </div>
 
