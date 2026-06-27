@@ -3806,39 +3806,41 @@ JSON structure:
             </div>
 
             {coachMode === 'manual' ? (
-              /* MANUAL POMODORO MODE */
+              /* MANUAL POMODORO MODE — mobile-first progressive disclosure */
               <div className="space-y-3 animate-scale-in flex-1 flex flex-col">
-                {/* Completed session counter */}
-                <div className="flex justify-between items-center bg-slate-50/50 sm:bg-white border border-slate-200/50 px-3 py-2 sm:px-3 sm:py-1.5 rounded-xl premium-shadow">
-                  <span className="text-xs sm:text-[10px] font-bold text-slate-600 sm:text-slate-500">Completed Focus Sessions</span>
-                  <div className="flex items-center gap-2 sm:gap-1.5 text-[10px] sm:text-[9px] font-black uppercase tracking-widest text-amber-700 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 sm:px-2.5 sm:py-1 rounded-full shadow-2xs">
-                    <Trophy className="w-3.5 h-3.5 text-amber-600 animate-trophy-bounce shrink-0" />
-                    <span>Done: {completedSessionsCount}</span>
-                    {completedSessionsCount > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCompletedSessionsCount(0);
-                          setCompletedStudyMinutes(0);
-                          localStorage.removeItem('study_coach_completed_sessions');
-                          localStorage.removeItem('study_coach_completed_study_minutes');
-                          toast.success("Sessions reset");
-                        }}
-                        className="p-1 sm:p-0 ml-1 text-amber-700 hover:text-amber-950 transition-colors cursor-pointer flex items-center justify-center shrink-0"
-                        title="Reset completed count"
-                      >
-                        <X className="w-2.5 h-2.5 stroke-[3.5px]" />
-                      </button>
-                    )}
-                  </div>
-                </div>
 
-                {/* Circular Timer & Controls */}
-                <div className="flex flex-col sm:flex-row lg:flex-col items-center gap-5 sm:gap-4 bg-gradient-to-b from-white to-slate-50/50 border border-slate-200/50 p-4 sm:p-3.5 rounded-2xl premium-shadow relative overflow-hidden">
-                  {/* Subtle decorative background pattern */}
+                {/* ── TIER 2: Primary Action Zone ── */}
+                {/* Timer card: larger circle, reset tucked inside, no competing buttons */}
+                <div className="relative bg-gradient-to-b from-white to-slate-50/60 border border-slate-200/50 rounded-2xl px-4 pt-5 pb-4 sm:p-3.5 flex flex-col items-center gap-4 premium-shadow overflow-hidden">
+                  {/* Subtle grid bg */}
                   <div className="absolute inset-0 grid-bg-fine opacity-20 pointer-events-none" />
-                  
-                  <div className="relative flex items-center justify-center w-32 h-32 sm:w-28 sm:h-28 shrink-0 mx-auto sm:mx-0 lg:mx-auto bg-white/80 rounded-full border border-slate-200/40 p-1.5 shadow-inner relative z-10">
+
+                  {/* Mode indicator pill — shows current mode, clickable to switch */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newMode = timerMode === 'study' ? 'break' : 'study';
+                      setTimerMode(newMode);
+                      setTimerActive(false);
+                      setTimerSeconds(newMode === 'study' ? timerMaxSeconds : breakMaxSeconds);
+                    }}
+                    className={cn(
+                      "relative z-10 inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-300 cursor-pointer active:scale-95",
+                      timerMode === 'study'
+                        ? "bg-rose-500/8 border-rose-500/20 text-[#8a1c36]"
+                        : "bg-emerald-500/10 border-emerald-500/25 text-emerald-700"
+                    )}
+                  >
+                    <span className={cn(
+                      "w-1.5 h-1.5 rounded-full shrink-0",
+                      timerMode === 'study' ? (timerActive ? "bg-[#8a1c36] animate-ping" : "bg-[#8a1c36]") : "bg-emerald-600"
+                    )} />
+                    {timerMode === 'study' ? 'Focus Mode' : 'Break Mode'}
+                    <span className="opacity-40 font-normal normal-case tracking-normal">&nbsp;· tap to switch</span>
+                  </button>
+
+                  {/* Circular Timer — larger on mobile for better visual impact */}
+                  <div className="relative flex items-center justify-center w-40 h-40 sm:w-28 sm:h-28 shrink-0 bg-white/80 rounded-full border border-slate-200/40 p-2 shadow-inner z-10">
                     <svg className="w-full h-full transform -rotate-90" viewBox="0 0 112 112">
                       <defs>
                         <linearGradient id="studyTimerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -3855,7 +3857,7 @@ JSON structure:
                         cy="56"
                         r="48"
                         className="text-slate-100"
-                        strokeWidth="5.5"
+                        strokeWidth="5"
                         stroke="currentColor"
                         fill="transparent"
                       />
@@ -3863,7 +3865,7 @@ JSON structure:
                         cx="56"
                         cy="56"
                         r="48"
-                        strokeWidth="5.5"
+                        strokeWidth="5"
                         strokeDasharray="301.59"
                         strokeDashoffset={301.59 * (1 - (timerSeconds / (timerMode === 'study' ? timerMaxSeconds : breakMaxSeconds)))}
                         strokeLinecap="round"
@@ -3872,12 +3874,13 @@ JSON structure:
                         className={cn("transition-all duration-300", timerActive && "animate-pulse-soft")}
                       />
                     </svg>
+                    {/* Time display */}
                     <div className="absolute flex flex-col items-center justify-center w-full px-2 text-center">
                       <span className={cn(
                         "font-mono font-black text-slate-800 transition-all duration-200",
-                        formatTime(timerSeconds).length > 5 
-                          ? (formatTime(timerSeconds).length > 6 ? "text-[15px] sm:text-[14px] tracking-tighter" : "text-lg sm:text-base tracking-tight")
-                          : "text-2xl sm:text-xl tracking-tight"
+                        formatTime(timerSeconds).length > 5
+                          ? (formatTime(timerSeconds).length > 6 ? "text-[17px] sm:text-[14px] tracking-tighter" : "text-xl sm:text-base tracking-tight")
+                          : "text-3xl sm:text-xl tracking-tight"
                       )}>
                         {formatTime(timerSeconds)}
                       </span>
@@ -3888,54 +3891,68 @@ JSON structure:
                         {timerMode === 'study' ? 'focus' : 'break'}
                       </span>
                     </div>
-                  </div>
-
-                  <div className="flex-1 w-full space-y-2.5 sm:space-y-2 relative z-10">
-                    <div className="flex items-center gap-2.5 sm:gap-2 w-full">
-                      <button
-                        type="button"
-                        onClick={toggleTimer}
-                        className={cn(
-                          "flex-1 py-2.5 sm:py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 cursor-pointer active:scale-95 text-center text-white shadow-md premium-btn-transition",
-                          timerActive 
-                            ? "bg-gradient-to-r from-amber-600 to-amber-500 shadow-amber-600/20" 
-                            : "bg-gradient-to-r from-[#8a1c36] to-[#b83a55] shadow-[#8a1c36]/20"
-                        )}
-                      >
-                        {timerActive ? 'Pause' : 'Start'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={resetTimer}
-                        className="p-3 sm:p-2 border border-slate-200/80 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 rounded-xl transition-all duration-300 cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 flex items-center justify-center shrink-0"
-                        title="Reset Timer"
-                      >
-                        <RotateCcw className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                      </button>
-                    </div>
-                    
+                    {/* Reset — tucked at top-right corner of the timer bubble */}
                     <button
                       type="button"
-                      onClick={() => {
-                        const newMode = timerMode === 'study' ? 'break' : 'study';
-                        setTimerMode(newMode);
-                        setTimerActive(false);
-                        setTimerSeconds(newMode === 'study' ? timerMaxSeconds : breakMaxSeconds);
-                      }}
-                      className="w-full py-2 sm:py-1.5 border border-slate-200 bg-white/50 hover:bg-slate-100/80 text-[10px] sm:text-[9px] font-black uppercase tracking-wider rounded-xl transition-all duration-300 cursor-pointer text-center text-slate-600 hover:text-slate-900 hover:shadow-2xs active:scale-98"
+                      onClick={resetTimer}
+                      className="absolute -top-1.5 -right-1.5 z-20 w-7 h-7 flex items-center justify-center bg-white border border-slate-200/80 rounded-full shadow-xs text-slate-400 hover:text-slate-700 hover:border-slate-300 transition-all duration-200 cursor-pointer active:scale-90"
+                      title="Reset Timer"
                     >
-                      Switch to {timerMode === 'study' ? 'Break' : 'Study'}
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Primary CTA — full width, dominant */}
+                  <div className="w-full relative z-10">
+                    <button
+                      type="button"
+                      onClick={toggleTimer}
+                      className={cn(
+                        "w-full py-3.5 sm:py-2.5 rounded-xl text-sm sm:text-xs font-black uppercase tracking-widest transition-all duration-300 cursor-pointer active:scale-[0.98] text-center text-white shadow-md premium-btn-transition",
+                        timerActive
+                          ? "bg-gradient-to-r from-amber-600 to-amber-500 shadow-amber-600/20"
+                          : "bg-gradient-to-r from-[#8a1c36] to-[#b83a55] shadow-[#8a1c36]/20"
+                      )}
+                    >
+                      {timerActive ? 'Pause Focus' : (timerSeconds < (timerMode === 'study' ? timerMaxSeconds : breakMaxSeconds) ? 'Resume' : 'Start Focus')}
                     </button>
                   </div>
                 </div>
 
-                {/* Presets and Focus Target */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-3 text-left">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] sm:text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">
-                      {timerMode === 'study' ? 'Study Presets' : 'Break Presets'}
-                    </label>
-                    <div className="grid grid-cols-4 gap-1.5 sm:gap-1 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 text-center relative overflow-hidden">
+                {/* ── TIER 3: Configuration card (presets + session target) ── */}
+                <div className="bg-white border border-slate-200/50 rounded-2xl px-3.5 py-3 sm:p-3 space-y-3 premium-shadow">
+
+                  {/* Duration presets row with done count embedded as inline label stat */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                        {timerMode === 'study' ? 'Study Duration' : 'Break Duration'}
+                      </span>
+                      {/* Done count — inline, no separate top-level card needed */}
+                      <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-amber-700 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">
+                        <Trophy className="w-2.5 h-2.5 text-amber-600 shrink-0" />
+                        <span>{completedSessionsCount} done</span>
+                        {completedSessionsCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCompletedSessionsCount(0);
+                              setCompletedStudyMinutes(0);
+                              localStorage.removeItem('study_coach_completed_sessions');
+                              localStorage.removeItem('study_coach_completed_study_minutes');
+                              toast.success("Sessions reset");
+                            }}
+                            className="ml-0.5 text-amber-600 hover:text-amber-950 transition-colors cursor-pointer"
+                            title="Reset completed count"
+                          >
+                            <X className="w-2.5 h-2.5 stroke-[3px]" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Preset chips — clean inline solid pills */}
+                    <div className="flex items-center gap-1.5 sm:gap-1">
                       {timerMode === 'study' ? (
                         <>
                           {[25, 45, 60].map((mins) => {
@@ -3954,64 +3971,46 @@ JSON structure:
                                   }
                                 }}
                                 className={cn(
-                                  "py-2 sm:py-1 rounded-lg text-[10px] sm:text-[9px] font-black uppercase transition-all duration-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed relative",
-                                  isSelected 
-                                    ? "text-[#8a1c36] font-black" 
-                                    : "text-slate-500 hover:text-slate-800"
+                                  "flex-1 py-2 sm:py-1.5 rounded-xl text-[11px] sm:text-[10px] font-black uppercase transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border",
+                                  isSelected
+                                    ? "bg-[#8a1c36] text-white border-[#8a1c36] shadow-sm shadow-[#8a1c36]/20"
+                                    : "bg-slate-50 text-slate-500 border-slate-200/60 hover:border-slate-300 hover:text-slate-700"
                                 )}
                               >
-                                {isSelected && (
-                                  <motion.div
-                                    layoutId="activePresetBg"
-                                    className="absolute inset-0 bg-white shadow-2xs border border-slate-200/40 rounded-lg z-0"
-                                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
-                                  />
-                                )}
-                                <span className="relative z-10">{mins}m</span>
+                                {mins}m
                               </button>
                             );
                           })}
-                          
-                          {![1500, 2700, 3600].includes(timerMaxSeconds) ? (
-                            <div className="relative rounded-lg z-10 flex items-center justify-center h-full min-h-[28px] sm:min-h-[20px]">
-                              <motion.div
-                                layoutId="activePresetBg"
-                                className="absolute inset-0 bg-white shadow-2xs border border-slate-200/40 rounded-lg z-0"
-                                transition={{ type: "spring", stiffness: 350, damping: 28 }}
-                              />
-                              <input
-                                type="number"
-                                disabled={timerActive}
-                                value={timerMaxSeconds / 60}
-                                onChange={(e) => {
-                                  const val = Math.min(999, Math.max(1, parseInt(e.target.value) || 1));
-                                  if (!timerActive) {
-                                    setTimerMaxSeconds(val * 60);
-                                    setTimerSeconds(val * 60);
-                                  }
-                                }}
-                                className="w-full text-center bg-transparent text-[#8a1c36] font-black text-[10px] sm:text-[9px] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none relative z-10 p-0"
-                                placeholder="Min"
-                                min="1"
-                                max="999"
-                              />
-                              <span className="text-[8px] sm:text-[7px] text-[#8a1c36]/60 font-bold pr-1 relative z-10 select-none">m</span>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
+                          {/* Custom input chip */}
+                          <div className={cn(
+                            "flex-1 py-1.5 rounded-xl border flex items-center justify-center gap-0.5 transition-all duration-200",
+                            ![1500, 2700, 3600].includes(timerMaxSeconds)
+                              ? "bg-[#8a1c36] border-[#8a1c36] shadow-sm shadow-[#8a1c36]/20"
+                              : "bg-slate-50 border-slate-200/60"
+                          )}>
+                            <input
+                              type="number"
                               disabled={timerActive}
-                              onClick={() => {
+                              value={timerMaxSeconds / 60}
+                              onChange={(e) => {
+                                const val = Math.min(999, Math.max(1, parseInt(e.target.value) || 1));
                                 if (!timerActive) {
-                                  setTimerMaxSeconds(1800);
-                                  setTimerSeconds(1800);
+                                  setTimerMaxSeconds(val * 60);
+                                  setTimerSeconds(val * 60);
                                 }
                               }}
-                              className="py-2 sm:py-1 rounded-lg text-[10px] sm:text-[9px] font-black uppercase transition-all duration-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-slate-500 hover:text-slate-800"
-                            >
-                              Custom
-                            </button>
-                          )}
+                              className={cn(
+                                "w-8 text-center bg-transparent font-black text-[11px] sm:text-[10px] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0 disabled:opacity-40",
+                                ![1500, 2700, 3600].includes(timerMaxSeconds) ? "text-white" : "text-slate-500"
+                              )}
+                              min="1"
+                              max="999"
+                            />
+                            <span className={cn(
+                              "text-[9px] font-bold select-none",
+                              ![1500, 2700, 3600].includes(timerMaxSeconds) ? "text-white/70" : "text-slate-400"
+                            )}>m</span>
+                          </div>
                         </>
                       ) : (
                         <>
@@ -4031,73 +4030,59 @@ JSON structure:
                                   }
                                 }}
                                 className={cn(
-                                  "py-2 sm:py-1 rounded-lg text-[10px] sm:text-[9px] font-black uppercase transition-all duration-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed relative",
-                                  isSelected 
-                                    ? "text-emerald-700 font-black" 
-                                    : "text-slate-500 hover:text-slate-800"
+                                  "flex-1 py-2 sm:py-1.5 rounded-xl text-[11px] sm:text-[10px] font-black uppercase transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border",
+                                  isSelected
+                                    ? "bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/20"
+                                    : "bg-slate-50 text-slate-500 border-slate-200/60 hover:border-slate-300 hover:text-slate-700"
                                 )}
                               >
-                                {isSelected && (
-                                  <motion.div
-                                    layoutId="activePresetBg"
-                                    className="absolute inset-0 bg-white shadow-2xs border border-slate-200/40 rounded-lg z-0"
-                                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
-                                  />
-                                )}
-                                <span className="relative z-10">{mins}m</span>
+                                {mins}m
                               </button>
                             );
                           })}
-                          
-                          {![300, 600, 900].includes(breakMaxSeconds) ? (
-                            <div className="relative rounded-lg z-10 flex items-center justify-center h-full min-h-[28px] sm:min-h-[20px]">
-                              <motion.div
-                                layoutId="activePresetBg"
-                                className="absolute inset-0 bg-white shadow-2xs border border-slate-200/40 rounded-lg z-0"
-                                transition={{ type: "spring", stiffness: 350, damping: 28 }}
-                              />
-                              <input
-                                type="number"
-                                disabled={timerActive}
-                                value={breakMaxSeconds / 60}
-                                onChange={(e) => {
-                                  const val = Math.min(999, Math.max(1, parseInt(e.target.value) || 1));
-                                  if (!timerActive) {
-                                    setBreakMaxSeconds(val * 60);
-                                    setTimerSeconds(val * 60);
-                                  }
-                                }}
-                                className="w-full text-center bg-transparent text-emerald-700 font-black text-[10px] sm:text-[9px] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none relative z-10 p-0"
-                                placeholder="Min"
-                                min="1"
-                                max="999"
-                              />
-                              <span className="text-[8px] sm:text-[7px] text-emerald-700/60 font-bold pr-1 relative z-10 select-none">m</span>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
+                          {/* Custom break input chip */}
+                          <div className={cn(
+                            "flex-1 py-1.5 rounded-xl border flex items-center justify-center gap-0.5 transition-all duration-200",
+                            ![300, 600, 900].includes(breakMaxSeconds)
+                              ? "bg-emerald-600 border-emerald-600 shadow-sm shadow-emerald-600/20"
+                              : "bg-slate-50 border-slate-200/60"
+                          )}>
+                            <input
+                              type="number"
                               disabled={timerActive}
-                              onClick={() => {
+                              value={breakMaxSeconds / 60}
+                              onChange={(e) => {
+                                const val = Math.min(999, Math.max(1, parseInt(e.target.value) || 1));
                                 if (!timerActive) {
-                                  setBreakMaxSeconds(720);
-                                  setTimerSeconds(720);
+                                  setBreakMaxSeconds(val * 60);
+                                  setTimerSeconds(val * 60);
                                 }
                               }}
-                              className="py-2 sm:py-1 rounded-lg text-[10px] sm:text-[9px] font-black uppercase transition-all duration-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-slate-500 hover:text-slate-800"
-                            >
-                              Custom
-                            </button>
-                          )}
+                              className={cn(
+                                "w-8 text-center bg-transparent font-black text-[11px] sm:text-[10px] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0 disabled:opacity-40",
+                                ![300, 600, 900].includes(breakMaxSeconds) ? "text-white" : "text-slate-500"
+                              )}
+                              min="1"
+                              max="999"
+                            />
+                            <span className={cn(
+                              "text-[9px] font-bold select-none",
+                              ![300, 600, 900].includes(breakMaxSeconds) ? "text-white/70" : "text-slate-400"
+                            )}>m</span>
+                          </div>
                         </>
                       )}
                     </div>
                   </div>
 
+                  {/* Divider */}
+                  <div className="border-t border-slate-100" />
+
+                  {/* Session Target — single clean labeled row */}
                   <div className="space-y-1.5">
-                    <label className="text-[10px] sm:text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">Session Target</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Session Target</label>
                     {timerActive ? (
-                      <div className="bg-brand-50/30 border border-brand-100/50 px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-xl text-[11px] sm:text-[10px] font-extrabold text-[#8a1c36] flex items-center gap-2 truncate shadow-2xs">
+                      <div className="bg-rose-500/5 border border-rose-500/15 px-3 py-2.5 rounded-xl text-xs font-extrabold text-[#8a1c36] flex items-center gap-2 truncate">
                         <span className="w-1.5 h-1.5 bg-[#8a1c36] rounded-full animate-ping shrink-0" />
                         <span className="truncate">{timerGoal.trim() || "Deep Study Block"}</span>
                       </div>
@@ -4106,20 +4091,21 @@ JSON structure:
                         type="text"
                         value={timerGoal}
                         onChange={(e) => setTimerGoal(e.target.value)}
-                        placeholder="Focus Target (e.g. History)"
-                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 sm:px-2.5 sm:py-1 text-[11px] sm:text-[10px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#8a1c36]/10 focus:border-[#8a1c36] transition-all duration-300 font-semibold shadow-2xs"
+                        placeholder="e.g. History — Modern India"
+                        className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 sm:py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#8a1c36]/10 focus:border-[#8a1c36] transition-all duration-300 font-semibold"
                       />
                     )}
                   </div>
                 </div>
 
+                {/* ── Secondary: compact Notify Coach button ── */}
                 <button
                   type="button"
                   onClick={handleNotifyCoachTimer}
-                  className="w-full py-3 sm:py-2 bg-white hover:bg-slate-950 hover:text-white border border-slate-200 hover:border-slate-950 text-slate-700 rounded-xl text-[11px] sm:text-[10px] font-black uppercase tracking-widest transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md active:scale-98 group"
+                  className="w-full py-2.5 sm:py-2 bg-white border border-slate-200/70 hover:border-slate-800 hover:bg-slate-950 hover:text-white text-slate-600 rounded-xl text-[10px] sm:text-[9px] font-black uppercase tracking-widest transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs hover:shadow-sm active:scale-[0.98] group"
                 >
-                  <Sparkles className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-[#8a1c36] group-hover:text-brand-300 transition-colors animate-pulse" />
-                  Notify Study Coach & Request Motivation
+                  <Sparkles className="w-3.5 h-3.5 text-[#8a1c36] group-hover:text-rose-300 transition-colors animate-pulse shrink-0" />
+                  Notify AI Coach &middot; Get Motivation
                 </button>
 
                 {/* Daily Focus Motivation & Coaching Board */}
