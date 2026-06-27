@@ -254,6 +254,7 @@ body {
   }
 
   /* ---------- Noise Texture Overlay ---------- */
+  /* Static pre-rasterized noise PNG tile — no SVG filter rasterization cost */
   .noise-overlay {
     position: relative;
   }
@@ -262,9 +263,20 @@ body {
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-    opacity: 0.4;
+    /* 64x64 pre-rendered grayscale noise tile (PNG, base64) — seamlessly tiles, zero filter overhead */
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABhWlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV9bpSIVBzuIOGSoThZERRy1CkWoEGqFVh1MrvgBTRqSFBdHwbXg4GOx6uDirKuDq6CIPgCeHi6KLqLifzKhSKzHw8e7e4+7e4BQLzPN6koAmmabmXgsTmezq4HuF+jHIAISZZnJJCWJFq7j6x6+ft3FeFb3uT9HrzJTCPBJxLNMN23iDeKpTdvgvE8cZkVZJT4nHjPpgsSPXFdcfuNccFjgmWEzk5onDhOLhTZW2pgVTY14kjiiajrlCxmXVc5bnLV5lTX35B6GcnplmSutIxhjCQkoSKBAVQklbEQo1UmxkKL9WIu/6PgniUuCqwJGjgVUoEFy/OB/8LtbKz8y7CaF4kDni+N8DAHdLaBeN47vY8epnwD+Z+DKbPkrNWD6k/RqSysdAaFt4OK6pcl7wOUOMPhkyKbsSkFaQj4P3s/oi2XAYN/oqtV7z+kDgKWuWrwBDg6BkQJlr7V5u6e9t3/PNPr3A+OeclwHJQI+AAAABmJLR0QA/wD/AP+gvaeTAAAAIElEQVRo3u3BAQ0AAADCoPdP7WsIoAAAAAAAAAAAeAMBxAABSyBHkwAAAABJRU5ErkJggg==");
+    background-size: 64px 64px;
+    background-repeat: repeat;
+    opacity: 0.08;
     pointer-events: none;
+    /* Static element — no repaints during scroll */
+    transform: translateZ(0);
+  }
+  /* On mobile: hide the noise overlay entirely to eliminate paint cost */
+  @media (max-width: 767px) {
+    .noise-overlay::after {
+      display: none;
+    }
   }
 
   /* ---------- Scrollbars ---------- */
@@ -805,6 +817,14 @@ body {
 
 .animate-pulse-soft {
   animation: pulse-soft 4s ease-in-out infinite;
+}
+/* Disable all continuous animations in footer on mobile to prevent GPU compositing during scroll */
+@media (max-width: 767px) {
+  .animate-pulse-soft,
+  .animate-float-sm,
+  .animate-float {
+    animation: none !important;
+  }
 }
 
 /* Premium Analytics Effects */

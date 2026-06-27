@@ -1168,9 +1168,9 @@ export const Footer = () => {
       <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#8a1c36_1px,transparent_1px),linear-gradient(to_bottom,#8a1c36_1px,transparent_1px)] bg-[size:3.5rem_3.5rem]" />
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
       
-      {/* Glowing blur spheres */}
-      <div className="absolute -top-20 right-1/4 w-[500px] h-[500px] bg-brand-500/10 rounded-full blur-[120px] pointer-events-none animate-pulse-soft" />
-      <div className="absolute -bottom-40 left-10 w-[400px] h-[400px] bg-slate-500/10 rounded-full blur-[100px] pointer-events-none animate-pulse-soft" style={{ animationDelay: '-2s' }} />
+      {/* Glowing blur spheres — hidden on mobile to prevent GPU compositing during scroll-in */}
+      <div className="hidden md:block absolute -top-20 right-1/4 w-[500px] h-[500px] bg-brand-500/10 rounded-full blur-[120px] pointer-events-none animate-pulse-soft" />
+      <div className="hidden md:block absolute -bottom-40 left-10 w-[400px] h-[400px] bg-slate-500/10 rounded-full blur-[100px] pointer-events-none animate-pulse-soft" style={{ animationDelay: '-2s' }} />
 
       <div className={cn("max-w-6xl mx-auto relative z-10", isMobile ? "px-4" : "px-6")}>
         
@@ -1185,8 +1185,11 @@ export const Footer = () => {
             <div 
               key={idx}
               className={cn(
-                "bg-slate-900/30 backdrop-blur-md border rounded-2xl hover:border-brand-500/30 hover:bg-slate-900/60 transition-all duration-300 group hover:-translate-y-1",
-                isMobile ? "p-3.5 border-slate-800/50" : "p-5 border-slate-800/80"
+                isMobile
+                  /* Mobile: no backdrop-blur, no layout-shifting translate, simple color transition */
+                  ? "bg-slate-900/60 border border-slate-800/50 rounded-2xl p-3.5 group transition-colors duration-200 hover:border-brand-500/30 hover:bg-slate-900/80"
+                  /* Desktop: full premium effect */
+                  : "bg-slate-900/30 backdrop-blur-md border border-slate-800/80 rounded-2xl p-5 hover:border-brand-500/30 hover:bg-slate-900/60 transition-all duration-300 group hover:-translate-y-1"
               )}
             >
               <div className={cn("flex items-center", isMobile ? "gap-2 mb-2" : "gap-3 mb-3")}>
