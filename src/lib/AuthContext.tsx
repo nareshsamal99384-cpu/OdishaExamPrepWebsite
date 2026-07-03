@@ -260,27 +260,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setManualAdmin(JSON.parse(storedAdmin));
     }
 
-    // Load the existing session (may have stale/bloated JWT from localStorage).
-    // Always force a token refresh so the JWT reflects the CURRENT server-side
-    // user_metadata — this is critical for accounts where metadata was cleaned
-    // server-side (e.g., via admin script) but the browser JWT is still old.
+    // Load the existing session.
+    // Avoid forcing a full token refresh on every single app launch if the current
+    // token is still valid. This prevents network handshake errors on mobile PWA startup
+    // from clearing the session and logging the user out.
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        try {
-          // Refresh the token to get a new JWT with current metadata
-          const { data: refreshed, error: refreshErr } = await supabase.auth.refreshSession();
-          if (!refreshErr && refreshed?.session) {
-            // onAuthStateChange will handle setUser/fetchProfile for TOKEN_REFRESHED
-            // but set loading=false here in case it fires slowly
-            setLoading(false);
-            return;
+        // Check if the current token is close to expiry (e.g. less than 15 minutes left)
+        const expiresAt = session.expires_at; // unix timestamp in seconds
+        const currentTime = Math.floor(Date.now() / 1000);
+        const buffer = 15 * 60; // 15 minutes buffer
+        const shouldRefresh = expiresAt && (expiresAt - currentTime < buffer);
+
+        if (shouldRefresh) {
+          try {
+            console.log('[AuthContext] Session token is close to expiry. Refreshing...');
+            const { data: refreshed, error: refreshErr } = await supabase.auth.refreshSession();
+            if (!refreshErr && refreshed?.session) {
+              setLoading(false);
+              return;
+            }
+          } catch (e) {
+            console.warn('Token refresh failed, falling back to cached session:', e);
           }
-        } catch (e) {
-          console.warn('Token refresh failed, falling back to cached session:', e);
         }
-        // Fallback: use cached session if refresh fails
+        
+        // Fallback/Default: use cached session if refresh is skipped or fails
         setUser(session.user);
-        fetchProfile(session.user, false);
+        // Force refresh the profile data to update user_metadata from server in the background.
+        // This is safe because getUser() failure does not clear the session or log the user out.
+        fetchProfile(session.user, true);
       } else {
         setUser(null);
         setProfile(null);
