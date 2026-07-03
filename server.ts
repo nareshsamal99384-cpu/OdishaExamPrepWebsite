@@ -1208,13 +1208,11 @@ async function startServer() {
         return res.status(400).json({ error: "Request content too large" });
       }
 
-      let apiKey = process.env.VITE_DEEPSEEK_API_KEY || process.env.VITE_DENTA_RESPONSE_AI;
-      let baseUrl = process.env.VITE_DEEPSEEK_BASE_URL || 'https://integrate.api.nvidia.com/v1';
+      const apiKey1 = (process.env.VITE_DEEPSEEK_API_KEY || '').replace(/^"|"$/g, '');
+      const apiKey2 = (process.env.VITE_DENTA_RESPONSE_AI || '').replace(/^"|"$/g, '');
+      const cleanUrl = (process.env.VITE_DEEPSEEK_BASE_URL || 'https://integrate.api.nvidia.com/v1').replace(/^"|"$/g, '');
 
-      if (apiKey) apiKey = apiKey.replace(/^"|"$/g, '');
-      if (baseUrl) baseUrl = baseUrl.replace(/^"|"$/g, '');
-
-      if (!apiKey) {
+      if (!apiKey1 && !apiKey2) {
         console.error("NVIDIA NIM API key is missing in env");
         return res.status(500).json({ error: "NVIDIA NIM API key is not configured on server." });
       }
@@ -1245,21 +1243,41 @@ async function startServer() {
       res.on('close', abortHandler);
 
       try {
-        const response = await fetch(`${baseUrl}/chat/completions`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify(requestBody),
-          signal: controller.signal
-        });
+        const keysToTry = [apiKey1, apiKey2].filter(Boolean);
+        let lastError: any = null;
+        let response: any = null;
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("NIM API error status:", response.status, errorText);
+        for (let i = 0; i < keysToTry.length; i++) {
+          const key = keysToTry[i];
+          try {
+            const resObj = await fetch(`${cleanUrl}/chat/completions`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${key}`,
+              },
+              body: JSON.stringify(requestBody),
+              signal: controller.signal
+            });
+
+            if (resObj.ok) {
+              response = resObj;
+              break;
+            } else {
+              const errorText = await resObj.text();
+              console.warn(`[Proxy] NIM API key ${i+1} failed with status ${resObj.status}:`, errorText);
+              lastError = new Error(`Status ${resObj.status}: ${errorText}`);
+            }
+          } catch (err: any) {
+            console.warn(`[Proxy] NIM API key ${i+1} fetch error:`, err);
+            lastError = err;
+          }
+        }
+
+        if (!response) {
+          console.error("[Proxy] All NIM API keys exhausted/failed. Last error:", lastError);
           if (!res.headersSent) {
-            return res.status(response.status).json({ error: errorText });
+            return res.status(502).json({ error: lastError?.message || "Failed to communicate with OdishaExamPrep AI" });
           }
           return;
         }

@@ -1169,7 +1169,7 @@ Your output must be a JSON object with:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'meta/llama-3.3-70b-instruct',
+          model: 'meta/llama-3.1-70b-instruct',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: `Analyze this student data and return JSON:\n${JSON.stringify(stats, null, 2)}` }
@@ -1229,7 +1229,7 @@ Your output must be a JSON object with:
               const isValidDate = dateObj && !isNaN(dateObj.getTime());
               const dateStr = isValidDate ? dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown Date';
               const timeStr = isValidDate ? dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Unknown Time';
-              return `• Title: "${h.title}" | Date: ${dateStr} | Time: ${timeStr} | Type: ${h.type.replace(/_/g, ' ')}${examStr}${catStr}${scoreStr}${accStr}${durationStr}`;
+              return `• Title: "${h.title}" | Date: ${dateStr} | Time: ${timeStr} | Type: ${(h.type || '').replace(/_/g, ' ')}${examStr}${catStr}${scoreStr}${accStr}${durationStr}`;
             })
             .join('\n')
         : 'No mock or practice test attempts recorded yet.';
