@@ -52,15 +52,6 @@ async function startServer() {
                         (!process.env.npm_lifecycle_event?.includes('dev') && 
                          fs.existsSync(path.join(distPath, 'index.html')));
 
-  // Redirect www to non-www in production for canonical SEO consistency
-  app.use((req, res, next) => {
-    if (isProduction && req.headers.host && req.headers.host.startsWith('www.')) {
-      const newHost = req.headers.host.slice(4);
-      return res.redirect(301, `https://${newHost}${req.originalUrl}`);
-    }
-    next();
-  });
-
   app.use(express.json({
     verify: (req: any, res, buf) => {
       req.rawBody = buf;
@@ -1208,11 +1199,13 @@ async function startServer() {
         return res.status(400).json({ error: "Request content too large" });
       }
 
-      const apiKey1 = (process.env.VITE_DEEPSEEK_API_KEY || '').replace(/^"|"$/g, '');
-      const apiKey2 = (process.env.VITE_DENTA_RESPONSE_AI || '').replace(/^"|"$/g, '');
-      const cleanUrl = (process.env.VITE_DEEPSEEK_BASE_URL || 'https://integrate.api.nvidia.com/v1').replace(/^"|"$/g, '');
+      let apiKey = process.env.VITE_DEEPSEEK_API_KEY || process.env.VITE_DENTA_RESPONSE_AI;
+      let baseUrl = process.env.VITE_DEEPSEEK_BASE_URL || 'https://integrate.api.nvidia.com/v1';
 
-      if (!apiKey1 && !apiKey2) {
+      if (apiKey) apiKey = apiKey.replace(/^"|"$/g, '');
+      if (baseUrl) baseUrl = baseUrl.replace(/^"|"$/g, '');
+
+      if (!apiKey) {
         console.error("NVIDIA NIM API key is missing in env");
         return res.status(500).json({ error: "NVIDIA NIM API key is not configured on server." });
       }
@@ -1243,41 +1236,21 @@ async function startServer() {
       res.on('close', abortHandler);
 
       try {
-        const keysToTry = [apiKey1, apiKey2].filter(Boolean);
-        let lastError: any = null;
-        let response: any = null;
+        const response = await fetch(`${baseUrl}/chat/completions`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal
+        });
 
-        for (let i = 0; i < keysToTry.length; i++) {
-          const key = keysToTry[i];
-          try {
-            const resObj = await fetch(`${cleanUrl}/chat/completions`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${key}`,
-              },
-              body: JSON.stringify(requestBody),
-              signal: controller.signal
-            });
-
-            if (resObj.ok) {
-              response = resObj;
-              break;
-            } else {
-              const errorText = await resObj.text();
-              console.warn(`[Proxy] NIM API key ${i+1} failed with status ${resObj.status}:`, errorText);
-              lastError = new Error(`Status ${resObj.status}: ${errorText}`);
-            }
-          } catch (err: any) {
-            console.warn(`[Proxy] NIM API key ${i+1} fetch error:`, err);
-            lastError = err;
-          }
-        }
-
-        if (!response) {
-          console.error("[Proxy] All NIM API keys exhausted/failed. Last error:", lastError);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("NIM API error status:", response.status, errorText);
           if (!res.headersSent) {
-            return res.status(502).json({ error: lastError?.message || "Failed to communicate with OdishaExamPrep AI" });
+            return res.status(response.status).json({ error: errorText });
           }
           return;
         }
@@ -1349,13 +1322,15 @@ async function startServer() {
     res.redirect(301, '/');
   });
 
-  // SEO Middleware (Pre-injects metadata for Google and social crawlers for main, blog, and exam pages)
-  app.get(['/', '/blog', '/blog/:id', '/exams/:id', '/privacy-policy', '/terms-of-service', '/refund-policy', '/admin-login'], async (req, res, next) => {
+  // SEO Middleware (Pre-injects metadata for Google and social crawlers for main and blog pages)
+  app.get(['/', '/blog', '/blog/:id', '/privacy-policy', '/terms-of-service', '/refund-policy', '/admin-login'], async (req, res, next) => {
     if (!isProduction) {
       return next();
     }
     try {
-      const baseUrl = 'https://odishaexamprep.in';
+      const host = req.get('host') || 'odishaexamprep.in';
+      const protocol = req.protocol || 'https';
+      const baseUrl = `${protocol}://${host}`;
       const canonicalUrl = `${baseUrl}${req.path}`;
       const pathName = req.path;
 
@@ -1412,46 +1387,7 @@ async function startServer() {
                 "name": "OdishaExamPrep"
               }
             };
-          }
-        }
-      } else if (pathName.startsWith('/exams/')) {
-        const examId = req.params.id;
-        title = "OEP Exam Mock Tests & Prep Series | OdishaExamPrep";
-        description = "Excel in your Odisha Government Exams (OPSC, OSSC, OSSSC) with high-quality, timed practice mock tests and syllabus roadmaps.";
-        keywords = "odisha exams, opsc mock test, ossc cgl mock test, osssc ri amin practice, test series, pyqs";
-
-        if (examId) {
-          try {
-            const { data: exam, error } = await supabaseAdmin
-              .from('exams')
-              .select('*')
-              .eq('id', examId)
-              .single();
-
-            if (exam && !error) {
-              title = exam.metaTitle || `${exam.name} Mock Test Series | OdishaExamPrep`;
-              description = exam.metaDescription || `Practice high-quality online mock tests, test series, and previous year questions for ${exam.name} in Odisha. Enhance your preparation with detailed analytics.`;
-              keywords = exam.keywords || `${exam.name.toLowerCase()} mock test, ${exam.name.toLowerCase()} preparation, odisha exams`;
-              if (exam.icon) {
-                imageUrl = exam.icon.startsWith('http') ? exam.icon : `https://nareshsamal99384-cpu.supabase.co/storage/v1/object/public/exams/${exam.icon}`;
-              }
-
-              const schemaObj = {
-                "@context": "https://schema.org",
-                "@type": "WebPage",
-                "name": title,
-                "description": description,
-                "url": canonicalUrl,
-                "publisher": {
-                  "@type": "EducationalOrganization",
-                  "name": "OdishaExamPrep",
-                  "logo": `${baseUrl}/android-chrome-512x512.png`
-                }
-              };
-              schemaJson = `<script type="application/ld+json" id="json-ld-schema">${JSON.stringify(schemaObj)}</script>`;
-            }
-          } catch (dbErr) {
-            console.error("[SEO Exam DB Error]", dbErr);
+            schemaJson = `<script type="application/ld+json" id="json-ld-schema">${JSON.stringify(schemaObj)}</script>`;
           }
         }
       } else if (pathName === '/privacy-policy') {
@@ -1476,38 +1412,17 @@ async function startServer() {
         imageUrl = `${baseUrl}/apple-touch-icon.png`;
       } else if (pathName === '/') {
         // Add custom Structured Data (JSON-LD) for home page SEO (WebSite and Organization)
-        const schemaObj = [
-          {
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            "name": "OdishaExamPrep",
-            "url": baseUrl,
-            "potentialAction": {
-              "@type": "SearchAction",
-              "target": `${baseUrl}/?search={search_term_string}`,
-              "query-input": "required name=search_term_string"
-            }
-          },
-          {
-            "@context": "https://schema.org",
-            "@type": "EducationalOrganization",
-            "name": "OdishaExamPrep",
-            "url": baseUrl,
-            "logo": `${baseUrl}/android-chrome-512x512.png`,
-            "description": "Odisha's leading EdTech platform providing high-quality mock tests, timed test series, previous year questions, and AI mentor support for OPSC, OSSC, and OSSSC government competitive examinations.",
-            "address": {
-              "@type": "PostalAddress",
-              "addressRegion": "Odisha",
-              "addressCountry": "IN"
-            },
-            "knowsAbout": [
-              "OPSC Civil Services Examination",
-              "OSSC Combined Graduate Level",
-              "OSSSC RI/ARI & Amin Recruitment",
-              "Odisha Government Competitive Exams"
-            ]
+        const schemaObj = {
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "OdishaExamPrep",
+          "url": baseUrl,
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": `${baseUrl}/?search={search_term_string}`,
+            "query-input": "required name=search_term_string"
           }
-        ];
+        };
         schemaJson = `<script type="application/ld+json" id="json-ld-schema">${JSON.stringify(schemaObj)}</script>`;
       }
 
@@ -1529,7 +1444,7 @@ async function startServer() {
       html = html.replace(/<meta[^>]*property="og:[^>]*>/gi, '');
       html = html.replace(/<meta[^>]*name="twitter:[^>]*>/gi, '');
       html = html.replace(/<meta[^>]*property="twitter:[^>]*>/gi, '');
-      html = html.replace(/<script[^>]*id="json-ld-schema"[^>]*>.*?<\/script>/gis, '');
+      html = html.replace(/<script[^>]*id="json-ld-schema"[^>]*>.*?<\/script>/gi, '');
 
       // Inject SEO tags inside <head>
       const ogMetaTags = `
@@ -1562,26 +1477,16 @@ async function startServer() {
     }
   });
 
-  // Sitemap Cache Variables
-  let cachedSitemap: string | null = null;
-  let sitemapCacheTime = 0;
-  const SITEMAP_CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours cache
-
   // Dynamic sitemap.xml generator for SEO search engine indexing
   app.get(['/sitemap.xml', '/sitemap_index.xml', '/sitemap-index.xml'], async (req, res) => {
     try {
-      const now = Date.now();
-      if (cachedSitemap && (now - sitemapCacheTime < SITEMAP_CACHE_DURATION)) {
-        res.setHeader('Content-Type', 'application/xml');
-        return res.status(200).send(cachedSitemap);
-      }
+      const host = req.get('host') || 'odishaexamprep.in';
+      const protocol = req.protocol || 'https';
+      const baseUrl = `${protocol}://${host}`;
 
-      const host = 'odishaexamprep.in';
-      const baseUrl = `https://${host}`;
-
-      // Static routes (Ensure homepage has trailing slash for consistency)
+      // Static routes (Only include indexable pages, excluding admin and private pages)
       const staticRoutes = [
-        '/',
+        '',
         '/blog',
         '/privacy-policy',
         '/terms-of-service',
@@ -1602,10 +1507,9 @@ async function startServer() {
       // Add static URLs
       staticRoutes.forEach(route => {
         xml += `  <url>\n`;
-        const locUrl = route === '/' ? `${baseUrl}/` : `${baseUrl}${route}`;
-        xml += `    <loc>${locUrl}</loc>\n`;
+        xml += `    <loc>${baseUrl}${route}</loc>\n`;
         xml += `    <changefreq>daily</changefreq>\n`;
-        xml += `    <priority>${route === '/' ? '1.0' : '0.8'}</priority>\n`;
+        xml += `    <priority>${route === '' ? '1.0' : '0.8'}</priority>\n`;
         xml += `  </url>\n`;
       });
 
@@ -1637,24 +1541,20 @@ async function startServer() {
 
       xml += `</urlset>`;
 
-      cachedSitemap = xml;
-      sitemapCacheTime = now;
-
       res.setHeader('Content-Type', 'application/xml');
-      res.status(200).send(xml);
+      res.send(xml);
     } catch (err) {
       console.error("[Sitemap Error]", err);
-      if (cachedSitemap) {
-        res.setHeader('Content-Type', 'application/xml');
-        return res.status(200).send(cachedSitemap);
-      }
       res.status(500).end();
     }
   });
 
   // Dynamic robots.txt handler
   app.get('/robots.txt', (req, res) => {
-    const sitemapUrl = `https://odishaexamprep.in/sitemap.xml`;
+    const host = req.get('host') || 'odishaexamprep.in';
+    const protocol = req.protocol || 'https';
+    const sitemapUrl = `${protocol}://${host}/sitemap.xml`;
+
     const txt = `User-agent: *\nAllow: /\nAllow: /blog\nAllow: /blog/*\nDisallow: /admin\nDisallow: /admin-login\nSitemap: ${sitemapUrl}\n`;
     res.setHeader('Content-Type', 'text/plain');
     res.send(txt);

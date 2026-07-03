@@ -209,7 +209,7 @@ function buildSystemPrompt(data: LiveSiteData | null, userName: string, activeTa
           const isValidDate = dateObj && !isNaN(dateObj.getTime());
           const dateStr = isValidDate ? dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown Date';
           const timeStr = isValidDate ? dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Unknown Time';
-          return `• Test Title: "${h.title}" | Date Completed/Attempted: ${dateStr} | Time Completed/Attempted: ${timeStr} | Type: ${(h.type || '').replace(/_/g, ' ')}${examStr}${catStr}${scoreStr}${accStr}${durationStr}${progressStr}`;
+          return `• Test Title: "${h.title}" | Date Completed/Attempted: ${dateStr} | Time Completed/Attempted: ${timeStr} | Type: ${h.type.replace(/_/g, ' ')}${examStr}${catStr}${scoreStr}${accStr}${durationStr}${progressStr}`;
         })
         .join('\n')
     : 'No test or practice history found in student\'s profile.';
@@ -356,7 +356,7 @@ ${trendStr}`
         parts.push(`  * Collection: "${c.name}"`);
         if (c.topics && c.topics.length > 0) {
           c.topics.forEach((t: any) => {
-            parts.push(`    - Topic: "${t.name}" | Status: ${(t.status || '').replace(/_/g, ' ')}${t.desc ? ` (${t.desc})` : ''}`);
+            parts.push(`    - Topic: "${t.name}" | Status: ${t.status.replace(/_/g, ' ')}${t.desc ? ` (${t.desc})` : ''}`);
           });
         } else {
           parts.push('    - (No topics added yet)');

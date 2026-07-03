@@ -1815,7 +1815,7 @@ EXAM-ORIENTED DIRECTIVES:
       // Map response mode to the optimized NVIDIA NIM model endpoints
       const modelName = responseMode === 'quick' 
         ? 'meta/llama-3.1-8b-instruct' 
-        : 'meta/llama-3.1-70b-instruct';
+        : 'meta/llama-3.3-70b-instruct';
 
       // Call local proxy endpoint to bypass CORS and protect API key
       const response = await fetch('/api/chat/completions', {
@@ -2297,7 +2297,7 @@ Note: "correctOption" must be an integer index (0 for Option A, 1 for Option B, 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: quizMode === 'quick' ? 'meta/llama-3.1-8b-instruct' : 'meta/llama-3.1-70b-instruct',
+          model: quizMode === 'quick' ? 'meta/llama-3.1-8b-instruct' : 'meta/llama-3.3-70b-instruct',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: prompt }
