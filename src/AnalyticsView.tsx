@@ -203,7 +203,7 @@ const StatCard = React.memo(({ icon, title, value, suffix = "", trend, decimals 
     >
       <div
         className={cn(
-          "relative w-full bg-white p-4 sm:p-6 rounded-2xl sm:rounded-[2.25rem] shadow-sm border border-slate-200/60 flex flex-col justify-between group transition-[transform,box-shadow,border-color,background-color] duration-300 ease-out cursor-default hover:-translate-y-1 hover:scale-[1.01] active:scale-[0.99] min-h-[146px] sm:min-h-[170px] will-change-transform",
+          "relative w-full bg-white p-3 sm:p-6 rounded-2xl sm:rounded-[2.25rem] shadow-sm border border-slate-200/60 flex flex-col justify-between group transition-[transform,box-shadow,border-color,background-color] duration-300 ease-out cursor-default hover:-translate-y-1 hover:scale-[1.01] active:scale-[0.99] min-h-[110px] sm:min-h-[170px] will-change-transform",
           color === "brand" ? "hover:border-brand-200/60 hover:shadow-md" :
           color === "success" ? "hover:border-emerald-200/60 hover:shadow-md" :
           color === "warning" ? "hover:border-amber-200/60 hover:shadow-md" :
@@ -229,31 +229,34 @@ const StatCard = React.memo(({ icon, title, value, suffix = "", trend, decimals 
           />
         </div>
         
-        <div className="relative z-10 flex items-center justify-between mb-3.5 sm:mb-5">
-           <div className={cn("p-2 sm:p-3 rounded-xl sm:rounded-2xl border shadow-sm transition-[transform,background-color,border-color] duration-300 group-hover:scale-105 group-hover:rotate-2", iconBg)}>
-              {React.cloneElement(icon, { className: "w-4 h-4 sm:w-5 h-5" })}
+        {/* ── Mobile: icon + trend on one row ── */}
+        <div className="relative z-10 flex items-center justify-between mb-2 sm:mb-5">
+           <div className={cn("p-1.5 sm:p-3 rounded-xl sm:rounded-2xl border shadow-sm transition-[transform,background-color,border-color] duration-300 group-hover:scale-105 group-hover:rotate-2", iconBg)}>
+              {React.cloneElement(icon, { className: "w-3.5 h-3.5 sm:w-5 sm:h-5" })}
            </div>
            {trend !== undefined && trend !== 0 && (
               <div className={cn(
-                 "flex items-center gap-1 px-1.5 py-0.5 sm:px-2.5 sm:py-1.5 rounded-lg sm:rounded-xl text-[9px] sm:text-xs font-black shadow-sm border border-white/80 transition-transform duration-300 group-hover:scale-103",
+                 "flex items-center gap-0.5 sm:gap-1 px-1.5 py-0.5 sm:px-2.5 sm:py-1.5 rounded-lg sm:rounded-xl text-[8px] sm:text-xs font-black shadow-sm border border-white/80",
                  isPositive ? "bg-emerald-50/80 text-emerald-700 border-emerald-100" : "bg-rose-50/80 text-rose-700 border-rose-100"
               )}>
-                 {isPositive ? <TrendingUp className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" /> : <TrendingDown className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" />}
+                 {isPositive ? <TrendingUp className="w-2 h-2 sm:w-3.5 sm:h-3.5" /> : <TrendingDown className="w-2 h-2 sm:w-3.5 sm:h-3.5" />}
                  {Math.abs(Math.round(trend))}%
               </div>
            )}
         </div>
 
-        <div className="relative z-10 space-y-1 flex-1 min-w-0 mb-3">
-          <h4 className="text-[9px] sm:text-[10px] font-sans font-black tracking-widest text-slate-400/90 uppercase leading-none truncate">{title}</h4>
-          <div className="text-xl xs:text-2xl sm:text-3xl font-sans font-black text-slate-900 flex items-baseline tracking-tight group-hover:text-slate-950 transition-colors duration-300 leading-none mt-1">
+        {/* ── Label + value ── */}
+        <div className="relative z-10 flex-1 min-w-0 mb-2 sm:mb-3">
+          <h4 className="text-[8px] sm:text-[10px] font-sans font-black tracking-widest text-slate-400/90 uppercase leading-none truncate">{title}</h4>
+          <div className="text-lg xs:text-xl sm:text-3xl font-sans font-black text-slate-900 flex items-baseline tracking-tight group-hover:text-slate-950 transition-colors duration-300 leading-none mt-0.5 sm:mt-1">
              <AnimatedCounter value={value} decimals={decimals} />
-             {suffix && <span className="text-xs sm:text-sm font-sans font-black text-slate-400/80 ml-1 leading-none">{suffix}</span>}
+             {suffix && <span className="text-[10px] sm:text-sm font-sans font-black text-slate-400/80 ml-1 leading-none">{suffix}</span>}
           </div>
         </div>
         
+        {/* ── Sparkline ── */}
         {sparklineData && sparklineData.length >= 2 && (
-          <div className="relative z-10 w-full pt-1 border-t border-slate-100/50 opacity-85 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="relative z-10 w-full pt-1 border-t border-slate-100/50 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
             <Sparkline data={sparklineData} color={strokeColor} id={title.replace(/\s+/g, '-').toLowerCase()} />
           </div>
         )}
@@ -1384,33 +1387,70 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
 
           <div className="relative z-10">
             {scanningPhase === 0 && (
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6 py-4">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5 w-full">
-                  <div className="w-16 h-16 rounded-2xl bg-[#8A1C36]/5 border border-[#8A1C36]/15 flex items-center justify-center relative shadow-sm shrink-0">
-                    <Brain className="w-9 h-9 text-[#8A1C36] animate-pulse" />
-                    <div className="absolute inset-0 rounded-2xl border-2 border-[#8A1C36]/10 animate-ping" />
-                  </div>
-                  <div>
-                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1.5">
-                      <span className="px-2.5 py-0.5 bg-[#8A1C36]/10 border border-[#8A1C36]/20 text-[#8A1C36] text-[9px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1 shadow-sm leading-none">
-                        <Cpu className="w-2.5 h-2.5" /> OdishaExamPrep AI
-                      </span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider">Ready to diagnose</span>
+              <div className="py-3 sm:py-4">
+                {/* ── Mobile: compact single horizontal block ── */}
+                <div className="flex md:hidden flex-col gap-3">
+                  {/* Row 1: icon + labels + status */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#8A1C36]/5 border border-[#8A1C36]/15 flex items-center justify-center relative shadow-sm shrink-0">
+                      <Brain className="w-5 h-5 text-[#8A1C36] animate-pulse" />
                     </div>
-                    <h3 className="text-xl sm:text-2xl font-sans font-black tracking-tight leading-tight text-slate-900">AI Performance & Diagnostic Laboratory</h3>
-                    <p className="text-slate-500 text-xs sm:text-sm font-medium mt-1.5 max-w-xl">
-                      Unlock instant cognitive diagnostics, custom time-management strategy, and a targeted exam preparation roadmap.
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="px-2 py-0.5 bg-[#8A1C36]/10 border border-[#8A1C36]/20 text-[#8A1C36] text-[8px] font-black uppercase tracking-widest rounded-md flex items-center gap-1 leading-none">
+                          <Cpu className="w-2 h-2" /> OdishaExamPrep AI
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider">Ready</span>
+                        </span>
+                      </div>
+                      <h3 className="text-sm font-sans font-black tracking-tight leading-tight text-slate-900 mt-0.5">AI Performance & Diagnostic Lab</h3>
+                    </div>
                   </div>
+                  {/* Row 2: description */}
+                  <p className="text-slate-500 text-[11px] font-medium leading-relaxed">
+                    Unlock instant cognitive diagnostics, custom time-management strategy, and a targeted exam preparation roadmap.
+                  </p>
+                  {/* Row 3: full-width CTA button */}
+                  <button
+                    onClick={() => runAiAnalysis()}
+                    className="w-full h-11 rounded-2xl bg-gradient-to-r from-[#8A1C36] via-[#a32240] to-indigo-600 hover:from-[#76142c] hover:to-indigo-700 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 hover:scale-[1.01] active:scale-[0.98] transition-[transform,box-shadow] flex items-center justify-center gap-2 group cursor-pointer border-none"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 fill-white/10 group-hover:scale-110 transition-transform" />
+                    Initialize AI Scan
+                  </button>
                 </div>
-                <button
-                  onClick={() => runAiAnalysis()}
-                  className="w-full md:w-auto px-8 h-[52px] rounded-2xl bg-gradient-to-r from-[#8A1C36] via-[#a32240] to-indigo-600 hover:from-[#76142c] hover:to-indigo-700 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 hover:scale-[1.02] active:scale-98 transition-[transform,box-shadow] flex items-center justify-center gap-2 group cursor-pointer border-none"
-                >
-                  <Sparkles className="w-4 h-4 fill-white/10 group-hover:scale-110 transition-transform" />
-                  Initialize AI Scan
-                </button>
+
+                {/* ── Desktop: original side-by-side layout ── */}
+                <div className="hidden md:flex flex-row items-center justify-between gap-6">
+                  <div className="flex flex-row items-start gap-5 flex-1">
+                    <div className="w-16 h-16 rounded-2xl bg-[#8A1C36]/5 border border-[#8A1C36]/15 flex items-center justify-center relative shadow-sm shrink-0">
+                      <Brain className="w-9 h-9 text-[#8A1C36] animate-pulse" />
+                      <div className="absolute inset-0 rounded-2xl border-2 border-[#8A1C36]/10 animate-ping" />
+                    </div>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                        <span className="px-2.5 py-0.5 bg-[#8A1C36]/10 border border-[#8A1C36]/20 text-[#8A1C36] text-[9px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1 shadow-sm leading-none">
+                          <Cpu className="w-2.5 h-2.5" /> OdishaExamPrep AI
+                        </span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider">Ready to diagnose</span>
+                      </div>
+                      <h3 className="text-2xl font-sans font-black tracking-tight leading-tight text-slate-900">AI Performance & Diagnostic Laboratory</h3>
+                      <p className="text-slate-500 text-sm font-medium mt-1.5 max-w-xl">
+                        Unlock instant cognitive diagnostics, custom time-management strategy, and a targeted exam preparation roadmap.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => runAiAnalysis()}
+                    className="shrink-0 px-8 h-[52px] rounded-2xl bg-gradient-to-r from-[#8A1C36] via-[#a32240] to-indigo-600 hover:from-[#76142c] hover:to-indigo-700 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 hover:scale-[1.02] active:scale-98 transition-[transform,box-shadow] flex items-center justify-center gap-2 group cursor-pointer border-none"
+                  >
+                    <Sparkles className="w-4 h-4 fill-white/10 group-hover:scale-110 transition-transform" />
+                    Initialize AI Scan
+                  </button>
+                </div>
               </div>
             )}
 
