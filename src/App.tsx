@@ -5207,7 +5207,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         setPaywallOriginalPrice(topicBank.originalPrice || ((topicBank.price || 499) * 2));
         setPaywallItemTitle(topicBank.title || 'Premium Bank');
         setPaywallFeatures([
-          `${topicBank.questionCount || 500}+ Premium Questions`,
+          `${topicBank.questions || topicBank.questionCount || 500}+ Premium Questions`,
           topicBank.hasPracticeMode !== false ? 'Unlimited Practice Mode' : 'Instant PDF Access',
           'Detailed Step-by-Step Solutions',
           'Advanced Performance Analytics'
@@ -5302,7 +5302,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         setPaywallOriginalPrice(topicBank.originalPrice || ((topicBank.price || 499) * 2));
         setPaywallItemTitle(topicBank.title || 'Premium Bank');
         setPaywallFeatures([
-          `${topicBank.questionCount || 500}+ Premium Questions`,
+          `${topicBank.questions || topicBank.questionCount || 500}+ Premium Questions`,
           topicBank.hasPracticeMode !== false ? 'Unlimited Practice Mode' : 'Instant PDF Access',
           'Detailed Step-by-Step Solutions',
           'Advanced Performance Analytics'
@@ -7239,15 +7239,15 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
             return (
               <div className="space-y-8">
-                <div className="flex items-center gap-4 border-b border-slate-200 pb-6">
+                <div className="flex items-center gap-2.5 sm:gap-4 border-b border-slate-100 pb-4 sm:pb-6">
                   <Button variant="ghost" onClick={() => {
                     setSelectedPracticeCategory(null);
                     scrollToElement('practice-mode-section', { block: 'start', delay: 50 });
-                  }} className="p-3 rounded-2xl hover:bg-brand-50">
-                    <ChevronRight className="w-6 h-6 rotate-180 text-brand-600" />
+                  }} className="p-2 sm:p-3 rounded-xl sm:rounded-2xl hover:bg-brand-50 shrink-0">
+                    <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 rotate-180 text-brand-600" />
                   </Button>
-                  <div className="flex items-center gap-4">
-                    <h3 className="text-3xl font-black text-slate-900 capitalize flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+                    <h3 className="text-xl sm:text-3xl font-black text-slate-900 capitalize truncate flex items-center gap-2">
                       {selectedPracticeCategory.replace('-', ' ')} Practice Sets
                     </h3>
                   </div>
@@ -7335,7 +7335,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                     </div>
                                     
                                     <div className="flex items-center gap-2 mt-2 text-[10px] font-extrabold text-slate-500 flex-wrap">
-                                      <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100/60"><FileText className="w-3 h-3 text-slate-400" /> {bank.questionCount || 0} Questions</span>
+                                      <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100/60"><FileText className="w-3 h-3 text-slate-400" /> {bank.questions || bank.questionCount || 0} Questions</span>
                                       <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100/60"><Clock className="w-3 h-3 text-slate-400" /> 30 Mins</span>
                                     </div>
                                   </div>
@@ -7379,10 +7379,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                   )}
                                 </div>
 
-                                <div className="flex items-center gap-6 relative z-10 text-xs font-bold text-slate-550 border-t border-slate-50 pt-4">
+                                <div className="flex items-center gap-6 relative z-10 text-xs font-bold text-slate-555 border-t border-slate-50 pt-4">
                                   <div className="flex items-center gap-2">
                                     <FileText className="w-4 h-4 text-slate-400" />
-                                    <span>{bank.questionCount || 0} Questions</span>
+                                    <span>{bank.questions || bank.questionCount || 0} Questions</span>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <Clock className="w-4 h-4 text-slate-400" />
@@ -7740,19 +7740,19 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
           return (
             <div className="space-y-8">
-              <div className="flex items-center gap-4 border-b border-slate-200 pb-6">
+              <div className="flex items-center gap-2.5 sm:gap-4 border-b border-slate-100 pb-4 sm:pb-6">
                 <Button variant="ghost" onClick={() => {
                   setSelectedMockCategory(null);
                   scrollToElement('test-series', { block: 'start', delay: 50 });
-                }} className="p-3 rounded-2xl hover:bg-brand-50">
-                  <ChevronRight className="w-6 h-6 rotate-180 text-brand-600" />
+                }} className="p-2 sm:p-3 rounded-xl sm:rounded-2xl hover:bg-brand-50 shrink-0">
+                  <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 rotate-180 text-brand-600" />
                 </Button>
-                <div className="flex items-center gap-4">
-                  <h3 className="text-3xl font-black text-slate-900 capitalize flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+                  <h3 className="text-xl sm:text-3xl font-black text-slate-900 capitalize truncate flex items-center gap-2">
                     {selectedMockCategory.replace('-', ' ')} Tests
                   </h3>
                   {selectedMockCategory === 'sectional' && (
-                    <span className="bg-brand-100 text-brand-600 text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full border border-brand-200">Subject-Wise</span>
+                    <span className="bg-brand-100 text-brand-600 text-[10px] sm:text-xs font-black uppercase tracking-widest px-2.5 py-0.5 sm:py-1 rounded-full border border-brand-200 shrink-0">Subject-Wise</span>
                   )}
                 </div>
               </div>
