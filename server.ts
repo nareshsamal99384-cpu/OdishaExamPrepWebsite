@@ -43,9 +43,10 @@ async function startServer() {
   app.set('trust proxy', true);
   const PORT = process.env.PORT || "3000";
 
-  const distPath = __dirname.endsWith('dist') || __dirname.endsWith('dist/') || __dirname.endsWith('dist\\')
+  const distPath = __dirname.endsWith('dist') || __dirname.endsWith('dist/') || __dirname.endsWith('dist\\') ||
+                   __dirname.endsWith('build') || __dirname.endsWith('build/') || __dirname.endsWith('build\\')
     ? path.resolve(__dirname, '.')
-    : path.resolve(__dirname, 'dist');
+    : (fs.existsSync(path.resolve(__dirname, 'build')) ? path.resolve(__dirname, 'build') : path.resolve(__dirname, 'dist'));
 
   const isProduction = process.env.NODE_ENV === "production" || 
                         process.env.NODE_ENV === "prod" || 
