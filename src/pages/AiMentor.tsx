@@ -659,6 +659,9 @@ export default function AiMentor({ user }: { user: any }) {
 
   const [isAddingQuizTab, setIsAddingQuizTab] = useState(false);
   const [newQuizTabName, setNewQuizTabName] = useState('');
+  const [showStatsAccordion, setShowStatsAccordion] = useState(false);
+  const [expandedTopicId, setExpandedTopicId] = useState<string | null>(null);
+  const [expandedFormulaId, setExpandedFormulaId] = useState<string | null>(null);
 
   const [quizTargetExam, setQuizTargetExam] = useState(() => {
     const metaVal = user?.user_metadata?.study_coach_practice?.quizTargetExam;
@@ -3099,20 +3102,20 @@ JSON structure:
     const InsightIcon = currentInsight.icon;
 
     return (
-      <div className="bg-gradient-to-b from-indigo-50/50 to-white/70 border border-indigo-100/40 rounded-2xl p-3.5 sm:p-4 mt-2.5 text-left space-y-3 sm:space-y-3.5 flex-1 flex flex-col justify-between relative overflow-hidden shadow-xs hover:shadow-sm transition-all duration-300 animate-scale-in">
-        <div className="absolute top-0 right-0 w-16 h-16 bg-indigo-500/5 rounded-full blur-xl pointer-events-none" />
+      <div className="bg-gradient-to-b from-indigo-50/30 to-white/70 border border-indigo-100/30 rounded-xl p-3 mt-2 text-left space-y-2 relative overflow-hidden shadow-xs hover:shadow-sm transition-all duration-300 animate-scale-in">
+        <div className="absolute top-0 right-0 w-12 h-12 bg-indigo-500/5 rounded-full blur-xl pointer-events-none" />
         
-        <div className="space-y-2">
-          <div className="flex justify-between items-center text-xs sm:text-[10px] font-bold text-slate-500">
-            <span className="flex items-center gap-1.5 uppercase tracking-wider text-[11px] sm:text-[10px]">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-650 animate-pulse" /> {titleText}
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-center text-[10px] font-bold text-slate-500">
+            <span className="flex items-center gap-1 uppercase tracking-wider text-[10px]">
+              <Sparkles className="w-3 h-3 text-indigo-650 animate-pulse" /> {titleText}
             </span>
-            <span className="font-mono text-indigo-650 text-xs sm:text-[11px] bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-lg font-bold">
+            <span className="font-mono text-indigo-650 text-[10px] bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded font-bold">
               {currentMins} / {targetMins} min
             </span>
           </div>
 
-          <div className="w-full bg-slate-50 rounded-full h-2 overflow-hidden border border-slate-200/50 p-0.5">
+          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
             <motion.div 
               className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 h-full rounded-full"
               initial={{ width: 0 }}
@@ -3121,16 +3124,16 @@ JSON structure:
             />
           </div>
           
-          <p className="text-[10.5px] sm:text-[9.5px] text-slate-500 italic pl-0.5 leading-tight font-medium">
+          <p className="text-[10px] text-slate-400 italic pl-0.5 leading-tight font-medium">
             {statusMessage}
           </p>
         </div>
 
-        <div className="border-t border-slate-200/50 w-full my-0.5" />
+        <div className="border-t border-slate-100 w-full my-0.5" />
 
-        <div className="space-y-2.5 sm:space-y-2 text-left relative flex-1 flex flex-col justify-between">
+        <div className="space-y-2 text-left relative">
           <div className="flex justify-between items-center shrink-0">
-            <span className="inline-flex px-2 py-0.5 rounded text-[10px] sm:text-[8px] font-black uppercase tracking-wider bg-indigo-500/15 border border-indigo-500/20 text-indigo-650">
+            <span className="inline-flex px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-indigo-500/10 border border-indigo-500/15 text-indigo-650">
               {currentInsight.category}
             </span>
             <button
@@ -3138,18 +3141,18 @@ JSON structure:
               onClick={() => {
                 setCurrentTipIdx((prev) => (prev + 1) % AI_COACH_INSIGHTS.length);
               }}
-              className="p-1.5 sm:p-1 border border-slate-200/50 bg-slate-50 hover:bg-slate-900 text-slate-500 hover:text-white rounded-lg transition-all duration-300 cursor-pointer flex items-center justify-center shadow-xs"
+              className="p-1 border border-slate-200/50 bg-slate-50 hover:bg-slate-900 text-slate-500 hover:text-white rounded transition-all duration-300 cursor-pointer flex items-center justify-center shadow-2xs"
               title="Next Strategy"
             >
-              <ChevronRight className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
           
-          <div className="flex gap-3 bg-white/80 border border-indigo-500/10 p-3 rounded-xl flex-1 items-center shadow-2xs hover:shadow-xs transition-all duration-300">
-            <div className="p-2.5 sm:p-2 bg-indigo-500/10 border border-indigo-500/15 rounded-xl text-indigo-650 shrink-0">
-              <InsightIcon className="w-5.5 h-5.5 sm:w-5 sm:h-5" />
+          <div className="flex gap-2.5 bg-indigo-500/5 border border-indigo-500/10 p-2.5 rounded-xl items-center">
+            <div className="p-1.5 bg-white border border-indigo-500/10 rounded-lg text-indigo-650 shrink-0">
+              <InsightIcon className="w-4 h-4" />
             </div>
-            <p className="text-xs sm:text-[11px] text-slate-700 leading-relaxed font-semibold">
+            <p className="text-[11px] sm:text-[10px] text-slate-700 leading-normal font-semibold flex-1">
               {currentInsight.tip}
             </p>
           </div>
@@ -4116,133 +4119,166 @@ JSON structure:
               <div className="space-y-4 flex-1 flex flex-col">
                 {activeBlockIndex === -1 ? (
                   /* AI PLAN GENERATOR FORM */
-                  <div className="space-y-4 text-left animate-fade-up flex-1 flex flex-col">
-                    {/* Times */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-[10px] sm:text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">Study Start Time</label>
-                        <TimePicker
-                          value={plannerStart}
-                          onChange={setPlannerStart}
-                        />
+                  <div className="space-y-3.5 text-left animate-fade-up flex-1 flex flex-col">
+                    
+                    {/* Card 1: Session Duration */}
+                    <div className="bg-slate-50/50 border border-slate-200/50 rounded-2xl p-3.5 space-y-3 shadow-2xs">
+                      <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-slate-400">
+                        <Clock3 className="w-3.5 h-3.5" />
+                        <span>Study Session Timing</span>
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] sm:text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">Study End Time</label>
-                        <TimePicker
-                          value={plannerEnd}
-                          onChange={setPlannerEnd}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Goal Grid */}
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] sm:text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">Primary Session Goal</label>
-                      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5 sm:gap-1 p-1 bg-slate-50 rounded-xl border border-slate-200/50">
-                        {["Deep Study", "Revision", "Mock Test", "Practice Questions", "Mixed Session"].map(g => (
-                          <button
-                            type="button"
-                            key={g}
-                            onClick={() => setPlannerGoal(g)}
-                            className={cn(
-                              "px-2.5 py-1.5 sm:py-1 text-[10px] sm:text-[9px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer relative",
-                              plannerGoal === g ? "text-white font-extrabold" : "text-slate-500 hover:text-slate-800",
-                              g === "Mixed Session" && "col-span-2 sm:col-span-1"
-                            )}
-                          >
-                            {plannerGoal === g && (
-                              <motion.div
-                                layoutId="activePlannerGoalBg"
-                                className="absolute inset-0 bg-indigo-600 rounded-lg z-0 shadow-sm"
-                                transition={{ type: "spring", stiffness: 350, damping: 28 }}
-                              />
-                            )}
-                            <span className="relative z-10">{g}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Energy Level */}
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] sm:text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">Your Energy Level</label>
-                      <div className="flex gap-1.5 sm:gap-1 p-1 bg-slate-50 rounded-xl border border-slate-200/50">
-                        {["Low", "Normal", "High"].map(e => (
-                          <button
-                            type="button"
-                            key={e}
-                            onClick={() => setPlannerEnergy(e)}
-                            className={cn(
-                              "flex-1 py-1.5 sm:py-1 text-[10px] sm:text-[9px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer relative",
-                              plannerEnergy === e ? "text-white font-extrabold" : "text-slate-500 hover:text-slate-800"
-                            )}
-                          >
-                            {plannerEnergy === e && (
-                              <motion.div
-                                layoutId="activePlannerEnergyBg"
-                                className="absolute inset-0 bg-indigo-600 rounded-lg z-0 shadow-sm"
-                                transition={{ type: "spring", stiffness: 350, damping: 28 }}
-                              />
-                            )}
-                            <span className="relative z-10 flex items-center justify-center gap-1">
-                              {e === 'Low' ? '🔋 Low' : e === 'Normal' ? '🔋 Normal' : '🔋 High'}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Advanced options toggle */}
-                    <button
-                      type="button"
-                      onClick={() => setShowAdvanced(!showAdvanced)}
-                      className="w-full text-center text-[10px] sm:text-[9px] font-bold uppercase tracking-wider text-slate-500 hover:text-indigo-650 transition-colors flex items-center justify-center gap-1 cursor-pointer py-1"
-                    >
-                      <span>{showAdvanced ? 'Hide Advanced Plan Parameters' : 'Show Advanced Plan Parameters'}</span>
-                      <ChevronDown className={cn("w-3 h-3 transition-transform 300", showAdvanced && "rotate-180")} />
-                    </button>
-
-                    {showAdvanced && (
-                      <div className="grid grid-cols-3 gap-2.5 pt-2 border-t border-slate-200/50 animate-fade-down">
+                      
+                      <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
-                          <label className="text-[9px] sm:text-[8px] font-black uppercase tracking-widest text-slate-500 px-1">Chapters</label>
-                          <input
-                            type="text"
-                            value={plannerChapters}
-                            onChange={(e) => setPlannerChapters(e.target.value)}
-                            placeholder="e.g. Chapter 4"
-                            className="w-full bg-slate-50 border border-slate-200/60 rounded-xl px-2.5 py-2 sm:px-2 sm:py-1.5 text-[11px] sm:text-[10px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 transition-all font-semibold"
+                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-0.5 block">Start Time</label>
+                          <TimePicker
+                            value={plannerStart}
+                            onChange={setPlannerStart}
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[9px] sm:text-[8px] font-black uppercase tracking-widest text-slate-500 px-1">MCQ Count</label>
-                          <input
-                            type="text"
-                            value={plannerQuestions}
-                            onChange={(e) => setPlannerQuestions(e.target.value)}
-                            placeholder="e.g. 30 MCQs"
-                            className="w-full bg-slate-50 border border-slate-200/60 rounded-xl px-2.5 py-2 sm:px-2 sm:py-1.5 text-[11px] sm:text-[10px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 transition-all font-semibold"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[9px] sm:text-[8px] font-black uppercase tracking-widest text-slate-500 px-1">Target Hours</label>
-                          <input
-                            type="text"
-                            value={plannerHours}
-                            onChange={(e) => setPlannerHours(e.target.value)}
-                            placeholder="e.g. 5 hours"
-                            className="w-full bg-slate-50 border border-slate-200/60 rounded-xl px-2.5 py-2 sm:px-2 sm:py-1.5 text-[11px] sm:text-[10px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 transition-all font-semibold"
+                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-0.5 block">End Time</label>
+                          <TimePicker
+                            value={plannerEnd}
+                            onChange={setPlannerEnd}
                           />
                         </div>
                       </div>
-                    )}
+                    </div>
+
+                    {/* Card 2: Preferences */}
+                    <div className="bg-slate-50/50 border border-slate-200/50 rounded-2xl p-3.5 space-y-4 shadow-2xs">
+                      
+                      {/* Primary Session Goal */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-slate-400">
+                          <Target className="w-3.5 h-3.5" />
+                          <span>Primary Session Goal</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {["Deep Study", "Revision", "Mock Test", "Practice Questions", "Mixed Session"].map(g => {
+                            const isSelected = plannerGoal === g;
+                            return (
+                              <button
+                                type="button"
+                                key={g}
+                                onClick={() => setPlannerGoal(g)}
+                                className={cn(
+                                  "px-2.5 py-1.5 text-[10px] sm:text-[9px] font-black uppercase tracking-wider rounded-lg transition-all duration-200 cursor-pointer border relative select-none",
+                                  isSelected
+                                    ? "bg-indigo-600 border-indigo-600 text-white shadow-sm font-extrabold"
+                                    : "bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700 font-semibold"
+                                )}
+                              >
+                                {isSelected && (
+                                  <motion.div
+                                    layoutId="activePlannerGoalBg"
+                                    className="absolute inset-0 bg-indigo-600 rounded-lg -z-10 shadow-sm"
+                                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                                  />
+                                )}
+                                <span className="relative z-10">{g}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="border-t border-slate-200/50" />
+
+                      {/* Energy Level */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-slate-400">
+                          <Zap className="w-3.5 h-3.5" />
+                          <span>Your Energy Level</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100/70 border border-slate-200/50 rounded-xl relative overflow-hidden">
+                          {["Low", "Normal", "High"].map(e => {
+                            const isSelected = plannerEnergy === e;
+                            return (
+                              <button
+                                type="button"
+                                key={e}
+                                onClick={() => setPlannerEnergy(e)}
+                                className={cn(
+                                  "py-1.5 text-[10px] sm:text-[9px] font-black uppercase tracking-wider rounded-lg transition-all duration-200 cursor-pointer relative text-center select-none",
+                                  isSelected ? "text-white font-extrabold" : "text-slate-500 hover:text-slate-800 font-semibold"
+                                )}
+                              >
+                                {isSelected && (
+                                  <motion.div
+                                    layoutId="activePlannerEnergyBg"
+                                    className="absolute inset-0 bg-indigo-600 rounded-lg z-0 shadow-sm"
+                                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                                  />
+                                )}
+                                <span className="relative z-10 flex items-center justify-center gap-1">
+                                  {e === 'Low' ? '🔋 Low' : e === 'Normal' ? '🔋 Normal' : '🔋 High'}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Card 3: Advanced Options Accordion */}
+                    <div className="border border-slate-200/50 rounded-2xl overflow-hidden bg-slate-50/20 shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => setShowAdvanced(!showAdvanced)}
+                        className="w-full flex items-center justify-between px-3.5 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-500 hover:text-slate-700 bg-slate-50/50 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Cpu className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Advanced Plan Parameters</span>
+                        </div>
+                        <ChevronDown className={cn("w-3.5 h-3.5 text-slate-400 transition-transform duration-300", showAdvanced && "rotate-180")} />
+                      </button>
+
+                      {showAdvanced && (
+                        <div className="p-3.5 pt-1.5 grid grid-cols-3 gap-2.5 bg-white border-t border-slate-200/40 animate-fade-down">
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-0.5 block">Chapters</label>
+                            <input
+                              type="text"
+                              value={plannerChapters}
+                              onChange={(e) => setPlannerChapters(e.target.value)}
+                              placeholder="e.g. Ch 4"
+                              className="w-full bg-slate-50 border border-slate-200/60 rounded-xl px-2.5 py-2 text-[10px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 transition-all font-semibold"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-0.5 block">MCQ Count</label>
+                            <input
+                              type="text"
+                              value={plannerQuestions}
+                              onChange={(e) => setPlannerQuestions(e.target.value)}
+                              placeholder="e.g. 30 Qs"
+                              className="w-full bg-slate-50 border border-slate-200/60 rounded-xl px-2.5 py-2 text-[10px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 transition-all font-semibold"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-0.5 block">Target Hours</label>
+                            <input
+                              type="text"
+                              value={plannerHours}
+                              onChange={(e) => setPlannerHours(e.target.value)}
+                              placeholder="e.g. 5 hrs"
+                              className="w-full bg-slate-50 border border-slate-200/60 rounded-xl px-2.5 py-2 text-[10px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 transition-all font-semibold"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
                     <button
                       type="button"
                       disabled={coachLoading}
                       onClick={handleGeneratePlan}
                       className={cn(
-                        "w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-widest transition-all cursor-pointer shadow-lg shadow-indigo-600/20 active:translate-y-0.5 text-center flex items-center justify-center gap-2",
+                        "w-full h-[50px] rounded-2xl bg-gradient-to-r from-indigo-650 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white text-[11px] font-black uppercase tracking-widest transition-all cursor-pointer shadow-md shadow-indigo-600/10 active:translate-y-0.5 text-center flex items-center justify-center gap-2 border-none",
                         coachLoading && "opacity-60 cursor-not-allowed"
                       )}
                     >
@@ -4663,113 +4699,136 @@ JSON structure:
               // Quiz view
               <div className="space-y-4">
                 {!activeQuiz.length && !quizLoading && (
-                  <div className="space-y-4">
-                    <div className="space-y-4">
-                      {/* Subject Selector */}
-                      <div className="space-y-2 text-left">
-                        <label className="text-[10px] sm:text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">
-                          Subject / Topic
-                        </label>
-                        
+                  <div className="space-y-4 text-left animate-fade-up flex-1 flex flex-col">
+                    
+                    {/* Card 1: Quiz Focus & Topic */}
+                    <div className="bg-slate-50/50 border border-slate-200/50 rounded-2xl p-3.5 space-y-3 shadow-2xs">
+                      <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-slate-400">
+                        <Target className="w-3.5 h-3.5" />
+                        <span>Quiz Focus & Topic</span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-0.5 block">Subject / Topic</label>
                         <input
                           type="text"
                           value={quizSubject}
                           onChange={(e) => setQuizSubject(e.target.value)}
                           placeholder="Enter subject or topic (e.g., Odisha Rivers, Trigonometry)"
-                          className="w-full bg-white border border-slate-200/60 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500/40 focus:border-teal-500/40 transition-all font-semibold"
+                          className="w-full bg-white border border-slate-200/60 rounded-xl px-3.5 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500/40 focus:border-teal-500 transition-all font-semibold"
                         />
- 
-                        {/* Popular Suggestion Chips */}
-                        <div className="flex flex-wrap gap-1.5 pt-1 items-center">
-                          {quizTabs.map((s) => (
-                            <div
-                              key={s}
-                              className={cn(
-                                "inline-flex items-center gap-1.5 px-2.5 py-1 sm:px-2 sm:py-0.5 border text-[9px] sm:text-[8px] font-black uppercase tracking-wider rounded-lg transition-all",
-                                quizSubject.toLowerCase() === s.toLowerCase()
-                                  ? "bg-teal-500/10 border-teal-500/35 text-brand-600 font-bold"
-                                  : "bg-slate-50 border-slate-200/50 text-slate-500 hover:text-slate-700 hover:bg-slate-100 hover:text-slate-800"
-                              )}
-                            >
-                              <button
-                                type="button"
-                                onClick={() => setQuizSubject(s)}
-                                className="cursor-pointer transition-colors focus:outline-none"
-                              >
-                                {s.replace(/\s*\(.*\)/, '').replace(/\s*&\s*/, ' & ')}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setQuizTabs(prev => prev.filter(t => t !== s));
-                                }}
-                                className="text-slate-600 hover:text-red-400 font-black transition-colors pl-1 sm:pl-0.5 cursor-pointer text-xs sm:text-[10px] leading-none focus:outline-none"
-                                title={`Delete ${s}`}
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))}
- 
-                          {/* Add New Tab Inline Form */}
-                          {isAddingQuizTab ? (
-                            <form 
-                              onSubmit={(e) => {
-                                e.preventDefault();
-                                if (newQuizTabName.trim()) {
-                                  if (!quizTabs.some(t => t.toLowerCase() === newQuizTabName.trim().toLowerCase())) {
-                                    setQuizTabs(prev => [...prev, newQuizTabName.trim()]);
-                                  }
-                                  setQuizSubject(newQuizTabName.trim());
-                                  setNewQuizTabName('');
-                                  setIsAddingQuizTab(false);
-                                }
-                              }}
-                              className="flex items-center gap-1 inline-flex animate-fade-in"
-                            >
-                              <input
-                                type="text"
-                                value={newQuizTabName}
-                                onChange={(e) => setNewQuizTabName(e.target.value)}
-                                placeholder="New tab..."
-                                className="bg-white border border-teal-500/30 rounded-lg px-2.5 py-1 sm:px-2 sm:py-0.5 text-[10px] sm:text-[9px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-teal-500/40 w-28 sm:w-24 font-bold"
-                                autoFocus
-                              />
-                              <button 
-                                type="submit" 
-                                className="px-2 py-1 sm:px-1.5 sm:py-0.5 bg-[#8A1C36] hover:bg-[#76142c] text-white rounded text-[10px] sm:text-[9px] font-black cursor-pointer"
-                              >
-                                ✓
-                              </button>
-                              <button 
-                                type="button" 
-                                onClick={() => setIsAddingQuizTab(false)} 
-                                className="px-2 py-1 sm:px-1.5 sm:py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-500 rounded text-[10px] sm:text-[9px] font-black cursor-pointer"
-                              >
-                                ✗
-                              </button>
-                            </form>
-                          ) : (
+                      </div>
+
+                      {/* Popular Suggestion Chips - Horizontal Scrollable Row */}
+                      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 w-full shrink-0">
+                        {quizTabs.map((s) => (
+                          <div
+                            key={s}
+                            className={cn(
+                              "inline-flex items-center gap-1.5 px-2.5 py-1 border text-[9px] font-black uppercase tracking-wider rounded-lg transition-all shrink-0 select-none",
+                              quizSubject.toLowerCase() === s.toLowerCase()
+                                ? "bg-teal-500/10 border-teal-500/35 text-[#8A1C36] font-bold"
+                                : "bg-white border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                            )}
+                          >
                             <button
                               type="button"
-                              onClick={() => setIsAddingQuizTab(true)}
-                              className="px-2.5 py-1 sm:px-2 sm:py-0.5 border border-dashed border-teal-500/30 bg-teal-500/5 hover:bg-teal-500/10 text-brand-600 text-[9px] sm:text-[8px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-0.5"
+                              onClick={() => setQuizSubject(s)}
+                              className="cursor-pointer transition-colors focus:outline-none"
                             >
-                              ➕ Add Tab
+                              {s.replace(/\s*\(.*\)/, '').replace(/\s*&\s*/, ' & ')}
                             </button>
-                          )}
-                        </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setQuizTabs(prev => prev.filter(t => t !== s));
+                              }}
+                              className="text-slate-500 hover:text-red-400 font-black transition-colors pl-1 cursor-pointer text-xs leading-none focus:outline-none"
+                              title={`Delete ${s}`}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+
+                        {/* Add New Tab Inline Form */}
+                        {isAddingQuizTab ? (
+                          <form 
+                            onSubmit={(e) => {
+                              e.preventDefault();
+                              if (newQuizTabName.trim()) {
+                                if (!quizTabs.some(t => t.toLowerCase() === newQuizTabName.trim().toLowerCase())) {
+                                  setQuizTabs(prev => [...prev, newQuizTabName.trim()]);
+                                }
+                                setQuizSubject(newQuizTabName.trim());
+                                setNewQuizTabName('');
+                                setIsAddingQuizTab(false);
+                              }
+                            }}
+                            className="flex items-center gap-1 inline-flex animate-fade-in shrink-0"
+                          >
+                            <input
+                              type="text"
+                              value={newQuizTabName}
+                              onChange={(e) => setNewQuizTabName(e.target.value)}
+                              placeholder="New tab..."
+                              className="bg-white border border-teal-500/30 rounded-lg px-2.5 py-1 text-[10px] sm:text-[9px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-teal-500/40 w-28 font-bold"
+                              autoFocus
+                            />
+                            <button 
+                              type="submit" 
+                              className="px-2 py-1 bg-[#8A1C36] hover:bg-[#76142c] text-white rounded text-[10px] sm:text-[9px] font-black cursor-pointer"
+                            >
+                              ✓
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => setIsAddingQuizTab(false)} 
+                              className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-500 rounded text-[10px] sm:text-[9px] font-black cursor-pointer"
+                            >
+                              ✗
+                            </button>
+                          </form>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setIsAddingQuizTab(true)}
+                            className="px-2.5 py-1 border border-dashed border-teal-500/30 bg-teal-500/5 hover:bg-teal-500/10 text-brand-600 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-0.5 shrink-0"
+                          >
+                            ➕ Add Tab
+                          </button>
+                        )}
                       </div>
- 
+
+                      <div className="border-t border-slate-200/50" />
+
+                      {/* Targeted Exam (Optional) */}
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-0.5 block">
+                          Target Exam <span className="text-slate-500 text-[9px] font-semibold">(Optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={quizTargetExam}
+                          onChange={(e) => setQuizTargetExam(e.target.value)}
+                          placeholder="e.g. OSSC CGL, OPSC OAS (defaults to global target)"
+                          className="w-full bg-white border border-slate-200/60 rounded-xl px-3.5 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500/40 focus:border-teal-500 transition-all font-semibold"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Card 2: Quiz Configuration */}
+                    <div className="bg-slate-50/50 border border-slate-200/50 rounded-2xl p-3.5 space-y-4 shadow-2xs">
+                      
                       {/* Difficulty and MCQ count row */}
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1 text-left">
-                          <label className="text-[10px] sm:text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">Difficulty</label>
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-0.5 block">Difficulty</label>
                           <select
                             value={quizDifficulty}
                             onChange={(e) => setQuizDifficulty(e.target.value)}
-                            className="w-full bg-white border border-slate-200/60 rounded-xl px-3 py-2.5 sm:px-2 sm:py-2 text-xs sm:text-[11px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-all font-bold"
+                            className="w-full bg-white border border-slate-200/60 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-teal-500/40 focus:border-teal-500 transition-all font-semibold"
                           >
                             <option>Easy</option>
                             <option>Medium</option>
@@ -4777,12 +4836,12 @@ JSON structure:
                           </select>
                         </div>
  
-                        <div className="space-y-1 text-left">
-                          <label className="text-[10px] sm:text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">MCQ Count</label>
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-0.5 block">MCQ Count</label>
                           <select
                             value={quizSize}
                             onChange={(e) => setQuizSize(Number(e.target.value))}
-                            className="w-full bg-white border border-slate-200/60 rounded-xl px-3 py-2.5 sm:px-2 sm:py-2 text-xs sm:text-[11px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-all font-bold"
+                            className="w-full bg-white border border-slate-200/60 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-teal-500/40 focus:border-teal-500 transition-all font-semibold"
                           >
                             <option value={3}>3 Questions</option>
                             <option value={5}>5 Questions</option>
@@ -4791,15 +4850,17 @@ JSON structure:
                         </div>
                       </div>
  
+                      <div className="border-t border-slate-200/50" />
+
                       {/* Generation Mode Control */}
-                      <div className="space-y-1.5 text-left">
-                        <label className="text-[10px] sm:text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">Quiz Engine Mode</label>
-                        <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-200/50 w-full relative overflow-hidden">
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-0.5 block">Quiz Engine Mode</label>
+                        <div className="flex bg-slate-100/70 p-1 rounded-xl border border-slate-200/50 w-full relative overflow-hidden">
                           <button
                             type="button"
                             onClick={() => setQuizMode('quick')}
                             className={cn(
-                              "flex-1 py-2 sm:py-1.5 px-3 rounded-lg text-[10.5px] sm:text-[10px] font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer relative",
+                              "flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer relative",
                               quizMode === "quick" ? "text-white" : "text-slate-600 hover:text-slate-900"
                             )}
                           >
@@ -4819,16 +4880,14 @@ JSON structure:
                             type="button"
                             onClick={() => setQuizMode('best')}
                             className={cn(
-                              "flex-1 py-2 sm:py-1.5 px-3 rounded-lg text-[10.5px] sm:text-[10px] font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer relative",
-                              quizMode === 'best'
-                                ? "text-white"
-                                : "text-slate-500 hover:text-slate-800"
+                              "flex-1 py-1.5 px-3 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer relative",
+                              quizMode === 'best' ? "text-white" : "text-slate-500 hover:text-slate-800"
                             )}
                           >
                             {quizMode === 'best' && (
                               <motion.div
                                 layoutId="activeQuizModeBg"
-                                className="absolute inset-0 bg-indigo-650 rounded-lg z-0 shadow-sm"
+                                className="absolute inset-0 bg-[#8A1C36] rounded-lg z-0 shadow-sm"
                                 transition={{ type: "spring", stiffness: 350, damping: 28 }}
                               />
                             )}
@@ -4839,67 +4898,72 @@ JSON structure:
                           </button>
                         </div>
                       </div>
- 
-                      {/* Targeted Exam (Optional) */}
-                      <div className="space-y-1 text-left">
-                        <label className="text-[10px] sm:text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">
-                          Target Exam <span className="text-slate-500 text-[9px] sm:text-[8px] font-semibold">(Optional)</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={quizTargetExam}
-                          onChange={(e) => setQuizTargetExam(e.target.value)}
-                          placeholder="e.g. OSSC CGL, OPSC OAS (defaults to global target)"
-                          className="w-full bg-white border border-slate-200/60 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500/40 focus:border-teal-500/40 transition-all font-semibold"
-                        />
-                      </div>
+
                     </div>
- 
+
                     <button
                       onClick={() => triggerCustomQuiz(quizSubject, quizDifficulty, quizSize)}
-                      className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 sm:py-3.5 rounded-2xl premium-gradient text-white text-xs font-black uppercase tracking-widest hover:premium-glow transition-all duration-300 cursor-pointer shadow-lg shadow-brand-500/15 active:scale-98 hover:scale-[1.01]"
+                      className="w-full inline-flex items-center justify-center gap-2 px-6 h-[50px] rounded-2xl bg-gradient-to-r from-[#8A1C36] to-[#b83a55] text-white text-xs font-black uppercase tracking-widest hover:premium-glow transition-all duration-300 cursor-pointer shadow-md shadow-[#8A1C36]/15 active:scale-98 hover:scale-[1.01] border-none animate-pulse-soft"
                     >
                       <Sparkles className="w-4 h-4 text-white animate-pulse" />
                       Generate AI Practice Quiz
                       <Play className="w-3.5 h-3.5 fill-white text-white" />
                     </button>
- 
-                    {/* Quiz History Scorecard */}
-                    {quizHistory.length > 0 && (
-                       <div className="border-t border-slate-200/50 pt-4 space-y-2 text-left">
-                        <div className="flex justify-between items-center">
-                          <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
-                            <Trophy className="w-3.5 h-3.5 text-amber-500" />
-                            Recent Attempts Scorecard
-                          </h5>
-                          <button
-                            onClick={clearQuizHistory}
-                            className="text-[10px] sm:text-[9px] font-black uppercase tracking-wider text-red-400 hover:text-red-300 transition-colors cursor-pointer"
-                          >
-                            Clear
-                          </button>
+
+                    {/* Card 3: Performance History & Stats Accordion */}
+                    <div className="border border-slate-200/50 rounded-2xl overflow-hidden bg-slate-50/20 shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => setShowStatsAccordion(!showStatsAccordion)}
+                        className="w-full flex items-center justify-between px-3.5 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-500 hover:text-slate-700 bg-slate-50/50 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Trophy className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Performance Stats & History</span>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-2 max-h-[120px] overflow-y-auto no-scrollbar">
-                          {quizHistory.map((rec, rIdx) => (
-                            <div key={rIdx} className="bg-slate-50 border border-slate-200/50 rounded-xl p-3 sm:p-2.5 flex justify-between items-center text-xs sm:text-[10px] font-semibold text-slate-700">
-                              <div className="space-y-0.5 pr-2 truncate">
-                                <span className="text-slate-800 font-extrabold truncate block">{rec.subject}</span>
-                                <span className="text-[10px] sm:text-[9px] text-slate-500">{rec.date} • {rec.difficulty}</span>
+                        <ChevronDown className={cn("w-3.5 h-3.5 text-slate-400 transition-transform duration-300", showStatsAccordion && "rotate-180")} />
+                      </button>
+
+                      {showStatsAccordion && (
+                        <div className="p-3.5 space-y-4 bg-white border-t border-slate-200/45 animate-fade-down">
+                          
+                          {/* Practice Performance HUD */}
+                          {renderPracticeAnalyticsHUD()}
+
+                          {/* Quiz History Scorecard */}
+                          {quizHistory.length > 0 && (
+                            <div className="space-y-2 text-left">
+                              <div className="flex justify-between items-center">
+                                <h5 className="text-[9px] font-black uppercase tracking-widest text-slate-500">Recent Attempts</h5>
+                                <button
+                                  type="button"
+                                  onClick={clearQuizHistory}
+                                  className="text-[9px] font-black uppercase tracking-wider text-red-400 hover:text-red-300 transition-colors cursor-pointer"
+                                >
+                                  Clear
+                                </button>
                               </div>
-                              <span className={cn(
-                                "px-2.5 py-1.5 sm:py-1 rounded text-[11px] sm:text-[10px] font-black shrink-0",
-                                (rec.score / rec.total) >= 0.7 ? "bg-emerald-500/10 text-emerald-650" : (rec.score / rec.total) >= 0.4 ? "bg-amber-500/10 text-amber-650" : "bg-red-500/10 text-red-400"
-                              )}>
-                                {rec.score} / {rec.total}
-                              </span>
+                              <div className="grid grid-cols-1 gap-2.5 max-h-[160px] overflow-y-auto no-scrollbar">
+                                {quizHistory.map((rec, rIdx) => (
+                                  <div key={rIdx} className="bg-slate-50 border border-slate-200/50 rounded-xl p-2.5 flex justify-between items-center text-xs font-semibold text-slate-700">
+                                    <div className="space-y-0.5 pr-2 truncate">
+                                      <span className="text-slate-800 font-extrabold truncate block">{rec.subject}</span>
+                                      <span className="text-[9px] text-slate-500">{rec.date} • {rec.difficulty}</span>
+                                    </div>
+                                    <span className={cn(
+                                      "px-2 py-1 rounded text-[10px] font-black shrink-0",
+                                      (rec.score / rec.total) >= 0.7 ? "bg-emerald-500/10 text-emerald-650" : (rec.score / rec.total) >= 0.4 ? "bg-amber-500/10 text-amber-650" : "bg-red-500/10 text-red-400"
+                                    )}>
+                                      {rec.score} / {rec.total}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          ))}
+                          )}
                         </div>
-                      </div>
-                    )}
- 
-                    {/* Practice Performance HUD */}
-                    {renderPracticeAnalyticsHUD()}
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -5195,12 +5259,10 @@ JSON structure:
                 </div>
               </div>
             )}
-
-            {/* Collection Tab Switcher */}
             {collections.length > 0 ? (
               <div className="space-y-4">
-                {/* Modern Pill Grid */}
-                <div className="flex flex-wrap gap-2 text-left">
+                {/* Modern Pill Grid - Horizontal Scrollable on Mobile */}
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 w-full shrink-0">
                   {collections.map((c) => {
                     const isActive = c.id === activeCollectionId;
 
@@ -5212,10 +5274,10 @@ JSON structure:
                           setEditingCollectionId(null); // Cancel editing other items
                         }}
                         className={cn(
-                          "px-4 py-2.5 sm:py-2 text-[10.5px] sm:text-[10px] font-black uppercase tracking-wider rounded-xl border transition-all duration-200 cursor-pointer active:scale-95 flex items-center gap-1.5 relative",
+                          "px-4 py-2 text-[10px] font-black uppercase tracking-wider rounded-xl border transition-all duration-200 cursor-pointer active:scale-95 flex items-center gap-1.5 relative shrink-0 select-none",
                           isActive 
-                            ? "text-amber-650 border-amber-500/40" 
-                            : "bg-slate-50 border-slate-200/50 text-slate-500 hover:text-slate-800 hover:bg-slate-100 hover:text-slate-800/40 hover:border-slate-200/60"
+                            ? "text-amber-650 border-amber-500/40 bg-amber-500/5 font-extrabold" 
+                            : "bg-white border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50"
                         )}
                       >
                         {isActive && (
@@ -5241,7 +5303,7 @@ JSON structure:
                   const isEditing = activeColl.id === editingCollectionId;
 
                   return (
-                    <div className="bg-slate-50 border border-slate-200/50 p-3 sm:p-3.5 rounded-2xl flex items-center justify-between gap-3 text-left animate-fade-in">
+                    <div className="bg-slate-50/50 border border-slate-200/50 p-2.5 rounded-xl flex items-center justify-between gap-3 text-left animate-fade-in shadow-2xs">
                       <div className="flex-1 min-w-0">
                         {isEditing ? (
                           <div className="flex items-center gap-1.5 w-full">
@@ -5249,20 +5311,20 @@ JSON structure:
                               type="text"
                               value={editingCollectionName}
                               onChange={(e) => setEditingCollectionName(e.target.value)}
-                              className="flex-1 min-w-0 bg-slate-50 border border-slate-200/60 rounded-xl px-2.5 py-2 sm:py-1 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-amber-500/40 transition-all font-semibold"
+                              className="flex-1 min-w-0 bg-white border border-slate-200/60 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-amber-500/40 transition-all font-semibold"
                               autoFocus
                               placeholder="Name..."
                             />
                             <button
                               onClick={() => handleRenameCollection(activeColl.id, editingCollectionName)}
-                              className="p-2 sm:p-1.5 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-650 rounded-lg shrink-0 transition-all cursor-pointer active:scale-95"
+                              className="p-1.5 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-650 rounded-lg shrink-0 transition-all cursor-pointer active:scale-95"
                               title="Save Name"
                             >
                               <Check className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                             </button>
                             <button
                               onClick={() => setEditingCollectionId(null)}
-                              className="p-2 sm:p-1.5 bg-slate-50 border border-slate-200/60 hover:bg-slate-100 text-slate-500 rounded-lg shrink-0 transition-all cursor-pointer active:scale-95"
+                              className="p-1.5 bg-slate-50 border border-slate-200/60 hover:bg-slate-100 text-slate-500 rounded-lg shrink-0 transition-all cursor-pointer active:scale-95"
                               title="Cancel"
                             >
                               <Square className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
@@ -5271,8 +5333,8 @@ JSON structure:
                         ) : (
                           <div className="flex items-center gap-2 min-w-0">
                             <div className="min-w-0 flex-1">
-                              <span className="text-[10px] sm:text-[8px] font-black uppercase tracking-widest text-slate-500 block mb-0.5">Selected Workspace</span>
-                              <h5 className="font-serif font-extrabold text-slate-900 text-sm flex items-center gap-1.5 min-w-0">
+                              <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">Selected Workspace</span>
+                              <h5 className="font-serif font-extrabold text-slate-900 text-xs flex items-center gap-1.5 min-w-0 leading-none">
                                 <span className="truncate max-w-[130px] xs:max-w-[180px] sm:max-w-[280px] md:max-w-none block">
                                   {activeColl.name}
                                 </span>
@@ -5281,10 +5343,10 @@ JSON structure:
                                     setEditingCollectionId(activeColl.id);
                                     setEditingCollectionName(activeColl.name);
                                   }}
-                                  className="text-slate-500 hover:text-amber-650 transition-colors p-1.5 rounded hover:bg-slate-100 shrink-0"
+                                  className="text-slate-400 hover:text-amber-650 transition-colors p-1 rounded hover:bg-slate-100 shrink-0"
                                   title="Rename Workspace"
                                 >
-                                  <Edit3 className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
+                                  <Edit3 className="w-3 h-3" />
                                 </button>
                               </h5>
                             </div>
@@ -5293,25 +5355,25 @@ JSON structure:
                       </div>
 
                       {/* Toolbar Actions */}
-                      <div className="flex items-center gap-1.5 sm:gap-1 shrink-0">
+                      <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={() => handleMoveCollection(activeColl.id, 'up')}
-                          className="p-2.5 sm:p-2 bg-slate-50 border border-slate-200/50 hover:border-slate-200/60 hover:bg-slate-100 hover:text-slate-800/80 rounded-xl text-slate-500 hover:text-white transition-all cursor-pointer active:scale-90"
+                          className="p-1.5 bg-white border border-slate-200 text-slate-400 hover:text-slate-700 hover:border-slate-350 rounded-lg transition-all cursor-pointer active:scale-90"
                           title="Move Left/Up"
                         >
                           <ArrowLeft className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleMoveCollection(activeColl.id, 'down')}
-                          className="p-2.5 sm:p-2 bg-slate-50 border border-slate-200/50 hover:border-slate-200/60 hover:bg-slate-100 hover:text-slate-800/80 rounded-xl text-slate-500 hover:text-white transition-all cursor-pointer active:scale-90"
+                          className="p-1.5 bg-white border border-slate-200 text-slate-400 hover:text-slate-700 hover:border-slate-350 rounded-lg transition-all cursor-pointer active:scale-90"
                           title="Move Right/Down"
                         >
                           <ArrowRight className="w-3.5 h-3.5" />
                         </button>
-                        <div className="w-px h-5 bg-slate-100 mx-1 shrink-0" />
+                        <div className="w-px h-4 bg-slate-200 mx-0.5 shrink-0" />
                         <button
                           onClick={() => handleDeleteCollection(activeColl.id)}
-                          className="p-2.5 sm:p-2 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-xl transition-all cursor-pointer active:scale-90"
+                          className="p-1.5 bg-red-50 border border-red-200 hover:bg-red-500 hover:border-red-500 hover:text-white text-red-500 rounded-lg transition-all cursor-pointer active:scale-90"
                           title="Delete Workspace"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -5330,12 +5392,12 @@ JSON structure:
                   const progressPercentage = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
 
                   return (
-                    <div className="bg-slate-50 border border-slate-200/50 p-3 rounded-2xl space-y-2 text-left">
-                      <div className="flex justify-between items-center text-[11px] sm:text-[10px] font-black uppercase text-slate-500">
-                        <span>Workspace Progress</span>
-                        <span className="text-amber-650">{completedCount} of {totalTopics} Completed ({progressPercentage}%)</span>
+                    <div className="bg-slate-50/50 border border-slate-200/50 p-3 rounded-xl flex items-center justify-between gap-4 shadow-2xs">
+                      <div className="min-w-0">
+                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">Workspace Progress</span>
+                        <span className="text-[10px] font-black text-amber-650 font-mono">{completedCount} of {totalTopics} Completed ({progressPercentage}%)</span>
                       </div>
-                      <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/50">
+                      <div className="flex-1 max-w-[120px] xs:max-w-[160px] sm:max-w-none bg-slate-200/80 rounded-full h-1.5 overflow-hidden border border-slate-200/30">
                         <div 
                           className="bg-amber-400 h-full transition-all duration-500 rounded-full" 
                           style={{ width: `${progressPercentage}%` }} 
@@ -5353,13 +5415,13 @@ JSON structure:
                   return (
                     <div className="space-y-3">
                       <div className="flex justify-between items-center px-1">
-                        <span className="text-[10px] sm:text-[9px] font-black uppercase tracking-widest text-slate-500">Study Chapters / Topics</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Study Chapters / Topics</span>
                         <button
                           onClick={() => {
                             setShowAddTopic(!showAddTopic);
                             setEditingTopicId(null);
                           }}
-                          className="text-[10px] sm:text-[9px] font-black uppercase tracking-widest text-amber-650 hover:text-amber-300 border border-amber-500/25 hover:border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/10 px-3 py-1.5 sm:px-2.5 sm:py-1 rounded-lg transition-all duration-200 cursor-pointer active:scale-95"
+                          className="text-[9px] font-black uppercase tracking-widest text-amber-650 hover:text-amber-300 border border-amber-500/25 hover:border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/10 px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer active:scale-95"
                         >
                           {showAddTopic ? 'Close Form' : '+ Add Custom Topic'}
                         </button>
@@ -5367,32 +5429,32 @@ JSON structure:
 
                       {/* Add Custom Topic Form */}
                       {showAddTopic && (
-                        <div className="bg-slate-50 border border-slate-200/50 p-4 rounded-2xl space-y-3 text-left animate-fade-down">
+                        <div className="bg-slate-50 border border-slate-200/50 p-4 rounded-2xl space-y-3 text-left animate-fade-down shadow-2xs">
                           <div className="space-y-1">
-                            <label className="text-[9px] sm:text-[8px] font-black uppercase tracking-widest text-slate-500 block px-1">Topic Title</label>
+                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block px-1">Topic Title</label>
                             <input
                               type="text"
                               value={newTopicName}
                               onChange={(e) => setNewTopicName(e.target.value)}
                               placeholder="e.g. Indus Valley Civilization"
-                              className="w-full bg-slate-50 border border-slate-200/60 rounded-xl px-3.5 py-2.5 sm:px-3 sm:py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-amber-500/40 transition-all font-semibold"
+                              className="w-full bg-white border border-slate-200/60 rounded-xl px-3.5 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-amber-500/40 transition-all font-semibold"
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="text-[9px] sm:text-[8px] font-black uppercase tracking-widest text-slate-500 block px-1">Description / Chapters</label>
+                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block px-1">Description / Chapters</label>
                             <input
                               type="text"
                               value={newTopicDesc}
                               onChange={(e) => setNewTopicDesc(e.target.value)}
                               placeholder="e.g. Harappan sites, trade routes, decline causes"
-                              className="w-full bg-slate-50 border border-slate-200/60 rounded-xl px-3.5 py-2.5 sm:px-3 sm:py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-amber-500/40 transition-all font-semibold"
+                              className="w-full bg-white border border-slate-200/60 rounded-xl px-3.5 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-amber-500/40 transition-all font-semibold"
                             />
                           </div>
                           <button
                             type="button"
                             disabled={!newTopicName.trim()}
                             onClick={() => handleCreateTopic(activeColl.id, newTopicName, newTopicDesc)}
-                            className="w-full py-3 sm:py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs sm:text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed font-extrabold"
+                            className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed font-extrabold"
                           >
                             Add Topic to Syllabus
                           </button>
@@ -5409,7 +5471,7 @@ JSON structure:
                           </p>
                         </div>
                       ) : (
-                        <div className="space-y-3 pr-1">
+                        <div className="space-y-2.5 pr-1">
                           {activeColl.topics.map((topic) => {
                             const isEditing = topic.id === editingTopicId;
                             const status = topic.status || 'not_started';
@@ -5426,35 +5488,35 @@ JSON structure:
 
                             if (isEditing) {
                               return (
-                                <div key={topic.id} className="p-4 bg-slate-50 border border-amber-500/30 rounded-2xl space-y-3.5 sm:space-y-3 text-left animate-fade-in">
+                                <div key={topic.id} className="p-4 bg-slate-50 border border-amber-500/30 rounded-2xl space-y-3.5 sm:space-y-3 text-left animate-fade-in shadow-2xs">
                                   <div className="space-y-1">
-                                    <label className="text-[9px] sm:text-[8px] font-black uppercase tracking-widest text-slate-500 block px-1">Rename Topic</label>
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block px-1">Rename Topic</label>
                                     <input
                                       type="text"
                                       value={editingTopicName}
                                       onChange={(e) => setEditingTopicName(e.target.value)}
-                                      className="w-full bg-slate-50 border border-slate-200/60 rounded-xl px-3.5 py-2.5 sm:px-3 sm:py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-amber-500/40 font-semibold"
+                                      className="w-full bg-white border border-slate-200/60 rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-amber-500/40 font-semibold"
                                     />
                                   </div>
                                   <div className="space-y-1">
-                                    <label className="text-[9px] sm:text-[8px] font-black uppercase tracking-widest text-slate-500 block px-1">Edit Description</label>
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block px-1">Edit Description</label>
                                     <input
                                       type="text"
                                       value={editingTopicDesc}
                                       onChange={(e) => setEditingTopicDesc(e.target.value)}
-                                      className="w-full bg-slate-50 border border-slate-200/60 rounded-xl px-3.5 py-2.5 sm:px-3 sm:py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-amber-500/40 font-semibold"
+                                      className="w-full bg-white border border-slate-200/60 rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-amber-500/40 font-semibold"
                                     />
                                   </div>
-                                  <div className="flex gap-2.5 sm:gap-2 pt-1">
+                                  <div className="flex gap-2.5 pt-1">
                                     <button
                                       onClick={() => handleEditTopic(activeColl.id, topic.id, editingTopicName, editingTopicDesc)}
-                                      className="flex-1 py-2.5 sm:py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] sm:text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer active:scale-95"
+                                      className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer active:scale-95"
                                     >
                                       Save Details
                                     </button>
                                     <button
                                       onClick={() => setEditingTopicId(null)}
-                                      className="px-4 py-2.5 sm:px-3.5 sm:py-1.5 border border-slate-200/60 hover:bg-slate-100 text-slate-700 rounded-lg text-[10px] sm:text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer active:scale-95"
+                                      className="px-4 py-2 border border-slate-200/60 hover:bg-slate-100 text-slate-700 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer active:scale-95"
                                     >
                                       Cancel
                                     </button>
@@ -5467,102 +5529,139 @@ JSON structure:
                             if (status === 'in_progress') indicatorColor = "bg-amber-400";
                             else if (status === 'completed') indicatorColor = "bg-emerald-400 animate-pulse";
 
+                            const isExpanded = topic.id === expandedTopicId;
+
                             return (
-                              <div key={topic.id} className="p-3.5 sm:p-4 bg-slate-50 border border-slate-200/50 hover:border-slate-200/60 rounded-2.5xl flex flex-col gap-3 sm:gap-3.5 text-left transition-colors relative group">
-                                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 sm:gap-3">
-                                  <div className="space-y-1 pr-2 sm:truncate min-w-0">
-                                    <h5 className="font-serif font-extrabold text-slate-800 text-sm sm:text-xs leading-tight">
+                              <div 
+                                key={topic.id} 
+                                className={cn(
+                                  "bg-slate-50/50 border border-slate-200/50 hover:border-slate-200/80 rounded-2xl flex flex-col text-left transition-all duration-200 relative group overflow-hidden shadow-3xs cursor-pointer",
+                                  isExpanded ? "p-3.5 gap-3 bg-white ring-1 ring-slate-100" : "p-3 gap-0"
+                                )}
+                                onClick={() => setExpandedTopicId(isExpanded ? null : topic.id)}
+                              >
+                                {/* Collapsed Header Row */}
+                                <div className="flex items-start justify-between gap-3 min-w-0">
+                                  <div className="space-y-0.5 pr-2 truncate min-w-0 flex-1">
+                                    <h5 className="font-serif font-extrabold text-slate-800 text-sm sm:text-xs leading-snug">
                                       {topic.name}
                                     </h5>
                                     {topic.desc && (
-                                      <p className="text-slate-500 text-xs sm:text-[10px] font-medium leading-relaxed">
+                                      <p className={cn(
+                                        "text-slate-500 text-xs sm:text-[10px] leading-relaxed transition-all",
+                                        isExpanded ? "font-medium" : "font-normal truncate block"
+                                      )}>
                                         {topic.desc}
                                       </p>
                                     )}
                                   </div>
 
-                                  {/* Topic Actions & Status Menu */}
-                                  <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:gap-2 w-full sm:w-auto shrink-0 mt-2 sm:mt-0 border-t border-slate-200/30 pt-2 sm:border-0 sm:pt-0">
-                                    <button
-                                      onClick={() => handleToggleSyllabusStatus(activeColl.id, topic.id)}
-                                      className={cn(
-                                        "px-3 py-1.5 sm:px-2.5 sm:py-1 rounded-lg text-[10px] sm:text-[8px] font-black uppercase tracking-wider border transition-all cursor-pointer shrink-0 active:scale-95 flex items-center gap-1.5",
-                                        status === 'not_started' && "bg-slate-50 border-slate-200/50 text-slate-500 hover:bg-slate-100 hover:text-slate-800",
-                                        status === 'in_progress' && "bg-amber-500/10 border-amber-500/25 text-amber-650 hover:bg-amber-500/20",
-                                        status === 'completed' && "bg-emerald-500/10 border-emerald-500/25 text-emerald-650 hover:bg-emerald-500/20"
-                                      )}
-                                      title="Toggle status"
-                                    >
-                                      <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", indicatorColor)} />
-                                      <span>{statusLabel}</span>
-                                    </button>
-
-                                    {/* Action Buttons Toolbar */}
-                                    <div className="flex items-center bg-slate-50 border border-slate-200/50 rounded-lg p-0.5 opacity-100 sm:opacity-60 sm:group-hover:opacity-100 transition-opacity">
+                                  {/* Simple indicator & collapse chevron */}
+                                  <div className="flex items-center gap-2.5 shrink-0 pt-0.5" onClick={(e) => e.stopPropagation()}>
+                                    {!isExpanded && (
                                       <button
-                                        onClick={() => {
-                                          setEditingTopicId(topic.id);
-                                          setEditingTopicName(topic.name);
-                                          setEditingTopicDesc(topic.desc);
-                                        }}
-                                        className="p-1.5 sm:p-1 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-100 transition-colors cursor-pointer active:scale-90"
-                                        title="Edit topic"
+                                        onClick={() => handleToggleSyllabusStatus(activeColl.id, topic.id)}
+                                        className={cn(
+                                          "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border transition-all cursor-pointer flex items-center gap-1",
+                                          status === 'not_started' && "bg-slate-50 border-slate-200/50 text-slate-500 hover:bg-slate-100",
+                                          status === 'in_progress' && "bg-amber-500/10 border-amber-500/25 text-amber-650",
+                                          status === 'completed' && "bg-emerald-500/10 border-emerald-500/25 text-emerald-650"
+                                        )}
+                                        title="Quick status toggle"
                                       >
-                                        <Edit3 className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
+                                        <div className={cn("w-1 h-1 rounded-full shrink-0", indicatorColor)} />
+                                        <span>{statusLabel.replace("Not Started", "Pending").replace("In Progress", "Doing").replace("Completed", "Done")}</span>
                                       </button>
-                                      <button
-                                        onClick={() => handleMoveTopic(activeColl.id, topic.id, 'up')}
-                                        className="p-1.5 sm:p-1 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-100 transition-colors cursor-pointer active:scale-90"
-                                        title="Move Up"
-                                      >
-                                        <ChevronUp className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
-                                      </button>
-                                      <button
-                                        onClick={() => handleMoveTopic(activeColl.id, topic.id, 'down')}
-                                        className="p-1.5 sm:p-1 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-100 transition-colors cursor-pointer active:scale-90"
-                                        title="Move Down"
-                                      >
-                                        <ChevronDown className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
-                                      </button>
-                                      <button
-                                        onClick={() => handleDeleteTopic(activeColl.id, topic.id)}
-                                        className="p-1.5 sm:p-1 text-slate-500 hover:text-red-400 rounded hover:bg-slate-100 transition-colors cursor-pointer active:scale-90"
-                                        title="Delete topic"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
-                                      </button>
-                                    </div>
+                                    )}
+                                    <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform duration-300", isExpanded && "rotate-180")} />
                                   </div>
                                 </div>
-                                
-                                {/* Action buttons */}
-                                <div className="flex gap-2.5 sm:gap-2">
-                                  <button
-                                    onClick={() => {
-                                      handleSendMessage(`Provide a comprehensive, exam-oriented study summary for: "${topic.name}" (${topic.desc}) under the context of the "${targetExam}" syllabus. List 3 high-yield exam subtopics, 2 historical/factual reference points or formulas to memorize for the exam, and 1 core takeaway/practical tip.`);
-                                      // Delay scroll slightly so the message appends to DOM first
-                                      setTimeout(() => scrollToElement('chat-pane', { block: 'start' }), 150);
-                                    }}
-                                    className="flex-1 py-3 sm:py-2 bg-slate-50 border border-slate-200/60 hover:bg-[#8A1C36]/8 hover:border-[#8A1C36]/30 hover:text-[#8A1C36] text-slate-600 text-xs sm:text-[9px] font-black uppercase tracking-widest rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 shadow-sm"
-                                    title="Ask personal AI tutor for summary"
-                                  >
-                                    <HelpCircle className="w-3.5 h-3.5" />
-                                    Ask Tutor
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      // Switch to quiz tab first so quiz-pane renders in DOM, then scroll
-                                      setActiveRightTab('quiz');
-                                      handleTriggerQuizFromSyllabus(topic.name);
-                                      setTimeout(() => scrollToElement('quiz-pane', { block: 'start' }), 200);
-                                    }}
-                                    className="flex-1 py-3 sm:py-2 bg-[#8A1C36] hover:bg-[#a12340] text-white text-xs sm:text-[9px] font-black uppercase tracking-widest rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 shadow-lg shadow-red-950/20"
-                                    title="Test yourself with dynamic MCQs"
-                                  >
-                                    <Target className="w-3.5 h-3.5" />
-                                    Quiz Me
-                                  </button>
-                                </div>
+
+                                {/* Expanded Action Panel */}
+                                {isExpanded && (
+                                  <div className="space-y-3.5 pt-3 border-t border-slate-100 animate-fade-down" onClick={(e) => e.stopPropagation()}>
+                                    
+                                    {/* Status & Options Toolbar */}
+                                    <div className="flex items-center justify-between gap-3 bg-slate-50 border border-slate-200/50 rounded-xl p-2">
+                                      <button
+                                        onClick={() => handleToggleSyllabusStatus(activeColl.id, topic.id)}
+                                        className={cn(
+                                          "px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all cursor-pointer flex items-center gap-1.5 shrink-0 active:scale-95 bg-white",
+                                          status === 'not_started' && "border-slate-200/60 text-slate-500 hover:bg-slate-50",
+                                          status === 'in_progress' && "border-amber-500/25 text-amber-650 bg-amber-500/5 hover:bg-amber-500/10",
+                                          status === 'completed' && "border-emerald-500/25 text-emerald-650 bg-emerald-500/5 hover:bg-emerald-500/10"
+                                        )}
+                                      >
+                                        <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", indicatorColor)} />
+                                        <span>{statusLabel}</span>
+                                      </button>
+
+                                      {/* Action Buttons Toolbar */}
+                                      <div className="flex items-center gap-0.5">
+                                        <button
+                                          onClick={() => {
+                                            setEditingTopicId(topic.id);
+                                            setEditingTopicName(topic.name);
+                                            setEditingTopicDesc(topic.desc);
+                                          }}
+                                          className="p-1.5 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-white transition-colors cursor-pointer active:scale-90 border border-transparent hover:border-slate-200/40"
+                                          title="Edit topic"
+                                        >
+                                          <Edit3 className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                          onClick={() => handleMoveTopic(activeColl.id, topic.id, 'up')}
+                                          className="p-1.5 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-white transition-colors cursor-pointer active:scale-90 border border-transparent hover:border-slate-200/40"
+                                          title="Move Up"
+                                        >
+                                          <ChevronUp className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                          onClick={() => handleMoveTopic(activeColl.id, topic.id, 'down')}
+                                          className="p-1.5 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-white transition-colors cursor-pointer active:scale-90 border border-transparent hover:border-slate-200/40"
+                                          title="Move Down"
+                                        >
+                                          <ChevronDown className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeleteTopic(activeColl.id, topic.id)}
+                                          className="p-1.5 text-slate-500 hover:text-red-400 rounded-lg hover:bg-white transition-colors cursor-pointer active:scale-90 border border-transparent hover:border-slate-200/40"
+                                          title="Delete topic"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    {/* Summary & Quiz Action buttons */}
+                                    <div className="flex gap-2.5">
+                                      <button
+                                        onClick={() => {
+                                          handleSendMessage(`Provide a comprehensive, exam-oriented study summary for: "${topic.name}" (${topic.desc}) under the context of the "${targetExam}" syllabus. List 3 high-yield exam subtopics, 2 historical/factual reference points or formulas to memorize for the exam, and 1 core takeaway/practical tip.`);
+                                          setTimeout(() => scrollToElement('chat-pane', { block: 'start' }), 150);
+                                        }}
+                                        className="flex-1 py-2.5 bg-slate-50 border border-slate-200/60 hover:bg-[#8A1C36]/8 hover:border-[#8A1C36]/30 hover:text-[#8A1C36] text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs cursor-pointer"
+                                        title="Ask personal AI tutor for summary"
+                                      >
+                                        <HelpCircle className="w-3.5 h-3.5" />
+                                        Ask Tutor
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setActiveRightTab('quiz');
+                                          handleTriggerQuizFromSyllabus(topic.name);
+                                          setTimeout(() => scrollToElement('quiz-pane', { block: 'start' }), 200);
+                                        }}
+                                        className="flex-1 py-2.5 bg-[#8A1C36] hover:bg-[#a12340] text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 shadow-md shadow-red-950/10 border-none cursor-pointer"
+                                        title="Test yourself with dynamic MCQs"
+                                      >
+                                        <Target className="w-3.5 h-3.5" />
+                                        Quiz Me
+                                      </button>
+                                    </div>
+
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
@@ -5938,12 +6037,10 @@ JSON structure:
                 </button>
               </div>
             )}
-
-            {/* Category Tab Switcher & Workspace Toolbar */}
             {formulaCategories.length > 0 && (
               <div className="space-y-4">
-                {/* Dynamic Category Pill Switcher */}
-                <div className="flex flex-wrap gap-2 text-left">
+                {/* Dynamic Category Pill Switcher - Horizontal Scrollable */}
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 w-full shrink-0">
                   {formulaCategories.map((cat) => {
                     const isActive = cat.id === activeFormulaCatId;
 
@@ -5955,10 +6052,10 @@ JSON structure:
                           setEditingFormulaCatId(null);
                         }}
                         className={cn(
-                          "px-4.5 py-2.5 sm:px-4 sm:py-2 text-[10.5px] sm:text-[10px] font-black uppercase tracking-wider rounded-xl border transition-all duration-200 cursor-pointer active:scale-95 flex items-center gap-1.5 relative",
+                          "px-4 py-2 text-[10px] font-black uppercase tracking-wider rounded-xl border transition-all duration-200 cursor-pointer active:scale-95 flex items-center gap-1.5 relative shrink-0 select-none",
                           isActive 
-                            ? "text-indigo-650 border-indigo-500/40" 
-                            : "bg-slate-50 border-slate-200/50 text-slate-500 hover:text-slate-800 hover:bg-slate-100 hover:text-slate-800/40 hover:border-slate-200/60"
+                            ? "text-indigo-650 border-indigo-500/40 bg-indigo-500/5 font-extrabold" 
+                            : "bg-white border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50"
                         )}
                       >
                         {isActive && (
@@ -5984,7 +6081,7 @@ JSON structure:
                   const isEditing = activeCat.id === editingFormulaCatId;
 
                   return (
-                    <div className="bg-slate-50 border border-slate-200/50 p-3 sm:p-3.5 rounded-2xl flex items-center justify-between gap-3 text-left animate-fade-in">
+                    <div className="bg-slate-50/50 border border-slate-200/50 p-2.5 rounded-xl flex items-center justify-between gap-3 text-left animate-fade-in shadow-2xs">
                       <div className="flex-1 min-w-0">
                         {isEditing ? (
                           <div className="flex items-center gap-1.5 w-full">
@@ -5998,14 +6095,14 @@ JSON structure:
                             />
                             <button
                               onClick={() => handleRenameFormulaCategory(activeCat.id, editingFormulaCatName)}
-                              className="p-2 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-650 rounded-lg shrink-0 transition-all cursor-pointer active:scale-95"
+                              className="p-1.5 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-650 rounded-lg shrink-0 transition-all cursor-pointer active:scale-95"
                               title="Save Name"
                             >
                               <Check className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => setEditingFormulaCatId(null)}
-                              className="p-2 bg-slate-50 border border-slate-200/60 hover:bg-slate-100 text-slate-500 rounded-lg shrink-0 transition-all cursor-pointer active:scale-95"
+                              className="p-1.5 bg-slate-50 border border-slate-200/60 hover:bg-slate-100 text-slate-500 rounded-lg shrink-0 transition-all cursor-pointer active:scale-95"
                               title="Cancel"
                             >
                               <Square className="w-3.5 h-3.5" />
@@ -6014,8 +6111,8 @@ JSON structure:
                         ) : (
                           <div className="flex items-center gap-2 min-w-0">
                             <div className="min-w-0 flex-1">
-                              <span className="text-[10px] sm:text-[8px] font-black uppercase tracking-widest text-slate-500 block mb-0.5">Category Workspace</span>
-                              <h5 className="font-serif font-extrabold text-slate-800 text-sm flex items-center gap-1.5 min-w-0">
+                              <span className="text-[8px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">Category Workspace</span>
+                              <h5 className="font-serif font-extrabold text-slate-800 text-xs flex items-center gap-1.5 min-w-0 leading-none">
                                 <span className="truncate max-w-[130px] xs:max-w-[180px] sm:max-w-[280px] md:max-w-none block">
                                   {activeCat.name}
                                 </span>
@@ -6024,7 +6121,7 @@ JSON structure:
                                     setEditingFormulaCatId(activeCat.id);
                                     setEditingFormulaCatName(activeCat.name);
                                   }}
-                                  className="text-slate-500 hover:text-amber-650 transition-colors p-1 rounded hover:bg-slate-150 shrink-0 cursor-pointer"
+                                  className="text-slate-400 hover:text-amber-650 transition-colors p-1 rounded hover:bg-slate-150 shrink-0 cursor-pointer"
                                   title="Rename Category"
                                 >
                                   <Edit3 className="w-3 h-3" />
@@ -6039,22 +6136,22 @@ JSON structure:
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={() => handleMoveFormulaCategory(activeCat.id, 'up')}
-                          className="p-2.5 sm:p-2 bg-white border border-slate-200/50 hover:border-slate-200/60 hover:bg-slate-100 text-slate-650 transition-all cursor-pointer active:scale-90 rounded-xl"
+                          className="p-1.5 bg-white border border-slate-200 text-slate-400 hover:text-slate-700 hover:border-slate-350 rounded-lg transition-all cursor-pointer active:scale-90"
                           title="Move Left/Up"
                         >
                           <ArrowLeft className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleMoveFormulaCategory(activeCat.id, 'down')}
-                          className="p-2.5 sm:p-2 bg-white border border-slate-200/50 hover:border-slate-200/60 hover:bg-slate-100 text-slate-650 transition-all cursor-pointer active:scale-90 rounded-xl"
+                          className="p-1.5 bg-white border border-slate-200 text-slate-400 hover:text-slate-700 hover:border-slate-350 rounded-lg transition-all cursor-pointer active:scale-90"
                           title="Move Right/Down"
                         >
                           <ArrowRight className="w-3.5 h-3.5" />
                         </button>
-                        <div className="w-px h-5 bg-slate-200 mx-1 shrink-0" />
+                        <div className="w-px h-4 bg-slate-200 mx-0.5 shrink-0" />
                         <button
                           onClick={() => handleDeleteFormulaCategory(activeCat.id)}
-                          className="p-2.5 sm:p-2 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-500 rounded-xl transition-all cursor-pointer active:scale-90"
+                          className="p-1.5 bg-red-50 border border-red-200 hover:bg-red-500 hover:border-red-500 hover:text-white text-red-500 rounded-lg transition-all cursor-pointer active:scale-90"
                           title="Delete Category"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -6157,7 +6254,7 @@ JSON structure:
               }
 
               return (
-                <div className="space-y-3 pr-1">
+                <div className="space-y-2.5 pr-1">
                   {filtered.map((card, idx) => {
                     const isRevealed = !flashcardMode || revealedFlashcards[card.title];
                     const isEditing = editingFormulaKey === activeFormulaCatId && editingFormulaIndex === card.id;
@@ -6166,48 +6263,48 @@ JSON structure:
                       return (
                         <div 
                           key={card.id} 
-                          className="p-4 bg-slate-50 border border-indigo-500/30 rounded-2xl space-y-3.5 text-left animate-fade-in"
+                          className="p-4 bg-slate-50 border border-indigo-500/30 rounded-2xl space-y-3.5 text-left animate-fade-in shadow-2xs"
                         >
                           <div className="space-y-1.5">
-                            <label className="text-[9px] sm:text-[8px] font-black uppercase tracking-widest text-slate-500 block px-1">Rename Title</label>
+                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block px-1">Rename Title</label>
                             <input
                               type="text"
                               value={editingFormulaTitle}
                               onChange={(e) => setEditingFormulaTitle(e.target.value)}
-                              className="w-full bg-white border border-slate-200/60 rounded-xl px-3 py-2 sm:px-2.5 sm:py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 font-semibold"
+                              className="w-full bg-white border border-slate-200/60 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 font-semibold"
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <label className="text-[9px] sm:text-[8px] font-black uppercase tracking-widest text-slate-500 block px-1">Formula</label>
+                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block px-1">Formula</label>
                             <input
                               type="text"
                               value={editingFormulaVal}
                               onChange={(e) => setEditingFormulaVal(e.target.value)}
-                              className="w-full bg-white border border-slate-200/60 rounded-xl px-3 py-2 sm:px-2.5 sm:py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 font-semibold"
+                              className="w-full bg-white border border-slate-200/60 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 font-semibold"
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <label className="text-[9px] sm:text-[8px] font-black uppercase tracking-widest text-slate-500 block px-1">Trick / Shortcut</label>
+                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block px-1">Trick / Shortcut</label>
                             <input
                               type="text"
                               value={editingFormulaShortcut}
                               onChange={(e) => setEditingFormulaShortcut(e.target.value)}
-                              className="w-full bg-white border border-slate-200/60 rounded-xl px-3 py-2 sm:px-2.5 sm:py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 font-semibold"
+                              className="w-full bg-white border border-slate-200/60 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 font-semibold"
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <label className="text-[9px] sm:text-[8px] font-black uppercase tracking-widest text-slate-500 block px-1">Example</label>
+                            <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 block px-1">Example</label>
                             <input
                               type="text"
                               value={editingFormulaExample}
                               onChange={(e) => setEditingFormulaExample(e.target.value)}
-                              className="w-full bg-white border border-slate-200/60 rounded-xl px-3 py-2 sm:px-2.5 sm:py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 font-semibold"
+                              className="w-full bg-white border border-slate-200/60 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500/40 font-semibold"
                             />
                           </div>
                           <div className="flex gap-2 pt-1">
                             <button
                               onClick={() => handleEditFormula(activeFormulaCatId, card.id)}
-                              className="flex-1 py-2.5 sm:py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] sm:text-[9px] font-black uppercase tracking-widest cursor-pointer font-bold active:scale-95"
+                              className="flex-1 py-2 bg-indigo-650 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest cursor-pointer font-bold active:scale-95"
                             >
                               Save Details
                             </button>
@@ -6216,7 +6313,7 @@ JSON structure:
                                 setEditingFormulaKey(null);
                                 setEditingFormulaIndex(null);
                               }}
-                              className="px-4 py-2.5 sm:px-3.5 sm:py-1.5 border border-slate-200/60 hover:bg-slate-100 text-slate-400 rounded-lg text-[10px] sm:text-[9px] font-black uppercase tracking-widest cursor-pointer active:scale-95"
+                              className="px-4 py-2 border border-slate-200/60 hover:bg-slate-100 text-slate-400 rounded-lg text-[10px] font-black uppercase tracking-widest cursor-pointer active:scale-95"
                             >
                               Cancel
                             </button>
@@ -6225,118 +6322,133 @@ JSON structure:
                       );
                     }
 
+                    const isExpanded = card.id === expandedFormulaId;
+
                     return (
                       <div 
                         key={card.id} 
                         className={cn(
-                          "p-4 border rounded-2xl text-left transition-all duration-300 relative overflow-hidden",
+                          "border rounded-2xl text-left transition-all duration-200 relative overflow-hidden shadow-3xs cursor-pointer",
                           flashcardMode 
                             ? isRevealed 
                               ? "bg-slate-50 border-indigo-500/25" 
-                              : "bg-indigo-950/20 border-indigo-500/10 cursor-pointer hover:bg-indigo-950/30"
-                            : "bg-slate-50 border-slate-200/50"
+                              : "bg-indigo-950/20 border-indigo-500/10 hover:bg-indigo-950/30"
+                            : "bg-slate-50/50 border-slate-200/50 hover:border-slate-200/80",
+                          isExpanded ? "p-3.5 gap-3 bg-white ring-1 ring-slate-100" : "p-3 gap-0"
                         )}
                         onClick={() => {
                           if (flashcardMode && !isRevealed) {
                             toggleFlashcardReveal(card.title);
+                          } else {
+                            setExpandedFormulaId(isExpanded ? null : card.id);
                           }
                         }}
                       >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4">
-                          <span className="text-[10.5px] sm:text-[9px] font-black uppercase tracking-wider text-indigo-650">
-                            {card.title}
-                          </span>
-                          
-                          <div className="flex items-center justify-between sm:justify-end gap-1.5 border-t border-slate-200/30 pt-2 mt-1 sm:border-0 sm:pt-0 sm:mt-0 w-full sm:w-auto shrink-0">
-                            <div className="flex items-center gap-1.5">
-                              {/* Copy button */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCopyShortcut(card);
-                                }}
-                                className="p-1.5 sm:p-1 border border-slate-200/60 hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded-lg transition-colors cursor-pointer"
-                                title="Copy shortcut"
-                              >
-                                <Copy className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
-                              </button>
+                        <div className="flex items-start justify-between gap-3 min-w-0">
+                          <div className="space-y-0.5 pr-2 truncate min-w-0 flex-1">
+                            <span className="text-[10.5px] sm:text-[9px] font-black uppercase tracking-wider text-indigo-650">
+                              {card.title}
+                            </span>
+                            
+                            {/* Fast preview of formula content */}
+                            {!isExpanded && isRevealed && (
+                              <div className="font-mono text-[10.5px] font-semibold text-slate-500 truncate block mt-0.5 max-w-[190px] xs:max-w-[240px] sm:max-w-none">
+                                {card.formula}
+                              </div>
+                            )}
+                          </div>
 
-                              {/* Edit button */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingFormulaKey(activeFormulaCatId);
-                                  setEditingFormulaIndex(card.id);
-                                  setEditingFormulaTitle(card.title);
-                                  setEditingFormulaVal(card.formula);
-                                  setEditingFormulaShortcut(card.shortcut);
-                                  setEditingFormulaExample(card.example);
-                                }}
-                                className="p-1.5 sm:p-1 border border-slate-200/60 hover:bg-slate-100 text-slate-500 hover:text-amber-650 rounded-lg transition-colors cursor-pointer"
-                                title="Edit formula"
-                              >
-                                <Edit3 className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
-                              </button>
-
-                              {/* Delete button */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteFormula(activeFormulaCatId, card.id);
-                                }}
-                                className="p-1.5 sm:p-1 border border-slate-200/60 hover:bg-slate-100 text-slate-500 hover:text-red-550 rounded-lg transition-colors cursor-pointer"
-                                title="Delete formula"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
-                              </button>
-                            </div>
-
-                            {/* Practice button */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePracticeFormula(card.title, `${card.formula} | ${card.shortcut}`);
-                              }}
-                              className="py-1.5 px-3 sm:py-1 sm:px-2 bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500 hover:text-slate-950 text-indigo-650 text-[10px] sm:text-[9px] font-black uppercase tracking-wider rounded-lg transition-colors cursor-pointer active:translate-y-0.5"
-                            >
-                              Practice This
-                            </button>
+                          {/* Collapse chevron */}
+                          <div className="flex items-center gap-1.5 shrink-0 pt-0.5" onClick={(e) => e.stopPropagation()}>
+                            {flashcardMode && isRevealed && (
+                              <span className="text-[8px] font-black uppercase tracking-wider text-slate-400 bg-white border border-slate-200 px-1.5 py-0.5 rounded-md leading-none">Revealed</span>
+                            )}
+                            <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform duration-300", isExpanded && "rotate-180")} />
                           </div>
                         </div>
 
                         {/* Card Content display */}
-                        <div className="mt-2.5 space-y-2 relative">
+                        <div className="mt-2.5 space-y-2 relative" onClick={(e) => e.stopPropagation()}>
                           {flashcardMode && !isRevealed ? (
-                            <div className="py-4 flex flex-col items-center justify-center text-[11px] sm:text-[10px] font-black uppercase tracking-widest text-indigo-650/80">
+                            <div className="py-4 flex flex-col items-center justify-center text-[10px] font-black uppercase tracking-widest text-indigo-650/80">
                               <span>❓ Tap Card to Reveal Formula</span>
                             </div>
                           ) : (
-                            <div className="space-y-1.5 animate-fade-in">
-                              <div className="font-mono text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200/50 p-2.5 rounded-lg leading-relaxed overflow-x-auto custom-scrollbar">
-                                <FormulaRenderer formula={card.formula} />
+                            isExpanded && (
+                              <div className="space-y-3.5 animate-fade-in">
+                                <div className="font-mono text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200/50 p-2.5 rounded-lg leading-relaxed overflow-x-auto custom-scrollbar">
+                                  <FormulaRenderer formula={card.formula} />
+                                </div>
+                                {card.shortcut && (
+                                  <p className="text-slate-500 text-xs sm:text-[10px] font-semibold leading-relaxed">
+                                    <span className="font-extrabold text-slate-800">Trick:</span> {card.shortcut}
+                                  </p>
+                                )}
+                                {card.example && (
+                                  <p className="text-slate-500 text-xs sm:text-[10px] font-semibold leading-relaxed">
+                                    <span className="font-extrabold text-slate-500">e.g.,</span> {card.example}
+                                  </p>
+                                )}
+
+                                <div className="border-t border-slate-100 my-1" />
+
+                                {/* Action Buttons Toolbar */}
+                                <div className="flex items-center justify-between gap-3 bg-slate-50 border border-slate-200/50 rounded-xl p-2">
+                                  <div className="flex items-center gap-0.5">
+                                    {/* Copy button */}
+                                    <button
+                                      onClick={() => handleCopyShortcut(card)}
+                                      className="p-1.5 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-white transition-colors cursor-pointer border border-transparent hover:border-slate-200/40"
+                                      title="Copy shortcut"
+                                    >
+                                      <Copy className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    {/* Edit button */}
+                                    <button
+                                      onClick={() => {
+                                        setEditingFormulaKey(activeFormulaCatId);
+                                        setEditingFormulaIndex(card.id);
+                                        setEditingFormulaTitle(card.title);
+                                        setEditingFormulaVal(card.formula);
+                                        setEditingFormulaShortcut(card.shortcut);
+                                        setEditingFormulaExample(card.example);
+                                      }}
+                                      className="p-1.5 text-slate-500 hover:text-amber-650 rounded-lg hover:bg-white transition-colors cursor-pointer border border-transparent hover:border-slate-200/40"
+                                      title="Edit formula"
+                                    >
+                                      <Edit3 className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    {/* Delete button */}
+                                    <button
+                                      onClick={() => handleDeleteFormula(activeFormulaCatId, card.id)}
+                                      className="p-1.5 text-slate-500 hover:text-red-550 rounded-lg hover:bg-white transition-colors cursor-pointer border border-transparent hover:border-slate-200/40"
+                                      title="Delete formula"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+
+                                  {/* Practice button */}
+                                  <button
+                                    onClick={() => handlePracticeFormula(card.title, `${card.formula} | ${card.shortcut}`)}
+                                    className="py-1.5 px-3 bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-650 hover:text-white text-indigo-650 text-[10px] font-black uppercase tracking-wider rounded-lg transition-colors cursor-pointer active:translate-y-0.5 shadow-2xs border-none"
+                                  >
+                                    Practice This
+                                  </button>
+                                </div>
+
+                                {flashcardMode && (
+                                  <button
+                                    onClick={() => toggleFlashcardReveal(card.title)}
+                                    className="text-[9px] font-black uppercase text-indigo-650 hover:text-indigo-300 block pt-1 cursor-pointer"
+                                  >
+                                    🙈 Hide card details
+                                  </button>
+                                )}
                               </div>
-                              {card.shortcut && (
-                                <p className="text-slate-500 text-xs sm:text-[10px] font-semibold leading-relaxed">
-                                  <span className="font-extrabold text-slate-800">Trick:</span> {card.shortcut}
-                                </p>
-                              )}
-                              {card.example && (
-                                <p className="text-slate-500 text-xs sm:text-[10px] font-semibold leading-relaxed">
-                                  <span className="font-extrabold text-slate-500">e.g.,</span> {card.example}
-                                </p>
-                              )}
-                              {flashcardMode && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleFlashcardReveal(card.title);
-                                  }}
-                                  className="text-[10px] sm:text-[9px] font-black uppercase text-indigo-650 hover:text-indigo-300 block pt-1 cursor-pointer"
-                                >
-                                  🙈 Hide card details
-                                </button>
-                              )}
-                            </div>
+                            )
                           )}
                         </div>
                       </div>
