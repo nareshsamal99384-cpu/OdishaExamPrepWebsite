@@ -165,65 +165,83 @@ const HistoryView = ({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="border-b border-slate-100 pb-4 space-y-2">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200/50 flex items-center justify-center shrink-0">
-              <History className="w-5.5 h-5.5 text-[#8A1C36]" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight mt-0.5 sm:mt-0">Your Activity History</h2>
-            </div>
+    <div className="space-y-5">
+      {/* ── Section header ── */}
+      <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-50 border border-slate-200/50 flex items-center justify-center shrink-0">
+            <History className="w-4 h-4 sm:w-5 sm:h-5 text-[#8A1C36]" />
           </div>
-
-          {activities.length > 0 && (
-            <div className="shrink-0">
-              {confirmClearAll ? (
-                <div className="flex items-center gap-1.5 sm:gap-2 animate-in fade-in duration-200">
-                  <span className="text-[10px] sm:text-xs font-semibold text-slate-500 hidden xs:inline">Clear all?</span>
-                  <button
-                    onClick={async () => {
-                      await handleClearAll();
-                    }}
-                    className="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-wider cursor-pointer border-none shadow-sm"
-                  >
-                    Confirm
-                  </button>
-                  <button
-                    onClick={() => setConfirmClearAll(false)}
-                    className="px-2.5 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-[10px] font-black uppercase tracking-wider cursor-pointer border-none"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setConfirmClearAll(true)}
-                  className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-50 hover:bg-rose-50/70 text-slate-500 hover:text-rose-600 border border-slate-200/60 text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Clear All</span>
-                </button>
-              )}
-            </div>
-          )}
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight">
+              Activity History
+            </h2>
+            <p className="text-[10px] font-semibold text-slate-400 leading-none mt-0.5 hidden sm:block">
+              Manage and track your exam sessions
+            </p>
+          </div>
         </div>
-        <p className="text-[10px] sm:text-xs font-semibold text-slate-400 pl-[52px] leading-relaxed">
-          Manage and track your exam mock tests and practice sessions
-        </p>
+
+        {activities.length > 0 && (
+          <div className="shrink-0">
+            {confirmClearAll ? (
+              <div className="flex items-center gap-1.5 animate-in fade-in duration-200">
+                <button
+                  onClick={async () => { await handleClearAll(); }}
+                  className="px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-wider cursor-pointer border-none shadow-sm"
+                >
+                  Confirm
+                </button>
+                <button
+                  onClick={() => setConfirmClearAll(false)}
+                  className="px-2.5 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-[10px] font-black uppercase tracking-wider cursor-pointer border-none"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmClearAll(true)}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-50 hover:bg-rose-50/70 text-slate-400 hover:text-rose-600 border border-slate-200/60 text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer shadow-xs"
+              >
+                <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <span className="hidden sm:inline">Clear All</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      <div className="grid gap-4">
+      {/* ── Activity cards ── */}
+      <div className="grid gap-2.5 sm:gap-3">
         {activities.map((a, i) => {
           const isTestResult = !!a.metadata && a.type !== 'question_bank_accessed';
           const isAiQuiz = a.type === 'practice_test_completed';
           const isDownloadable = a.type === 'question_bank_accessed' && !!a.metadata?.pdfUrl;
           const isInteractive = isTestResult || isDownloadable || a.type === 'test_incomplete';
 
+          // Left accent stripe colour by type
+          const accentColor =
+            a.type === 'test_incomplete'        ? 'bg-amber-400' :
+            isAiQuiz                             ? 'bg-purple-500' :
+            a.type === 'question_bank_accessed'  ? 'bg-blue-400'  :
+                                                   'bg-brand-500';
+
+          // Compact timestamp: "3 Jul · 08:10"
+          const d = new Date(a.timestamp);
+          const compactDate =
+            d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) +
+            ' · ' +
+            d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+          const titleText =
+            !isNaN(Number(a.title)) && a.metadata?.testCategory?.toLowerCase().includes('mock')
+              ? `Mock Test #${a.title}`
+              : a.title;
+
           return (
-            <div 
-              key={i} 
+            <div
+              key={i}
               onClick={() => {
                 if (isDownloadable) {
                   window.open(a.metadata.pdfUrl, '_blank');
@@ -234,127 +252,116 @@ const HistoryView = ({
                 }
               }}
               className={cn(
-                "relative bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6 transition-all group overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:shadow-md",
-                isInteractive ? "cursor-pointer hover:border-brand-500 hover:shadow-brand-500/5" : ""
+                "relative bg-white rounded-2xl border border-slate-200/50 overflow-hidden transition-all group shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-md flex",
+                isInteractive ? "cursor-pointer hover:border-brand-400/50 hover:shadow-brand-500/5" : ""
               )}
             >
-              {/* Confirm Single Delete Overlay */}
-              {confirmDeleteId === a.id && (
-                <div 
-                  className="absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-6 z-20 animate-in fade-in duration-200"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <span className="text-xs sm:text-sm font-bold text-slate-800 text-center">Delete this activity from your history?</span>
-                  <div className="flex gap-2">
+              {/* ── Left accent stripe ── */}
+              <div className={cn("w-[3px] shrink-0 self-stretch", accentColor)} />
+
+              {/* ── Card body ── */}
+              <div className="flex-1 min-w-0 px-3.5 py-3 sm:px-5 sm:py-4 flex flex-col gap-1.5">
+
+                {/* Confirm delete overlay */}
+                {confirmDeleteId === a.id && (
+                  <div
+                    className="absolute inset-0 bg-white/97 backdrop-blur-sm flex flex-col items-center justify-center gap-3 px-6 z-20 animate-in fade-in duration-200 rounded-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span className="text-xs font-bold text-slate-800 text-center">Delete this activity?</span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={async () => { await handleDeleteActivity(a.id); }}
+                        className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-wider cursor-pointer border-none shadow-md active:scale-95 transition-all"
+                      >Delete</button>
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-black uppercase tracking-wider cursor-pointer border-none active:scale-95 transition-all"
+                      >Cancel</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Row 1 — title + action buttons */}
+                <div className="flex items-start justify-between gap-2">
+                  <h4 className="font-extrabold text-sm sm:text-base text-slate-900 leading-snug group-hover:text-brand-600 transition-colors line-clamp-2 flex-1 min-w-0">
+                    {titleText}
+                  </h4>
+                  <div className="flex items-center gap-1 shrink-0 -mt-0.5 -mr-1.5">
+                    {(isTestResult || a.type === 'test_incomplete') && (
+                      <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center bg-brand-50 text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition-all shrink-0 border border-brand-100/30">
+                        {a.type === 'test_incomplete'
+                          ? <Play className="w-2.5 h-2.5 sm:w-3 sm:h-3 ml-px fill-current" />
+                          : <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 ml-px" />}
+                      </div>
+                    )}
                     <button
-                      onClick={async () => {
-                        await handleDeleteActivity(a.id);
-                      }}
-                      className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-[10px] sm:text-xs font-black uppercase tracking-wider cursor-pointer border-none shadow-md shadow-rose-600/20 active:scale-95 transition-all"
+                      onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(a.id); }}
+                      className="delete-btn p-1.5 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50/50 active:text-rose-600 transition-all cursor-pointer border-none bg-transparent shrink-0"
+                      title="Delete from history"
                     >
-                      Delete
-                    </button>
-                    <button
-                      onClick={() => setConfirmDeleteId(null)}
-                      className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] sm:text-xs font-black uppercase tracking-wider cursor-pointer border-none active:scale-95 transition-all"
-                    >
-                      Cancel
+                      <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </button>
                   </div>
                 </div>
-              )}
 
-              <div className="flex-1 min-w-0 pr-0 sm:pr-4 w-full">
-                 <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                   {a.metadata?.testCategory && (
-                     <span className="inline-flex items-center px-2 py-0.5 bg-brand-50/70 text-brand-700 rounded-md text-[9px] font-black uppercase tracking-wider leading-none">
-                       {a.metadata.testCategory}
-                     </span>
-                   )}
-                   {a.metadata?.examName && (
-                     <span className="inline-flex items-center px-2 py-0.5 bg-slate-50 text-slate-500 rounded-md text-[9px] font-bold uppercase tracking-wider leading-none max-w-[160px] truncate" title={a.metadata.examName}>
-                       {a.metadata.examName}
-                     </span>
-                   )}
-                   {a.type === 'test_incomplete' && (
-                     <span className="inline-flex items-center px-2 py-0.5 bg-amber-50 text-amber-600 rounded-md text-[9px] font-bold uppercase tracking-wider leading-none">
-                       Incomplete
-                     </span>
-                   )}
-                 </div>
-                 
-                 <h4 className={cn(
-                   "font-extrabold text-sm sm:text-lg text-slate-900 leading-snug transition-colors group-hover:text-brand-600 truncate",
-                 )}>
-                   {!isNaN(Number(a.title)) && a.metadata?.testCategory?.toLowerCase().includes('mock') 
-                     ? `Mock Test #${a.title}` 
-                     : a.title}
-                 </h4>
+                {/* Row 2 — compact date */}
+                <div className="flex items-center gap-1">
+                  <Clock className="w-2.5 h-2.5 text-slate-300 shrink-0" />
+                  <span className="text-[9px] sm:text-[10px] font-medium text-slate-400">{compactDate}</span>
+                </div>
 
-                 <div className="flex items-center gap-1 text-[10px] font-medium text-slate-400 mt-1">
-                   <Clock className="w-3 h-3 text-slate-400/80" />
-                   <span>{new Date(a.timestamp).toLocaleString()}</span>
-                 </div>
+                {/* Row 3 — badges (left) + score/status (right) */}
+                <div className="flex items-center justify-between gap-2 pt-0.5">
+                  <div className="flex flex-wrap items-center gap-1 min-w-0">
+                    {a.metadata?.testCategory && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 bg-brand-50/80 text-brand-700 rounded text-[8px] font-black uppercase tracking-wider leading-none">
+                        {a.metadata.testCategory}
+                      </span>
+                    )}
+                    {a.metadata?.examName && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 bg-slate-50 text-slate-500 rounded text-[8px] font-bold uppercase tracking-wider leading-none max-w-[100px] sm:max-w-[160px] truncate" title={a.metadata.examName}>
+                        {a.metadata.examName}
+                      </span>
+                    )}
+                    {a.type === 'test_incomplete' && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded text-[8px] font-bold uppercase tracking-wider leading-none">
+                        Incomplete
+                      </span>
+                    )}
+                    {a.type === 'question_bank_accessed' && (
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-50/80 text-blue-600 rounded text-[8px] font-bold">
+                        <Download className="w-2.5 h-2.5" />
+                        {isDownloadable ? 'Download' : 'Downloaded'}
+                      </span>
+                    )}
+                  </div>
 
-                 {a.type === 'question_bank_accessed' && (
-                    <div className="inline-flex items-center px-2.5 py-1 bg-blue-50/70 text-blue-600 rounded-lg text-[10px] font-bold mt-2 transition-colors">
-                      <Download className="w-3 h-3 mr-1" /> 
-                      {isDownloadable ? 'Download Again' : 'Downloaded Item'}
-                    </div>
-                 )}
-              </div>
-              
-              {/* Divider line visible only on mobile/tablet to split content cleanly */}
-              <div className="sm:hidden w-full h-[1px] bg-slate-100/60" />
-
-              <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 w-full sm:w-auto">
-                 {a.type === 'test_incomplete' && (
-                   <div className="flex flex-col items-start sm:items-end">
-                      <span className="text-[9px] font-black uppercase text-brand-600 tracking-wider">In Progress</span>
-                      <div className="flex items-center gap-1 text-slate-400 mt-0.5">
-                        <Clock className="w-3 h-3 text-slate-400" />
-                        <span className="text-[11px] font-bold">{Object.keys(a.metadata?.answers || {}).length} Answered</span>
+                  <div className="shrink-0">
+                    {a.type === 'test_incomplete' && (
+                      <div className="flex items-center gap-0.5">
+                        <Clock className="w-2.5 h-2.5 text-brand-400" />
+                        <span className="text-[9px] font-bold text-brand-600">
+                          {Object.keys(a.metadata?.answers || {}).length} answered
+                        </span>
                       </div>
-                   </div>
-                 )}
-                 
-                 {((isTestResult || isAiQuiz) && a.score !== undefined && a.score !== null) && (
-                   <div className="flex flex-col text-left sm:text-right">
+                    )}
+                    {((isTestResult || isAiQuiz) && a.score !== undefined && a.score !== null) && (
                       <div className="flex items-baseline gap-0.5">
-                        <span className="font-extrabold text-slate-900 text-base sm:text-xl">
+                        <span className="font-black text-slate-900 text-sm leading-none">
                           {typeof a.score === 'number' ? Number(a.score.toFixed(2)) : a.score}
                         </span>
-                        <span className="text-slate-400 text-[11px] sm:text-xs font-bold">/{a.totalMarks}</span>
+                        <span className="text-slate-400 text-[9px] font-bold">/{a.totalMarks}</span>
+                        {!isAiQuiz && (
+                          <span className="ml-1 text-[8px] font-bold text-slate-400">
+                            · {Math.round(a.accuracy || 0)}%
+                          </span>
+                        )}
                       </div>
-                      {!isAiQuiz && (
-                        <span className="text-[10px] font-bold text-slate-500 mt-0.5">
-                          {Math.round(a.accuracy || 0)}% Accuracy
-                        </span>
-                      )}
-                   </div>
-                 )}
-                
-                 <div className="flex items-center gap-2 sm:gap-3 ml-auto sm:ml-0">
-                   {(isTestResult || a.type === 'test_incomplete') && (
-                     <div className={cn(
-                       "w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all bg-brand-50 text-brand-600 group-hover:scale-105 group-hover:bg-brand-600 group-hover:text-white shrink-0 border border-brand-100/20"
-                     )}>
-                       {a.type === 'test_incomplete' ? <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-0.5 fill-current" /> : <ChevronRight className="w-4.5 h-4.5 sm:w-5 sm:h-5 ml-0.5" />}
-                     </div>
-                   )}
- 
-                   {/* Delete Button */}
-                   <button
-                     onClick={(e) => {
-                       e.stopPropagation();
-                       setConfirmDeleteId(a.id);
-                     }}
-                     className="delete-btn p-2 rounded-xl text-slate-400 active:text-rose-600 active:bg-rose-50/50 hover:text-rose-600 hover:bg-rose-50/50 transition-all cursor-pointer border-none bg-transparent shrink-0"
-                     title="Delete from history"
-                   >
-                     <Trash2 className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
-                   </button>
-                 </div>
+                    )}
+                  </div>
+                </div>
+
               </div>
             </div>
           );
