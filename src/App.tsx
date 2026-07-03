@@ -2915,26 +2915,54 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-16 md:pb-20 mt-2 md:mt-8">
       {/* Header */}
-      <div className="flex flex-col space-y-2 md:space-y-4 text-center mb-6 md:mb-8 relative">
-        <div className="w-14 h-14 md:w-20 md:h-20 rounded-full flex items-center justify-center mx-auto shadow-inner relative"
-          style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}>
-          <BookMarked className="w-7 h-7 md:w-10 md:h-10 text-white" />
-          <div className="absolute inset-0 rounded-full animate-ping opacity-20"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }} />
-        </div>
-        <h2 className="text-2xl md:text-5xl font-black text-slate-900 tracking-tight">
-          My <span className="premium-text-gradient">Library</span>
-        </h2>
-        <p className="text-slate-500 font-medium text-sm md:text-lg">All your unlocked premium content in one place.</p>
-        <div className="flex justify-center mt-2">
+      {/* Mobile: slim 1-row header; Desktop: centred stacked hero */}
+      <div className="mb-6 md:mb-8 relative">
+        {/* ── Mobile header (hidden on md+) ── */}
+        <div className="flex items-center justify-between gap-3 md:hidden">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+              style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}>
+              <BookMarked className="w-4.5 h-4.5 text-white" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-lg font-black text-slate-900 tracking-tight leading-none">
+                My <span className="premium-text-gradient">Library</span>
+              </h2>
+              <p className="text-slate-500 text-[11px] font-medium truncate mt-0.5">Unlocked premium content</p>
+            </div>
+          </div>
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 font-bold rounded-xl text-xs transition-[background-color,border-color,transform,box-shadow] shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed select-none"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold rounded-xl text-[10px] transition-all shadow-xs active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed select-none shrink-0"
           >
-            <RotateCw className={cn("w-3.5 h-3.5 text-brand-600", refreshing && "animate-spin")} />
-            {refreshing ? 'Syncing Library...' : 'Sync Library'}
+            <RotateCw className={cn("w-3 h-3 text-brand-600", refreshing && "animate-spin")} />
+            {refreshing ? 'Syncing…' : 'Sync'}
           </button>
+        </div>
+
+        {/* ── Desktop stacked hero (hidden on mobile) ── */}
+        <div className="hidden md:flex flex-col space-y-4 text-center">
+          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-inner relative"
+            style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}>
+            <BookMarked className="w-10 h-10 text-white" />
+            <div className="absolute inset-0 rounded-full animate-ping opacity-20"
+              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }} />
+          </div>
+          <h2 className="text-5xl font-black text-slate-900 tracking-tight">
+            My <span className="premium-text-gradient">Library</span>
+          </h2>
+          <p className="text-slate-500 font-medium text-lg">All your unlocked premium content in one place.</p>
+          <div className="flex justify-center mt-2">
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 hover:border-slate-300 font-bold rounded-xl text-xs transition-[background-color,border-color,transform,box-shadow] shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed select-none"
+            >
+              <RotateCw className={cn("w-3.5 h-3.5 text-brand-600", refreshing && "animate-spin")} />
+              {refreshing ? 'Syncing Library...' : 'Sync Library'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -3000,21 +3028,22 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                 className="rounded-2xl md:rounded-[2rem] overflow-hidden shadow-2xl shadow-slate-200/60"
               >
                 {/* Exam Header — dark premium strip */}
-                <div className="relative p-5 md:p-8 text-white overflow-hidden"
+                <div className="relative p-4 sm:p-8 text-white overflow-hidden"
                   style={{ background: 'linear-gradient(135deg, #0f0a28 0%, #1e1151 60%, #312e81 100%)' }}>
                   {/* Glow orb */}
                   <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full opacity-30 pointer-events-none"
                     style={{ background: 'radial-gradient(circle, #818cf8 0%, transparent 70%)' }} />
-                  <div className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 sm:gap-5">
-                    <div className="flex items-center gap-3.5 sm:gap-5 min-w-0">
+                  <div className="relative z-10 flex items-center justify-between gap-3">
+                    {/* Icon + text */}
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                       {/* Exam icon */}
-                      <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
+                      <div className="w-10 h-10 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
                         {isUrl(exam.icon)
                           ? <img src={getDirectImageUrl(exam.icon)} alt={exam.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={(e: any) => { e.target.style.display='none'; e.target.parentNode.textContent='📚'; }} />
-                          : <span className="text-xl sm:text-4xl">{exam.icon || '📚'}</span>}
+                          : <span className="text-lg sm:text-4xl">{exam.icon || '📚'}</span>}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 sm:gap-2 mb-1 flex-wrap">
+                        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                           {isBundle && (
                             <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest bg-brand-500/30 border border-brand-400/40 text-brand-300 px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg animate-pulse-soft">
                               Exam Bundle
@@ -3024,11 +3053,11 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                             <CheckCircle2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Premium Unlocked
                           </span>
                         </div>
-                        <h3 className="text-base sm:text-2xl font-black text-white leading-tight line-clamp-2">{exam.name}</h3>
+                        <h3 className="text-sm sm:text-2xl font-black text-white leading-tight line-clamp-2">{exam.name}</h3>
                         {cleanDesc(exam.description) && (
-                          <p className="text-white/60 text-[11px] sm:text-sm mt-1 line-clamp-2 sm:line-clamp-1">{cleanDesc(exam.description)}</p>
+                          <p className="text-white/60 text-[10px] sm:text-sm mt-0.5 line-clamp-1 hidden sm:block">{cleanDesc(exam.description)}</p>
                         )}
-                        <p className="text-white/40 text-[9px] sm:text-xs mt-1">
+                        <p className="text-white/40 text-[9px] sm:text-xs mt-0.5">
                           {totalItems} item{totalItems !== 1 ? 's' : ''} unlocked
                           {isBundle ? ' · Full Bundle Access' : ''}
                         </p>
@@ -3037,9 +3066,9 @@ const PurchasesView = ({ user, profile, exams, mockTests, testSeries, dynamicQue
                     {isBundle && (
                       <button
                         onClick={() => onViewExam(exam.id)}
-                        className="group shrink-0 w-full sm:w-auto px-4 py-2 md:px-5 md:py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white text-xs md:text-sm font-bold rounded-xl md:rounded-2xl transition-[transform,border-color,background-color,box-shadow] duration-300 flex items-center justify-center sm:justify-start gap-2 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] active:scale-[0.98] sm:active:scale-[1]"
+                        className="group shrink-0 px-3 py-1.5 sm:px-5 sm:py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white text-xs sm:text-sm font-bold rounded-xl sm:rounded-2xl transition-[transform,border-color,background-color,box-shadow] duration-300 flex items-center gap-1.5 sm:gap-2 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] active:scale-[0.98]"
                       >
-                        Open <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        Open <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
                       </button>
                     )}
                   </div>
