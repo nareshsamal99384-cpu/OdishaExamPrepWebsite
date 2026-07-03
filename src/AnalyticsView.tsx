@@ -17,6 +17,7 @@ import { activityTracker } from './lib/activityTracker';
 import { cn } from './lib/utils';
 import { stagger } from './lib/animations';
 import { MathTextRenderer } from './components/MathTextRenderer';
+import { aiDiagnosticManager } from './lib/aiDiagnosticManager';
 
 
 const MarkdownMathRenderer = ({ text, isUser = false }: { text: string; isUser?: boolean }) => {
@@ -1106,105 +1107,59 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
     ];
   }, [stats, scanCount]);
 
-  // Load AI Insights from cache if available
+  // Load AI Insights or sync with background manager
   useEffect(() => {
     if (!user?.id || !stats) return;
     const cacheKey = `oep_ai_insights_${user.id}_${stats.totalTests}_${stats.avgScore}`;
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        setAiInsight(parsed.diagnostic || '');
-        setActionItems(parsed.actionPlan || []);
-        setScanningPhase(2);
-      } catch (e) {}
+    
+    // Check if there is an active background scan in progress for this cache key
+    const managerState = aiDiagnosticManager.getState();
+    if (managerState.activeCacheKey === cacheKey && managerState.scanningPhase === 1) {
+      setScanningPhase(managerState.scanningPhase);
+      setScanStep(managerState.scanStep);
+      setLoadingAi(managerState.loadingAi);
+      setAiInsight(managerState.aiInsight);
+      setActionItems(managerState.actionItems);
+      setScanCount(managerState.scanCount);
     } else {
-      setScanningPhase(0);
-      setAiInsight('');
-      setActionItems([]);
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          setAiInsight(parsed.diagnostic || '');
+          setActionItems(parsed.actionPlan || []);
+          setScanningPhase(2);
+          setLoadingAi(false);
+        } catch (e) {}
+      } else {
+        setScanningPhase(0);
+        setAiInsight('');
+        setActionItems([]);
+        setLoadingAi(false);
+      }
     }
+
+    // Subscribe to manager updates to reflect state changes reactively
+    const unsubscribe = aiDiagnosticManager.subscribe(() => {
+      const latest = aiDiagnosticManager.getState();
+      if (latest.activeCacheKey === cacheKey) {
+        setScanningPhase(latest.scanningPhase);
+        setScanStep(latest.scanStep);
+        setLoadingAi(latest.loadingAi);
+        setAiInsight(latest.aiInsight);
+        setActionItems(latest.actionItems);
+        setScanCount(latest.scanCount);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [user?.id, stats?.totalTests, stats?.avgScore]);
 
-  const cleanJson = (str: string) => {
-    let cleaned = str.trim();
-    if (cleaned.startsWith('```')) {
-      cleaned = cleaned.replace(/^```(json)?/, '').replace(/```$/, '').trim();
-    }
-    return cleaned;
-  };
-
   const runAiAnalysis = async (force = false) => {
-    if (!stats) return;
-    const cacheKey = `oep_ai_insights_${user?.id}_${stats.totalTests}_${stats.avgScore}`;
-    
     setChatHistory([]);
-    setScanCount(prev => prev + 1);
-    setLoadingAi(true);
-    setScanningPhase(1);
-    
-    const steps = [
-      "Ingesting mock test history...",
-      "Correlating accuracy & speed data...",
-      "Analyzing subject-wise strengths...",
-      "Synthesizing customized action plan..."
-    ];
-
-    for (let i = 0; i < steps.length; i++) {
-      setScanStep(steps[i]);
-      await new Promise(resolve => setTimeout(resolve, 800));
-    }
-
-    try {
-      const systemPrompt = `You are the OdishaExamPrep AI Performance Laboratory, an elite exam coaching intelligence. You generate performance insights in JSON format.
-Your output must be a JSON object with:
-{
-  "diagnostic": "A detailed executive performance analysis (3-4 sentences) highlighting cognitive strengths, speed/accuracy trade-offs, and critical focus areas in Odisha exams.",
-  "actionPlan": [
-    { "task": "A highly specific recommendation, e.g., 'Attempt 25 intermediate math questions'", "boost": "+5%", "timeframe": "2 days" },
-    ... (exactly 3 items)
-  ]
-}`;
-
-      const response = await fetch('/api/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'meta/llama-3.3-70b-instruct',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: `Analyze this student data and return JSON:\n${JSON.stringify(stats, null, 2)}` }
-          ],
-          temperature: 0.3,
-          response_format: { type: 'json_object' }
-        })
-      });
-
-      if (!response.ok) throw new Error('API connection failed');
-      const data = await response.json();
-      const content = data.choices?.[0]?.message?.content || '';
-      
-      const parsed = JSON.parse(cleanJson(content));
-      setAiInsight(parsed.diagnostic || '');
-      setActionItems(parsed.actionPlan || []);
-      sessionStorage.setItem(cacheKey, JSON.stringify(parsed));
-      setScanningPhase(2);
-    } catch (err) {
-      console.error(err);
-      // Fallback
-      const fallbackData = {
-        diagnostic: `Based on your ${stats.totalTests} completed mock tests, you have shown an average accuracy of ${stats.avgAccuracy}%. Your speed is ${stats.avgTimePerQuestion.toFixed(0)}s per question. Focus on reviewing wrong answers and practicing weaker subjects.`,
-        actionPlan: [
-          { task: "Practice 15 topic-wise tests in your weakest subjects", boost: "+8%", timeframe: "3 days" },
-          { task: "Attempt a full-length mock test focusing on speed (under 45s per Q)", boost: "+5%", timeframe: "5 days" },
-          { task: "Review all incorrect answers in your test history log", boost: "+10%", timeframe: "1 day" }
-        ]
-      };
-      setAiInsight(fallbackData.diagnostic);
-      setActionItems(fallbackData.actionPlan);
-      setScanningPhase(2);
-    } finally {
-      setLoadingAi(false);
-    }
+    aiDiagnosticManager.runAiAnalysis(user, stats, force);
   };
 
   const sendMessage = async (customText?: string) => {
@@ -1503,10 +1458,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                     <button
                       onClick={() => {
                         const cacheKey = `oep_ai_insights_${user?.id}_${stats?.totalTests}_${stats?.avgScore}`;
-                        sessionStorage.removeItem(cacheKey);
-                        setScanningPhase(0);
-                        setAiInsight('');
-                        setActionItems([]);
+                        aiDiagnosticManager.reset(cacheKey);
                       }}
                       className="sm:hidden w-9 h-9 rounded-xl flex items-center justify-center bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200/60 transition-all cursor-pointer shrink-0"
                       title="Return to main screen"
@@ -1562,10 +1514,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                     <button
                       onClick={() => {
                         const cacheKey = `oep_ai_insights_${user?.id}_${stats?.totalTests}_${stats?.avgScore}`;
-                        sessionStorage.removeItem(cacheKey);
-                        setScanningPhase(0);
-                        setAiInsight('');
-                        setActionItems([]);
+                        aiDiagnosticManager.reset(cacheKey);
                       }}
                       className="hidden sm:flex items-center justify-center w-10 h-10 rounded-xl bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200/60 hover:border-rose-200/60 active:scale-95 transition-all shrink-0 cursor-pointer"
                       title="Return to main screen"
