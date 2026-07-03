@@ -3306,12 +3306,15 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   const [mockTests, setMockTests] = useState<any[]>(() => _dashboardCache.mockTests);
   const [loadingExams, setLoadingExams] = useState(() => _dashboardCache.exams.length === 0);
   const [selectedMockCategory, setSelectedMockCategory] = useState<string | null>(() => sessionStorage.getItem('oep_selectedMockCategory') || null);
+  const [selectedPracticeCategory, setSelectedPracticeCategory] = useState<string | null>(() => sessionStorage.getItem('oep_selectedPracticeCategory') || null);
   const [internalSelectedExam, setInternalSelectedExam] = useState<string | null>(() => sessionStorage.getItem('oep_selectedExam') || null);
   const selectedExam = propsSelectedExam !== undefined ? propsSelectedExam : internalSelectedExam;
   const setSelectedExam = (val: string | null) => {
     if (val === null) {
       sessionStorage.setItem('oep_auto_navigated_dismissed', 'true');
     }
+    setSelectedMockCategory(null);
+    setSelectedPracticeCategory(null);
     if (propsSetSelectedExam) {
       propsSetSelectedExam(val);
     } else {
@@ -4793,6 +4796,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     if (selectedMockCategory) sessionStorage.setItem('oep_selectedMockCategory', selectedMockCategory);
     else sessionStorage.removeItem('oep_selectedMockCategory');
   }, [selectedMockCategory]);
+
+  useEffect(() => {
+    if (selectedPracticeCategory) sessionStorage.setItem('oep_selectedPracticeCategory', selectedPracticeCategory);
+    else sessionStorage.removeItem('oep_selectedPracticeCategory');
+  }, [selectedPracticeCategory]);
   const actualExams = useMemo(() => {
     return exams.filter(e => !e.is_archived && e.category !== 'blog' && e.category !== 'system' && !(e.name || '').startsWith('SYSTEM_SETTINGS_'));
   }, [exams]);
@@ -5248,6 +5256,94 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         durationMinutes: duration,
         // Access was already verified above — mark as non-premium here so
         // handleStartTest does NOT show the paywall a second time for this session.
+        isPremium: false,
+        examId: topicBank?.examId || effectiveExamId,
+        questions: finalQuestions.map(q => {
+          const item: any = {
+            id: q.id,
+            questionText: q.questionText,
+            options: q.options,
+            correctAnswerIndex: q.correctAnswerIndex,
+            explanation: q.explanation || 'No explanation provided.'
+          };
+          if (q.diagram !== undefined && q.diagram !== null) {
+            item.diagram = q.diagram;
+          }
+          return item;
+        })
+      };
+
+      setActiveTestState({ resumeSessionId: `session-${Date.now()}` });
+      handleStartTest(practiceTest);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to compile practice session.");
+    } finally {
+      setLoadingPractice(false);
+    }
+  };
+
+  const handleStartDirectPractice = async (topicBank: any) => {
+    if (isGuest) {
+      setShowLoginPrompt(true);
+      return;
+    }
+    setLoadingPractice(true);
+    try {
+      const effectiveExamId = selectedExam || topicBank?.examId;
+      if (!effectiveExamId) {
+        alert("Could not determine the exam ID.");
+        setLoadingPractice(false);
+        return;
+      }
+
+      if (topicBank?.isPremium && !hasAccessTo(topicBank)) {
+        setPaywallPrice(topicBank.price || 499);
+        setPaywallOriginalPrice(topicBank.originalPrice || ((topicBank.price || 499) * 2));
+        setPaywallItemTitle(topicBank.title || 'Premium Bank');
+        setPaywallFeatures([
+          `${topicBank.questionCount || 500}+ Premium Questions`,
+          topicBank.hasPracticeMode !== false ? 'Unlimited Practice Mode' : 'Instant PDF Access',
+          'Detailed Step-by-Step Solutions',
+          'Advanced Performance Analytics'
+        ]);
+        setPaywallItemId(topicBank.id);
+        setPaywallProductType('question_bank');
+        setShowPaywall(true);
+        setLoadingPractice(false);
+        return;
+      }
+
+      const bankTopicName = topicBank.title;
+
+      const { data, error } = await supabase.from('questions').select('*').eq('examId', effectiveExamId);
+      if (error) throw error;
+
+      let matchedQs = data || [];
+      if (bankTopicName) {
+        const normBank = bankTopicName.toLowerCase().replace(/[\s\-_—–:()]+/g, '').trim();
+        matchedQs = matchedQs.filter((q: any) => {
+           if (!q.topic) return false;
+           const normQ = q.topic.toLowerCase().replace(/[\s\-_—–:()]+/g, '').trim();
+           return normQ.includes(normBank) || normBank.includes(normQ);
+        });
+      }
+
+      if (matchedQs.length === 0) {
+        alert("Oh no! No questions are available for this topic yet.");
+        setLoadingPractice(false);
+        return;
+      }
+
+      const limit = Math.min(25, matchedQs.length);
+      const duration = 30; 
+      const shuffled = matchedQs.sort(() => 0.5 - Math.random());
+      const finalQuestions = shuffled.slice(0, limit);
+
+      const practiceTest = {
+        id: `practice-${Date.now()}`,
+        title: `${bankTopicName} - Practice Session`,
+        durationMinutes: duration,
         isPremium: false,
         examId: topicBank?.examId || effectiveExamId,
         questions: finalQuestions.map(q => {
@@ -7013,59 +7109,320 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
               <Dumbbell className="w-5 h-5 text-indigo-600" />
             </div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Step 2: Custom Practice</h2>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Step 2: Practice Mode</h2>
           </div>
-          
-            {isMobile ? (
-              <div
-                onClick={() => setShowPracticeConfig(true)}
-                className="p-4 bg-white border border-slate-100 hover:border-indigo-200/50 shadow-[0_4px_16px_-4px_rgba(79,70,229,0.03),0_1px_2px_rgba(79,70,229,0.01)] active:scale-[0.98] active:border-indigo-300 active:shadow-md rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/[0.01] to-indigo-500/0 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none" />
-                <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-gradient-to-b from-indigo-500 to-indigo-650 rounded-r-sm opacity-90" />
-                
-                <div className="flex items-center gap-3.5 min-w-0 flex-1 pl-1">
-                  <div className="w-11 h-11 bg-indigo-50/60 rounded-xl flex items-center justify-center shrink-0 border border-indigo-100/30 relative">
-                    <Play className="w-5 h-5 text-indigo-650 fill-indigo-650/15 relative z-10 ml-0.5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="font-extrabold text-[14.5px] text-slate-850 tracking-tight leading-snug">Start Practice Session</h4>
-                    <p className="text-[11.5px] text-slate-500 font-medium leading-relaxed mt-0.5 line-clamp-2 pr-1">Customize your practice based on targeted subjects and units.</p>
-                  </div>
-                </div>
-                
-                <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 shadow-2xs group-active:bg-indigo-50 group-active:border-indigo-100 group-active:text-indigo-600 group-active:translate-x-0.5 transition-all duration-300">
-                  <ChevronRight className="w-4 h-4" />
-                </div>
-              </div>
-            ) : (
-              <Card 
-                onClick={() => setShowPracticeConfig(true)}
-                className="p-5 sm:p-6 md:p-8 bg-white border border-slate-200/60 shadow-xl shadow-brand-500/5 rounded-[1.5rem] md:rounded-[2rem] cursor-pointer group relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8 hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 hover:-translate-y-1 premium-shine-container"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-50/50 via-white to-indigo-50/50" />
-                <VisualEffects />
-                <div className="absolute -right-20 -top-20 w-80 h-80 bg-brand-500/5 rounded-full blur-3xl group-hover:bg-brand-500/10 transition-colors duration-700 pointer-events-none" />
-                <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl group-hover:bg-indigo-500/10 transition-colors duration-700 pointer-events-none" />
-                
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 relative z-10 flex-1 w-full">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 shrink-0 premium-gradient rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/10 group-hover:scale-110 group-hover:premium-glow transition-all duration-500">
-                    <Play className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-white fill-white/20 ml-1" />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight group-hover:text-brand-600 transition-colors leading-snug">Start Practice Session</h3>
-                    <p className="text-xs sm:text-sm lg:text-base text-slate-500 font-medium leading-relaxed max-w-xl">Customize your practice based on targeted subjects and units.</p>
+
+          {(() => {
+            if (!selectedPracticeCategory) {
+              return (
+                <motion.div 
+                  initial={isMobile ? "show" : "hidden"}
+                  animate="show"
+                  variants={{
+                    hidden: { opacity: 0 },
+                    show: {
+                      opacity: 1,
+                      transition: { staggerChildren: isMobile ? 0.05 : 0.1 }
+                    }
+                  }}
+                  className={cn(
+                    isMobile
+                      ? "flex flex-col gap-3.5"
+                      : "grid grid-cols-1 sm:grid-cols-2 lg:gap-8 gap-4 sm:gap-6"
+                  )}
+                >
+                  {[
+                    { id: 'topic-wise', title: 'Topic-wise Practice', desc: 'Practice with topic-by-topic structured questions.', icon: <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'from-blue-400 to-indigo-500', tag: 'Structured' },
+                    { id: 'exam-focused', title: 'Exam-Focused Practice', desc: 'High-yield banks focused on core exam subjects.', icon: <Target className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'from-rose-450 to-orange-500', tag: 'High Yield' },
+                    { id: 'revision-sets', title: 'Revision Sets', desc: 'Short, curated sets perfect for quick revisions.', icon: <Layers className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'from-emerald-400 to-teal-500', tag: 'Quick Revise' },
+                    { id: 'pyq-collections', title: 'PYQ Collections', desc: 'Practice with real previous year questions.', icon: <History className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'from-purple-400 to-pink-500', tag: 'Real PYQs' },
+                  ].map((test, i) => {
+                    const styleMap: Record<string, any> = {
+                      'topic-wise': { shadow: 'rgba(79,70,229,0.03)', borderActive: 'active:border-indigo-300', textActive: 'group-active:bg-indigo-50 group-active:border-indigo-100 group-active:text-indigo-600' },
+                      'exam-focused': { shadow: 'rgba(244,63,94,0.03)', borderActive: 'active:border-rose-300', textActive: 'group-active:bg-rose-50 group-active:border-rose-100 group-active:text-rose-600' },
+                      'revision-sets': { shadow: 'rgba(16,185,129,0.03)', borderActive: 'active:border-emerald-300', textActive: 'group-active:bg-emerald-50 group-active:border-emerald-100 group-active:text-emerald-600' },
+                      'pyq-collections': { shadow: 'rgba(236,72,153,0.03)', borderActive: 'active:border-pink-300', textActive: 'group-active:bg-pink-50 group-active:border-pink-100 group-active:text-pink-600' }
+                    };
+                    const style = styleMap[test.id] || styleMap['topic-wise'];
+
+                    return (
+                      <motion.div
+                        key={i}
+                        variants={{
+                          hidden: { opacity: 0, scale: 0.95, y: 10 },
+                          show: { opacity: 1, scale: 1, y: 0 }
+                        }}
+                        whileHover={isMobile ? undefined : whileHover.liftTap}
+                        whileTap={whileTap.press}
+                        className="w-full"
+                      >
+                        {isMobile ? (
+                          <div
+                            onClick={() => {
+                              setSelectedPracticeCategory(test.id);
+                              scrollToElement('practice-mode-section', { block: 'start', delay: 50 });
+                            }}
+                            className={cn(
+                              "p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300",
+                              style.borderActive
+                            )}
+                            style={{ boxShadow: `0 4px 16px -4px ${style.shadow}, 0 1px 2px rgba(0,0,0,0.02)` }}
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-r from-slate-500/0 via-slate-500/[0.01] to-slate-500/0 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none" />
+                            <div className={cn("absolute left-0 top-3.5 bottom-3.5 w-1 rounded-r-md opacity-80 bg-gradient-to-b", test.color)} />
+                            
+                            <div className="flex items-center gap-3.5 min-w-0 flex-1 pl-1">
+                              <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-md relative text-white bg-gradient-to-br", test.color)}>
+                                {test.icon}
+                                <div className="absolute inset-0 border border-white/10 rounded-xl" />
+                              </div>
+                              
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <h4 className="font-extrabold text-[14.5px] text-slate-850 tracking-tight leading-snug">{test.title}</h4>
+                                  <span className="px-1.5 py-0.5 bg-slate-50 text-slate-400 text-[8.5px] font-black rounded border border-slate-100 uppercase tracking-wider shrink-0">{test.tag}</span>
+                                </div>
+                                <p className="text-[11.5px] text-slate-500 font-medium leading-relaxed mt-0.5 line-clamp-2 pr-1">{test.desc}</p>
+                              </div>
+                            </div>
+                            
+                            <div className={cn(
+                              "w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 shadow-2xs group-active:translate-x-0.5 transition-all duration-300",
+                              style.textActive
+                            )}>
+                              <ChevronRight className="w-4 h-4" />
+                            </div>
+                          </div>
+                        ) : (
+                          <Card 
+                            className="p-5 sm:p-6 lg:p-8 bg-white border-slate-200/60 shadow-lg shadow-slate-200/30 rounded-[2rem] hover:-translate-y-2 hover:shadow-2xl hover:shadow-brand-500/10 hover:border-brand-200 group transition-all duration-500 cursor-pointer flex flex-col gap-4 sm:gap-6 relative overflow-hidden h-full premium-shine-container"
+                            onClick={() => {
+                              setSelectedPracticeCategory(test.id);
+                              scrollToElement('practice-mode-section', { block: 'start', delay: 50 });
+                            }}
+                          >
+                            <div className="flex items-center gap-3 sm:gap-4 relative z-10">
+                              <div className={cn(
+                                "w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shrink-0 shadow-md bg-gradient-to-br text-white transition-transform group-hover:scale-110 relative",
+                                test.color
+                              )}>
+                                {test.icon}
+                                <div className="absolute inset-0 border-2 border-white/20 rounded-2xl animate-pulse" />
+                              </div>
+                              <h4 className="font-black text-xl sm:text-2xl text-slate-950 tracking-tight leading-tight group-hover:text-brand-600 transition-colors uppercase">{test.title}</h4>
+                            </div>
+                            
+                            <div className="space-y-4 flex-1 relative z-10">
+                              <p className="text-slate-500 font-medium text-xs sm:text-sm leading-relaxed">{test.desc}</p>
+                              <div className="flex">
+                                <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 bg-slate-50 text-slate-400 rounded-lg border border-slate-100 group-hover:bg-brand-50 group-hover:text-brand-600 group-hover:border-brand-100 transition-colors">
+                                  {test.tag}
+                                </span>
+                              </div>
+                            </div>
+
+                            <Button 
+                              className="w-full h-[48px] sm:h-[56px] mt-2 rounded-xl flex items-center justify-center gap-2 font-black text-sm sm:text-base premium-gradient text-white shadow-lg shadow-brand-500/20 group-hover:premium-glow transition-all relative z-10 pointer-events-none overflow-hidden"
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
+                              <span className="relative z-10">Explore Sets</span>
+                              <ChevronRight className="w-4 h-4 sm:ml-1 group-hover:translate-x-1 transition-transform relative z-10" />
+                            </Button>
+                          </Card>
+                        )}
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
+              );
+            }
+
+            return (
+              <div className="space-y-8">
+                <div className="flex items-center gap-4 border-b border-slate-200 pb-6">
+                  <Button variant="ghost" onClick={() => {
+                    setSelectedPracticeCategory(null);
+                    scrollToElement('practice-mode-section', { block: 'start', delay: 50 });
+                  }} className="p-3 rounded-2xl hover:bg-brand-50">
+                    <ChevronRight className="w-6 h-6 rotate-180 text-brand-600" />
+                  </Button>
+                  <div className="flex items-center gap-4">
+                    <h3 className="text-3xl font-black text-slate-900 capitalize flex items-center gap-3">
+                      {selectedPracticeCategory.replace('-', ' ')} Practice Sets
+                    </h3>
                   </div>
                 </div>
 
-                <div className="relative z-10 w-full md:w-auto shrink-0 mt-2 md:mt-0">
-                  <Button className="w-full md:w-auto px-8 h-[48px] sm:h-[56px] rounded-xl flex items-center justify-center gap-2 text-sm sm:text-base font-black premium-gradient text-white border-none shadow-lg shadow-brand-500/20 group-hover:shadow-brand-500/40 group-hover:premium-glow transition-all">
-                    Start Practice
-                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 ml-1 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </div>
-              </Card>
-            )}
+                {(() => {
+                  const matchingBanks = (dynamicQuestionBanks[selectedPracticeCategory] || [])
+                    .filter((item: any) => item.examId === selectedExam && (!item.is_archived || hasAccessTo(item)) && item.hasPracticeMode !== false);
+
+                  if (matchingBanks.length === 0) {
+                    return (
+                      <div className="p-8 text-center bg-slate-50 rounded-[2rem] border border-slate-200 text-slate-500 font-bold">
+                        No practice sets found in this category for the selected exam.
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {matchingBanks.map((bank: any) => {
+                        const isLocked = bank.isPremium && !hasAccessTo(bank);
+                        const isPremiumUnlocked = bank.isPremium && hasAccessTo(bank);
+
+                        return (
+                          <motion.div
+                            key={bank.id}
+                            initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+                            animate={isMobile ? undefined : { opacity: 1, y: 0 }}
+                            exit={isMobile ? undefined : { opacity: 0, scale: 0.95 }}
+                            whileHover={isMobile ? undefined : whileHover.liftTap}
+                            whileTap={whileTap.press}
+                            className="w-full"
+                          >
+                            {isMobile ? (
+                              <div
+                                onClick={() => handleStartDirectPractice(bank)}
+                                className={cn(
+                                  "p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300",
+                                  isLocked 
+                                    ? "shadow-[0_4px_16px_-4px_rgba(245,158,11,0.03),0_1px_2px_rgba(245,158,11,0.01)] active:border-amber-300"
+                                    : isPremiumUnlocked
+                                      ? "shadow-[0_4px_16px_-4px_rgba(16,185,129,0.03),0_1px_2px_rgba(16,185,129,0.01)] active:border-emerald-300"
+                                      : "shadow-[0_4px_16px_-4px_rgba(79,70,229,0.03),0_1px_2px_rgba(79,70,229,0.01)] active:border-brand-300"
+                                )}
+                              >
+                                <div className={cn(
+                                  "absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none",
+                                  isLocked 
+                                    ? "bg-gradient-to-r from-amber-500/0 via-amber-500/[0.01] to-amber-500/0"
+                                    : isPremiumUnlocked
+                                      ? "bg-gradient-to-r from-emerald-500/0 via-emerald-500/[0.01] to-emerald-500/0"
+                                      : "bg-gradient-to-r from-brand-500/0 via-brand-500/[0.01] to-brand-500/0"
+                                )} />
+                                <div className={cn(
+                                  "absolute left-0 top-0 bottom-0 w-[4px] rounded-r-sm opacity-90",
+                                  isLocked 
+                                    ? "bg-gradient-to-b from-amber-400 to-orange-500" 
+                                    : isPremiumUnlocked 
+                                      ? "bg-gradient-to-b from-emerald-400 to-teal-500" 
+                                      : "bg-gradient-to-b from-indigo-500 to-purple-600"
+                                )} />
+
+                                <div className="flex items-center gap-3.5 min-w-0 flex-1 pl-1">
+                                  <div className={cn(
+                                    "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border relative",
+                                    isLocked 
+                                      ? "bg-amber-50/60 border-amber-100/30 text-amber-600" 
+                                      : isPremiumUnlocked 
+                                        ? "bg-emerald-50/60 border-emerald-100/30 text-emerald-600" 
+                                        : "bg-indigo-50/60 border-indigo-100/30 text-indigo-650"
+                                  )}>
+                                    <Play className="w-5 h-5 relative z-10 ml-0.5 text-indigo-650" />
+                                  </div>
+                                  
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <h4 className="font-extrabold text-[13.5px] text-slate-900 tracking-tight leading-snug line-clamp-2 uppercase pr-2">{bank.title}</h4>
+                                      {bank.isPremium && (
+                                        isLocked ? (
+                                          <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 text-[8.5px] font-black rounded border border-amber-100 uppercase tracking-wider shrink-0">Premium</span>
+                                        ) : (
+                                          <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 text-[8.5px] font-black rounded border border-emerald-100 uppercase tracking-wider shrink-0">Active</span>
+                                        )
+                                      )}
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-2 mt-2 text-[10px] font-extrabold text-slate-500 flex-wrap">
+                                      <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100/60"><FileText className="w-3 h-3 text-slate-400" /> {bank.questionCount || 0} Questions</span>
+                                      <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100/60"><Clock className="w-3 h-3 text-slate-400" /> 30 Mins</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className={cn(
+                                  "w-8 h-8 rounded-full border flex items-center justify-center shrink-0 shadow-2xs group-active:translate-x-0.5 transition-all duration-300",
+                                  isLocked
+                                    ? "bg-amber-50 border-amber-100 text-amber-600 group-active:bg-amber-500 group-active:text-white"
+                                    : isPremiumUnlocked
+                                      ? "bg-emerald-50 border-emerald-100 text-emerald-600 group-active:bg-emerald-500 group-active:text-white"
+                                      : "bg-slate-50 border-slate-100 text-slate-400 group-active:bg-brand-50 group-active:border-brand-100 group-active:text-brand-600"
+                                )}>
+                                  {isLocked ? <Lock className="w-3.5 h-3.5" /> : <ChevronRight className="w-4 h-4" />}
+                                </div>
+                              </div>
+                            ) : (
+                              <Card 
+                                className={cn("p-6 bg-white border-slate-200/60 shadow-lg shadow-slate-200/30 rounded-[1.5rem] hover:-translate-y-2 hover:shadow-2xl hover:shadow-brand-500/10 hover:border-brand-200 group transition-all duration-500 cursor-pointer flex flex-col gap-6 relative overflow-hidden premium-shine-container", isLocked && "border-amber-200/50 hover:border-amber-300", isPremiumUnlocked && "border-emerald-200/50 hover:border-emerald-300")}
+                                onClick={() => handleStartDirectPractice(bank)}
+                              >
+                                {isPremiumUnlocked && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none" />}
+                                <div className="flex items-start justify-between relative z-10 w-full">
+                                  <div className="flex items-center gap-4">
+                                    <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center shrink-0 shadow-md text-white transition-transform group-hover:scale-110 relative", isLocked ? "bg-gradient-to-br from-amber-400 to-orange-500" : isPremiumUnlocked ? "bg-gradient-to-br from-emerald-500 to-teal-650" : "bg-gradient-to-br from-indigo-500 to-purple-650")}>
+                                      <Play className="w-6 h-6 text-white fill-white/10 ml-0.5" />
+                                    </div>
+                                    <div className="text-left">
+                                      <h4 className="font-black text-xl text-slate-950 tracking-tight group-hover:text-brand-600 transition-colors uppercase leading-tight">{bank.title}</h4>
+                                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-100">Practice Set</span>
+                                    </div>
+                                  </div>
+                                  {bank.isPremium && (
+                                    <div className="flex shrink-0">
+                                      {isLocked ? (
+                                        <span className="px-2 py-1 bg-amber-50 text-amber-700 text-[10px] font-black rounded-lg border border-amber-100 uppercase tracking-wider">Premium</span>
+                                      ) : (
+                                        <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-black rounded-lg border border-emerald-100 uppercase tracking-wider">Active</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-6 relative z-10 text-xs font-bold text-slate-550 border-t border-slate-50 pt-4">
+                                  <div className="flex items-center gap-2">
+                                    <FileText className="w-4 h-4 text-slate-400" />
+                                    <span>{bank.questionCount || 0} Questions</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Clock className="w-4 h-4 text-slate-400" />
+                                    <span>30 Mins Session</span>
+                                  </div>
+                                </div>
+
+                                <Button 
+                                  className={cn(
+                                    "w-full h-[48px] rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all shadow-md relative z-10",
+                                    isLocked 
+                                      ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-amber-500/10 hover:shadow-amber-500/30" 
+                                      : isPremiumUnlocked 
+                                        ? "bg-gradient-to-r from-emerald-500 to-teal-650 text-white shadow-emerald-500/10 hover:shadow-emerald-500/30" 
+                                        : "premium-gradient text-white shadow-brand-500/10 hover:shadow-brand-500/30"
+                                  )}
+                                >
+                                  {isLocked ? (
+                                    <>
+                                      <Lock className="w-4 h-4" />
+                                      Unlock Set
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span>Start Practice</span>
+                                      <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                                    </>
+                                  )}
+                                </Button>
+                              </Card>
+                            )}
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            );
+          })()}
 
         </section>
       )}
@@ -8148,6 +8505,7 @@ function AppContent() {
       sessionStorage.removeItem('oep_selectedBankType');
       sessionStorage.removeItem('oep_practiceSettings');
       sessionStorage.removeItem('oep_selectedMockCategory');
+      sessionStorage.removeItem('oep_selectedPracticeCategory');
       sessionStorage.removeItem('oep_auto_navigated_dismissed');
       sessionStorage.removeItem('oep_cached_exams');
       sessionStorage.removeItem('oep_cached_testSeries');
@@ -8166,6 +8524,7 @@ function AppContent() {
       sessionStorage.removeItem('oep_selectedBankType');
       sessionStorage.removeItem('oep_practiceSettings');
       sessionStorage.removeItem('oep_selectedMockCategory');
+      sessionStorage.removeItem('oep_selectedPracticeCategory');
       sessionStorage.removeItem('oep_auto_navigated_dismissed');
       sessionStorage.removeItem('oep_cached_exams');
       sessionStorage.removeItem('oep_cached_testSeries');
