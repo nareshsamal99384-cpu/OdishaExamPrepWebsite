@@ -192,39 +192,37 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
   if (sourceVideos.length === 0) return null;
 
   return (
-    <div className="w-full relative py-5 sm:py-12 overflow-hidden bg-[#F2EFE9] border-2 border-slate-900 rounded-[2rem] sm:rounded-[2.5rem] shadow-[6px_6px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_rgba(0,0,0,1)] select-none">
+    <div className="w-full relative py-3 sm:py-12 overflow-hidden bg-[#F2EFE9] border-2 border-slate-900 rounded-[2rem] sm:rounded-[2.5rem] shadow-[6px_6px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_rgba(0,0,0,1)] select-none">
       {/* Editorial Decorative Grid overlay — desktop only */}
       {!isMobile && <div className="absolute inset-0 grid-bg opacity-[0.02] pointer-events-none" />}
 
       {/* ── MOBILE HEADER ─────────────────────────────────────────────── */}
       {isMobile ? (
-        <div className="px-5 mb-5 relative z-10">
-          {/* Top row: icon + title */}
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 bg-[#8A1C36] text-white rounded-xl flex items-center justify-center border-2 border-slate-900 shrink-0 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
-              <Youtube className="w-4.5 h-4.5 text-white" />
+        <div className="px-4 mb-3 relative z-10">
+          {/* Single row: icon + title/subtitle + subscribe button */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-[#8A1C36] text-white rounded-xl flex items-center justify-center border-2 border-slate-900 shrink-0 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+              <Youtube className="w-4 h-4 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-[15px] font-serif font-extrabold text-slate-900 tracking-tight leading-tight">
+              <h3 className="text-[13px] font-serif font-extrabold text-slate-900 tracking-tight leading-tight">
                 Free Strategy Videos
               </h3>
-              <p className="text-slate-500 font-medium text-[11px] mt-0.5 leading-snug">
-                Masterclasses &amp; proven exam tips — free
+              <p className="text-slate-500 font-medium text-[10px] leading-snug">
+                Masterclasses &amp; exam tips — free
               </p>
             </div>
+            {/* Subscribe pill — inline, right side */}
+            <a
+              href="https://www.youtube.com/@OdishaExamPrep365?sub_confirmation=1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#FF0000] border-2 border-slate-900 text-white font-black uppercase text-[9px] tracking-widest rounded-lg shadow-[2px_2px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all duration-150 select-none cursor-pointer shrink-0"
+            >
+              <Youtube className="w-3 h-3 text-white shrink-0" />
+              <span>Subscribe</span>
+            </a>
           </div>
-
-          {/* Subscribe button — compact, inline, premium pill style */}
-          <a
-            href="https://www.youtube.com/@OdishaExamPrep365?sub_confirmation=1"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#FF0000] border-2 border-slate-900 text-white font-black uppercase text-[10px] tracking-widest rounded-xl shadow-[3px_3px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[3px] active:translate-y-[3px] transition-all duration-150 select-none cursor-pointer"
-          >
-            <Youtube className="w-3.5 h-3.5 text-white shrink-0" />
-            <span>Subscribe</span>
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-white animate-ping shrink-0" />
-          </a>
         </div>
       ) : (
         /* ── DESKTOP HEADER ───────────────────────────────────────────── */
@@ -301,7 +299,7 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
                 {/* Thumbnail with aspect ratio */}
                 <div className={cn(
                   "relative w-full border-b-2 border-slate-900 overflow-hidden shrink-0",
-                  isMobile ? "h-[135px]" : "h-[160px]"
+                  isMobile ? "h-[110px]" : "h-[160px]"
                 )}>
                   <img
                     src={`https://i.ytimg.com/vi_webp/${video.id}/maxresdefault.webp`}
@@ -334,7 +332,7 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
                 {/* Text Meta section */}
                 <div className={cn(
                   "flex-1 flex flex-col justify-between bg-white",
-                  isMobile ? "p-3" : "p-4"
+                  isMobile ? "p-2.5" : "p-4"
                 )}>
                   <div>
                     {/* Category badge — coloured on mobile for premium feel */}
