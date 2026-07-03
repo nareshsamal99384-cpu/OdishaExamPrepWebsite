@@ -3807,6 +3807,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                               category: selectedBankType || practiceSettings.category,
                               topic: selectedBankItem.id
                             });
+                            setMobileExamTab('practice');
                             scrollToElement('practice-mode-section', { block: 'start', delay: 100 });
                           }
                         }}
@@ -4716,6 +4717,14 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   const [activeTab, setActiveTab] = useState<'popular' | 'upcoming'>('upcoming');
   const [showPracticeConfig, setShowPracticeConfig] = useState<boolean>(false);
   const [selectedBankType, setSelectedBankType] = useState<string | null>(() => sessionStorage.getItem('oep_selectedBankType') || null);
+  const [mobileExamTab, setMobileExamTab] = useState<'learn' | 'practice' | 'mock'>(() => {
+    return (sessionStorage.getItem('oep_mobileExamTab') as 'learn' | 'practice' | 'mock') || 'learn';
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem('oep_mobileExamTab', mobileExamTab);
+  }, [mobileExamTab]);
+
   const [bankSearchQuery, setBankSearchQuery] = useState("");
   const [bankSortBy, setBankSortBy] = useState("Name");
   const [showPaywall, setShowPaywall] = useState(false);
@@ -6547,111 +6556,133 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             </Button>
           </motion.div>
 
-          {/* Mobile Quick Navigation Grid */}
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-3 gap-3 sm:hidden w-full mt-2"
-          >
-            <button 
-              onClick={() => scrollToElement('question-bank-section', { block: 'start' })}
-              className="flex flex-col items-center justify-center p-3 rounded-2xl border border-brand-100/40 bg-white shadow-[0_4px_16px_rgba(138,28,54,0.03)] active:scale-95 active:border-brand-300 transition-all text-center min-h-[90px] cursor-pointer group relative overflow-hidden"
-            >
-              <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand-500 to-brand-700" />
-              <div className="w-9 h-9 rounded-xl bg-brand-50/70 flex items-center justify-center mb-1.5 border border-brand-100/30 group-active:scale-110 transition-transform">
-                <Layers className="w-4 h-4 text-brand-600" />
-              </div>
-              <span className="text-[10px] font-black text-slate-800 tracking-wide uppercase leading-none">Question Bank</span>
-            </button>
-
-            <button 
-              onClick={() => scrollToElement('practice-mode-section', { block: 'start' })}
-              className="flex flex-col items-center justify-center p-3 rounded-2xl border border-indigo-100/40 bg-white shadow-[0_4px_16px_rgba(79,70,229,0.03)] active:scale-95 active:border-indigo-300 transition-all text-center min-h-[90px] cursor-pointer group relative overflow-hidden"
-            >
-              <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-indigo-500 to-indigo-700" />
-              <div className="w-9 h-9 rounded-xl bg-indigo-50/70 flex items-center justify-center mb-1.5 border border-indigo-100/30 group-active:scale-110 transition-transform">
-                <Dumbbell className="w-4 h-4 text-indigo-600" />
-              </div>
-              <span className="text-[10px] font-black text-slate-800 tracking-wide uppercase leading-none">Practice Mode</span>
-            </button>
-
-            <button 
-              onClick={() => scrollToElement('test-series', { block: 'start' })}
-              className="flex flex-col items-center justify-center p-3 rounded-2xl border border-amber-100/40 bg-white shadow-[0_4px_16px_rgba(245,158,11,0.03)] active:scale-95 active:border-amber-300 transition-all text-center min-h-[90px] cursor-pointer group relative overflow-hidden"
-            >
-              <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-amber-500 to-orange-500" />
-              <div className="w-9 h-9 rounded-xl bg-amber-50/70 flex items-center justify-center mb-1.5 border border-amber-100/30 group-active:scale-110 transition-transform">
-                <Award className="w-4 h-4 text-amber-600" />
-              </div>
-              <span className="text-[10px] font-black text-slate-800 tracking-wide uppercase leading-none">Mock Tests</span>
-            </button>
-          </motion.div>
-        </div>
-
-        {/* Section 1: Download Question Bank */}
-      <section id="question-bank-section" className="space-y-8 scroll-mt-24">
-        <div className="relative pl-4">
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-500 rounded-full" />
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Step 1: Learn & Review</h2>
-          <p className="text-slate-500 font-medium mt-1">Premium resources for your preparation</p>
-        </div>
-        
-        <motion.div 
-          initial={isMobile ? "show" : "hidden"}
-          animate={isMobile ? "show" : undefined}
-          whileInView={isMobile ? undefined : "show"}
-          viewport={isMobile ? undefined : { once: true }}
-          variants={{
-            hidden: { opacity: 0 },
-            show: {
-              opacity: 1,
-              transition: { staggerChildren: isMobile ? 0.05 : 0.1 }
-            }
-          }}
-          className={cn(
-            isMobile 
-              ? "flex flex-col gap-3.5" 
-              : "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6"
-          )}
-        >
-          {[
-            { id: 'topic-wise', title: 'Topic-wise Question Bank', desc: 'Master specific subjects with curated questions.', icon: <Layers className="w-5.5 h-5.5 text-brand-600" />, iconDesktop: <Layers className="w-6 h-6 sm:w-7 sm:h-7" /> },
-            { id: 'exam-focused', title: 'Exam-Focused Bank', desc: 'High-yield questions tailored for this exam.', icon: <Target className="w-5.5 h-5.5 text-brand-600" />, iconDesktop: <Target className="w-6 h-6 sm:w-7 sm:h-7" /> },
-            { id: 'revision-sets', title: 'Revision Sets', desc: 'Quick revision modules for last-minute prep.', icon: <BookMarked className="w-5.5 h-5.5 text-brand-600" />, iconDesktop: <BookMarked className="w-6 h-6 sm:w-7 sm:h-7" /> },
-            { id: 'pyq-collections', title: 'PYQ Collections', desc: 'Previous Year Questions with detailed solutions.', icon: <History className="w-5.5 h-5.5 text-brand-600" />, iconDesktop: <History className="w-6 h-6 sm:w-7 sm:h-7" /> },
-          ].map((item, i) => (
-            <motion.div
-              key={i}
-              variants={{
-                hidden: { y: 15, opacity: 0 },
-                show: { y: 0, opacity: 1 }
-              }}
-              whileHover={isMobile ? undefined : whileHover.liftTap}
-              whileTap={isMobile ? { scale: 0.98 } : whileTap.press}
-              className="w-full"
-            >
-              {isMobile ? (
-                <div
-                  onClick={() => setSelectedBankType(item.id)}
-                  className="p-4 bg-white border border-slate-100 shadow-[0_4px_16px_-4px_rgba(138,28,54,0.06),0_1px_2px_rgba(138,28,54,0.02)] active:scale-[0.98] active:border-brand-300 active:shadow-md rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300"
+          {/* Mobile Premium Segmented Tab Switcher */}
+          {isMobile && (
+            <div className="sticky top-16 z-20 -mx-4 px-4 py-2.5 bg-slate-50/95 backdrop-blur-md border-b border-slate-200/50 mt-1">
+              <div className="flex bg-slate-100 p-1 rounded-xl relative shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => setMobileExamTab('learn')}
+                  className={cn(
+                    "flex-grow flex-shrink-0 flex-1 py-2 text-[11px] font-black rounded-lg transition-all flex items-center justify-center gap-1.5 relative cursor-pointer",
+                    mobileExamTab === 'learn' ? "text-brand-700 font-extrabold" : "text-slate-500"
+                  )}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-brand-500/0 via-brand-500/[0.012] to-brand-500/0 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none" />
-                  <div className="absolute left-0 top-3.5 bottom-3.5 w-1 bg-gradient-to-b from-brand-500 to-brand-700 rounded-r-md opacity-80" />
-                  <div className="flex items-center gap-3.5 min-w-0 flex-1 pl-1">
-                    <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-brand-500/10 relative">
-                      {React.cloneElement(item.icon, { className: "w-5.5 h-5.5 text-white" })}
-                      <div className="absolute inset-0 border border-white/10 rounded-xl" />
+                  {mobileExamTab === 'learn' && (
+                    <motion.div
+                      layoutId="mobileActiveSubTabIndicator"
+                      className="absolute inset-0 bg-white rounded-lg shadow-sm z-0"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                  <Layers className="w-3.5 h-3.5 relative z-10" />
+                  <span className="relative z-10">Learn</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileExamTab('practice')}
+                  className={cn(
+                    "flex-grow flex-shrink-0 flex-1 py-2 text-[11px] font-black rounded-lg transition-all flex items-center justify-center gap-1.5 relative cursor-pointer",
+                    mobileExamTab === 'practice' ? "text-indigo-700 font-extrabold" : "text-slate-500"
+                  )}
+                >
+                  {mobileExamTab === 'practice' && (
+                    <motion.div
+                      layoutId="mobileActiveSubTabIndicator"
+                      className="absolute inset-0 bg-white rounded-lg shadow-sm z-0"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                  <Dumbbell className="w-3.5 h-3.5 relative z-10" />
+                  <span className="relative z-10">Practice</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileExamTab('mock')}
+                  className={cn(
+                    "flex-grow flex-shrink-0 flex-1 py-2 text-[11px] font-black rounded-lg transition-all flex items-center justify-center gap-1.5 relative cursor-pointer",
+                    mobileExamTab === 'mock' ? "text-amber-700 font-extrabold" : "text-slate-500"
+                  )}
+                >
+                  {mobileExamTab === 'mock' && (
+                    <motion.div
+                      layoutId="mobileActiveSubTabIndicator"
+                      className="absolute inset-0 bg-white rounded-lg shadow-sm z-0"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                  <Award className="w-3.5 h-3.5 relative z-10" />
+                  <span className="relative z-10">Mock Tests</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+      {/* Section 1: Download Question Bank */}
+      {(!isMobile || mobileExamTab === 'learn') && (
+        <section id="question-bank-section" className="space-y-8 scroll-mt-24">
+          <div className="relative pl-4">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-500 rounded-full" />
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Step 1: Learn & Review</h2>
+            <p className="text-slate-500 font-medium mt-1">Premium resources for your preparation</p>
+          </div>
+          
+          <motion.div 
+            initial={isMobile ? "show" : "hidden"}
+            animate={isMobile ? "show" : undefined}
+            whileInView={isMobile ? undefined : "show"}
+            viewport={isMobile ? undefined : { once: true }}
+            variants={{
+              hidden: { opacity: 0 },
+              show: {
+                opacity: 1,
+                transition: { staggerChildren: isMobile ? 0.05 : 0.1 }
+              }
+            }}
+            className={cn(
+              isMobile 
+                ? "flex flex-col gap-3.5" 
+                : "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6"
+            )}
+          >
+            {[
+              { id: 'topic-wise', title: 'Topic-wise Question Bank', desc: 'Master specific subjects with curated questions.', icon: <Layers className="w-5.5 h-5.5 text-brand-600" />, iconDesktop: <Layers className="w-6 h-6 sm:w-7 sm:h-7" /> },
+              { id: 'exam-focused', title: 'Exam-Focused Bank', desc: 'High-yield questions tailored for this exam.', icon: <Target className="w-5.5 h-5.5 text-brand-600" />, iconDesktop: <Target className="w-6 h-6 sm:w-7 sm:h-7" /> },
+              { id: 'revision-sets', title: 'Revision Sets', desc: 'Quick revision modules for last-minute prep.', icon: <BookMarked className="w-5.5 h-5.5 text-brand-600" />, iconDesktop: <BookMarked className="w-6 h-6 sm:w-7 sm:h-7" /> },
+              { id: 'pyq-collections', title: 'PYQ Collections', desc: 'Previous Year Questions with detailed solutions.', icon: <History className="w-5.5 h-5.5 text-brand-600" />, iconDesktop: <History className="w-6 h-6 sm:w-7 sm:h-7" /> },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                variants={{
+                  hidden: { y: 15, opacity: 0 },
+                  show: { y: 0, opacity: 1 }
+                }}
+                whileHover={isMobile ? undefined : whileHover.liftTap}
+                whileTap={isMobile ? { scale: 0.98 } : whileTap.press}
+                className="w-full"
+              >
+                {isMobile ? (
+                  <div
+                    onClick={() => setSelectedBankType(item.id)}
+                    className="p-4 bg-white border border-slate-100 hover:border-brand-200/50 shadow-[0_4px_16px_-4px_rgba(138,28,54,0.03),0_1px_2px_rgba(138,28,54,0.01)] active:scale-[0.98] active:border-brand-300 active:shadow-md rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-brand-500/0 via-brand-500/[0.01] to-brand-500/0 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none" />
+                    <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-gradient-to-b from-brand-500 to-brand-650 rounded-r-sm opacity-90" />
+                    <div className="flex items-center gap-3.5 min-w-0 flex-1 pl-1">
+                      <div className="w-11 h-11 bg-brand-50/60 rounded-xl flex items-center justify-center shrink-0 border border-brand-100/30 relative">
+                        {React.cloneElement(item.icon, { className: "w-5 h-5 text-brand-700 relative z-10" })}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-extrabold text-[14.5px] text-slate-850 tracking-tight leading-snug">{item.title}</h4>
+                        <p className="text-[11.5px] text-slate-500 font-medium leading-relaxed mt-0.5 line-clamp-2 pr-1">{item.desc}</p>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="font-extrabold text-[14.5px] text-slate-850 tracking-tight leading-snug">{item.title}</h4>
-                      <p className="text-[11.5px] text-slate-500 font-medium leading-relaxed mt-0.5 line-clamp-2 pr-1">{item.desc}</p>
+                    <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 shadow-2xs group-active:bg-brand-50 group-active:border-brand-100 group-active:text-brand-600 group-active:translate-x-0.5 transition-all duration-300">
+                      <ChevronRight className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 shadow-2xs group-active:bg-brand-50 group-active:border-brand-100 group-active:text-brand-600 group-active:translate-x-0.5 transition-all duration-300">
-                    <ChevronRight className="w-4 h-4" />
-                  </div>
-                </div>
-              ) : (
+                ) : (
                 <Card 
                   onClick={() => setSelectedBankType(item.id)}
                   className={cn(
@@ -6682,10 +6713,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           ))}
         </motion.div>
       </section>
+      )}
 
       {/* Full Exam Access Banner - Refined for Laptop & Mobile */}
         {/* Full Exam Access Banner - Refined for Laptop & Mobile */}
-        {hasBundle && !hasAccessTo(`exam_bundle_${selectedExam}`) && !isBannerDismissed && (
+        {hasBundle && !hasAccessTo(`exam_bundle_${selectedExam}`) && !isBannerDismissed && (!isMobile || mobileExamTab === 'learn') && (
           <motion.div 
             initial={isMobile ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.98 }}
             animate={isMobile ? undefined : { opacity: 1, scale: 1 }}
@@ -6975,70 +7007,72 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         )}
 
       {/* Section 2: Practice Mode */}
-      <section id="practice-mode-section" className="space-y-6 scroll-mt-24">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
-            <Dumbbell className="w-5 h-5 text-indigo-600" />
-          </div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Step 2: Custom Practice</h2>
-        </div>
-        
-          {isMobile ? (
-            <div
-              onClick={() => setShowPracticeConfig(true)}
-              className="p-4 bg-white border border-slate-100 shadow-[0_4px_16px_-4px_rgba(79,70,229,0.06),0_1px_2px_rgba(79,70,229,0.02)] active:scale-[0.98] active:border-indigo-300 active:shadow-md rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/[0.012] to-indigo-500/0 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none" />
-              <div className="absolute left-0 top-3.5 bottom-3.5 w-1 bg-gradient-to-b from-indigo-500 to-indigo-700 rounded-r-md opacity-80" />
-              
-              <div className="flex items-center gap-3.5 min-w-0 flex-1 pl-1">
-                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-650 rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-indigo-500/10 relative">
-                  <Play className="w-5 h-5 text-white fill-white/20 ml-0.5" />
-                  <div className="absolute inset-0 border border-white/10 rounded-xl" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="font-extrabold text-[14.5px] text-slate-850 tracking-tight leading-snug">Start Practice Session</h4>
-                  <p className="text-[11.5px] text-slate-500 font-medium leading-relaxed mt-0.5 line-clamp-2 pr-1">Customize your practice based on targeted subjects and units.</p>
-                </div>
-              </div>
-              
-              <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 shadow-2xs group-active:bg-indigo-50 group-active:border-indigo-100 group-active:text-indigo-600 group-active:translate-x-0.5 transition-all duration-300">
-                <ChevronRight className="w-4 h-4" />
-              </div>
+      {(!isMobile || mobileExamTab === 'practice') && (
+        <section id="practice-mode-section" className="space-y-6 scroll-mt-24">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
+              <Dumbbell className="w-5 h-5 text-indigo-600" />
             </div>
-          ) : (
-            <Card 
-              onClick={() => setShowPracticeConfig(true)}
-              className="p-5 sm:p-6 md:p-8 bg-white border border-slate-200/60 shadow-xl shadow-brand-500/5 rounded-[1.5rem] md:rounded-[2rem] cursor-pointer group relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8 hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 hover:-translate-y-1 premium-shine-container"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-brand-50/50 via-white to-indigo-50/50" />
-              <VisualEffects />
-              <div className="absolute -right-20 -top-20 w-80 h-80 bg-brand-500/5 rounded-full blur-3xl group-hover:bg-brand-500/10 transition-colors duration-700 pointer-events-none" />
-              <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl group-hover:bg-indigo-500/10 transition-colors duration-700 pointer-events-none" />
-              
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 relative z-10 flex-1 w-full">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 shrink-0 premium-gradient rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/10 group-hover:scale-110 group-hover:premium-glow transition-all duration-500">
-                  <Play className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-white fill-white/20 ml-1" />
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Step 2: Custom Practice</h2>
+          </div>
+          
+            {isMobile ? (
+              <div
+                onClick={() => setShowPracticeConfig(true)}
+                className="p-4 bg-white border border-slate-100 hover:border-indigo-200/50 shadow-[0_4px_16px_-4px_rgba(79,70,229,0.03),0_1px_2px_rgba(79,70,229,0.01)] active:scale-[0.98] active:border-indigo-300 active:shadow-md rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/[0.01] to-indigo-500/0 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none" />
+                <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-gradient-to-b from-indigo-500 to-indigo-650 rounded-r-sm opacity-90" />
+                
+                <div className="flex items-center gap-3.5 min-w-0 flex-1 pl-1">
+                  <div className="w-11 h-11 bg-indigo-50/60 rounded-xl flex items-center justify-center shrink-0 border border-indigo-100/30 relative">
+                    <Play className="w-5 h-5 text-indigo-650 fill-indigo-650/15 relative z-10 ml-0.5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-extrabold text-[14.5px] text-slate-850 tracking-tight leading-snug">Start Practice Session</h4>
+                    <p className="text-[11.5px] text-slate-500 font-medium leading-relaxed mt-0.5 line-clamp-2 pr-1">Customize your practice based on targeted subjects and units.</p>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight group-hover:text-brand-600 transition-colors leading-snug">Start Practice Session</h3>
-                  <p className="text-xs sm:text-sm lg:text-base text-slate-500 font-medium leading-relaxed max-w-xl">Customize your practice based on targeted subjects and units.</p>
+                
+                <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 shadow-2xs group-active:bg-indigo-50 group-active:border-indigo-100 group-active:text-indigo-600 group-active:translate-x-0.5 transition-all duration-300">
+                  <ChevronRight className="w-4 h-4" />
                 </div>
               </div>
+            ) : (
+              <Card 
+                onClick={() => setShowPracticeConfig(true)}
+                className="p-5 sm:p-6 md:p-8 bg-white border border-slate-200/60 shadow-xl shadow-brand-500/5 rounded-[1.5rem] md:rounded-[2rem] cursor-pointer group relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8 hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 hover:-translate-y-1 premium-shine-container"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-50/50 via-white to-indigo-50/50" />
+                <VisualEffects />
+                <div className="absolute -right-20 -top-20 w-80 h-80 bg-brand-500/5 rounded-full blur-3xl group-hover:bg-brand-500/10 transition-colors duration-700 pointer-events-none" />
+                <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl group-hover:bg-indigo-500/10 transition-colors duration-700 pointer-events-none" />
+                
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 relative z-10 flex-1 w-full">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 shrink-0 premium-gradient rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/10 group-hover:scale-110 group-hover:premium-glow transition-all duration-500">
+                    <Play className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-white fill-white/20 ml-1" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight group-hover:text-brand-600 transition-colors leading-snug">Start Practice Session</h3>
+                    <p className="text-xs sm:text-sm lg:text-base text-slate-500 font-medium leading-relaxed max-w-xl">Customize your practice based on targeted subjects and units.</p>
+                  </div>
+                </div>
 
-              <div className="relative z-10 w-full md:w-auto shrink-0 mt-2 md:mt-0">
-                <Button className="w-full md:w-auto px-8 h-[48px] sm:h-[56px] rounded-xl flex items-center justify-center gap-2 text-sm sm:text-base font-black premium-gradient text-white border-none shadow-lg shadow-brand-500/20 group-hover:shadow-brand-500/40 group-hover:premium-glow transition-all">
-                  Start Practice
-                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 ml-1 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </div>
-            </Card>
-          )}
+                <div className="relative z-10 w-full md:w-auto shrink-0 mt-2 md:mt-0">
+                  <Button className="w-full md:w-auto px-8 h-[48px] sm:h-[56px] rounded-xl flex items-center justify-center gap-2 text-sm sm:text-base font-black premium-gradient text-white border-none shadow-lg shadow-brand-500/20 group-hover:shadow-brand-500/40 group-hover:premium-glow transition-all">
+                    Start Practice
+                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 ml-1 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </div>
+              </Card>
+            )}
 
-      </section>
+        </section>
+      )}
 
       {/* Section 3: Mock Tests */}
-      <section id="test-series" className="space-y-10 scroll-mt-24">
+      {(!isMobile || mobileExamTab === 'mock') && (
+        <section id="test-series" className="space-y-10 scroll-mt-24">
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-brand-600 font-black text-[10px] uppercase tracking-[0.2em] bg-brand-50 w-fit px-3 py-1 rounded-full border border-brand-100">
             <Award className="w-3 h-3" />
@@ -7089,22 +7123,22 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     className={cn(
                       "p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300",
                       isLocked 
-                        ? "shadow-[0_4px_16px_-4px_rgba(245,158,11,0.06),0_1px_2px_rgba(245,158,11,0.02)] active:border-amber-300"
+                        ? "shadow-[0_4px_16px_-4px_rgba(245,158,11,0.03),0_1px_2px_rgba(245,158,11,0.01)] active:border-amber-300"
                         : isPremiumUnlocked
-                          ? "shadow-[0_4px_16px_-4px_rgba(16,185,129,0.06),0_1px_2px_rgba(16,185,129,0.02)] active:border-emerald-300"
-                          : "shadow-[0_4px_16px_-4px_rgba(138,28,54,0.06),0_1px_2px_rgba(138,28,54,0.02)] active:border-brand-300"
+                          ? "shadow-[0_4px_16px_-4px_rgba(16,185,129,0.03),0_1px_2px_rgba(16,185,129,0.01)] active:border-emerald-300"
+                          : "shadow-[0_4px_16px_-4px_rgba(79,70,229,0.03),0_1px_2px_rgba(79,70,229,0.01)] active:border-brand-300"
                     )}
                   >
                     <div className={cn(
                       "absolute inset-0 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none",
                       isLocked 
-                        ? "bg-gradient-to-r from-amber-500/0 via-amber-500/[0.012] to-amber-500/0"
+                        ? "bg-gradient-to-r from-amber-500/0 via-amber-500/[0.01] to-amber-500/0"
                         : isPremiumUnlocked
-                          ? "bg-gradient-to-r from-emerald-500/0 via-emerald-500/[0.012] to-emerald-500/0"
-                          : "bg-gradient-to-r from-brand-500/0 via-brand-500/[0.012] to-brand-500/0"
+                          ? "bg-gradient-to-r from-emerald-500/0 via-emerald-500/[0.01] to-emerald-500/0"
+                          : "bg-gradient-to-r from-brand-500/0 via-brand-500/[0.01] to-brand-500/0"
                     )} />
                     <div className={cn(
-                      "absolute left-0 top-3.5 bottom-3.5 w-1 rounded-r-md opacity-80",
+                      "absolute left-0 top-0 bottom-0 w-[4px] rounded-r-sm opacity-90",
                       isLocked 
                         ? "bg-gradient-to-b from-amber-400 to-orange-500" 
                         : isPremiumUnlocked 
@@ -7114,15 +7148,14 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
                     <div className="flex items-center gap-3.5 min-w-0 flex-1 pl-1">
                       <div className={cn(
-                        "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-md relative text-white",
+                        "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border relative",
                         isLocked 
-                          ? "bg-gradient-to-br from-amber-400 to-orange-500 shadow-amber-500/10" 
+                          ? "bg-amber-50/60 border-amber-100/30 text-amber-600" 
                           : isPremiumUnlocked 
-                            ? "bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-500/10" 
-                            : "bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-500/10"
+                            ? "bg-emerald-50/60 border-emerald-100/30 text-emerald-600" 
+                            : "bg-indigo-50/60 border-indigo-100/30 text-indigo-650"
                       )}>
-                        <Target className="w-5.5 h-5.5 text-white" />
-                        <div className="absolute inset-0 border border-white/10 rounded-xl" />
+                        <Target className="w-5 h-5 relative z-10" />
                       </div>
                       
                       <div className="min-w-0 flex-1">
@@ -7416,6 +7449,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           );
         })()}
       </section>
+      )}
 
       {/* Common View Elements */}
       {renderCommonModals()}
@@ -7755,7 +7789,7 @@ const ExamDetailPage = () => {
         initial={false}
         animate={{ y: isBottomNavVisible ? 0 : '100%' }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="glass border-t border-white/25 border-x-transparent border-b-transparent px-2 sm:px-8 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:py-4 flex justify-around items-center fixed bottom-0 left-0 right-0 z-30 rounded-t-[2rem] shadow-[0_-10px_35px_rgba(0,0,0,0.06)]"
+        className="bg-white/92 backdrop-blur-xl border-t border-slate-200/30 sm:glass sm:border-t sm:border-white/25 border-x-transparent border-b-transparent px-2 sm:px-8 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:py-4 flex justify-around items-center fixed bottom-0 left-0 right-0 z-30 rounded-t-[2rem] shadow-[0_-10px_35px_rgba(0,0,0,0.06)]"
       >
         <button 
           type="button"
@@ -8231,7 +8265,7 @@ function AppContent() {
                   initial={false}
                   animate={{ y: isBottomNavVisible ? 0 : '100%' }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="glass border-t border-white/25 border-x-transparent border-b-transparent px-2 sm:px-8 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:py-4 flex justify-around items-center fixed bottom-0 left-0 right-0 z-30 rounded-t-[2rem] shadow-[0_-10px_35px_rgba(0,0,0,0.06)]"
+                  className="bg-white/92 backdrop-blur-xl border-t border-slate-200/30 sm:glass sm:border-t sm:border-white/25 border-x-transparent border-b-transparent px-2 sm:px-8 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:py-4 flex justify-around items-center fixed bottom-0 left-0 right-0 z-30 rounded-t-[2rem] shadow-[0_-10px_35px_rgba(0,0,0,0.06)]"
                 >
                   {/* Hide Navigation Toggle Tab */}
                   <button 

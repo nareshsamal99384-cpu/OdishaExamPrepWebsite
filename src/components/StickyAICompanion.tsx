@@ -946,6 +946,9 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
       if (forOpenFullChat) {
         return "sm:bottom-28";
       }
+      if (effectiveBottomNavVisible) {
+        return "bottom-[calc(92px+env(safe-area-inset-bottom))] sm:bottom-28";
+      }
       return "bottom-24 sm:bottom-28";
     }
   };
