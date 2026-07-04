@@ -80,7 +80,7 @@ const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
     try {
       if (typeof window !== 'undefined' && 'Notification' in window) {
         if (Notification.permission === 'denied') {
-          toast.error('Notifications blocked. Please enable them in your browser settings.', {
+          toast.error('Notifications blocked. Please enable them in your browser or device settings.', {
             duration: 5000,
           });
           setVisible(false);
@@ -95,7 +95,7 @@ const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
 
     if (permission !== 'granted') {
       if (permission === 'denied') {
-        toast.error('Notifications blocked. Please enable them in your browser settings.', {
+        toast.error('Notifications blocked. Please enable them in your browser or device settings.', {
           duration: 5000,
         });
       }
