@@ -119,9 +119,9 @@ const SearchableDropdown = ({ value, onChange, options, placeholder, required, d
 // --- Admin Components ---
 
 const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () => void }) => {
-  const [activeTab, setActiveTab] = useState<'questions' | 'series' | 'tests' | 'exams' | 'banks' | 'users' | 'updates' | 'settings' | 'subscribers'>(() => {
+  const [activeTab, setActiveTab] = useState<'questions' | 'series' | 'tests' | 'exams' | 'banks' | 'users' | 'updates' | 'settings' | 'subscribers' | 'notifications'>(() => {
     const saved = sessionStorage.getItem('oep_adminActiveTab');
-    if (saved === 'questions' || saved === 'series' || saved === 'tests' || saved === 'exams' || saved === 'banks' || saved === 'users' || saved === 'updates' || saved === 'settings' || saved === 'subscribers') {
+    if (saved === 'questions' || saved === 'series' || saved === 'tests' || saved === 'exams' || saved === 'banks' || saved === 'users' || saved === 'updates' || saved === 'settings' || saved === 'subscribers' || saved === 'notifications') {
       return saved as any;
     }
     return 'exams';
@@ -141,6 +141,18 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
   const [bulkFileContent, setBulkFileContent] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // Push Notification Composer State
+  const [pushTitle, setPushTitle] = useState('');
+  const [pushBody, setPushBody] = useState('');
+  const [pushClickUrl, setPushClickUrl] = useState('/');
+  const [pushImageUrl, setPushImageUrl] = useState('');
+  const [pushTargetType, setPushTargetType] = useState<'all' | 'users'>('all');
+  const [pushScheduledAt, setPushScheduledAt] = useState('');
+  const [pushSending, setPushSending] = useState(false);
+  const [pushHistory, setPushHistory] = useState<any[]>([]);
+  const [pushHistoryLoading, setPushHistoryLoading] = useState(false);
+  const [pushHistoryPage, setPushHistoryPage] = useState(1);
+  const [pushHistoryTotal, setPushHistoryTotal] = useState(0);
 
   // Data State
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -2080,6 +2092,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
               { id: 'updates', label: 'Exam Updates', icon: Bell },
               { id: 'settings', label: 'Site Settings', icon: Settings },
               { id: 'subscribers', label: 'Subscribers', icon: Mail },
+              { id: 'notifications', label: 'Push Notify', icon: Bell },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -3641,6 +3654,257 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                       )}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            ) : activeTab === 'notifications' ? (
+              <div className="space-y-8">
+                {/* Header */}
+                <div className="glass rounded-[2rem] border border-slate-200/50 shadow-xl overflow-hidden bg-white/70 p-8">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-2xl bg-[#fce7eb] border border-[#fbe1e6] flex items-center justify-center">
+                      <Bell className="w-6 h-6 text-[#8A1C36]" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black text-slate-900 tracking-tight">Push Notification Composer</h3>
+                      <p className="text-slate-500 font-medium text-sm mt-0.5">Send real-time push notifications to all subscribed users.</p>
+                    </div>
+                  </div>
+
+                  {/* Compose Form */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black uppercase tracking-widest text-slate-500">Notification Title *</label>
+                        <input
+                          type="text"
+                          value={pushTitle}
+                          onChange={e => setPushTitle(e.target.value)}
+                          placeholder="e.g. New Mock Test Available!"
+                          className="w-full px-4 py-3 rounded-xl border-2 border-slate-100 focus:border-brand-500 font-bold text-sm outline-none transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black uppercase tracking-widest text-slate-500">Message Body *</label>
+                        <textarea
+                          value={pushBody}
+                          onChange={e => setPushBody(e.target.value)}
+                          placeholder="e.g. OSSC CGL Full Mock Test 2026 is now live. Attempt it now!"
+                          rows={3}
+                          className="w-full px-4 py-3 rounded-xl border-2 border-slate-100 focus:border-brand-500 font-semibold text-sm outline-none transition-all resize-none"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black uppercase tracking-widest text-slate-500">Destination URL</label>
+                        <input
+                          type="text"
+                          value={pushClickUrl}
+                          onChange={e => setPushClickUrl(e.target.value)}
+                          placeholder="/ or /mock-tests or https://odishaexamprep.in"
+                          className="w-full px-4 py-3 rounded-xl border-2 border-slate-100 focus:border-brand-500 font-mono text-sm outline-none transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black uppercase tracking-widest text-slate-500">Image URL (optional banner)</label>
+                        <input
+                          type="text"
+                          value={pushImageUrl}
+                          onChange={e => setPushImageUrl(e.target.value)}
+                          placeholder="https://... (shown as large banner in notification)"
+                          className="w-full px-4 py-3 rounded-xl border-2 border-slate-100 focus:border-brand-500 font-mono text-sm outline-none transition-all"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-black uppercase tracking-widest text-slate-500">Target</label>
+                          <select
+                            value={pushTargetType}
+                            onChange={e => setPushTargetType(e.target.value as any)}
+                            className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 focus:border-brand-500 font-bold text-sm outline-none"
+                          >
+                            <option value="all">All Subscribers</option>
+                            <option value="users">Specific Users</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-black uppercase tracking-widest text-slate-500">Schedule (optional)</label>
+                          <input
+                            type="datetime-local"
+                            value={pushScheduledAt}
+                            onChange={e => setPushScheduledAt(e.target.value)}
+                            className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 focus:border-brand-500 font-bold text-sm outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Preview Card */}
+                    <div className="space-y-3">
+                      <p className="text-xs font-black uppercase tracking-widest text-slate-500">Live Preview</p>
+                      <div className="bg-slate-800 rounded-2xl p-4 space-y-2 shadow-xl">
+                        <div className="flex items-start gap-3">
+                          <img src="/android-chrome-192x192.png" className="w-10 h-10 rounded-xl shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <p className="text-white text-xs font-black truncate">{pushTitle || 'OdishaExamPrep'}</p>
+                              <p className="text-slate-400 text-[10px] font-medium shrink-0 ml-2">now</p>
+                            </div>
+                            <p className="text-slate-300 text-xs font-medium mt-0.5 line-clamp-2">{pushBody || 'Your notification message will appear here.'}</p>
+                          </div>
+                        </div>
+                        {pushImageUrl && (
+                          <img src={pushImageUrl} className="w-full h-24 object-cover rounded-xl mt-2" onError={e => (e.currentTarget.style.display = 'none')} />
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-400 font-medium">This is how it will appear on Android. iOS appearance may vary.</p>
+
+                      <button
+                        disabled={!pushTitle || !pushBody || pushSending}
+                        onClick={async () => {
+                          if (!pushTitle.trim() || !pushBody.trim()) return alert('Title and body are required.');
+                          if (!confirm(`Send push notification to ALL subscribers? This cannot be undone.`)) return;
+                          setPushSending(true);
+                          try {
+                            const session = (await supabase.auth.getSession()).data.session;
+                            const token = session?.access_token;
+                            const res = await fetch('/api/push/send', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                              body: JSON.stringify({
+                                title: pushTitle,
+                                body: pushBody,
+                                clickUrl: pushClickUrl || '/',
+                                imageUrl: pushImageUrl || undefined,
+                                targetType: pushTargetType,
+                                scheduledAt: pushScheduledAt || undefined,
+                              }),
+                            });
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.error || 'Failed to send');
+                            if (data.scheduled) {
+                              alert(`✅ Notification scheduled for ${new Date(pushScheduledAt).toLocaleString()}`);
+                            } else {
+                              alert(`✅ Sent! Total: ${data.total} | Success: ${data.successCount} | Failed: ${data.failCount}`);
+                            }
+                            setPushTitle(''); setPushBody(''); setPushClickUrl('/'); setPushImageUrl(''); setPushScheduledAt('');
+                            // Reload history
+                            setPushHistoryPage(1);
+                            setPushHistoryLoading(true);
+                            const hr = await fetch(`/api/push/history?page=1`, { headers: { 'Authorization': `Bearer ${token}` } });
+                            const hd = await hr.json();
+                            setPushHistory(hd.notifications || []);
+                            setPushHistoryTotal(hd.total || 0);
+                            setPushHistoryLoading(false);
+                          } catch (err: any) {
+                            alert(`Error: ${err.message}`);
+                          } finally {
+                            setPushSending(false);
+                          }
+                        }}
+                        className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#8A1C36] to-[#b83a55] text-white font-black text-sm hover:shadow-lg hover:shadow-[#8A1C36]/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+                      >
+                        <Bell className="w-4 h-4" />
+                        {pushSending ? 'Sending...' : pushScheduledAt ? 'Schedule Notification' : 'Send Now to All Users'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Templates */}
+                <div className="glass rounded-[2rem] border border-slate-200/50 shadow-xl overflow-hidden bg-white/70 p-6">
+                  <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-4">Quick Templates</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {[
+                      { label: '📝 New Mock Test', title: 'New Mock Test Available!', body: 'A brand new full-length mock test is live. Attempt it now to boost your score!' },
+                      { label: '📚 New Question Bank', title: 'New Question Bank Added!', body: 'A new question bank is now available in your library. Practice and improve!' },
+                      { label: '📋 Exam Notification', title: 'Official Exam Notification!', body: 'An important exam notification has been released. Check details now.' },
+                      { label: '⏰ Exam Reminder', title: 'Exam Alert!', body: 'Don\'t miss the upcoming exam. Check the date and prepare now!' },
+                      { label: '🎉 Result Out', title: 'Result Declared!', body: 'Exam results are out! Check your performance and plan your next step.' },
+                      { label: '🔧 Maintenance', title: 'Scheduled Maintenance', body: 'OdishaExamPrep will be briefly offline tonight for maintenance. We\'ll be back soon!' },
+                    ].map(t => (
+                      <button
+                        key={t.label}
+                        onClick={() => { setPushTitle(t.title); setPushBody(t.body); }}
+                        className="text-left p-3.5 rounded-xl border border-slate-200 hover:border-brand-300 hover:bg-brand-50/30 transition-all text-xs font-bold text-slate-700"
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Notification History */}
+                <div className="glass rounded-[2rem] border border-slate-200/50 shadow-xl overflow-hidden bg-white/70 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-xs font-black uppercase tracking-widest text-slate-500">Notification History</p>
+                    <button
+                      onClick={async () => {
+                        setPushHistoryLoading(true);
+                        try {
+                          const session = (await supabase.auth.getSession()).data.session;
+                          const token = session?.access_token;
+                          const res = await fetch(`/api/push/history?page=${pushHistoryPage}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                          const data = await res.json();
+                          setPushHistory(data.notifications || []);
+                          setPushHistoryTotal(data.total || 0);
+                        } catch {}
+                        setPushHistoryLoading(false);
+                      }}
+                      className="text-xs font-black text-brand-600 hover:text-brand-700 underline"
+                    >
+                      {pushHistoryLoading ? 'Loading...' : 'Refresh'}
+                    </button>
+                  </div>
+
+                  {pushHistory.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Bell className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+                      <p className="text-slate-400 font-bold text-sm">No notifications sent yet.</p>
+                      <p className="text-slate-400 text-xs mt-1">Click Refresh to load history, or send your first notification above.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-100">
+                            <th className="text-left py-2 px-3 text-xs font-black uppercase tracking-wider text-slate-400">Title</th>
+                            <th className="text-left py-2 px-3 text-xs font-black uppercase tracking-wider text-slate-400">Sent At</th>
+                            <th className="text-left py-2 px-3 text-xs font-black uppercase tracking-wider text-slate-400">Target</th>
+                            <th className="text-right py-2 px-3 text-xs font-black uppercase tracking-wider text-slate-400">Delivery</th>
+                            <th className="text-right py-2 px-3 text-xs font-black uppercase tracking-wider text-slate-400">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {pushHistory.map((n: any) => (
+                            <tr key={n.id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="py-3 px-3">
+                                <p className="font-bold text-slate-800 text-xs truncate max-w-[200px]">{n.title}</p>
+                                <p className="text-slate-500 text-[11px] truncate max-w-[200px]">{n.body}</p>
+                              </td>
+                              <td className="py-3 px-3 text-xs font-medium text-slate-500 whitespace-nowrap">
+                                {n.sent_at ? new Date(n.sent_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : n.scheduled_at ? `Scheduled: ${new Date(n.scheduled_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })}` : '-'}
+                              </td>
+                              <td className="py-3 px-3">
+                                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">{n.target_type}</span>
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                <p className="text-xs font-black text-emerald-600">{n.delivery_stats?.success ?? 0} ✓</p>
+                                <p className="text-[10px] text-slate-400">{n.delivery_stats?.total ?? 0} total</p>
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                <span className={cn(
+                                  "text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider",
+                                  n.status === 'sent' ? 'bg-emerald-50 text-emerald-700' :
+                                  n.status === 'scheduled' ? 'bg-amber-50 text-amber-700' :
+                                  n.status === 'sending' ? 'bg-blue-50 text-blue-700' :
+                                  'bg-red-50 text-red-700'
+                                )}>{n.status}</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               </div>
            ) : activeTab === 'users' ? (

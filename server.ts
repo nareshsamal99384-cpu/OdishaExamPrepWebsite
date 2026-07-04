@@ -5,6 +5,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import crypto from "crypto";
+import webpush from "web-push";
 import { createClient } from "@supabase/supabase-js";
 import { ROUTE_LIST } from "./src/lib/routes-config";
 
@@ -481,6 +482,199 @@ async function startServer() {
 
     throw new Error(`Unsupported product type: ${productType}`);
   };
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // Web Push Notification API Routes
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // Configure VAPID keys on startup
+  const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || '';
+  const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || '';
+  const vapidEmail = process.env.ADMIN_EMAIL || 'admin@odishaexamprep.in';
+
+  if (vapidPublicKey && vapidPrivateKey) {
+    webpush.setVapidDetails(`mailto:${vapidEmail}`, vapidPublicKey, vapidPrivateKey);
+  }
+
+  // GET /api/push/vapid-key — Return public VAPID key (safe to expose)
+  app.get("/api/push/vapid-key", (req, res) => {
+    res.json({ publicKey: vapidPublicKey });
+  });
+
+  // POST /api/push/subscribe — Save/update a push subscription
+  app.post("/api/push/subscribe", async (req, res) => {
+    try {
+      const { userId, endpoint, p256dh, auth, deviceInfo = {} } = req.body;
+      if (!userId || !endpoint || !p256dh || !auth) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const { error } = await supabaseAdmin
+        .from('push_subscriptions')
+        .upsert(
+          { user_id: userId, endpoint, p256dh, auth, device_info: deviceInfo, is_active: true },
+          { onConflict: 'user_id,endpoint' }
+        );
+
+      if (error) throw error;
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error('[Push] Subscribe error:', err);
+      res.status(500).json({ error: err.message || 'Failed to save subscription' });
+    }
+  });
+
+  // DELETE /api/push/unsubscribe — Remove a push subscription
+  app.delete("/api/push/unsubscribe", async (req, res) => {
+    try {
+      const { userId, endpoint } = req.body;
+      if (!userId || !endpoint) {
+        return res.status(400).json({ error: "Missing userId or endpoint" });
+      }
+
+      const { error } = await supabaseAdmin
+        .from('push_subscriptions')
+        .delete()
+        .eq('user_id', userId)
+        .eq('endpoint', endpoint);
+
+      if (error) throw error;
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error('[Push] Unsubscribe error:', err);
+      res.status(500).json({ error: err.message || 'Failed to remove subscription' });
+    }
+  });
+
+  // POST /api/push/send — Send a push notification (admin only)
+  app.post("/api/push/send", requireAdmin, async (req, res) => {
+    try {
+      const {
+        title,
+        body,
+        icon = '/android-chrome-192x192.png',
+        imageUrl,
+        clickUrl = '/',
+        data = {},
+        targetType = 'all', // 'all' | 'users' | 'exam'
+        targetIds = [],
+        scheduledAt,
+      } = req.body;
+
+      if (!title || !body) {
+        return res.status(400).json({ error: "title and body are required" });
+      }
+
+      // If scheduled for the future, just save it
+      if (scheduledAt && new Date(scheduledAt) > new Date()) {
+        const { data: notif, error } = await supabaseAdmin
+          .from('push_notifications')
+          .insert({
+            title, body, icon, image_url: imageUrl, click_url: clickUrl, data,
+            target_type: targetType, target_ids: targetIds,
+            status: 'scheduled', scheduled_at: scheduledAt,
+            created_by: (req as any).user?.id || null,
+          })
+          .select()
+          .single();
+        if (error) throw error;
+        return res.json({ success: true, scheduled: true, id: notif.id });
+      }
+
+      // Insert notification record
+      const { data: notif, error: notifError } = await supabaseAdmin
+        .from('push_notifications')
+        .insert({
+          title, body, icon, image_url: imageUrl, click_url: clickUrl, data,
+          target_type: targetType, target_ids: targetIds,
+          status: 'sending', created_by: (req as any).user?.id || null,
+        })
+        .select()
+        .single();
+      if (notifError) throw notifError;
+
+      // Fetch target subscriptions
+      let query = supabaseAdmin.from('push_subscriptions').select('*').eq('is_active', true);
+      if (targetType === 'users' && targetIds.length > 0) {
+        query = query.in('user_id', targetIds);
+      }
+      const { data: subscriptions, error: subError } = await query;
+      if (subError) throw subError;
+
+      const payload = JSON.stringify({ title, body, icon, image: imageUrl, clickUrl, data });
+      let successCount = 0;
+      let failCount = 0;
+      const invalidEndpoints: string[] = [];
+
+      // Send to all subscriptions in parallel (batched)
+      const BATCH_SIZE = 50;
+      for (let i = 0; i < (subscriptions || []).length; i += BATCH_SIZE) {
+        const batch = subscriptions!.slice(i, i + BATCH_SIZE);
+        await Promise.allSettled(
+          batch.map(async (sub) => {
+            try {
+              await webpush.sendNotification(
+                { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+                payload
+              );
+              successCount++;
+            } catch (err: any) {
+              failCount++;
+              // 404 / 410 = subscription expired/invalid
+              if (err.statusCode === 404 || err.statusCode === 410) {
+                invalidEndpoints.push(sub.endpoint);
+              }
+              console.error(`[Push] Failed to send to ${sub.endpoint.slice(0, 40)}:`, err.statusCode);
+            }
+          })
+        );
+      }
+
+      // Clean up invalid subscriptions
+      if (invalidEndpoints.length > 0) {
+        await supabaseAdmin
+          .from('push_subscriptions')
+          .update({ is_active: false })
+          .in('endpoint', invalidEndpoints);
+      }
+
+      // Update notification record with delivery stats
+      await supabaseAdmin
+        .from('push_notifications')
+        .update({
+          status: 'sent',
+          sent_at: new Date().toISOString(),
+          delivery_stats: { total: (subscriptions || []).length, success: successCount, failed: failCount },
+        })
+        .eq('id', notif.id);
+
+      res.json({ success: true, total: (subscriptions || []).length, successCount, failCount });
+    } catch (err: any) {
+      console.error('[Push] Send error:', err);
+      res.status(500).json({ error: err.message || 'Failed to send notifications' });
+    }
+  });
+
+  // GET /api/push/history — Get notification history (admin only)
+  app.get("/api/push/history", requireAdmin, async (req, res) => {
+    try {
+      const page = parseInt(String(req.query.page || '1'));
+      const limit = 20;
+      const from = (page - 1) * limit;
+
+      const { data, count, error } = await supabaseAdmin
+        .from('push_notifications')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, from + limit - 1);
+
+      if (error) throw error;
+      res.json({ notifications: data, total: count, page, limit });
+    } catch (err: any) {
+      console.error('[Push] History error:', err);
+      res.status(500).json({ error: err.message || 'Failed to fetch history' });
+    }
+  });
 
   // Razorpay Create Order API
   app.post("/api/payment/order", async (req, res) => {

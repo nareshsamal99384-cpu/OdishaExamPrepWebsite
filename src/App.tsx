@@ -83,6 +83,8 @@ import { ROUTE_PATHS } from './lib/routes-config';
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 import StickyAICompanion from './components/StickyAICompanion';
 import LoadingPortal from './components/LoadingPortal';
+import PushPermissionPrompt from './components/PushPermissionPrompt';
+import { registerServiceWorker } from './lib/pushNotifications';
 
 const HistoryView = ({ 
   user, 
@@ -8401,6 +8403,12 @@ function AppContent() {
   const { user, loading, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Register service worker on app start (for push notifications)
+  useEffect(() => {
+    registerServiceWorker().catch(console.error);
+  }, []);
+
   const [mainTab, setMainTab] = useState<'home' | 'courses' | 'analytics' | 'history' | 'library' | 'ai_mentor'>(() => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab');
@@ -9026,6 +9034,11 @@ function AppContent() {
           isBottomNavVisible={isBottomNavVisible} 
           activeTab={location.pathname.startsWith('/blog') ? 'blog' : mainTab} 
         />
+      )}
+
+      {/* Push Notification Permission Prompt - only for logged-in users */}
+      {user && !location.pathname.startsWith('/admin') && (
+        <PushPermissionPrompt userId={user.id} trigger="auto" />
       )}
 
       <AnimatePresence mode="wait">
