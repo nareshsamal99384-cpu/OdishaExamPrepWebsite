@@ -54,23 +54,23 @@ class AiDiagnosticManager {
     } catch (e) {
       console.error("Failed to remove from localStorage:", e);
     }
-    
-    if (this.state.activeCacheKey === cacheKey) {
-      if (this.abortController) {
-        this.abortController.abort();
-        this.abortController = null;
-      }
-      this.state = {
-        scanningPhase: 0,
-        scanStep: '',
-        loadingAi: false,
-        aiInsight: '',
-        actionItems: [],
-        activeCacheKey: null,
-        scanCount: this.state.scanCount,
-      };
-      this.notify();
+
+    // Always reset and notify — regardless of whether the manager started the scan
+    // this session (activeCacheKey may be null if data was loaded from localStorage).
+    if (this.abortController) {
+      this.abortController.abort();
+      this.abortController = null;
     }
+    this.state = {
+      scanningPhase: 0,
+      scanStep: '',
+      loadingAi: false,
+      aiInsight: '',
+      actionItems: [],
+      activeCacheKey: null,
+      scanCount: this.state.scanCount,
+    };
+    this.notify();
   }
 
   async runAiAnalysis(user: any, stats: any, force = false) {
