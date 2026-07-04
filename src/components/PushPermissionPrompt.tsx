@@ -32,11 +32,11 @@ const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
   useEffect(() => {
     if (!userId || isSubscribed) return;
 
-    // For normal devices, don't show if already granted or denied
+    // For normal devices, don't show if already granted
     const isIOSNotInstalled = isIOSDevice && !isIOSInstalled;
     if (!isIOSNotInstalled) {
       if (!isSupported) return;
-      if (permissionState === 'denied' || permissionState === 'granted') return;
+      if (permissionState === 'granted') return;
     }
 
     if (trigger !== 'auto') return;
@@ -56,17 +56,17 @@ const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
       const isIOSNotInstalled = isIOSDevice && !isIOSInstalled;
       if (isIOSNotInstalled) {
         setVisible(true);
-      } else if (isSupported && permissionState !== 'granted' && permissionState !== 'denied') {
+      } else if (isSupported && permissionState !== 'granted') {
         setVisible(true);
       }
     }
   }, [trigger, isSupported, isIOSDevice, isIOSInstalled, userId, isSubscribed, permissionState]);
 
-  // Automatically hide the panel if subscribed or permission is granted/denied (except for iOS safari instructions)
+  // Automatically hide the panel if subscribed AND permission is granted (except for iOS safari instructions which hide when subscribed)
   useEffect(() => {
     const isIOSNotInstalled = isIOSDevice && !isIOSInstalled;
     if (!isIOSNotInstalled) {
-      if (isSubscribed || permissionState === 'granted' || permissionState === 'denied') {
+      if (isSubscribed && permissionState === 'granted') {
         setVisible(false);
       }
     } else {

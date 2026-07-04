@@ -52,7 +52,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 export async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | null> {
   if (!isPushSupported()) return null;
   try {
-    const registration = await navigator.serviceWorker.getRegistration('/');
+    const registration = await navigator.serviceWorker.ready;
     return registration || null;
   } catch {
     return null;
@@ -139,7 +139,8 @@ export async function unsubscribeFromPush(userId: string): Promise<boolean> {
 // ── Check current subscription status ─────────────────────────────────────
 export async function getSubscriptionStatus(): Promise<boolean> {
   try {
-    const reg = await getServiceWorkerRegistration();
+    if (!isPushSupported()) return false;
+    const reg = await navigator.serviceWorker.ready;
     if (!reg) return false;
     const subscription = await reg.pushManager.getSubscription();
     return !!subscription;
