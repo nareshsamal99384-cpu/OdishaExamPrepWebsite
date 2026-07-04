@@ -6669,7 +6669,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     />
                   )}
                   <Layers className="w-3.5 h-3.5 relative z-10" />
-                  <span className="relative z-10">Learn</span>
+                  <span className="relative z-10">Question Bank</span>
                 </button>
                 <button
                   type="button"
