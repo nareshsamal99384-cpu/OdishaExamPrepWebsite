@@ -6717,7 +6717,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         <section id="question-bank-section" className="space-y-8 scroll-mt-24">
           <div className="relative pl-4">
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-500 rounded-full" />
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Step 1: Learn & Review</h2>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Step 1: Question Banks</h2>
             <p className="text-slate-500 font-medium mt-1">Premium resources for your preparation</p>
           </div>
           
