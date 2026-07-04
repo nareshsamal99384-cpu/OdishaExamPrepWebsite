@@ -764,6 +764,8 @@ export default function AiMentor({ user }: { user: any }) {
     const saved = localStorage.getItem('study_coach_quiz_size');
     return saved ? Number(saved) : 3;
   });
+  const [difficultyOpen, setDifficultyOpen] = useState(false);
+  const [quizSizeOpen, setQuizSizeOpen] = useState(false);
   const [quizMode, setQuizMode] = useState<'quick' | 'best'>(() => {
     const metaVal = user?.user_metadata?.study_coach_practice?.quizMode;
     if (metaVal) return metaVal;
@@ -4845,31 +4847,124 @@ JSON structure:
                       
                       {/* Difficulty and MCQ count row */}
                       <div className="grid grid-cols-2 gap-3">
+
+                        {/* Difficulty Custom Dropdown */}
                         <div className="space-y-1">
                           <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-0.5 block">Difficulty</label>
-                          <select
-                            value={quizDifficulty}
-                            onChange={(e) => setQuizDifficulty(e.target.value)}
-                            className="w-full bg-white border border-slate-200/60 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-teal-500/40 focus:border-teal-500 transition-all font-semibold"
-                          >
-                            <option>Easy</option>
-                            <option>Medium</option>
-                            <option>Hard</option>
-                          </select>
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => { setDifficultyOpen(o => !o); setQuizSizeOpen(false); }}
+                              className={cn(
+                                "w-full flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold tracking-wide transition-all duration-200 cursor-pointer outline-none",
+                                difficultyOpen
+                                  ? "bg-teal-50 border-teal-400/50 text-teal-700 shadow-sm"
+                                  : "bg-white border-slate-200/70 text-slate-700 hover:border-teal-400/40 hover:bg-teal-50/50"
+                              )}
+                            >
+                              <span className="flex items-center gap-1.5">
+                                <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", quizDifficulty === 'Easy' ? 'bg-emerald-500' : quizDifficulty === 'Medium' ? 'bg-amber-400' : 'bg-rose-500')} />
+                                {quizDifficulty}
+                              </span>
+                              <motion.div animate={{ rotate: difficultyOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                                <ChevronDown className="w-3 h-3 text-slate-400" />
+                              </motion.div>
+                            </button>
+                            <AnimatePresence>
+                              {difficultyOpen && (
+                                <>
+                                  <div className="fixed inset-0 z-40" onClick={() => setDifficultyOpen(false)} />
+                                  <motion.div
+                                    initial={{ opacity: 0, y: -5, scale: 0.97 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -5, scale: 0.97 }}
+                                    transition={{ duration: 0.14, ease: 'easeOut' }}
+                                    className="absolute left-0 top-[calc(100%+5px)] z-50 w-full bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/60 overflow-hidden"
+                                  >
+                                    <div className="p-1.5 space-y-0.5">
+                                      {[
+                                        { value: 'Easy', color: 'bg-emerald-500' },
+                                        { value: 'Medium', color: 'bg-amber-400' },
+                                        { value: 'Hard', color: 'bg-rose-500' },
+                                      ].map(opt => (
+                                        <button
+                                          key={opt.value}
+                                          type="button"
+                                          onClick={() => { setQuizDifficulty(opt.value); setDifficultyOpen(false); }}
+                                          className={cn(
+                                            "w-full text-left px-3 py-2 rounded-xl text-xs font-bold tracking-wide transition-all duration-150 cursor-pointer flex items-center gap-2",
+                                            quizDifficulty === opt.value
+                                              ? "bg-teal-50 text-teal-700"
+                                              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                                          )}
+                                        >
+                                          <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", opt.color)} />
+                                          {opt.value}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                </>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         </div>
- 
+
+                        {/* MCQ Count Custom Dropdown */}
                         <div className="space-y-1">
                           <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-0.5 block">MCQ Count</label>
-                          <select
-                            value={quizSize}
-                            onChange={(e) => setQuizSize(Number(e.target.value))}
-                            className="w-full bg-white border border-slate-200/60 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-teal-500/40 focus:border-teal-500 transition-all font-semibold"
-                          >
-                            <option value={3}>3 Questions</option>
-                            <option value={5}>5 Questions</option>
-                            <option value={10}>10 Questions</option>
-                          </select>
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => { setQuizSizeOpen(o => !o); setDifficultyOpen(false); }}
+                              className={cn(
+                                "w-full flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold tracking-wide transition-all duration-200 cursor-pointer outline-none",
+                                quizSizeOpen
+                                  ? "bg-teal-50 border-teal-400/50 text-teal-700 shadow-sm"
+                                  : "bg-white border-slate-200/70 text-slate-700 hover:border-teal-400/40 hover:bg-teal-50/50"
+                              )}
+                            >
+                              <span>{quizSize} Questions</span>
+                              <motion.div animate={{ rotate: quizSizeOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                                <ChevronDown className="w-3 h-3 text-slate-400" />
+                              </motion.div>
+                            </button>
+                            <AnimatePresence>
+                              {quizSizeOpen && (
+                                <>
+                                  <div className="fixed inset-0 z-40" onClick={() => setQuizSizeOpen(false)} />
+                                  <motion.div
+                                    initial={{ opacity: 0, y: -5, scale: 0.97 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -5, scale: 0.97 }}
+                                    transition={{ duration: 0.14, ease: 'easeOut' }}
+                                    className="absolute left-0 top-[calc(100%+5px)] z-50 w-full bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/60 overflow-hidden"
+                                  >
+                                    <div className="p-1.5 space-y-0.5">
+                                      {[3, 5, 10].map(n => (
+                                        <button
+                                          key={n}
+                                          type="button"
+                                          onClick={() => { setQuizSize(n); setQuizSizeOpen(false); }}
+                                          className={cn(
+                                            "w-full text-left px-3 py-2 rounded-xl text-xs font-bold tracking-wide transition-all duration-150 cursor-pointer flex items-center gap-2",
+                                            quizSize === n
+                                              ? "bg-teal-50 text-teal-700"
+                                              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                                          )}
+                                        >
+                                          <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", quizSize === n ? 'bg-teal-500' : 'bg-slate-200')} />
+                                          {n} Questions
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                </>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         </div>
+
                       </div>
  
                       <div className="border-t border-slate-200/50" />
