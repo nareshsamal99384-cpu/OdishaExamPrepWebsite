@@ -1495,10 +1495,10 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                     Holographic Scanning Active
                   </div>
                   <h4 className="text-lg font-black tracking-tight mt-1 text-slate-800">{scanStep}</h4>
-                  <div className="w-64 h-1 bg-slate-100 rounded-full overflow-hidden mt-4 mx-auto relative border border-slate-200/50">
-                    <motion.div 
+                  <div className="w-full max-w-[256px] h-1 bg-slate-100 rounded-full overflow-hidden mt-4 mx-auto relative border border-slate-200/50">
+                    <motion.div
                       className="h-full bg-gradient-to-r from-[#8A1C36] to-indigo-500 rounded-full"
-                      animate={{ x: [-200, 200] }}
+                      animate={{ x: ['-100%', '350%'] }}
                       transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
                       style={{ width: '40%' }}
                     />
