@@ -1172,7 +1172,7 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
     // Subscribe to manager updates to reflect state changes reactively
     const unsubscribe = aiDiagnosticManager.subscribe(() => {
       const latest = aiDiagnosticManager.getState();
-      if (latest.activeCacheKey === cacheKey) {
+      if (latest.activeCacheKey === cacheKey || latest.activeCacheKey === null) {
         setScanningPhase(latest.scanningPhase);
         setScanStep(latest.scanStep);
         setLoadingAi(latest.loadingAi);
