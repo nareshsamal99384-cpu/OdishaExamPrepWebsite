@@ -501,6 +501,15 @@ body {
   animation: shimmer 2.5s ease-in-out infinite;
 }
 
+/* --- AI Diagnostics scanning bar --- */
+@keyframes scan-bar {
+  0%   { left: -40%; }
+  100% { left: 110%; }
+}
+.animate-scan-bar {
+  animation: scan-bar 1.4s linear infinite;
+}
+
 /* --- Glow pulse --- */
 @keyframes glow-pulse {
   0%, 100% { box-shadow: 0 0 20px rgba(124,58,237,0.3), 0 0 60px rgba(124,58,237,0.1); }
