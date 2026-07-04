@@ -735,10 +735,10 @@ Data last refreshed: ${data ? new Date(data.loadedAt).toLocaleTimeString() : 'No
 function RenderMessage({ text }: { text: string }) {
   if (!text) {
     return (
-      <span className="flex gap-1 items-center h-5">
-        <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce [animation-delay:0ms]" />
-        <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce [animation-delay:150ms]" />
-        <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce [animation-delay:300ms]" />
+      <span className="flex gap-1 items-center h-6 py-1 overflow-visible">
+        <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce shrink-0 [animation-delay:0ms]" />
+        <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce shrink-0 [animation-delay:150ms]" />
+        <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce shrink-0 [animation-delay:300ms]" />
       </span>
     );
   }
@@ -1661,9 +1661,9 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     if (isOpen && !isMinimized) {
-      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      chatEndRef.current?.scrollIntoView({ behavior: loading ? 'auto' : 'smooth' });
     }
-  }, [messages, isOpen, isMinimized]);
+  }, [messages, isOpen, isMinimized, loading]);
 
   // Focus input
   // eslint-disable-next-line react-hooks/rules-of-hooks

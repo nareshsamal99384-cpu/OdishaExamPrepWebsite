@@ -3486,7 +3486,11 @@ JSON structure:
               </div>
             </div>
 
-            <div ref={chatConsoleRef} className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-6 space-y-4 md:space-y-5 no-scrollbar smooth-scroll-gpu">
+            <div 
+              ref={chatConsoleRef} 
+              className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-6 space-y-4 md:space-y-5 no-scrollbar smooth-scroll-gpu"
+              style={{ scrollBehavior: loading ? 'auto' : 'smooth' }}
+            >
               {messages.map((m, idx) => (
                 <div 
                   key={idx} 
@@ -3520,12 +3524,12 @@ JSON structure:
                   </div>
                   <div className="whitespace-pre-wrap font-sans">
                     {m.content ? <MarkdownMathRenderer text={m.content} isUser={m.role === 'user'} /> : (
-                      <span className="inline-flex gap-2 items-center text-xs font-semibold text-slate-500">
+                      <span className="inline-flex gap-2 items-center text-xs font-semibold text-slate-500 py-1.5 overflow-visible">
                         <span className="text-[10px] text-brand-600/80 font-black tracking-wider uppercase animate-pulse">OdishaExamPrep AI is responding</span>
-                        <span className="flex gap-1">
-                          <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        <span className="flex gap-1 py-1 overflow-visible">
+                          <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce shrink-0" style={{ animationDelay: '0ms' }} />
+                          <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce shrink-0" style={{ animationDelay: '150ms' }} />
+                          <span className="w-1.5 h-1.5 bg-brand-400 rounded-full animate-bounce shrink-0" style={{ animationDelay: '300ms' }} />
                         </span>
                       </span>
                     )}

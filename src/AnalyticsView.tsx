@@ -684,7 +684,7 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTo({
         top: chatContainerRef.current.scrollHeight,
-        behavior: 'smooth'
+        behavior: chatLoading ? 'auto' : 'smooth'
       });
     }
   }, [chatHistory, chatLoading]);
