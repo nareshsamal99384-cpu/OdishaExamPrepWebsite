@@ -24,14 +24,14 @@ const MarkdownMathRenderer = ({ text, isUser = false }: { text: string; isUser?:
   if (!text) return null;
   const lines = text.split('\n');
   return (
-    <div className="space-y-2 text-left w-full whitespace-pre-wrap">
+    <div className={cn("text-left w-full", isUser ? "space-y-1.5" : "space-y-3")}>
       {lines.map((line, lineIdx) => {
         const trimmed = line.trim();
         if (trimmed.startsWith('### ')) {
           return <h4 key={lineIdx} className={cn("text-xs font-black mt-3 mb-1 uppercase tracking-wider", isUser ? "text-white" : "text-[#8A1C36]")}><MathTextRenderer text={trimmed.substring(4)} isUser={isUser} /></h4>;
         }
         if (trimmed.startsWith('## ')) {
-          return <h3 key={lineIdx} className={cn("text-sm font-black mt-4 mb-1.5 uppercase tracking-wide", isUser ? "text-white" : "text-slate-900")}><MathTextRenderer text={trimmed.substring(3)} isUser={isUser} /></h3>;
+          return <h3 key={lineIdx} className={cn("text-sm font-black mt-4 mb-1.5 uppercase tracking-wide", isUser ? "text-white" : "text-slate-905")}><MathTextRenderer text={trimmed.substring(3)} isUser={isUser} /></h3>;
         }
         if (trimmed.startsWith('# ')) {
           return <h2 key={lineIdx} className={cn("text-base font-black mt-5 mb-2", isUser ? "text-white" : "text-slate-900")}><MathTextRenderer text={trimmed.substring(2)} isUser={isUser} /></h2>;
@@ -53,6 +53,9 @@ const MarkdownMathRenderer = ({ text, isUser = false }: { text: string; isUser?:
           listContent = numMatch[2];
         }
 
+        // Check for option lists (e.g., a) or A. or a-)
+        const optionMatch = trimmed.match(/^([a-gA-G])[\)\.\-]\s+(.*)$/);
+
         const renderInline = (str: string) => {
           const parts = str.split(/(\*\*.*?\*\*)/g);
           return parts.map((part, pIdx) => {
@@ -67,7 +70,7 @@ const MarkdownMathRenderer = ({ text, isUser = false }: { text: string; isUser?:
           return (
             <div key={lineIdx} className="flex items-start gap-2 pl-3 my-0.5">
               <span className={cn("w-1.5 h-1.5 rounded-full shrink-0 mt-2", isUser ? "bg-brand-200" : "bg-[#8A1C36]")} />
-              <span className={cn("leading-relaxed font-semibold flex-1 text-xs text-slate-700", isUser ? "text-brand-50" : "text-slate-700")}>{renderInline(listContent)}</span>
+              <span className={cn("leading-relaxed font-medium flex-1 text-xs text-slate-700", isUser ? "text-brand-50" : "text-slate-700")}>{renderInline(listContent)}</span>
             </div>
           );
         }
@@ -76,13 +79,37 @@ const MarkdownMathRenderer = ({ text, isUser = false }: { text: string; isUser?:
           return (
             <div key={lineIdx} className="flex items-start gap-2 pl-3 my-0.5">
               <span className={cn("font-black text-xs shrink-0 mt-0.5", isUser ? "text-brand-200" : "text-[#8A1C36]")}>{numLabel}.</span>
-              <span className={cn("leading-relaxed font-semibold flex-1 text-xs text-slate-700", isUser ? "text-brand-50" : "text-slate-700")}>{renderInline(listContent)}</span>
+              <span className={cn("leading-relaxed font-medium flex-1 text-xs text-slate-700", isUser ? "text-brand-50" : "text-slate-700")}>{renderInline(listContent)}</span>
             </div>
           );
         }
 
+        if (optionMatch) {
+          const optionLetter = optionMatch[1];
+          const optionText = optionMatch[2];
+          return (
+            <div key={lineIdx} className="flex items-start gap-2 pl-3.5 my-1 group/option">
+              <span className={cn(
+                "flex items-center justify-center w-4.5 h-4.5 rounded text-[9px] font-black uppercase shrink-0 mt-0.5 border transition-all duration-200",
+                isUser 
+                  ? "bg-white/10 border-white/20 text-white" 
+                  : "bg-slate-100 border-slate-200/60 text-slate-500 group-hover/option:bg-brand-50 group-hover/option:border-brand-200 group-hover/option:text-brand-650"
+              )}>
+                {optionLetter}
+              </span>
+              <span className={cn("leading-relaxed font-medium flex-1 text-xs text-slate-700", isUser ? "text-brand-50" : "text-slate-700")}>
+                {renderInline(optionText)}
+              </span>
+            </div>
+          );
+        }
+
+        if (trimmed === '') {
+          return null;
+        }
+
         return (
-          <p key={lineIdx} className={cn("leading-relaxed font-semibold text-xs text-slate-700", isUser ? "text-brand-50" : "text-slate-700")}>
+          <p key={lineIdx} className={cn("leading-relaxed font-medium text-xs text-slate-700", isUser ? "text-brand-50" : "text-slate-700")}>
             {renderInline(line)}
           </p>
         );
@@ -1695,8 +1722,10 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                               <div 
                                 key={i} 
                                 className={cn(
-                                  "flex gap-2 sm:gap-3 max-w-[90%] sm:max-w-[85%] animate-in fade-in slide-in-from-bottom-2 duration-305",
-                                  msg.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
+                                  "flex gap-2 sm:gap-3 animate-in fade-in slide-in-from-bottom-2 duration-305",
+                                  msg.role === 'user' 
+                                    ? "max-w-[85%] sm:max-w-[75%] ml-auto flex-row-reverse" 
+                                    : "w-full sm:w-auto max-w-[96%] sm:max-w-[85%] md:max-w-[80%] mr-auto"
                                 )}
                               >
                                 <div className={cn(

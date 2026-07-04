@@ -507,23 +507,20 @@ const GENERATING_STEPS = [
   "Analyzing exam blueprint & target standards...",
   "Drafting high-yield custom MCQ question keys...",
   "Rendering LaTeX formulas & tutor explanations..."
-];
-
-
-const MarkdownMathRenderer = ({ text, isUser = false }: { text: string; isUser?: boolean }) => {
+];const MarkdownMathRenderer = ({ text, isUser = false }: { text: string; isUser?: boolean }) => {
   if (!text) return null;
 
   // Process text to handle math, lists, bold, etc.
   const lines = text.split('\n');
 
   return (
-    <div className="space-y-1.5 text-left w-full">
+    <div className={cn("text-left w-full", isUser ? "space-y-1.5" : "space-y-3")}>
       {lines.map((line, lineIdx) => {
         const trimmed = line.trim();
         
         // Check for headers
         if (trimmed.startsWith('### ')) {
-          return <h4 key={lineIdx} className={cn("text-sm font-black mt-3 mb-1", isUser ? "text-white" : "text-slate-800")}><MathTextRenderer text={trimmed.substring(4)} isUser={isUser} /></h4>;
+          return <h4 key={lineIdx} className={cn("text-sm font-black mt-3 mb-1", isUser ? "text-white" : "text-slate-805")}><MathTextRenderer text={trimmed.substring(4)} isUser={isUser} /></h4>;
         }
         if (trimmed.startsWith('## ')) {
           return <h3 key={lineIdx} className={cn("text-base font-black mt-4 mb-1.5", isUser ? "text-white" : "text-slate-900")}><MathTextRenderer text={trimmed.substring(3)} isUser={isUser} /></h3>;
@@ -550,6 +547,9 @@ const MarkdownMathRenderer = ({ text, isUser = false }: { text: string; isUser?:
           listContent = numMatch[2];
         }
 
+        // Check for option lists (e.g., a) or A. or a-)
+        const optionMatch = trimmed.match(/^([a-gA-G])[\)\.\-]\s+(.*)$/);
+
         // Parse bold and other inline formats in listContent
         const renderInline = (str: string) => {
           const parts = str.split(/(\*\*.*?\*\*)/g);
@@ -565,7 +565,7 @@ const MarkdownMathRenderer = ({ text, isUser = false }: { text: string; isUser?:
           return (
             <div key={lineIdx} className="flex items-start gap-2 pl-3 my-0.5">
               <span className={cn("w-1.5 h-1.5 rounded-full shrink-0 mt-2", isUser ? "bg-brand-200" : "bg-[#8A1C36]")} />
-              <span className={cn("leading-relaxed font-semibold flex-1", isUser ? "text-brand-50" : "text-slate-700")}>{renderInline(listContent)}</span>
+              <span className={cn("leading-relaxed font-medium flex-1 text-sm md:text-[15px]", isUser ? "text-brand-50" : "text-slate-700")}>{renderInline(listContent)}</span>
             </div>
           );
         }
@@ -574,18 +574,38 @@ const MarkdownMathRenderer = ({ text, isUser = false }: { text: string; isUser?:
           return (
             <div key={lineIdx} className="flex items-start gap-2 pl-3 my-0.5">
               <span className={cn("font-black text-xs shrink-0 mt-0.5", isUser ? "text-brand-200" : "text-[#8A1C36]")}>{numLabel}.</span>
-              <span className={cn("leading-relaxed font-semibold flex-1", isUser ? "text-brand-50" : "text-slate-700")}>{renderInline(listContent)}</span>
+              <span className={cn("leading-relaxed font-medium flex-1 text-sm md:text-[15px]", isUser ? "text-brand-50" : "text-slate-700")}>{renderInline(listContent)}</span>
+            </div>
+          );
+        }
+
+        if (optionMatch) {
+          const optionLetter = optionMatch[1];
+          const optionText = optionMatch[2];
+          return (
+            <div key={lineIdx} className="flex items-start gap-2.5 pl-4 my-1 group/option">
+              <span className={cn(
+                "flex items-center justify-center w-5 h-5 rounded-md text-[10px] font-black uppercase shrink-0 mt-0.5 border transition-all duration-200",
+                isUser 
+                  ? "bg-white/10 border-white/20 text-white" 
+                  : "bg-slate-100 border-slate-200/60 text-slate-500 group-hover/option:bg-brand-50 group-hover/option:border-brand-200 group-hover/option:text-brand-650"
+              )}>
+                {optionLetter}
+              </span>
+              <span className={cn("leading-relaxed font-medium flex-1 text-sm md:text-[15px]", isUser ? "text-brand-50" : "text-slate-700")}>
+                {renderInline(optionText)}
+              </span>
             </div>
           );
         }
 
         // Regular line
         if (trimmed === '') {
-          return <div key={lineIdx} className="h-1" />;
+          return null;
         }
 
         return (
-          <p key={lineIdx} className={cn("leading-relaxed font-semibold", isUser ? "text-white" : "text-slate-700")}>
+          <p key={lineIdx} className={cn("leading-relaxed font-medium text-sm md:text-[15px]", isUser ? "text-white" : "text-slate-700")}>
             {renderInline(line)}
           </p>
         );
@@ -3341,7 +3361,7 @@ JSON structure:
         
         {/* Left Pane: Chat Interface */}
         <div id="chat-pane" className={cn(
-          "lg:col-span-7 bg-white text-slate-700 border border-slate-200/60 rounded-[2rem] overflow-hidden shadow-2xl flex-col h-[600px] lg:h-[720px] relative",
+          "lg:col-span-7 bg-white text-slate-700 border border-slate-200/60 rounded-[2rem] overflow-hidden shadow-2xl flex-col h-[calc(100dvh-12rem)] min-h-[580px] lg:h-[720px] relative",
           mobileTab === 'chat' ? "flex" : "hidden lg:flex"
         )}>
           {/* Declaring dark color-scheme on the dark chat console to enable dark-themed scrollbars and select default popups */}
@@ -3466,15 +3486,15 @@ JSON structure:
               </div>
             </div>
 
-            <div ref={chatConsoleRef} className="flex-1 overflow-y-auto p-3.5 md:p-6 space-y-3.5 md:space-y-4 no-scrollbar smooth-scroll-gpu">
+            <div ref={chatConsoleRef} className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-6 space-y-4 md:space-y-5 no-scrollbar smooth-scroll-gpu">
               {messages.map((m, idx) => (
                 <div 
                   key={idx} 
                   className={cn(
-                    "flex flex-col max-w-[90%] sm:max-w-[85%] rounded-2xl p-3 md:p-4 text-[13px] md:text-sm font-medium leading-relaxed shadow-md animate-fade-up",
+                    "flex flex-col rounded-2xl p-3.5 md:p-5 text-sm md:text-[15px] leading-relaxed shadow-sm transition-all duration-300 animate-fade-up",
                     m.role === 'user' 
-                      ? "bg-brand-500 text-white self-end rounded-tr-none" 
-                      : "bg-slate-50 border border-slate-200/60 text-slate-800 self-start rounded-tl-none"
+                      ? "bg-brand-500 text-white self-end rounded-tr-none max-w-[85%] sm:max-w-[75%]" 
+                      : "bg-slate-50 border border-slate-200/60 text-slate-800 self-start rounded-tl-none w-full sm:w-auto max-w-[96%] sm:max-w-[85%] md:max-w-[80%]"
                   )}
                 >
                   <div className={cn(
@@ -3645,7 +3665,7 @@ JSON structure:
 
         {/* Right Pane: Interactive Study Suite */}
         <div className={cn(
-          "lg:col-span-5 bg-white text-slate-600 border border-slate-200/60 rounded-[2rem] overflow-hidden shadow-2xl flex-col h-[600px] lg:h-[720px] relative",
+          "lg:col-span-5 bg-white text-slate-600 border border-slate-200/60 rounded-[2rem] overflow-hidden shadow-2xl flex-col h-[calc(100dvh-12rem)] min-h-[580px] lg:h-[720px] relative",
           mobileTab === 'tools' ? "flex" : "hidden lg:flex"
         )}>
           
