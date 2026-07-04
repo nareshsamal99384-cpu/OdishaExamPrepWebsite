@@ -6780,7 +6780,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         <section id="question-bank-section" className="space-y-8 scroll-mt-24">
           <div className="relative pl-4">
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-500 rounded-full" />
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Step 1: Question Banks</h2>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Step 1: Question Banks</h2>
             <p className="text-slate-500 font-medium mt-1">Premium resources for your preparation</p>
           </div>
           
@@ -7169,7 +7169,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
               <Dumbbell className="w-5 h-5 text-indigo-600" />
             </div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Step 2: Practice Tests</h2>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Step 2: Practice Tests</h2>
           </div>
 
           {(() => {
@@ -7497,7 +7497,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           </div>
           <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4 sm:gap-6">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-black text-slate-955 tracking-tight">Step 3: Mock Tests</h2>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-955 tracking-tight">Step 3: Mock Tests</h2>
               <p className="text-slate-500 text-sm sm:text-lg font-medium mt-1 sm:mt-2 leading-relaxed">Simulate the real exam environment with our expert-curated test series.</p>
             </div>
             <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-slate-200/50 shadow-sm">
