@@ -76,21 +76,47 @@ const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
   };
 
   const handleAllow = async () => {
-    const success = await subscribe();
-    if (success) {
-      toast.success('🔔 Notifications enabled! You\'ll get alerts for new tests & exams.', {
-        duration: 4000,
-        style: { fontWeight: '700', borderRadius: '14px' },
-      });
-      setVisible(false);
-      onClose?.();
-    } else if (Notification.permission === 'denied') {
-      toast.error('Notifications blocked. Please enable them in your browser settings.', {
-        duration: 5000,
-      });
-      setVisible(false);
-      onClose?.();
+    let permission: NotificationPermission = 'default';
+    try {
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        if (Notification.permission === 'denied') {
+          toast.error('Notifications blocked. Please enable them in your browser settings.', {
+            duration: 5000,
+          });
+          setVisible(false);
+          onClose?.();
+          return;
+        }
+        permission = await Notification.requestPermission();
+      }
+    } catch (err) {
+      console.error('[PushPermissionPrompt] Permission request failed:', err);
     }
+
+    if (permission !== 'granted') {
+      if (permission === 'denied') {
+        toast.error('Notifications blocked. Please enable them in your browser settings.', {
+          duration: 5000,
+        });
+      }
+      setVisible(false);
+      onClose?.();
+      return;
+    }
+
+    // Permission granted! Close the prompt panel immediately
+    setVisible(false);
+    onClose?.();
+
+    // Register push subscription in the background
+    subscribe().then((success) => {
+      if (success) {
+        toast.success('🔔 Notifications enabled! You\'ll get alerts for new tests & exams.', {
+          duration: 4000,
+          style: { fontWeight: '700', borderRadius: '14px' },
+        });
+      }
+    });
   };
 
   // iOS not installed as PWA — show instructions instead
