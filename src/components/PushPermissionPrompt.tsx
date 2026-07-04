@@ -4,8 +4,6 @@ import { Bell, X, Smartphone } from 'lucide-react';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { toast } from 'react-hot-toast';
 
-const DISMISS_KEY = 'oep_push_prompt_dismissed_until';
-const DISMISS_DAYS = 7;
 
 interface PushPermissionPromptProps {
   userId?: string;
@@ -41,10 +39,6 @@ const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
 
     if (trigger !== 'auto') return;
 
-    // Check if dismissed recently
-    const until = localStorage.getItem(DISMISS_KEY);
-    if (until && Date.now() < Number(until)) return;
-
     // Show after 3 seconds (only if user is logged in and hasn't subscribed)
     const timer = setTimeout(() => setVisible(true), 3000);
     return () => clearTimeout(timer);
@@ -77,8 +71,6 @@ const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
   }, [isSubscribed, permissionState, isIOSDevice, isIOSInstalled]);
 
   const handleDismiss = () => {
-    const until = Date.now() + DISMISS_DAYS * 24 * 60 * 60 * 1000;
-    localStorage.setItem(DISMISS_KEY, String(until));
     setVisible(false);
     onClose?.();
   };
