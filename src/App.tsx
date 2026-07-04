@@ -3322,6 +3322,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     }
   };
   const [showAdmin, setShowAdmin] = useState(false);
+  const [infoModal, setInfoModal] = useState<{ isOpen: boolean; title: string; message: string } | null>(null);
+  const showPremiumAlert = (title: string, message: string) => {
+    setInfoModal({ isOpen: true, title, message });
+  };
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   const [isBannerDescExpanded, setIsBannerDescExpanded] = useState(false);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
@@ -4711,6 +4715,56 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             </>
           )}
         </AnimatePresence>
+
+        {/* Premium Info Modal */}
+        <AnimatePresence mode="wait">
+          {infoModal && infoModal.isOpen && (
+            <>
+              {/* Animated backdrop */}
+              <motion.div
+                key="info-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                className="fixed inset-0 bg-black/50 z-[300] backdrop-blur-sm"
+                style={{ willChange: 'opacity' }}
+                onClick={() => setInfoModal(null)}
+              />
+
+              {/* Modal panel */}
+              <div className="fixed inset-0 z-[301] flex items-center justify-center pointer-events-none p-4">
+                <motion.div
+                  key="info-modal"
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  transition={{ type: 'spring', duration: 0.3 }}
+                  className="bg-white rounded-[2rem] w-full max-w-sm p-6 space-y-6 shadow-2xl relative overflow-hidden flex flex-col pointer-events-auto text-center border border-slate-100"
+                >
+                  <div className="absolute -top-10 -right-10 w-40 h-40 bg-brand-500/5 rounded-full blur-3xl pointer-events-none" />
+                  
+                  <div className="w-14 h-14 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto relative text-brand-600">
+                    <AlertCircle className="w-7 h-7" />
+                    <div className="absolute inset-0 border-2 border-brand-100 rounded-2xl animate-pulse opacity-40" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">{infoModal.title}</h3>
+                    <p className="text-xs text-slate-500 leading-relaxed font-semibold px-2">{infoModal.message}</p>
+                  </div>
+
+                  <Button 
+                    className="w-full h-12 rounded-xl premium-gradient text-white font-black text-xs shadow-md shadow-brand-500/10 active:scale-[0.98] transition-transform border-none cursor-pointer"
+                    onClick={() => setInfoModal(null)}
+                  >
+                    Got it, thanks!
+                  </Button>
+                </motion.div>
+              </div>
+            </>
+          )}
+        </AnimatePresence>
       </>,
       document.body
     );
@@ -5152,7 +5206,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           finalTest.questions = fetchedQs;
           
           if (fetchedQs.length === 0) {
-            alert("This test doesn't have any questions yet.");
+            showPremiumAlert(
+              "No Questions in Test",
+              "This practice set does not contain any questions yet. We are updating the question files now."
+            );
             return;
           }
         }
@@ -5240,7 +5297,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       }
       
       if (matchedQs.length === 0) {
-        alert("Oh no! You haven't added any questions for this Exam in the Admin Panel yet.");
+        showPremiumAlert(
+          "No Questions Found",
+          "No questions have been configured for this exam yet. If you are an administrator, please upload questions in the Admin Panel."
+        );
         setLoadingPractice(false);
         return;
       }
@@ -5330,7 +5390,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       }
 
       if (matchedQs.length === 0) {
-        alert("Oh no! No questions are available for this topic yet.");
+        showPremiumAlert(
+          "Questions Coming Soon",
+          "We are currently compiling high-yield exam questions for this specific topic. Our subject matter experts update the database daily. Please check back shortly or explore other practice sets!"
+        );
         setLoadingPractice(false);
         return;
       }
