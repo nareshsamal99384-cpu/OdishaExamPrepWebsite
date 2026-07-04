@@ -1590,15 +1590,27 @@ async function startServer() {
     });
   }
 
-  if (isNaN(Number(PORT))) {
-    app.listen(PORT, () => {
-      console.log(`Server running on socket ${PORT}`);
-    });
-  } else {
-    app.listen(Number(PORT), "0.0.0.0", () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-    });
-  }
+  const startListen = (retries = 5, delayMs = 1000) => {
+    if (isNaN(Number(PORT))) {
+      app.listen(PORT, () => {
+        console.log(`Server running on socket ${PORT}`);
+      });
+    } else {
+      const server = app.listen(Number(PORT), "0.0.0.0", () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+      });
+      server.on('error', (err: any) => {
+        if (err.code === 'EADDRINUSE' && retries > 0) {
+          console.warn(`Port ${PORT} still in use, retrying in ${delayMs}ms... (${retries} retries left)`);
+          setTimeout(() => startListen(retries - 1, delayMs), delayMs);
+        } else {
+          console.error('Server failed to start:', err);
+          process.exit(1);
+        }
+      });
+    }
+  };
+  startListen();
 }
 
 startServer();

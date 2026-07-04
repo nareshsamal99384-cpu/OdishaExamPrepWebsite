@@ -3697,7 +3697,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                   setPaywallOriginalPrice(selectedBankItem.originalPrice || ((selectedBankItem.price || 499) * 2));
                                   setPaywallItemTitle(selectedBankItem.title || 'Premium Content');
                                   setPaywallFeatures([
-                                    `${selectedBankItem.questions || selectedBankItem.questionCount || '500+'} Questions`,
+                                    `${selectedBankItem.questions || selectedBankItem.questionCount || selectedBankItem.question_count || selectedBankItem.questioncount || '500+'} Questions`,
                                     selectedBankItem.hasPracticeMode !== false ? 'Interactive Practice Mode' : 'Instant PDF Access',
                                     selectedBankItem.tagline || 'Detailed Solutions Provided',
                                     'Advanced Performance Analytics'
@@ -3792,7 +3792,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                             setPaywallOriginalPrice(selectedBankItem.originalPrice || ((selectedBankItem.price || 499) * 2));
                             setPaywallItemTitle(selectedBankItem.title || 'Premium Content');
                             setPaywallFeatures([
-                              `${selectedBankItem.questions || selectedBankItem.questionCount || '500+'} Questions`,
+                              `${selectedBankItem.questions || selectedBankItem.questionCount || selectedBankItem.question_count || selectedBankItem.questioncount || '500+'} Questions`,
                               selectedBankItem.hasPracticeMode !== false ? 'Interactive Practice Mode' : 'Instant PDF Access',
                               selectedBankItem.tagline || 'Detailed Solutions Provided',
                               'Advanced Performance Analytics'
@@ -4902,7 +4902,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           groupedBanks[bank.type].push({
             id: bank.id,
             title: bank.title,
-            questions: bank.questionCount,
+            questions: bank.questions || bank.questionCount || bank.question_count || bank.questioncount || 0,
             tagline: parsedTagline.text,
             price: parsedTagline.price || 499,
             image: bank.image,
@@ -5207,7 +5207,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         setPaywallOriginalPrice(topicBank.originalPrice || ((topicBank.price || 499) * 2));
         setPaywallItemTitle(topicBank.title || 'Premium Bank');
         setPaywallFeatures([
-          `${topicBank.questions || topicBank.questionCount || 500}+ Premium Questions`,
+          `${topicBank.questions || topicBank.questionCount || topicBank.question_count || topicBank.questioncount || 500}+ Premium Questions`,
           topicBank.hasPracticeMode !== false ? 'Unlimited Practice Mode' : 'Instant PDF Access',
           'Detailed Step-by-Step Solutions',
           'Advanced Performance Analytics'
@@ -5302,7 +5302,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         setPaywallOriginalPrice(topicBank.originalPrice || ((topicBank.price || 499) * 2));
         setPaywallItemTitle(topicBank.title || 'Premium Bank');
         setPaywallFeatures([
-          `${topicBank.questions || topicBank.questionCount || 500}+ Premium Questions`,
+          `${topicBank.questions || topicBank.questionCount || topicBank.question_count || topicBank.questioncount || 500}+ Premium Questions`,
           topicBank.hasPracticeMode !== false ? 'Unlimited Practice Mode' : 'Instant PDF Access',
           'Detailed Step-by-Step Solutions',
           'Advanced Performance Analytics'
@@ -7238,16 +7238,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             }
 
             return (
-              <div className="space-y-8">
-                <div className="flex items-center gap-2.5 sm:gap-4 border-b border-slate-100 pb-4 sm:pb-6">
+              <div className="space-y-6 sm:space-y-8">
+                <div className="flex items-center gap-2 sm:gap-4 border-b border-slate-100 pb-3 sm:pb-6">
                   <Button variant="ghost" onClick={() => {
                     setSelectedPracticeCategory(null);
                     scrollToElement('practice-mode-section', { block: 'start', delay: 50 });
-                  }} className="p-2 sm:p-3 rounded-xl sm:rounded-2xl hover:bg-brand-50 shrink-0">
-                    <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 rotate-180 text-brand-600" />
+                  }} className="p-1.5 sm:p-3 rounded-xl sm:rounded-2xl hover:bg-brand-50 shrink-0">
+                    <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6 rotate-180 text-brand-600" />
                   </Button>
-                  <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-                    <h3 className="text-xl sm:text-3xl font-black text-slate-900 capitalize truncate flex items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg sm:text-2xl md:text-3xl font-black text-slate-900 capitalize tracking-tight leading-tight">
                       {selectedPracticeCategory.replace('-', ' ')} Practice Sets
                     </h3>
                   </div>
@@ -7319,7 +7319,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                         ? "bg-emerald-50/60 border-emerald-100/30 text-emerald-600" 
                                         : "bg-indigo-50/60 border-indigo-100/30 text-indigo-650"
                                   )}>
-                                    <Play className="w-5 h-5 relative z-10 ml-0.5 text-indigo-650" />
+                                    <Play className="w-5 h-5 relative z-10 ml-0.5" />
                                   </div>
                                   
                                   <div className="min-w-0 flex-1">
@@ -7335,7 +7335,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                     </div>
                                     
                                     <div className="flex items-center gap-2 mt-2 text-[10px] font-extrabold text-slate-500 flex-wrap">
-                                      <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100/60"><FileText className="w-3 h-3 text-slate-400" /> {bank.questions || bank.questionCount || 0} Questions</span>
+                                      <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100/60"><FileText className="w-3 h-3 text-slate-400" /> {bank.questions || bank.questionCount || bank.question_count || bank.questioncount || 0} Questions</span>
                                       <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100/60"><Clock className="w-3 h-3 text-slate-400" /> 30 Mins</span>
                                     </div>
                                   </div>
@@ -7368,7 +7368,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-100">Practice Set</span>
                                     </div>
                                   </div>
-                                  {bank.isPremium && (
+                                {bank.isPremium && (
                                     <div className="flex shrink-0">
                                       {isLocked ? (
                                         <span className="px-2 py-1 bg-amber-50 text-amber-700 text-[10px] font-black rounded-lg border border-amber-100 uppercase tracking-wider">Premium</span>
@@ -7382,7 +7382,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                 <div className="flex items-center gap-6 relative z-10 text-xs font-bold text-slate-555 border-t border-slate-50 pt-4">
                                   <div className="flex items-center gap-2">
                                     <FileText className="w-4 h-4 text-slate-400" />
-                                    <span>{bank.questions || bank.questionCount || 0} Questions</span>
+                                    <span>{bank.questions || bank.questionCount || bank.question_count || bank.questioncount || 0} Questions</span>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <Clock className="w-4 h-4 text-slate-400" />

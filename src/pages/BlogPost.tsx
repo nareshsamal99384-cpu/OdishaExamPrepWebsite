@@ -457,7 +457,7 @@ export default function BlogPost() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <h3 className="font-extrabold text-slate-900 text-sm line-clamp-1 group-hover:text-brand-600 transition-colors">{bank.title}</h3>
-                              <p className="text-[11px] text-slate-400 font-bold mt-0.5">{bank.questionCount}+ Practice Sets</p>
+                              <p className="text-[11px] text-slate-400 font-bold mt-0.5">{bank.questionCount || bank.questions || bank.question_count || bank.questioncount || 0}+ Practice Sets</p>
                               <div className="flex items-center gap-2 mt-2">
                                 {bank.isPremium ? (
                                   <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1"><Lock className="w-2.5 h-2.5" /> Premium</span>

@@ -667,12 +667,37 @@ export const examService = {
   },
 
   async getAllQuestionBanks() {
-    const { data, error } = await supabase
+    const { data: banks, error } = await supabase
       .from('questionBanks')
       .select('*')
       .order('sortOrder', { ascending: true });
     if (error) throw error;
-    return data as QuestionBank[];
+
+    if (banks && banks.length > 0) {
+      try {
+        const bankTitles = banks.map(b => b.title);
+        // Query the count of questions associated with these banks (where topic is the bank title)
+        const { data: qCounts, error: qError } = await supabase
+          .from('questions')
+          .select('topic')
+          .in('topic', bankTitles);
+
+        if (!qError && qCounts) {
+          const countMap: Record<string, number> = {};
+          qCounts.forEach(q => {
+            if (q.topic) {
+              countMap[q.topic] = (countMap[q.topic] || 0) + 1;
+            }
+          });
+          banks.forEach(b => {
+            b.questionCount = countMap[b.title] || 0;
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch actual question counts for question banks:", err);
+      }
+    }
+    return banks as QuestionBank[];
   },
 
   async deleteQuestionBank(id: string) {
