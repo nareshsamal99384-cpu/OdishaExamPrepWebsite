@@ -2038,15 +2038,23 @@ EXAM-ORIENTED DIRECTIVES:
   const timerSecondsRef = useRef(timerSeconds);
   useEffect(() => { timerSecondsRef.current = timerSeconds; }, [timerSeconds]);
 
+  const lastTickRef = useRef<number>(Date.now());
+
   useEffect(() => {
+    lastTickRef.current = Date.now();
+
     if (timerActive) {
       timerIntervalRef.current = setInterval(() => {
+        const now = Date.now();
+        const elapsed = Math.max(1, Math.floor((now - lastTickRef.current) / 1000));
+        lastTickRef.current = now;
+
         // 1. Decrement remaining timer seconds
-        setTimerSeconds(prev => (prev > 0 ? prev - 1 : 0));
+        setTimerSeconds(prev => (prev > elapsed ? prev - elapsed : 0));
         
         // 2. Accumulate study seconds if currently in study mode
         if (timerMode === 'study') {
-          setStudySecondsAccumulator(prev => prev + 1);
+          setStudySecondsAccumulator(prev => prev + elapsed);
         }
 
         // 3. Throttled localStorage write — only every 10 seconds to avoid main-thread blocking on every tick
@@ -2071,9 +2079,10 @@ EXAM-ORIENTED DIRECTIVES:
     return () => {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
-        // Save on cleanup (tab switch / unmount)
-        localStorage.setItem('study_coach_timer_seconds', String(timerSecondsRef.current));
       }
+      // Save on cleanup (tab switch / unmount)
+      localStorage.setItem('study_coach_timer_seconds', String(timerSecondsRef.current));
+      localStorage.setItem('study_coach_timer_last_timestamp', String(Date.now()));
     };
   }, [timerActive, timerMode]);
 

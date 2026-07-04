@@ -5608,7 +5608,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     );
   }
 
-  if (mainTab === 'courses') {
+  const renderActiveTabContent = () => {
+    if (mainTab === 'courses') {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center space-y-4">
         <div className="w-20 h-20 bg-brand-100 rounded-full flex items-center justify-center mb-4">
@@ -5680,13 +5681,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     );
   }
 
-  if (mainTab === 'ai_mentor') {
-    return (
-      <React.Suspense fallback={<LoadingPortal />}>
-        <AiMentor user={user} />
-      </React.Suspense>
-    );
-  }
+    if (mainTab === 'ai_mentor') {
+      return null;
+    }
 
   if (!selectedExam) {
     let globalVideoIds: string[] | null = exams.length === 0 ? null : [];
@@ -7811,6 +7808,25 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       {/* Common View Elements */}
       {renderCommonModals()}
     </div>
+    </ErrorBoundary>
+    );
+  };
+
+  return (
+    <ErrorBoundary>
+      <div className="w-full">
+        {/* Main dashboard tabs */}
+        <div className={mainTab === 'ai_mentor' ? 'hidden' : 'block'}>
+          {renderActiveTabContent()}
+        </div>
+
+        {/* AI Mentor tab (always mounted in background to preserve state & running timers) */}
+        <div className={mainTab === 'ai_mentor' ? 'block' : 'hidden'}>
+          <React.Suspense fallback={<LoadingPortal />}>
+            <AiMentor user={user} />
+          </React.Suspense>
+        </div>
+      </div>
     </ErrorBoundary>
   );
 };
