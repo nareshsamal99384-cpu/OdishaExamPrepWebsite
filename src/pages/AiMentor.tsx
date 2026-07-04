@@ -619,9 +619,12 @@ export default function AiMentor({ user }: { user: any }) {
   const { refreshProfile } = useAuth();
   // rotating exam tips index
   const [currentTipIdx, setCurrentTipIdx] = useState(0);
-  const [mobileTab, setMobileTab] = useState<'chat' | 'tools'>('chat');
+  const [mobileTab, setMobileTab] = useState<'chat' | 'tools'>(() => {
+    return (localStorage.getItem('study_coach_mobile_tab') as 'chat' | 'tools') || 'chat';
+  });
 
   useEffect(() => {
+    localStorage.setItem('study_coach_mobile_tab', mobileTab);
     window.dispatchEvent(new CustomEvent('oep-aimentor-subtab-changed', { detail: mobileTab }));
   }, [mobileTab]);
 

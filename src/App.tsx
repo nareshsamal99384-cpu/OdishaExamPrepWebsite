@@ -7879,15 +7879,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     <ErrorBoundary>
       <div className="w-full">
         {/* Main dashboard tabs */}
-        <div className={mainTab === 'ai_mentor' ? 'hidden' : 'block'}>
+        <div>
           {renderActiveTabContent()}
-        </div>
-
-        {/* AI Mentor tab (always mounted in background to preserve state & running timers) */}
-        <div className={mainTab === 'ai_mentor' ? 'block' : 'hidden'}>
-          <React.Suspense fallback={<LoadingPortal />}>
-            <AiMentor user={user} />
-          </React.Suspense>
         </div>
       </div>
     </ErrorBoundary>
@@ -8460,6 +8453,23 @@ function AppContent() {
     window.history.replaceState(null, '', newUrl);
   }, [mainTab, location.pathname]);
 
+  // Sync URL query tab parameter to local state when location/URL changes (e.g. back navigation or direct tab link)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    if (location.pathname === '/') {
+      if (tab === 'courses' || tab === 'analytics' || tab === 'history' || tab === 'library' || tab === 'ai_mentor') {
+        if (mainTab !== tab) {
+          setMainTab(tab as any);
+        }
+      } else {
+        if (mainTab !== 'home') {
+          setMainTab('home');
+        }
+      }
+    }
+  }, [location.search, location.pathname]);
+
   const [dashboardKey, setDashboardKey] = useState(0);
   const [activities, setActivities] = useState<any[]>([]);
 
@@ -8632,13 +8642,148 @@ function AppContent() {
     navigate('/');
   };
 
+  const isAIOctive = !!(user && mainTab === 'ai_mentor' && location.pathname === '/');
+
   if (loading) {
     return <LoadingPortal />;
   }
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-[#F8FAFC] font-sans text-slate-900">
-      <AnimatedRoutes>
+      {isAIOctive && (
+        <div className="flex flex-col min-h-screen min-h-[100dvh]">
+          <Navbar user={user} isAdmin={isAdmin} onHomeClick={handleHomeClick} />
+
+          <main className={cn(
+            "relative flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pt-4 md:pt-8 overflow-x-hidden",
+            isBottomNavVisible 
+              ? "pb-28 sm:pb-24 lg:pb-32" 
+              : "pb-12 sm:pb-16 lg:pb-20"
+          )}>
+            <React.Suspense fallback={<LoadingPortal />}>
+              <AiMentor user={user} />
+            </React.Suspense>
+          </main>
+
+          {/* Mobile Bottom Nav */}
+          <motion.nav 
+            initial={false}
+            animate={{ y: isBottomNavVisible ? 0 : '100%' }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="bg-white/92 backdrop-blur-xl border-t border-slate-200/30 sm:glass sm:border-t sm:border-white/25 border-x-transparent border-b-transparent px-2 sm:px-8 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:py-4 flex justify-around items-center fixed bottom-0 left-0 right-0 z-30 rounded-t-[2rem] shadow-[0_-10px_35px_rgba(0,0,0,0.06)]"
+          >
+            {/* Hide Navigation Toggle Tab */}
+            <button 
+              type="button"
+              onClick={() => setIsBottomNavVisible(false)}
+              className="absolute -top-6 left-1/2 -translate-x-1/2 glass border-t border-l border-r border-white/35 text-slate-500 hover:text-slate-800 rounded-t-xl px-4 py-1 flex items-center justify-center cursor-pointer shadow-[0_-4px_12px_rgba(0,0,0,0.04)] backdrop-blur-md transition-all duration-300 hover:-translate-y-[2px] z-40 group focus:outline-none"
+              title="Hide Navigation"
+            >
+              <ChevronDown className="w-4 h-4 transition-transform group-hover:translate-y-0.5 duration-200" />
+            </button>
+
+            <button onClick={handleHomeClick} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'home' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+              <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+                {mainTab === 'home' && (
+                  <motion.div
+                    layoutId="activeAppContentBottomTabPill"
+                    className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                    transition={{ type: "spring", stiffness: 380, damping: 25 }}
+                  />
+                )}
+                <LayoutDashboard className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
+              </div>
+              <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'home' ? 'font-black' : 'font-extrabold'}`}>Home</span>
+            </button>
+            <button onClick={() => handleTabClick('courses')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'courses' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+              <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+                {mainTab === 'courses' && (
+                  <motion.div
+                    layoutId="activeAppContentBottomTabPill"
+                    className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                    transition={{ type: "spring", stiffness: 380, damping: 25 }}
+                  />
+                )}
+                <BookOpen className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
+              </div>
+              <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'courses' ? 'font-black' : 'font-extrabold'}`}>Courses</span>
+            </button>
+            <button onClick={() => handleTabClick('analytics')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'analytics' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+              <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+                {mainTab === 'analytics' && (
+                  <motion.div
+                    layoutId="activeAppContentBottomTabPill"
+                    className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                    transition={{ type: "spring", stiffness: 380, damping: 25 }}
+                  />
+                )}
+                <BarChart3 className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
+              </div>
+              <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'analytics' ? 'font-black' : 'font-extrabold'}`}>Analytics</span>
+            </button>
+            <button onClick={() => handleTabClick('history')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'history' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+              <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+                {mainTab === 'history' && (
+                  <motion.div
+                    layoutId="activeAppContentBottomTabPill"
+                    className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                    transition={{ type: "spring", stiffness: 380, damping: 25 }}
+                  />
+                )}
+                <History className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
+              </div>
+              <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'history' ? 'font-black' : 'font-extrabold'}`}>History</span>
+            </button>
+            <button onClick={() => handleTabClick('library')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'library' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+              <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+                {mainTab === 'library' && (
+                  <motion.div
+                    layoutId="activeAppContentBottomTabPill"
+                    className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                    transition={{ type: "spring", stiffness: 380, damping: 25 }}
+                  />
+                )}
+                <BookMarked className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
+              </div>
+              <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'library' ? 'font-black' : 'font-extrabold'}`}>Library</span>
+            </button>
+            <button onClick={() => handleTabClick('ai_mentor')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'ai_mentor' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+              <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
+                {mainTab === 'ai_mentor' && (
+                  <motion.div
+                    layoutId="activeAppContentBottomTabPill"
+                    className="absolute inset-0 bg-brand-500/12 border border-brand-500/20 rounded-xl shadow-xs backdrop-blur-xs z-0"
+                    transition={{ type: "spring", stiffness: 380, damping: 25 }}
+                  />
+                )}
+                <Sparkles className="w-5.5 h-5.5 sm:w-6 sm:h-6 relative z-10" />
+              </div>
+              <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'ai_mentor' ? 'font-black' : 'font-extrabold'}`}>AI Mentor</span>
+            </button>
+          </motion.nav>
+
+          {/* Show Navigation Trigger Tab */}
+          <AnimatePresence>
+            {!isBottomNavVisible && (
+              <motion.button 
+                initial={{ y: 50, opacity: 0, x: '-50%' }}
+                animate={{ y: 0, opacity: 1, x: '-50%' }}
+                exit={{ y: 50, opacity: 0, x: '-50%' }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                type="button"
+                onClick={() => setIsBottomNavVisible(true)}
+                className="fixed bottom-0 left-1/2 glass border-t border-l border-r border-white/35 text-slate-500 hover:text-slate-800 rounded-t-xl px-5 py-1.5 flex items-center justify-center cursor-pointer shadow-[0_-4px_12px_rgba(0,0,0,0.04)] backdrop-blur-md z-40 group focus:outline-none transition-all duration-300 hover:-translate-y-[2px]"
+                title="Show Navigation"
+              >
+                <ChevronUp className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 duration-200" />
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
+      <div className={isAIOctive ? 'hidden' : 'block'}>
+        <AnimatedRoutes>
         <Route path={ROUTE_PATHS.ADMIN_LOGIN} element={<AdminLoginPage />} />
         <Route path={ROUTE_PATHS.PRIVACY_POLICY} element={<PrivacyPolicy />} />
         <Route path={ROUTE_PATHS.TERMS_OF_SERVICE} element={<TermsOfService />} />
@@ -8819,6 +8964,7 @@ function AppContent() {
         <Route path={ROUTE_PATHS.NOT_FOUND} element={<NotFoundPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </AnimatedRoutes>
+    </div>
       {!(location.pathname.startsWith('/admin') || location.pathname.startsWith('/admin-login')) && (
         <WhatsAppButton />
       )}
