@@ -7491,7 +7491,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       {(!isMobile || mobileExamTab === 'mock') && (
         <section id="test-series" className="space-y-10 scroll-mt-24">
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-brand-600 font-black text-[10px] uppercase tracking-[0.2em] bg-brand-50 w-fit px-3 py-1 rounded-full border border-brand-100">
+          <div className="hidden sm:flex items-center gap-2 text-brand-600 font-black text-[10px] uppercase tracking-[0.2em] bg-brand-50 w-fit px-3 py-1 rounded-full border border-brand-100">
             <Award className="w-3 h-3" />
             Test Series
           </div>
@@ -7500,9 +7500,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               <h2 className="text-2xl sm:text-3xl font-black text-slate-955 tracking-tight">Step 3: Mock Tests</h2>
               <p className="text-slate-500 text-sm sm:text-lg font-medium mt-1 sm:mt-2 leading-relaxed">Simulate the real exam environment with our expert-curated test series.</p>
             </div>
-            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-slate-200/50 shadow-sm">
-              <Sparkles className="w-4 h-4 text-brand-500" />
-              <span className="text-sm font-bold text-slate-700">
+            <div className="flex items-center gap-2.5 sm:gap-3 bg-white px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full border border-slate-200/50 shadow-sm w-fit text-xs sm:text-sm">
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-500" />
+              <span className="font-bold text-slate-700">
               Updated for {new Date().getFullYear()} Exam Pattern
               </span>
             </div>
