@@ -6641,7 +6641,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             </Button>
             <Button variant="outline" className="rounded-full bg-white border-slate-200/60 shadow-sm text-slate-600 font-bold hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 h-9 px-4 text-xs sm:text-sm transition-all" onClick={() => scrollToElement('practice-mode-section', { block: 'start' })}>
               <Dumbbell className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-indigo-500" />
-              Practice Mode
+              Practice Tests
             </Button>
             <Button variant="outline" className="rounded-full bg-white border-slate-200/60 shadow-sm text-slate-600 font-bold hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 h-9 px-4 text-xs sm:text-sm transition-all" onClick={() => scrollToElement('test-series', { block: 'start' })}>
               <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-amber-500" />
@@ -6687,7 +6687,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     />
                   )}
                   <Dumbbell className="w-3.5 h-3.5 relative z-10" />
-                  <span className="relative z-10">Practice</span>
+                  <span className="relative z-10">Practice Tests</span>
                 </button>
                 <button
                   type="button"
@@ -7099,14 +7099,14 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           </motion.div>
         )}
 
-      {/* Section 2: Practice Mode */}
+      {/* Section 2: Practice Tests */}
       {(!isMobile || mobileExamTab === 'practice') && (
         <section id="practice-mode-section" className="space-y-6 scroll-mt-24">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
               <Dumbbell className="w-5 h-5 text-indigo-600" />
             </div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Step 2: Practice Mode</h2>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Step 2: Practice Tests</h2>
           </div>
 
           {(() => {
