@@ -1152,7 +1152,7 @@ function AnalyticsViewInner({ user, activities: propActivities, onNavigate }: { 
       setActionItems(managerState.actionItems);
       setScanCount(managerState.scanCount);
     } else {
-      const cached = sessionStorage.getItem(cacheKey);
+      const cached = localStorage.getItem(cacheKey);
       if (cached) {
         try {
           const parsed = JSON.parse(cached);

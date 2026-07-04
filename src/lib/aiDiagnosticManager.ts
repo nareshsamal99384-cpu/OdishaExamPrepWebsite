@@ -50,9 +50,9 @@ class AiDiagnosticManager {
 
   reset(cacheKey: string) {
     try {
-      sessionStorage.removeItem(cacheKey);
+      localStorage.removeItem(cacheKey);
     } catch (e) {
-      console.error("Failed to remove from sessionStorage:", e);
+      console.error("Failed to remove from localStorage:", e);
     }
     
     if (this.state.activeCacheKey === cacheKey) {
@@ -162,9 +162,9 @@ Your output must be a JSON object with:
       if (signal.aborted) return;
 
       try {
-        sessionStorage.setItem(cacheKey, JSON.stringify(parsed));
+        localStorage.setItem(cacheKey, JSON.stringify(parsed));
       } catch (e) {
-        console.error("Failed to save to sessionStorage:", e);
+        console.error("Failed to save to localStorage:", e);
       }
       
       this.updateState({
@@ -192,9 +192,9 @@ Your output must be a JSON object with:
       if (signal.aborted) return;
 
       try {
-        sessionStorage.setItem(cacheKey, JSON.stringify(fallbackData));
+        localStorage.setItem(cacheKey, JSON.stringify(fallbackData));
       } catch (e) {
-        console.error("Failed to save fallback to sessionStorage:", e);
+        console.error("Failed to save fallback to localStorage:", e);
       }
 
       this.updateState({
