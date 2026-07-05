@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --import tsx --watch --watch-path=server.ts --watch-path=src/lib/routes-config.ts server.ts",
-    "build": "vite build --outDir=build && esbuild server.ts --bundle --platform=node --format=esm --outfile=build/server.js --packages=external",
+    "build": "vite build --outDir=build && esbuild server.ts --bundle --platform=node --format=esm --outfile=build/server.js --packages=external && (pkill -f \"server.js\" || true)",
     "build:frontend": "vite build --outDir=build",
     "build:server": "esbuild server.ts --bundle --platform=node --format=esm --outfile=build/server.js --packages=external",
     "preview": "vite preview",
