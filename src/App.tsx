@@ -526,7 +526,7 @@ const ExamRegistrySection = ({
   exams: any[] 
 }) => {
   const [announcements, setAnnouncements] = useState<any[]>(EXAM_REGISTRY_DEFAULT);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -684,7 +684,7 @@ const SYLLABUS_ROADMAPS_DEFAULT = [
 ];const SyllabusPathsSection = () => {
   const [tabs, setTabs] = useState<any[]>(SYLLABUS_ROADMAPS_DEFAULT);
   const [activeTabIdx, setActiveTabIdx] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -840,7 +840,7 @@ const AchieversJournalSection = () => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'opsc' | 'ossc' | 'osssc'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(4);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
 
   const [stories, setStories] = useState<any[]>(DEFAULT_ACHIEVERS_JOURNAL);
 
@@ -1134,7 +1134,7 @@ const AchieversJournalSection = () => {
 export const Footer = () => {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -2472,7 +2472,7 @@ const LandingPage = () => {
   const { loading, user } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showGuideToast, setShowGuideToast] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -3331,7 +3331,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   const [isBannerDescExpanded, setIsBannerDescExpanded] = useState(false);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -8149,7 +8149,7 @@ const ExamDetailPage = () => {
 
   const [activities, setActivities] = useState<any[]>([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
   const [mainTab, setMainTab] = useState<'home' | 'courses' | 'analytics' | 'history' | 'library' | 'ai_mentor'>('home');
 
