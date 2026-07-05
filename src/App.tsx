@@ -2547,6 +2547,9 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
+      <h1 style={{ color: "red" }}>
+        HOSTINGER TEST 9999
+      </h1>
       {/* Top Professional Announcement Bar */}
       <div className="ticker-bar relative z-50 bg-[#0F172A] border-b-2 border-slate-900 overflow-hidden">
         <div className="max-w-7xl mx-auto flex items-center h-10 relative">
