@@ -1665,6 +1665,9 @@ async function startServer() {
       html = html.replace('<head>', `<head>${ogMetaTags}`);
 
       res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       return res.send(html);
     } catch (err) {
       console.error("[SEO Middleware Error]", err);
@@ -1763,7 +1766,17 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, {
+      setHeaders: (res, path) => {
+        if (path.endsWith('.html')) {
+          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+          res.setHeader('Pragma', 'no-cache');
+          res.setHeader('Expires', '0');
+        } else {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        }
+      }
+    }));
     app.get('*', (req, res) => {
       const matches = ROUTE_LIST.some(route => {
         const regex = routeToRegex(route);
@@ -1772,6 +1785,9 @@ async function startServer() {
 
       const htmlPath = path.join(distPath, 'index.html');
       if (fs.existsSync(htmlPath)) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
         if (!matches) {
           res.status(404);
           let html = fs.readFileSync(htmlPath, 'utf8');
