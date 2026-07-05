@@ -4829,6 +4829,13 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     sessionStorage.setItem('oep_mobileExamTab', mobileExamTab);
   }, [mobileExamTab]);
 
+  console.log("[DIAG] === DashboardContent Render ===");
+  console.log("[DIAG] propsSelectedExam:", propsSelectedExam);
+  console.log("[DIAG] internalSelectedExam:", internalSelectedExam);
+  console.log("[DIAG] finalSelectedExam (final):", selectedExam);
+  console.log("[DIAG] isMobile:", isMobile);
+  console.log("[DIAG] mobileExamTab:", mobileExamTab);
+
   const [bankSearchQuery, setBankSearchQuery] = useState("");
   const [bankSortBy, setBankSortBy] = useState("Name");
   const [bankSortOpen, setBankSortOpen] = useState(false);
@@ -8166,6 +8173,12 @@ const ExamDetailPage = () => {
   const { examId } = useParams<{ examId: string }>();
   const { user, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
+
+  console.log("[DIAG] === ExamDetailPage Render ===");
+  console.log("[DIAG] Pathname:", typeof window !== 'undefined' ? window.location.pathname : 'N/A');
+  console.log("[DIAG] params.examId:", examId);
+  console.log("[DIAG] user:", user?.email || 'guest');
+  console.log("[DIAG] loading:", loading);
 
   const [activities, setActivities] = useState<any[]>([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
