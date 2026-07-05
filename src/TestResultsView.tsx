@@ -7,7 +7,15 @@ import { fadeSlideUpSm } from './lib/animations';
 import { MathTextRenderer, DiagramRenderer } from './components/MathTextRenderer';
 
 export default function TestResultsView({ results, onClose }: { results: any, onClose: () => void }) {
-  const [currentIdx, setCurrentIdx] = useState(0);
+  const [currentIdx, setCurrentIdx] = useState(() => {
+    const saved = sessionStorage.getItem('oep_reviewQuestionIdx');
+    return saved ? parseInt(saved, 10) : 0;
+  });
+
+  React.useEffect(() => {
+    sessionStorage.setItem('oep_reviewQuestionIdx', currentIdx.toString());
+  }, [currentIdx]);
+
   const questionCardRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isFirstRender = useRef(true);
@@ -36,30 +44,39 @@ export default function TestResultsView({ results, onClose }: { results: any, on
   const currentQ = questions[currentIdx];
 
   // useLayoutEffect fires synchronously BEFORE the browser paints, ensuring
-  // the page is at position 0 before the user ever sees it.
+  // the page is at position 0 (or restored position) before the user ever sees it.
   useLayoutEffect(() => {
     setShowQuestionNav(false);
-    // Target all three scroll containers for cross-browser reliability
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    if (containerRef.current) {
-      containerRef.current.scrollTop = 0;
-    }
-  }, [results]);
-
-  React.useEffect(() => {
-    const handleScrollToTop = () => {
+    const savedScroll = sessionStorage.getItem('oep_reviewScrollTop');
+    if (savedScroll && containerRef.current) {
+      containerRef.current.scrollTop = parseInt(savedScroll, 10);
+    } else {
       window.scrollTo(0, 0);
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
       if (containerRef.current) {
         containerRef.current.scrollTop = 0;
       }
+    }
+  }, [results]);
+
+  React.useEffect(() => {
+    const handleScrollToTopOrSaved = () => {
+      const savedScroll = sessionStorage.getItem('oep_reviewScrollTop');
+      if (savedScroll && containerRef.current) {
+        containerRef.current.scrollTop = parseInt(savedScroll, 10);
+      } else {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        if (containerRef.current) {
+          containerRef.current.scrollTop = 0;
+        }
+      }
     };
-    handleScrollToTop();
-    const frameId = requestAnimationFrame(handleScrollToTop);
-    const timeoutId = setTimeout(handleScrollToTop, 50);
+    handleScrollToTopOrSaved();
+    const frameId = requestAnimationFrame(handleScrollToTopOrSaved);
+    const timeoutId = setTimeout(handleScrollToTopOrSaved, 50);
     return () => {
       cancelAnimationFrame(frameId);
       clearTimeout(timeoutId);
@@ -341,6 +358,9 @@ export default function TestResultsView({ results, onClose }: { results: any, on
   return (
     <div 
       ref={containerRef}
+      onScroll={(e) => {
+        sessionStorage.setItem('oep_reviewScrollTop', e.currentTarget.scrollTop.toString());
+      }}
       className={cn(
         "fixed inset-0 z-[200] overflow-y-auto bg-[#F8FAFC] font-sans",
         showQuestionNav ? "pb-18 sm:pb-20" : "pb-12"

@@ -3478,7 +3478,27 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       console.error('[Recovery] Failed to restore active test state:', e);
     }
   }, [user]);
-  const [testResults, setTestResults] = useState<any | null>(null);
+  const [testResults, setTestResults] = useState<any | null>(() => {
+    const saved = sessionStorage.getItem('oep_testResults');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse test results from sessionStorage:", e);
+      }
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    if (testResults) {
+      sessionStorage.setItem('oep_testResults', JSON.stringify(testResults));
+    } else {
+      sessionStorage.removeItem('oep_testResults');
+      sessionStorage.removeItem('oep_reviewQuestionIdx');
+      sessionStorage.removeItem('oep_reviewScrollTop');
+    }
+  }, [testResults]);
 
   const handleViewResults = async (results: any) => {
     if (!results) {
