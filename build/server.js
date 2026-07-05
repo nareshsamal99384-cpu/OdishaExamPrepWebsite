@@ -170,11 +170,42 @@ async function startServer() {
   };
   app.get("/api/version", (req, res) => {
     res.json({
-      version: "1.1.1",
-      buildDate: "2026-07-05T10:24:00Z",
-      commit: "93085d3-retrigger-deploy",
+      version: "1.1.4",
+      buildDate: (/* @__PURE__ */ new Date()).toISOString(),
+      commit: "55ff5b3c-resolve-cache-issue",
       description: "OdishaExamPrep diagnostics endpoint"
     });
+  });
+  app.get("/api/diag", (req, res) => {
+    try {
+      const getDirFiles = (dirPath) => {
+        try {
+          return fs.existsSync(dirPath) ? fs.readdirSync(dirPath) : null;
+        } catch (e) {
+          return { error: e.message };
+        }
+      };
+      res.json({
+        success: true,
+        version: "1.1.4",
+        time: (/* @__PURE__ */ new Date()).toISOString(),
+        __dirname,
+        cwd: process.cwd(),
+        files: {
+          root: getDirFiles(path.resolve(".")),
+          build: getDirFiles(path.resolve("build")),
+          buildAssets: getDirFiles(path.resolve("build/assets")),
+          dist: getDirFiles(path.resolve("dist")),
+          distAssets: getDirFiles(path.resolve("dist/assets"))
+        },
+        env: {
+          NODE_ENV: process.env.NODE_ENV,
+          PORT: process.env.PORT
+        }
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
   app.get("/api/admin/users", requireAdmin, async (req, res) => {
     try {
