@@ -168,6 +168,14 @@ async function startServer() {
       return res.status(500).json({ error: "Authentication check failed" });
     }
   };
+  app.get("/api/version", (req, res) => {
+    res.json({
+      version: "1.1.0",
+      buildDate: "2026-07-05T10:15:00Z",
+      commit: "fb8f6b9-cache-fix",
+      description: "OdishaExamPrep diagnostics endpoint"
+    });
+  });
   app.get("/api/admin/users", requireAdmin, async (req, res) => {
     try {
       const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
