@@ -53,6 +53,25 @@ async function startServer() {
   app.set("trust proxy", true);
   const PORT = process.env.PORT || "3000";
   const distPath = __dirname.endsWith("build") || __dirname.endsWith("build/") || __dirname.endsWith("build\\") ? path.resolve(__dirname, ".") : path.resolve(__dirname, "build");
+  try {
+    const startupLogPath = path.join(distPath, "startup-log.json");
+    const logInfo = {
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      filename: typeof __filename !== "undefined" ? __filename : "undefined",
+      dirname: typeof __dirname !== "undefined" ? __dirname : "undefined",
+      cwd: process.cwd(),
+      distPath,
+      nodeVersion: process.version,
+      env: {
+        NODE_ENV: process.env.NODE_ENV,
+        PORT: process.env.PORT
+      },
+      message: "Server started and initialized successfully."
+    };
+    fs.writeFileSync(startupLogPath, JSON.stringify(logInfo, null, 2), "utf8");
+  } catch (err) {
+    console.error("Failed to write startup log:", err.message);
+  }
   const isProduction = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "prod" || !process.env.npm_lifecycle_event?.includes("dev") && fs.existsSync(path.join(distPath, "index.html"));
   app.use(express.json({
     verify: (req, res, buf) => {

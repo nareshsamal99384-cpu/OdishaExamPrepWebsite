@@ -1,4 +1,4 @@
-// Root entry point for Hostinger and production environments.
+// Diagnostic entrypoint for app.js
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -7,11 +7,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 try {
-  const rootLogPath = path.resolve(__dirname, 'build', 'root-startup-log.json');
+  const rootLogPath = path.resolve(__dirname, 'build', 'app-startup-log.json');
   fs.writeFileSync(rootLogPath, JSON.stringify({
     timestamp: new Date().toISOString(),
     filename: __filename,
-    message: "Root server.js executed successfully."
+    message: "Root app.js executed successfully."
   }, null, 2), 'utf8');
 } catch (err) {
   // Ignore

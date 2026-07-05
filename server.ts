@@ -48,6 +48,27 @@ async function startServer() {
     ? path.resolve(__dirname, '.')
     : path.resolve(__dirname, 'build');
 
+  // Write startup log for runtime diagnostic check
+  try {
+    const startupLogPath = path.join(distPath, 'startup-log.json');
+    const logInfo = {
+      timestamp: new Date().toISOString(),
+      filename: typeof __filename !== 'undefined' ? __filename : 'undefined',
+      dirname: typeof __dirname !== 'undefined' ? __dirname : 'undefined',
+      cwd: process.cwd(),
+      distPath,
+      nodeVersion: process.version,
+      env: {
+        NODE_ENV: process.env.NODE_ENV,
+        PORT: process.env.PORT
+      },
+      message: "Server started and initialized successfully."
+    };
+    fs.writeFileSync(startupLogPath, JSON.stringify(logInfo, null, 2), 'utf8');
+  } catch (err: any) {
+    console.error("Failed to write startup log:", err.message);
+  }
+
   const isProduction = process.env.NODE_ENV === "production" || 
                         process.env.NODE_ENV === "prod" || 
                         (!process.env.npm_lifecycle_event?.includes('dev') && 
