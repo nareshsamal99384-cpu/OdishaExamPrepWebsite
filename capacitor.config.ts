@@ -3,7 +3,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.odishaexamprep.app',
   appName: 'Odisha Exam Prep',
-  webDir: 'dist',
+  webDir: 'build',
   plugins: {
     CapacitorHttp: {
       enabled: true

@@ -1434,11 +1434,14 @@ Sitemap: ${sitemapUrl}
         res.setHeader("Expires", "0");
         if (!matches) {
           res.status(404);
-          let html = fs.readFileSync(htmlPath, "utf8");
-          html = html.replace("<head>", '<head><meta name="robots" content="noindex, nofollow" />');
-          return res.send(html);
+          let html2 = fs.readFileSync(htmlPath, "utf8");
+          html2 = html2.replace("<head>", '<head><meta name="robots" content="noindex, nofollow" />');
+          res.setHeader("Content-Type", "text/html");
+          return res.send(html2);
         }
-        return res.sendFile(htmlPath);
+        let html = fs.readFileSync(htmlPath, "utf8");
+        res.setHeader("Content-Type", "text/html");
+        return res.send(html);
       }
       res.status(404).send("Not Found");
     });

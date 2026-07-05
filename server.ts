@@ -1802,9 +1802,12 @@ async function startServer() {
           res.status(404);
           let html = fs.readFileSync(htmlPath, 'utf8');
           html = html.replace('<head>', '<head><meta name="robots" content="noindex, nofollow" />');
+          res.setHeader('Content-Type', 'text/html');
           return res.send(html);
         }
-        return res.sendFile(htmlPath);
+        let html = fs.readFileSync(htmlPath, 'utf8');
+        res.setHeader('Content-Type', 'text/html');
+        return res.send(html);
       }
       res.status(404).send('Not Found');
     });
