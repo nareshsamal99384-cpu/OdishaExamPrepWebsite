@@ -52,7 +52,7 @@ async function startServer() {
   const app = express();
   app.set("trust proxy", true);
   const PORT = process.env.PORT || "3000";
-  const distPath = __dirname.endsWith("dist") || __dirname.endsWith("dist/") || __dirname.endsWith("dist\\") || __dirname.endsWith("build") || __dirname.endsWith("build/") || __dirname.endsWith("build\\") ? path.resolve(__dirname, ".") : fs.existsSync(path.resolve(__dirname, "build")) ? path.resolve(__dirname, "build") : path.resolve(__dirname, "dist");
+  const distPath = __dirname.endsWith("build") || __dirname.endsWith("build/") || __dirname.endsWith("build\\") ? path.resolve(__dirname, ".") : path.resolve(__dirname, "build");
   const isProduction = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "prod" || !process.env.npm_lifecycle_event?.includes("dev") && fs.existsSync(path.join(distPath, "index.html"));
   app.use(express.json({
     verify: (req, res, buf) => {
