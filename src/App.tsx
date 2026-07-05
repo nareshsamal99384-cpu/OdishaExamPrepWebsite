@@ -3418,6 +3418,31 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     }
   }, [selectedExam, isGuest]);
 
+  // Prevent body scroll on mobile when the paywall modal is active
+  useEffect(() => {
+    if (!selectedExam) {
+      document.body.style.overflow = '';
+      return;
+    }
+    const currentExam = exams.find((e: any) => e.id === selectedExam);
+    let hasBundle = false;
+    if (currentExam) {
+      const examDesc = currentExam.description || '';
+      if (typeof examDesc === 'string' && examDesc.startsWith('JSON_METADATA_')) {
+        hasBundle = true;
+      }
+    }
+    const isModalActive = isMobile && hasBundle && !hasAccessTo(`exam_bundle_${selectedExam}`) && !isBannerDismissed;
+    if (isModalActive) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobile, exams, selectedExam, isBannerDismissed, hasAccessTo]);
+
   // Onboarding modal trigger removed
 
 
@@ -6926,238 +6951,83 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       </section>
       )}
 
-      {/* Full Exam Access Banner - Refined for Laptop & Mobile */}
-        {/* Full Exam Access Banner - Refined for Laptop & Mobile */}
-        {hasBundle && !hasAccessTo(`exam_bundle_${selectedExam}`) && !isBannerDismissed && (!isMobile || mobileExamTab === 'learn') && (
-          <motion.div 
-            initial={isMobile ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.98 }}
-            animate={isMobile ? undefined : { opacity: 1, scale: 1 }}
-            className="group relative overflow-hidden rounded-[2rem] lg:rounded-[3rem] p-[1px] premium-shine-container mb-10"
-          >
-            {/* Animated Outer Gradient Border */}
-            <div className={cn(
-              "absolute inset-0 opacity-90 transition-all duration-500",
-              isMobile ? "" : "animate-gradient-x",
-              hasAccessTo(`exam_bundle_${selectedExam}`) 
-                ? "bg-gradient-to-r from-emerald-500/60 via-teal-400/40 to-emerald-600/60" 
-                : "bg-gradient-to-r from-brand-500/60 via-amber-400/40 to-indigo-600/60"
-            )} />
-            
-            <div className={cn(
-              "relative rounded-[1.95rem] lg:rounded-[2.95rem] overflow-hidden transition-all duration-500",
-              hasAccessTo(`exam_bundle_${selectedExam}`)
-                ? "bg-gradient-to-br from-[#02130c]/98 via-[#010906]/99 to-[#000503]/100 border border-emerald-500/10"
-                : "bg-gradient-to-br from-[#12040b]/98 via-[#08020a]/99 to-[#030005]/100 border border-brand-500/10"
-            )}>
-              <VisualEffects />
-              
-              {/* Premium Close Button */}
-              <button
+      {/* Mobile Premium Unlock Modal Popup */}
+      {isMobile && (
+        <AnimatePresence>
+          {hasBundle && !hasAccessTo(`exam_bundle_${selectedExam}`) && !isBannerDismissed && (
+            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="absolute inset-0 bg-[#0b0307]/75 backdrop-blur-xs"
                 onClick={() => setIsBannerDismissed(true)}
-                className="absolute top-4 right-4 sm:top-5 sm:right-5 z-20 p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white/60 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 group focus:outline-none cursor-pointer"
-                aria-label="Dismiss banner"
+              />
+
+              {/* Centered Modal Content Card */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.93, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.93, y: 15 }}
+                transition={{ type: "spring", stiffness: 350, damping: 26 }}
+                className="relative w-full max-w-sm rounded-[2.5rem] p-[1.5px] premium-shine-container shadow-2xl overflow-hidden z-10 bg-gradient-to-b from-brand-500/20 via-transparent to-brand-500/10"
+                onClick={(e) => e.stopPropagation()}
               >
-                <X className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:rotate-90" />
-              </button>
-              
-              {/* Dynamic Glowing Ambient Mesh / Orbs */}
-              {!isMobile && (
-                hasAccessTo(`exam_bundle_${selectedExam}`) ? (
-                  <>
-                    <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-emerald-500/10 blur-[100px] pointer-events-none transform-gpu" />
-                    <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-teal-500/10 blur-[120px] pointer-events-none transform-gpu" />
-                    <div className="absolute top-1/2 left-2/3 -translate-y-1/2 w-80 h-80 rounded-full bg-emerald-500/[0.04] blur-[80px] pointer-events-none transform-gpu" />
-                  </>
-                ) : (
-                  <>
-                    <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-brand-500/10 blur-[100px] pointer-events-none transform-gpu" />
-                    <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none transform-gpu" />
-                    <div className="absolute top-1/2 left-2/3 -translate-y-1/2 w-80 h-80 rounded-full bg-amber-500/[0.03] blur-[80px] pointer-events-none transform-gpu" />
-                  </>
-                )
-              )}
+                <div className="relative rounded-[2.45rem] overflow-hidden bg-gradient-to-br from-[#12040b]/98 via-[#08020a]/99 to-[#030005]/100 border border-brand-500/15 p-6 flex flex-col items-center text-center gap-5">
+                  <VisualEffects />
 
-              {/* Sparkle Particles */}
-              <div className="absolute inset-0 pointer-events-none hidden md:block">
-                {SPARKLE_POSITIONS.map((sparkle, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ 
-                      opacity: [0, 0.8, 0], 
-                      scale: [0, 1.3, 0],
-                      x: sparkle.x,
-                      y: sparkle.y
-                    }}
-                    transition={{ 
-                      duration: sparkle.duration, 
-                      repeat: Infinity, 
-                      delay: sparkle.delay 
-                    }}
-                    className={cn(
-                      "absolute w-1 h-1 rounded-full blur-[0.5px] transform-gpu",
-                      hasAccessTo(`exam_bundle_${selectedExam}`) ? "bg-emerald-300" : "bg-brand-300"
-                    )}
-                  />
-                ))}
-              </div>
-              <div className="relative z-10 px-4 py-6 sm:p-10 lg:p-14 flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10">
-                <motion.div 
-                  initial={isMobile ? "show" : "hidden"}
-                  animate={isMobile ? "show" : undefined}
-                  whileInView={isMobile ? undefined : "show"}
-                  viewport={isMobile ? undefined : { once: true }}
-                  variants={{
-                    hidden: { opacity: 0 },
-                    show: {
-                      opacity: 1,
-                      transition: {
-                        staggerChildren: isMobile ? 0 : 0.08
-                      }
-                    }
-                  }}
-                  className="flex flex-col sm:flex-row items-center gap-4 sm:gap-10 flex-1 w-full"
-                >
-                  {/* Rotating Orbital Emblem */}
-                  <motion.div 
-                    variants={{
-                      hidden: { scale: 0.8, opacity: 0 },
-                      show: { scale: 1, opacity: 1 }
-                    }}
-                    className="relative shrink-0 flex items-center justify-center w-14 h-14 sm:w-28 sm:h-28 lg:w-32 lg:h-32"
+                  {/* Premium Close Button */}
+                  <button
+                    onClick={() => setIsBannerDismissed(true)}
+                    className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all cursor-pointer"
+                    aria-label="Dismiss banner"
                   >
-                    {/* Rotating Dashed Orbit 1 */}
-                    <div className={cn(
-                      "absolute inset-0 rounded-full border border-dashed opacity-40 transform-gpu will-change-transform",
-                      isMobile ? "" : "animate-[spin_35s_linear_infinite]",
-                      hasAccessTo(`exam_bundle_${selectedExam}`) ? "border-emerald-400" : "border-brand-400"
-                    )} />
-                    
-                    {/* Rotating Dashed Orbit 2 (Counter-rotated) */}
-                    <div className={cn(
-                      "absolute inset-1 sm:inset-2 rounded-full border border-dashed opacity-20 transform-gpu will-change-transform",
-                      isMobile ? "" : "animate-[spin_20s_linear_infinite_reverse]",
-                      hasAccessTo(`exam_bundle_${selectedExam}`) ? "border-teal-300" : "border-indigo-400"
-                    )} />
+                    <X className="w-4 h-4" />
+                  </button>
 
-                    {/* Ring Pulse Glow */}
-                    <div className={cn(
-                      "absolute inset-2 sm:inset-4 rounded-full border opacity-15 transform-gpu",
-                      isMobile ? "" : "animate-[ping_4s_ease-in-out_infinite]",
-                      hasAccessTo(`exam_bundle_${selectedExam}`) ? "border-emerald-400" : "border-brand-400"
-                    )} />
-
-                    {/* Core Glass Sphere */}
-                    <div className={cn(
-                      "absolute inset-2 sm:inset-4 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-700 hover:scale-105",
-                      isMobile ? "" : "backdrop-blur-xl",
-                      hasAccessTo(`exam_bundle_${selectedExam}`)
-                        ? "bg-emerald-950/45 border border-emerald-400/30 text-emerald-400 shadow-emerald-900/30"
-                        : "bg-brand-950/45 border border-brand-400/30 text-brand-300 shadow-brand-950/50"
-                    )}>
-                       {hasAccessTo(`exam_bundle_${selectedExam}`) ? (
-                          <CheckCircle2 className="w-5 h-5 sm:w-10 sm:h-10 lg:w-11 lg:h-11 text-emerald-300 filter drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]" />
-                       ) : (
-                          <Award className="w-5 h-5 sm:w-10 sm:h-10 lg:w-11 lg:h-11 text-brand-200 filter drop-shadow-[0_0_8px_rgba(244,176,190,0.3)] animate-pulse" />
-                       )}
-                    </div>
-                  </motion.div>
-
-                  <div className="text-center sm:text-left space-y-2.5 sm:space-y-4 w-full">
-                    <motion.div 
-                      variants={{
-                        hidden: { y: 8, opacity: 0 },
-                        show: { y: 0, opacity: 1 }
-                      }}
-                      className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2.5"
-                    >
-                      <span className={cn(
-                        "px-2.5 sm:px-3.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-[0.18em] border backdrop-blur-sm",
-                        hasAccessTo(`exam_bundle_${selectedExam}`)
-                          ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-300"
-                          : "bg-brand-500/10 border-brand-500/25 text-brand-300"
-                      )}>
-                        Selection Special
-                      </span>
-                      <span className={cn(
-                        "px-2.5 sm:px-3.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-[0.18em] border backdrop-blur-sm",
-                        hasAccessTo(`exam_bundle_${selectedExam}`) 
-                          ? "bg-teal-500/10 border-teal-400/30 text-teal-300" 
-                          : "bg-indigo-500/10 border-indigo-400/25 text-indigo-300"
-                      )}>
-                        {hasAccessTo(`exam_bundle_${selectedExam}`) ? 'Premium Unlocked' : 'Unlimited Access'}
-                      </span>
-                    </motion.div>
-
-                    <div className="max-w-2xl space-y-2.5">
-                      <motion.h2 
-                        variants={{
-                          hidden: { y: 8, opacity: 0 },
-                          show: { y: 0, opacity: 1 }
-                        }}
-                        className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight tracking-tight"
-                      >
-                        {hasAccessTo(`exam_bundle_${selectedExam}`) ? (
-                          <>You have <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 drop-shadow-[0_2px_10px_rgba(52,211,153,0.15)]">Full Access</span> to {currentExam?.name}</>
-                        ) : (
-                          <>Get Full Access to <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-pink-200 to-indigo-300 drop-shadow-[0_2px_10px_rgba(244,176,190,0.15)]">{currentExam?.name}</span> Pack</>
-                        )}
-                      </motion.h2>
-                      <motion.p 
-                        variants={{
-                          hidden: { y: 8, opacity: 0 },
-                          show: { y: 0, opacity: 1 }
-                        }}
-                        className={cn(
-                          "text-xs sm:text-base lg:text-[1.05rem] leading-relaxed font-normal tracking-wide max-w-xl transition-all duration-300",
-                          hasAccessTo(`exam_bundle_${selectedExam}`) ? "text-emerald-100/70" : "text-brand-100/70",
-                          !isBannerDescExpanded && "line-clamp-2"
-                        )}
-                      >
-                        {examDescription || (hasAccessTo(`exam_bundle_${selectedExam}`) 
-                          ? 'You have unlocked lifetime access to all Question Banks, Practice Mode, Premium Mock Tests, and PDF notes. Best of luck with your preparation!'
-                          : 'Get full lifetime access to all Question Banks, Practice Mode, Premium Mock Tests, PDF notes, and any future content added to this exam. Complete your preparation with the ultimate bundle.'
-                        )}
-                      </motion.p>
-                      {examDescription && examDescription.length > 150 && (
-                        <button 
-                          onClick={() => setIsBannerDescExpanded(!isBannerDescExpanded)}
-                          className={cn(
-                            "text-xs font-black transition-colors uppercase tracking-wider focus:outline-none inline-flex items-center gap-1 cursor-pointer mt-1",
-                            hasAccessTo(`exam_bundle_${selectedExam}`)
-                              ? "text-emerald-300 hover:text-emerald-200"
-                              : "text-brand-300 hover:text-brand-200"
-                          )}
-                        >
-                          {isBannerDescExpanded ? 'Read Less' : 'Read More'}
-                        </button>
-                      )}
+                  {/* Emblem */}
+                  <div className="relative shrink-0 flex items-center justify-center w-24 h-24 mt-2">
+                    <div className="absolute inset-0 rounded-full border border-dashed border-brand-400 opacity-40 animate-[spin_35s_linear_infinite]" />
+                    <div className="absolute inset-2 rounded-full border border-dashed border-indigo-400 opacity-20 animate-[spin_20s_linear_infinite_reverse]" />
+                    <div className="absolute inset-4 rounded-full border border-brand-400 opacity-15 animate-[ping_4s_ease-in-out_infinite]" />
+                    <div className="absolute inset-4 rounded-full flex items-center justify-center bg-brand-950/45 border border-brand-400/30 text-brand-300 shadow-2xl shadow-brand-950/50">
+                      <Award className="w-8 h-8 text-brand-200 filter drop-shadow-[0_0_8px_rgba(244,176,190,0.3)] animate-pulse" />
                     </div>
                   </div>
-                </motion.div>
 
-                {/* Action Section - Compact on Laptop */}
-                {!hasAccessTo(`exam_bundle_${selectedExam}`) ? (
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.2 }}
-                    className="flex flex-col items-center lg:items-center gap-4 sm:gap-5 shrink-0 lg:border-l lg:border-white/5 lg:pl-12 lg:min-w-[280px] w-full lg:w-auto"
-                  >
-                    <div className="text-center lg:text-center">
-                      <div className="flex flex-row sm:flex-row lg:flex-col items-center justify-center lg:items-center gap-2.5 sm:gap-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-brand-300/40 text-sm sm:text-base lg:text-lg line-through font-bold">₹{bundleOriginalPrice}</span>
-                          <span className="text-2xl sm:text-4xl lg:text-5xl font-black text-white font-mono tracking-tighter">₹{bundlePrice}</span>
-                        </div>
-                        <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-amber-500/10 text-amber-300 text-[9px] sm:text-[10px] font-black rounded-lg border border-amber-500/20 uppercase tracking-widest">
-                          Save {Math.round(((bundleOriginalPrice - bundlePrice) / bundleOriginalPrice) * 100)}% Instant
-                        </span>
-                      </div>
+                  {/* Badges */}
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.18em] border border-brand-500/25 bg-brand-500/10 text-brand-300 backdrop-blur-sm">
+                      Selection Special
+                    </span>
+                    <span className="px-3 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.18em] border border-indigo-400/25 bg-indigo-500/10 text-indigo-300 backdrop-blur-sm">
+                      Unlimited Access
+                    </span>
+                  </div>
+
+                  {/* Heading & Description */}
+                  <div className="space-y-2">
+                    <h2 className="text-xl font-extrabold text-white leading-tight tracking-tight px-2">
+                      Get Full Access to <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-pink-200 to-indigo-300 drop-shadow-[0_2px_10px_rgba(244,176,190,0.15)]">{currentExam?.name}</span> Pack
+                    </h2>
+                    <p className="text-xs text-brand-100/70 leading-relaxed font-normal tracking-wide max-w-xs">
+                      Get full lifetime access to all Question Banks, Practice Mode, Premium Mock Tests, PDF notes, and all future updates.
+                    </p>
+                  </div>
+
+                  {/* Pricing and Action Section */}
+                  <div className="w-full space-y-4 pt-4 border-t border-white/5">
+                    <div className="flex items-center justify-center gap-3">
+                      <span className="text-brand-300/40 text-sm line-through font-bold">₹{bundleOriginalPrice}</span>
+                      <span className="text-3xl font-black text-white font-mono tracking-tighter">₹{bundlePrice}</span>
+                      <span className="px-2 py-0.5 bg-amber-500/10 text-amber-300 text-[9px] font-black rounded-lg border border-amber-500/20 uppercase tracking-widest">
+                        Save {Math.round(((bundleOriginalPrice - bundlePrice) / bundleOriginalPrice) * 100)}% Instant
+                      </span>
                     </div>
 
-                    <Button 
+                    <Button
                       onClick={() => {
                         if (isGuest) {
                           setShowLoginPrompt(true);
@@ -7178,44 +7048,221 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         setPaywallProductType('exam_bundle');
                         setShowPaywall(true);
                       }}
-                      className="w-full sm:w-auto h-12 lg:h-16 px-8 rounded-2xl bg-gradient-to-r from-white via-slate-100 to-white hover:from-brand-100 hover:to-white text-brand-950 font-black text-base lg:text-lg shadow-xl shadow-brand-500/10 hover:shadow-brand-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 group/btn relative overflow-hidden"
+                      className="w-full h-12 rounded-2xl bg-gradient-to-r from-white via-slate-100 to-white hover:from-brand-100 hover:to-white text-brand-950 font-black text-sm shadow-xl shadow-brand-500/10 hover:shadow-brand-500/20 transition-all flex items-center justify-center gap-2 group/btn relative overflow-hidden"
                     >
-                      {/* Button Shine Effect */}
                       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 z-10" />
-                      
                       <span className="relative z-10">Unlock All Access</span>
-                      <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-1.5 transition-transform relative z-10" />
+                      <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform relative z-10" />
                     </Button>
-                    
-                    <div className="flex items-center gap-1.5 text-brand-300/60 font-bold text-[9px] sm:text-[10px] uppercase tracking-widest">
+
+                    <div className="flex items-center justify-center gap-1.5 text-brand-300/60 font-bold text-[9px] uppercase tracking-widest">
                       <Zap className="w-3.5 h-3.5 fill-brand-300/60 animate-pulse" />
                       Instant Activation
                     </div>
-                  </motion.div>
-                ) : (
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.2 }}
-                    className="flex flex-col items-center lg:items-center gap-4 shrink-0 lg:border-l lg:border-emerald-500/10 lg:pl-12 lg:min-w-[280px] w-full lg:w-auto"
-                  >
-                     {/* Elegant Gold/Emerald Security Seal */}
-                     <div className="w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-400/20 flex items-center justify-center relative shadow-[0_0_30px_rgba(16,185,129,0.15)] group-hover:scale-105 transition-transform duration-500">
-                       <div className="absolute inset-2 rounded-full border border-dashed border-emerald-400/20 animate-[spin_40s_linear_infinite]" />
-                       <ShieldCheck className="w-10 h-10 text-emerald-400 filter drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]" />
-                       <div className="absolute inset-0 rounded-full border border-emerald-400/20 animate-ping opacity-30" style={{ animationDuration: '3s' }} />
-                     </div>
-                     <span className="text-emerald-300 font-bold uppercase tracking-[0.2em] text-[10px] bg-emerald-950/60 hover:bg-emerald-950/80 px-4.5 py-1.5 rounded-full border border-emerald-500/25 flex items-center gap-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all">
-                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-[pulse_1.5s_ease-in-out_infinite]" />
-                       Bundle Active
-                     </span>
-                  </motion.div>
-                )}
-              </div>
+                  </div>
+                </div>
+              </motion.div>
             </div>
-          </motion.div>
-        )}
+          )}
+        </AnimatePresence>
+      )}
+
+      {/* Desktop Premium Unlock Banner */}
+      {!isMobile && hasBundle && !hasAccessTo(`exam_bundle_${selectedExam}`) && !isBannerDismissed && (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="group relative overflow-hidden rounded-[2rem] lg:rounded-[3rem] p-[1px] premium-shine-container mb-10"
+        >
+          {/* Animated Outer Gradient Border */}
+          <div className="absolute inset-0 opacity-90 transition-all duration-500 animate-gradient-x bg-gradient-to-r from-brand-500/60 via-amber-400/40 to-indigo-600/60" />
+          
+          <div className="relative rounded-[1.95rem] lg:rounded-[2.95rem] overflow-hidden transition-all duration-500 bg-gradient-to-br from-[#12040b]/98 via-[#08020a]/99 to-[#030005]/100 border border-brand-500/10">
+            <VisualEffects />
+            
+            {/* Premium Close Button */}
+            <button
+              onClick={() => setIsBannerDismissed(true)}
+              className="absolute top-4 right-4 sm:top-5 sm:right-5 z-20 p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white/60 hover:text-white transition-all duration-300 hover:scale-110 active:scale-95 group focus:outline-none cursor-pointer"
+              aria-label="Dismiss banner"
+            >
+              <X className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:rotate-90" />
+            </button>
+            
+            {/* Dynamic Glowing Ambient Mesh / Orbs */}
+            <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-brand-500/10 blur-[100px] pointer-events-none transform-gpu" />
+            <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none transform-gpu" />
+            <div className="absolute top-1/2 left-2/3 -translate-y-1/2 w-80 h-80 rounded-full bg-amber-500/[0.03] blur-[80px] pointer-events-none transform-gpu" />
+
+            {/* Sparkle Particles */}
+            <div className="absolute inset-0 pointer-events-none hidden md:block">
+              {SPARKLE_POSITIONS.map((sparkle, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ 
+                    opacity: [0, 0.8, 0], 
+                    scale: [0, 1.3, 0],
+                    x: sparkle.x,
+                    y: sparkle.y
+                  }}
+                  transition={{ 
+                    duration: sparkle.duration, 
+                    repeat: Infinity, 
+                    delay: sparkle.delay 
+                  }}
+                  className="absolute w-1 h-1 rounded-full blur-[0.5px] transform-gpu bg-brand-300"
+                />
+              ))}
+            </div>
+            <div className="relative z-10 px-4 py-6 sm:p-10 lg:p-14 flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10">
+              <motion.div 
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true }}
+                variants={{
+                  hidden: { opacity: 0 },
+                  show: {
+                    opacity: 1,
+                    transition: {
+                      staggerChildren: 0.08
+                    }
+                  }
+                }}
+                className="flex flex-col sm:flex-row items-center gap-4 sm:gap-10 flex-1 w-full"
+              >
+                {/* Rotating Orbital Emblem */}
+                <motion.div 
+                  variants={{
+                    hidden: { scale: 0.8, opacity: 0 },
+                    show: { scale: 1, opacity: 1 }
+                  }}
+                  className="relative shrink-0 flex items-center justify-center w-14 h-14 sm:w-28 sm:h-28 lg:w-32 lg:h-32"
+                >
+                  {/* Rotating Dashed Orbit 1 */}
+                  <div className="absolute inset-0 rounded-full border border-dashed opacity-40 transform-gpu will-change-transform border-brand-400 animate-[spin_35s_linear_infinite]" />
+                  
+                  {/* Rotating Dashed Orbit 2 (Counter-rotated) */}
+                  <div className="absolute inset-1 sm:inset-2 rounded-full border border-dashed opacity-20 transform-gpu will-change-transform border-indigo-400 animate-[spin_20s_linear_infinite_reverse]" />
+
+                  {/* Ring Pulse Glow */}
+                  <div className="absolute inset-2 sm:inset-4 rounded-full border opacity-15 transform-gpu border-brand-400 animate-[ping_4s_ease-in-out_infinite]" />
+
+                  {/* Core Glass Sphere */}
+                  <div className="absolute inset-2 sm:inset-4 rounded-full flex items-center justify-center shadow-2xl transition-transform duration-700 hover:scale-105 backdrop-blur-xl bg-brand-950/45 border border-brand-400/30 text-brand-300 shadow-brand-950/50">
+                     <Award className="w-5 h-5 sm:w-10 sm:h-10 lg:w-11 lg:h-11 text-brand-200 filter drop-shadow-[0_0_8px_rgba(244,176,190,0.3)] animate-pulse" />
+                  </div>
+                </motion.div>
+
+                <div className="text-center sm:text-left space-y-2.5 sm:space-y-4 w-full">
+                  <motion.div 
+                    variants={{
+                      hidden: { y: 8, opacity: 0 },
+                      show: { y: 0, opacity: 1 }
+                    }}
+                    className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2.5"
+                  >
+                    <span className="px-2.5 sm:px-3.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-[0.18em] border backdrop-blur-sm bg-brand-500/10 border-brand-500/25 text-brand-300">
+                      Selection Special
+                    </span>
+                    <span className="px-2.5 sm:px-3.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-[0.18em] border backdrop-blur-sm bg-indigo-500/10 border-indigo-400/25 text-indigo-300">
+                      Unlimited Access
+                    </span>
+                  </motion.div>
+
+                  <div className="max-w-2xl space-y-2.5">
+                    <motion.h2 
+                      variants={{
+                        hidden: { y: 8, opacity: 0 },
+                        show: { y: 0, opacity: 1 }
+                      }}
+                      className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight tracking-tight"
+                    >
+                      <>Get Full Access to <span className="font-serif italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-pink-200 to-indigo-300 drop-shadow-[0_2px_10px_rgba(244,176,190,0.15)]">{currentExam?.name}</span> Pack</>
+                    </motion.h2>
+                    <motion.p 
+                      variants={{
+                        hidden: { y: 8, opacity: 0 },
+                        show: { y: 0, opacity: 1 }
+                      }}
+                      className={cn(
+                        "text-xs sm:text-base lg:text-[1.05rem] leading-relaxed font-normal tracking-wide max-w-xl transition-all duration-300 text-brand-100/70",
+                        !isBannerDescExpanded && "line-clamp-2"
+                      )}
+                    >
+                      {examDescription || 'Get full lifetime access to all Question Banks, Practice Mode, Premium Mock Tests, PDF notes, and any future content added to this exam. Complete your preparation with the ultimate bundle.'}
+                    </motion.p>
+                    {examDescription && examDescription.length > 150 && (
+                      <button 
+                        onClick={() => setIsBannerDescExpanded(!isBannerDescExpanded)}
+                        className="text-xs font-black transition-colors uppercase tracking-wider focus:outline-none inline-flex items-center gap-1 cursor-pointer mt-1 text-brand-300 hover:text-brand-200"
+                      >
+                        {isBannerDescExpanded ? 'Read Less' : 'Read More'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Action Section - Compact on Laptop */}
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+                className="flex flex-col items-center lg:items-center gap-4 sm:gap-5 shrink-0 lg:border-l lg:border-white/5 lg:pl-12 lg:min-w-[280px] w-full lg:w-auto"
+              >
+                <div className="text-center lg:text-center">
+                  <div className="flex flex-row sm:flex-row lg:flex-col items-center justify-center lg:items-center gap-2.5 sm:gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-brand-300/40 text-sm sm:text-base lg:text-lg line-through font-bold">₹{bundleOriginalPrice}</span>
+                      <span className="text-2xl sm:text-4xl lg:text-5xl font-black text-white font-mono tracking-tighter">₹{bundlePrice}</span>
+                    </div>
+                    <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-amber-500/10 text-amber-300 text-[9px] sm:text-[10px] font-black rounded-lg border border-amber-500/20 uppercase tracking-widest">
+                      Save {Math.round(((bundleOriginalPrice - bundlePrice) / bundleOriginalPrice) * 100)}% Instant
+                    </span>
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={() => {
+                    if (isGuest) {
+                      setShowLoginPrompt(true);
+                      return;
+                    }
+                    setPaywallPrice(bundlePrice);
+                    setPaywallOriginalPrice(bundleOriginalPrice);
+                    setPaywallItemTitle(`${currentExam?.name} Full Access Pack`);
+                    setPaywallFeatures([
+                      'Unlocks ALL Premium Mock Tests',
+                      'Unlocks ALL Question Banks',
+                      'Full Interactive Practice Mode',
+                      'Advanced Performance Analytics',
+                      'All PDF Downloads Included',
+                      'Lifetime Validity & Updates'
+                    ]);
+                    setPaywallItemId(`exam_bundle_${selectedExam}`);
+                    setPaywallProductType('exam_bundle');
+                    setShowPaywall(true);
+                  }}
+                  className="w-full sm:w-auto h-12 lg:h-16 px-8 rounded-2xl bg-gradient-to-r from-white via-slate-100 to-white hover:from-brand-100 hover:to-white text-brand-950 font-black text-base lg:text-lg shadow-xl shadow-brand-500/10 hover:shadow-brand-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 group/btn relative overflow-hidden"
+                >
+                  {/* Button Shine Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 z-10" />
+                  
+                  <span className="relative z-10">Unlock All Access</span>
+                  <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-1.5 transition-transform relative z-10" />
+                </Button>
+                
+                <div className="flex items-center gap-1.5 text-brand-300/60 font-bold text-[9px] sm:text-[10px] uppercase tracking-widest">
+                  <Zap className="w-3.5 h-3.5 fill-brand-300/60 animate-pulse" />
+                  Instant Activation
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Section 2: Practice Tests */}
       {(!isMobile || mobileExamTab === 'practice') && (
