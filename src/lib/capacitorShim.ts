@@ -5,7 +5,9 @@ import { Browser } from '@capacitor/browser';
 // Capacitor Mobile Environment Shim
 // Intercepts and redirects relative API calls when running inside the native Capacitor app wrapper.
 
-const isCapacitor = typeof (window as any).Capacitor !== 'undefined';
+const isCapacitor = typeof (window as any).Capacitor !== 'undefined' &&
+                     typeof (window as any).Capacitor.getPlatform === 'function' &&
+                     (window as any).Capacitor.getPlatform() !== 'web';
 
 if (isCapacitor) {
   console.log('[Mobile Shim] Running inside native app wrapper. Initializing plugins.');
