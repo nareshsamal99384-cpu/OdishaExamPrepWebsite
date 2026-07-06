@@ -3299,23 +3299,23 @@ const SPARKLE_POSITIONS = [
 ];
 
 const premiumBackdropVariants = {
-  hidden: { 
-    opacity: 0, 
-    backdropFilter: 'blur(0px)', 
-    WebkitBackdropFilter: 'blur(0px)' 
-  },
-  visible: (customBlur: number) => ({ 
-    opacity: 1, 
-    backdropFilter: `blur(${customBlur}px)`, 
-    WebkitBackdropFilter: `blur(${customBlur}px)`,
+  hidden: (custom: { blur: number; color: string; initColor: string }) => ({ 
+    backgroundColor: custom.initColor,
+    backdropFilter: `blur(${custom.blur}px)`,
+    WebkitBackdropFilter: `blur(${custom.blur}px)`,
+  }),
+  visible: (custom: { blur: number; color: string; initColor: string }) => ({ 
+    backgroundColor: custom.color,
+    backdropFilter: `blur(${custom.blur}px)`,
+    WebkitBackdropFilter: `blur(${custom.blur}px)`,
     transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] }
   }),
-  exit: { 
-    opacity: 0, 
-    backdropFilter: 'blur(0px)', 
+  exit: (custom: { blur: number; color: string; initColor: string }) => ({ 
+    backgroundColor: custom.initColor,
+    backdropFilter: 'blur(0px)',
     WebkitBackdropFilter: 'blur(0px)',
     transition: { duration: 0.28, ease: [0.7, 0, 0.84, 0] }
-  }
+  })
 };
 
 const premiumModalVariants = {
@@ -3609,12 +3609,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               <motion.div
                 key="detail-backdrop"
                 variants={premiumBackdropVariants}
-                custom={8}
+                custom={{ blur: 8, color: 'rgba(0, 0, 0, 0.5)', initColor: 'rgba(0, 0, 0, 0)' }}
                 initial="hidden"
                 animate="visible"
                 exit="exit"
-                className="fixed inset-0 bg-black/50 z-[100]"
-                style={{ willChange: 'opacity, backdrop-filter' }}
+                className="fixed inset-0 z-[100]"
+                style={{ willChange: 'background-color, backdrop-filter' }}
                 onClick={() => setSelectedBankItem(null)}
               />
 
@@ -3951,12 +3951,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 <motion.div
                   key="practice-backdrop"
                   variants={premiumBackdropVariants}
-                  custom={12}
+                  custom={{ blur: 12, color: 'rgba(2, 6, 23, 0.4)', initColor: 'rgba(2, 6, 23, 0)' }}
                   initial="hidden"
                   animate="visible"
                   exit="exit"
-                  className="fixed inset-0 z-[100] bg-slate-950/40"
-                  style={{ willChange: 'opacity, backdrop-filter' }}
+                  className="fixed inset-0 z-[100]"
+                  style={{ willChange: 'background-color, backdrop-filter' }}
                   onClick={() => setShowPracticeConfig(false)}
                 />
 
@@ -4267,12 +4267,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               <motion.div
                 key="paywall-backdrop"
                 variants={premiumBackdropVariants}
-                custom={10}
+                custom={{ blur: 10, color: 'rgba(2, 6, 23, 0.6)', initColor: 'rgba(2, 6, 23, 0)' }}
                 initial="hidden"
                 animate="visible"
                 exit="exit"
-                className="fixed inset-0 bg-slate-950/60 z-[250]"
-                style={{ willChange: 'opacity, backdrop-filter' }}
+                className="fixed inset-0 z-[250]"
+                style={{ willChange: 'background-color, backdrop-filter' }}
                 onClick={() => {
                   if (paymentState === 'idle') {
                     setShowPaywall(false);
@@ -4754,12 +4754,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               <motion.div
                 key="login-backdrop"
                 variants={premiumBackdropVariants}
-                custom={8}
+                custom={{ blur: 8, color: 'rgba(0, 0, 0, 0.5)', initColor: 'rgba(0, 0, 0, 0)' }}
                 initial="hidden"
                 animate="visible"
                 exit="exit"
-                className="fixed inset-0 bg-black/50 z-[200]"
-                style={{ willChange: 'opacity, backdrop-filter' }}
+                className="fixed inset-0 z-[200]"
+                style={{ willChange: 'background-color, backdrop-filter' }}
                 onClick={() => setShowLoginPrompt(false)}
               />
 
@@ -4809,12 +4809,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               <motion.div
                 key="info-backdrop"
                 variants={premiumBackdropVariants}
-                custom={8}
+                custom={{ blur: 8, color: 'rgba(0, 0, 0, 0.5)', initColor: 'rgba(0, 0, 0, 0)' }}
                 initial="hidden"
                 animate="visible"
                 exit="exit"
-                className="fixed inset-0 bg-black/50 z-[300]"
-                style={{ willChange: 'opacity, backdrop-filter' }}
+                className="fixed inset-0 z-[300]"
+                style={{ willChange: 'background-color, backdrop-filter' }}
                 onClick={() => setInfoModal(null)}
               />
 
