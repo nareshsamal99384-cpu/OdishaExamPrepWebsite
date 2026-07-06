@@ -3298,6 +3298,60 @@ const SPARKLE_POSITIONS = [
   { left: '92%', top: '40%', x: [12, -22], y: [-18, 12], duration: 4.9, delay: 0.9 },
 ];
 
+const premiumBackdropVariants = {
+  hidden: { 
+    opacity: 0, 
+    backdropFilter: 'blur(0px)', 
+    WebkitBackdropFilter: 'blur(0px)' 
+  },
+  visible: (customBlur: number) => ({ 
+    opacity: 1, 
+    backdropFilter: `blur(${customBlur}px)`, 
+    WebkitBackdropFilter: `blur(${customBlur}px)`,
+    transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] }
+  }),
+  exit: { 
+    opacity: 0, 
+    backdropFilter: 'blur(0px)', 
+    WebkitBackdropFilter: 'blur(0px)',
+    transition: { duration: 0.28, ease: [0.7, 0, 0.84, 0] }
+  }
+};
+
+const premiumModalVariants = {
+  hidden: { 
+    y: '100%', 
+    opacity: 0 
+  },
+  visible: { 
+    y: 0, 
+    opacity: 1,
+    transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] }
+  },
+  exit: { 
+    y: '100%', 
+    opacity: 0,
+    transition: { duration: 0.28, ease: [0.7, 0, 0.84, 0] }
+  }
+};
+
+const premiumScaleModalVariants = {
+  hidden: { 
+    scale: 0.95, 
+    opacity: 0 
+  },
+  visible: { 
+    scale: 1, 
+    opacity: 1,
+    transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] }
+  },
+  exit: { 
+    scale: 0.95, 
+    opacity: 0,
+    transition: { duration: 0.28, ease: [0.7, 0, 0.84, 0] }
+  }
+};
+
 const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activities = [], onNavigate, onActivityLogged, selectedExam: propsSelectedExam, setSelectedExam: propsSetSelectedExam }: { isGuest?: boolean, onSignIn?: () => void, mainTab?: string, user?: any, activities?: any[], onNavigate?: (tab: any) => void, onActivityLogged?: () => void, selectedExam?: string | null, setSelectedExam?: (val: string | null) => void }) => {
   const { profile, isAdmin, hasFullAccess, grantFullAccess, hasAccessTo, unlockItem, guestUsage, incrementGuestUsage } = useAuth();
   const navigate = useNavigate();
@@ -3554,12 +3608,13 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               {/* Animated backdrop */}
               <motion.div
                 key="detail-backdrop"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-                className="fixed inset-0 bg-black/50 z-[100] backdrop-blur-sm"
-                style={{ willChange: 'opacity' }}
+                variants={premiumBackdropVariants}
+                custom={8}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="fixed inset-0 bg-black/50 z-[100]"
+                style={{ willChange: 'opacity, backdrop-filter' }}
                 onClick={() => setSelectedBankItem(null)}
               />
 
@@ -3567,17 +3622,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               <div className="fixed inset-0 z-[101] flex items-end md:items-center justify-center pointer-events-none px-3 pb-3 md:p-4" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 56px)' }}>
                 <motion.div 
                   key="detail-modal"
-                  initial={{ y: '100%', opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: '100%', opacity: 0 }}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 320,
-                    damping: 32,
-                    mass: 0.9,
-                  }}
+                  variants={premiumModalVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
                   className="bg-[#FAF8F5] rounded-[2rem] w-full md:w-full max-w-xl md:max-w-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] flex flex-col md:flex-row border border-slate-200/50 relative pointer-events-auto mx-auto"
-                  style={{ willChange: 'transform' }}
+                  style={{ willChange: 'transform, opacity' }}
                 >
                   {/* Unified Close Button */}
                   <button 
@@ -3900,12 +3950,13 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 {/* Animated backdrop */}
                 <motion.div
                   key="practice-backdrop"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-                  className="fixed inset-0 z-[100] backdrop-blur-xl bg-slate-950/40"
-                  style={{ willChange: 'opacity' }}
+                  variants={premiumBackdropVariants}
+                  custom={12}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="fixed inset-0 z-[100] bg-slate-950/40"
+                  style={{ willChange: 'opacity, backdrop-filter' }}
                   onClick={() => setShowPracticeConfig(false)}
                 />
 
@@ -3913,15 +3964,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 <div className="fixed inset-0 z-[101] flex items-end md:items-center justify-center pointer-events-none p-0 md:p-6">
                   <motion.div
                     key="practice-modal"
-                    initial={{ y: '100%', opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: '100%', opacity: 0 }}
-                    transition={{
-                      type: 'spring',
-                      stiffness: 320,
-                      damping: 32,
-                      mass: 0.9,
-                    }}
+                    variants={premiumModalVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
                     className="relative w-full md:max-w-4xl max-h-[92vh] md:max-h-[90vh] flex flex-col bg-white rounded-t-[2rem] md:rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.12)] border-x-0 border-b-0 md:border border-slate-200/50 overflow-hidden pointer-events-auto"
                     style={{ willChange: 'transform, opacity' }}
                   >
@@ -4220,12 +4266,13 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               {/* Animated backdrop */}
               <motion.div
                 key="paywall-backdrop"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-                className="fixed inset-0 bg-slate-950/60 z-[250] backdrop-blur-md"
-                style={{ willChange: 'opacity' }}
+                variants={premiumBackdropVariants}
+                custom={10}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="fixed inset-0 bg-slate-950/60 z-[250]"
+                style={{ willChange: 'opacity, backdrop-filter' }}
                 onClick={() => {
                   if (paymentState === 'idle') {
                     setShowPaywall(false);
@@ -4240,15 +4287,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               <div className="fixed inset-0 z-[251] flex items-end md:items-center justify-center pointer-events-none p-0 md:p-4">
                 <motion.div 
                   key="paywall-modal"
-                  initial={{ y: '100%', opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: '100%', opacity: 0 }}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 320,
-                    damping: 32,
-                    mass: 0.9,
-                  }}
+                  variants={premiumModalVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
                   className="relative overflow-hidden rounded-t-[2.5rem] md:rounded-[2.5rem] p-[1px] bg-gradient-to-b from-white/15 via-white/5 to-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] w-full max-w-md max-h-fit md:max-h-fit flex flex-col pointer-events-auto"
                   style={{ willChange: 'transform, opacity' }}
                 >
@@ -4711,12 +4753,13 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               {/* Animated backdrop */}
               <motion.div
                 key="login-backdrop"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-                className="fixed inset-0 bg-black/50 z-[200] backdrop-blur-sm"
-                style={{ willChange: 'opacity' }}
+                variants={premiumBackdropVariants}
+                custom={8}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="fixed inset-0 bg-black/50 z-[200]"
+                style={{ willChange: 'opacity, backdrop-filter' }}
                 onClick={() => setShowLoginPrompt(false)}
               />
 
@@ -4724,15 +4767,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               <div className="fixed inset-0 z-[201] flex items-end md:items-center justify-center pointer-events-none p-0 md:p-4">
                 <motion.div
                   key="login-modal"
-                  initial={{ y: '100%', opacity: 0, scale: 1 }}
-                  animate={{ y: 0, opacity: 1, scale: 1 }}
-                  exit={{ y: '100%', opacity: 0, scale: 1 }}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 320,
-                    damping: 32,
-                    mass: 0.9,
-                  }}
+                  variants={premiumModalVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
                   className="bg-white rounded-t-[2.5rem] md:rounded-[2.5rem] w-full md:max-w-sm p-8 space-y-6 shadow-2xl relative overflow-hidden max-h-[92vh] md:max-h-[85vh] flex flex-col pointer-events-auto"
                   style={{ willChange: 'transform, opacity' }}
                 >
@@ -4770,12 +4808,13 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               {/* Animated backdrop */}
               <motion.div
                 key="info-backdrop"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-                className="fixed inset-0 bg-black/50 z-[300] backdrop-blur-sm"
-                style={{ willChange: 'opacity' }}
+                variants={premiumBackdropVariants}
+                custom={8}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="fixed inset-0 bg-black/50 z-[300]"
+                style={{ willChange: 'opacity, backdrop-filter' }}
                 onClick={() => setInfoModal(null)}
               />
 
@@ -4783,11 +4822,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               <div className="fixed inset-0 z-[301] flex items-center justify-center pointer-events-none p-4">
                 <motion.div
                   key="info-modal"
-                  initial={{ scale: 0.95, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.95, opacity: 0 }}
-                  transition={{ type: 'spring', duration: 0.3 }}
+                  variants={premiumScaleModalVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
                   className="bg-white rounded-[2rem] w-full max-w-sm p-6 space-y-6 shadow-2xl relative overflow-hidden flex flex-col pointer-events-auto text-center border border-slate-100"
+                  style={{ willChange: 'transform, opacity' }}
                 >
                   <div className="absolute -top-10 -right-10 w-40 h-40 bg-brand-500/5 rounded-full blur-3xl pointer-events-none" />
                   
