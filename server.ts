@@ -26,12 +26,16 @@ for (const envPath of envPaths) {
   }
 }
 
-// Initialize Supabase Admin Client
-const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || "";
+// Initialize Supabase Admin Client resiliently (prevents startup crash if env is missing)
+const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://placeholder.supabase.co";
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || "dummy_key_to_prevent_startup_crash";
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: { autoRefreshToken: false, persistSession: false }
 });
+
+if (supabaseUrl === "https://placeholder.supabase.co" || supabaseServiceKey === "dummy_key_to_prevent_startup_crash") {
+  console.warn("⚠️ WARNING: VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing. Supabase admin features will fail.");
+}
 
 function routeToRegex(route: string): RegExp {
   const escaped = route.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');

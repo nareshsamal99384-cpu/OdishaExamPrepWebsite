@@ -38,11 +38,14 @@ for (const envPath of envPaths) {
     break;
   }
 }
-var supabaseUrl = process.env.VITE_SUPABASE_URL || "";
-var supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || "";
+var supabaseUrl = process.env.VITE_SUPABASE_URL || "https://placeholder.supabase.co";
+var supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || "dummy_key_to_prevent_startup_crash";
 var supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: { autoRefreshToken: false, persistSession: false }
 });
+if (supabaseUrl === "https://placeholder.supabase.co" || supabaseServiceKey === "dummy_key_to_prevent_startup_crash") {
+  console.warn("\u26A0\uFE0F WARNING: VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing. Supabase admin features will fail.");
+}
 function routeToRegex(route) {
   const escaped = route.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
   const paramPattern = escaped.replace(/:[A-Za-z0-9_]+/g, "([^/]+)");
