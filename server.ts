@@ -408,6 +408,16 @@ async function startServer() {
     }
   });
 
+  app.post("/api/log-error", (req, res) => {
+    try {
+      console.log("[Client Error Logged]", req.body);
+      require("fs").writeFileSync("client_error.json", JSON.stringify(req.body, null, 2));
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to write error" });
+    }
+  });
+
   // Admin Login API
   app.post("/api/admin/login", async (req, res) => {
     try {

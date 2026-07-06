@@ -1,3 +1,11 @@
+var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+}) : x)(function(x) {
+  if (typeof require !== "undefined")
+    return require.apply(this, arguments);
+  throw Error('Dynamic require of "' + x + '" is not supported');
+});
+
 // server.ts
 import express from "express";
 import { createServer as createViteServer } from "vite";
@@ -324,6 +332,15 @@ async function startServer() {
     } catch (err) {
       console.error("[Admin User Update Error]", err);
       res.status(500).json({ error: err.message || "Failed to update user" });
+    }
+  });
+  app.post("/api/log-error", (req, res) => {
+    try {
+      console.log("[Client Error Logged]", req.body);
+      __require("fs").writeFileSync("client_error.json", JSON.stringify(req.body, null, 2));
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to write error" });
     }
   });
   app.post("/api/admin/login", async (req, res) => {

@@ -7,6 +7,35 @@ import { AuthProvider } from './lib/AuthContext';
 import { ErrorBoundary } from './ErrorBoundary';
 import LoadingPortal from './components/LoadingPortal';
 
+// Global client-side error reporter for remote diagnostics
+window.onerror = function(message, source, lineno, colno, error) {
+  fetch('/api/log-error', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'onerror',
+      message: message ? message.toString() : '',
+      source,
+      lineno,
+      colno,
+      stack: error?.stack || ''
+    })
+  }).catch(() => {});
+};
+
+window.addEventListener('unhandledrejection', function(event) {
+  fetch('/api/log-error', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'unhandledrejection',
+      message: 'Unhandled Promise Rejection',
+      reason: event.reason ? (event.reason.message || event.reason.toString()) : '',
+      stack: event.reason?.stack || ''
+    })
+  }).catch(() => {});
+});
+
 // Handle dynamic import (chunk) loading failures gracefully
 window.addEventListener('vite:preloadError', (event) => {
   console.warn('[Vite Preload Error] Failed to fetch dynamic asset. Reloading to apply update...');
