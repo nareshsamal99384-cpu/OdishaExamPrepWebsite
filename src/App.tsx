@@ -3298,26 +3298,6 @@ const SPARKLE_POSITIONS = [
   { left: '92%', top: '40%', x: [12, -22], y: [-18, 12], duration: 4.9, delay: 0.9 },
 ];
 
-const premiumBackdropVariants = {
-  hidden: (custom: { blur: number; color: string; initColor: string }) => ({ 
-    backgroundColor: custom.initColor,
-    backdropFilter: `blur(${custom.blur}px)`,
-    WebkitBackdropFilter: `blur(${custom.blur}px)`,
-  }),
-  visible: (custom: { blur: number; color: string; initColor: string }) => ({ 
-    backgroundColor: custom.color,
-    backdropFilter: `blur(${custom.blur}px)`,
-    WebkitBackdropFilter: `blur(${custom.blur}px)`,
-    transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] }
-  }),
-  exit: (custom: { blur: number; color: string; initColor: string }) => ({ 
-    backgroundColor: custom.initColor,
-    backdropFilter: 'blur(0px)',
-    WebkitBackdropFilter: 'blur(0px)',
-    transition: { duration: 0.28, ease: [0.7, 0, 0.84, 0] }
-  })
-};
-
 const premiumModalVariants = {
   hidden: { 
     y: '100%', 
@@ -3605,16 +3585,20 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         <AnimatePresence mode="wait">
           {selectedBankItem && (
             <>
-              {/* Animated backdrop */}
+              {/* Instant static blur layer */}
+              <div 
+                className="fixed inset-0 z-[99]"
+                style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+              />
+              {/* Animated dimming layer */}
               <motion.div
-                key="detail-backdrop"
-                variants={premiumBackdropVariants}
-                custom={{ blur: 8, color: 'rgba(0, 0, 0, 0.5)', initColor: 'rgba(0, 0, 0, 0)' }}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="fixed inset-0 z-[100]"
-                style={{ willChange: 'background-color, backdrop-filter' }}
+                key="detail-backdrop-color"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+                className="fixed inset-0 bg-black/50 z-[100]"
+                style={{ willChange: 'opacity' }}
                 onClick={() => setSelectedBankItem(null)}
               />
 
@@ -3948,15 +3932,20 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             <React.Suspense fallback={<LoadingPortal />}>
               <>
                 {/* Animated backdrop */}
+                {/* Instant static blur layer */}
+                <div 
+                  className="fixed inset-0 z-[99]"
+                  style={{ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
+                />
+                {/* Animated dimming layer */}
                 <motion.div
-                  key="practice-backdrop"
-                  variants={premiumBackdropVariants}
-                  custom={{ blur: 12, color: 'rgba(2, 6, 23, 0.4)', initColor: 'rgba(2, 6, 23, 0)' }}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  className="fixed inset-0 z-[100]"
-                  style={{ willChange: 'background-color, backdrop-filter' }}
+                  key="practice-backdrop-color"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+                  className="fixed inset-0 bg-slate-950/40 z-[100]"
+                  style={{ willChange: 'opacity' }}
                   onClick={() => setShowPracticeConfig(false)}
                 />
 
@@ -4263,16 +4252,20 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         <AnimatePresence mode="wait">
           {showPaywall && (
             <>
-              {/* Animated backdrop */}
+              {/* Instant static blur layer */}
+              <div 
+                className="fixed inset-0 z-[249]"
+                style={{ backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}
+              />
+              {/* Animated dimming layer */}
               <motion.div
-                key="paywall-backdrop"
-                variants={premiumBackdropVariants}
-                custom={{ blur: 10, color: 'rgba(2, 6, 23, 0.6)', initColor: 'rgba(2, 6, 23, 0)' }}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="fixed inset-0 z-[250]"
-                style={{ willChange: 'background-color, backdrop-filter' }}
+                key="paywall-backdrop-color"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+                className="fixed inset-0 bg-slate-950/60 z-[250]"
+                style={{ willChange: 'opacity' }}
                 onClick={() => {
                   if (paymentState === 'idle') {
                     setShowPaywall(false);
@@ -4750,16 +4743,20 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         <AnimatePresence mode="wait">
           {showLoginPrompt && (
             <>
-              {/* Animated backdrop */}
+              {/* Instant static blur layer */}
+              <div 
+                className="fixed inset-0 z-[199]"
+                style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+              />
+              {/* Animated dimming layer */}
               <motion.div
-                key="login-backdrop"
-                variants={premiumBackdropVariants}
-                custom={{ blur: 8, color: 'rgba(0, 0, 0, 0.5)', initColor: 'rgba(0, 0, 0, 0)' }}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="fixed inset-0 z-[200]"
-                style={{ willChange: 'background-color, backdrop-filter' }}
+                key="login-backdrop-color"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+                className="fixed inset-0 bg-black/50 z-[200]"
+                style={{ willChange: 'opacity' }}
                 onClick={() => setShowLoginPrompt(false)}
               />
 
@@ -4805,16 +4802,20 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         <AnimatePresence mode="wait">
           {infoModal && infoModal.isOpen && (
             <>
-              {/* Animated backdrop */}
+              {/* Instant static blur layer */}
+              <div 
+                className="fixed inset-0 z-[299]"
+                style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+              />
+              {/* Animated dimming layer */}
               <motion.div
-                key="info-backdrop"
-                variants={premiumBackdropVariants}
-                custom={{ blur: 8, color: 'rgba(0, 0, 0, 0.5)', initColor: 'rgba(0, 0, 0, 0)' }}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="fixed inset-0 z-[300]"
-                style={{ willChange: 'background-color, backdrop-filter' }}
+                key="info-backdrop-color"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+                className="fixed inset-0 bg-black/50 z-[300]"
+                style={{ willChange: 'opacity' }}
                 onClick={() => setInfoModal(null)}
               />
 
