@@ -1788,7 +1788,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
       {/* ── Floating Trigger Button ── */}
       <AnimatePresence>
         {!isOpen && (
-          <motion.button
+          <motion.div
             key="trigger"
             initial={{ opacity: 0, scale: 0.5, y: 40 }}
             animate={{ 
@@ -1799,8 +1799,16 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
             exit={{ opacity: 0, scale: 0.5, y: 40 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             onClick={handleOpen}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleOpen();
+              }
+            }}
+            role="button"
+            tabIndex={0}
             className={cn(
-              "fixed right-4 sm:right-6 z-[80] group focus:outline-none",
+              "fixed right-4 sm:right-6 z-[80] group focus:outline-none cursor-pointer",
               getBaseCompanionBottomClass(false)
             )}
             style={{ pointerEvents: (hasModalActive || !isVisible) ? 'none' : 'auto' }}
@@ -1844,7 +1852,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
             <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 whitespace-nowrap bg-slate-900 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg">
               Ask OEP Buddy ✨
             </span>
-          </motion.button>
+          </motion.div>
         )}
       </AnimatePresence>
 
