@@ -1808,18 +1808,25 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
             aria-label="Open AI Companion"
           >
             {/* Close/Dismiss Button */}
-            <button
-              type="button"
+            <span
+              role="button"
+              tabIndex={0}
               onClick={(e) => {
                 e.stopPropagation();
                 setIsDismissed(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.stopPropagation();
+                  setIsDismissed(true);
+                }
               }}
               className="absolute -top-1.5 -left-1.5 w-5 h-5 bg-slate-900 text-white rounded-full flex items-center justify-center border border-white/20 shadow-md hover:bg-slate-800 hover:scale-110 active:scale-95 transition-all duration-200 z-[90] cursor-pointer"
               title="Dismiss AI Companion"
               aria-label="Dismiss AI Companion"
             >
               <X className="w-3 h-3 text-slate-300" strokeWidth={3} />
-            </button>
+            </span>
             <span className="absolute inset-0 rounded-2xl bg-brand-500 animate-ping opacity-20 group-hover:opacity-30 transition-opacity" />
             <div className="relative w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl flex items-center justify-center shadow-[0_8px_30px_rgba(138,28,54,0.4)] group-hover:shadow-[0_14px_40px_rgba(138,28,54,0.55)] transition-[box-shadow] duration-300 overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />

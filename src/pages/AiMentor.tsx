@@ -1404,10 +1404,64 @@ export default function AiMentor({ user }: { user: any }) {
   }, [activeCollectionId, user?.id]);
 
   const lastSyncedTimestampRef = useRef<number>(0);
+  const lastSyncedPayloadRef = useRef<string>('');
 
   // Unified Debounced Supabase Sync Engine
   useEffect(() => {
     if (!user || user.id === 'guest') return;
+
+    const currentPayload = JSON.stringify({
+      study_coach_planner: {
+        coachMode,
+        plannerStart,
+        plannerEnd,
+        plannerGoal,
+        plannerEnergy,
+        plannerChapters,
+        plannerQuestions,
+        plannerHours,
+        plannerBlocks,
+        activeBlockIndex,
+        coachStrategy,
+        completedSessionsCount,
+        completedStudyMinutes,
+        timerGoal,
+        breakMaxSeconds,
+        targetExam,
+        timerSeconds: timerSecondsRef.current,
+        timerActive,
+        timerMode,
+        timerMaxSeconds,
+        hasPlanStarted
+      },
+      study_coach_practice: {
+        quizSubject,
+        quizDifficulty,
+        quizSize,
+        quizMode,
+        quizTargetExam,
+        activeQuiz,
+        selectedAnswers,
+        quizSubmitted,
+        quizHistory,
+        bookmarkedQuestions
+      },
+      study_coach_syllabus: {
+        collections,
+        activeCollectionId
+      },
+      study_coach_formulas: {
+        formulaCategories,
+        activeFormulaCatId
+      },
+      study_coach_user_exams: userExams,
+      study_coach_target_exam: targetExam
+    });
+
+    // Prevent infinite metadata sync loops by skipping updates if data payload hasn't deeply changed
+    if (lastSyncedPayloadRef.current === currentPayload) {
+      return;
+    }
 
     const handler = setTimeout(async () => {
       try {
@@ -1465,6 +1519,7 @@ export default function AiMentor({ user }: { user: any }) {
         });
         if (!error) {
           lastSyncedTimestampRef.current = updatedTimestamp;
+          lastSyncedPayloadRef.current = currentPayload;
         } else {
           console.error("Supabase study suite sync error:", error);
         }
@@ -1608,8 +1663,56 @@ export default function AiMentor({ user }: { user: any }) {
         if (formulas.activeFormulaCatId !== undefined) setActiveFormulaCatId(formulas.activeFormulaCatId);
       }
 
-      // Update local timestamp reference to prevent recursive loop or stale writes
+      // Update local timestamp & payload references to prevent recursive loop or stale writes
       lastSyncedTimestampRef.current = Number(serverTimestamp);
+      lastSyncedPayloadRef.current = JSON.stringify({
+        study_coach_planner: {
+          coachMode: meta.study_coach_planner?.coachMode ?? coachMode,
+          plannerStart: meta.study_coach_planner?.plannerStart ?? plannerStart,
+          plannerEnd: meta.study_coach_planner?.plannerEnd ?? plannerEnd,
+          plannerGoal: meta.study_coach_planner?.plannerGoal ?? plannerGoal,
+          plannerEnergy: meta.study_coach_planner?.plannerEnergy ?? plannerEnergy,
+          plannerChapters: meta.study_coach_planner?.plannerChapters ?? plannerChapters,
+          plannerQuestions: meta.study_coach_planner?.plannerQuestions ?? plannerQuestions,
+          plannerHours: meta.study_coach_planner?.plannerHours ?? plannerHours,
+          plannerBlocks: meta.study_coach_planner?.plannerBlocks ?? plannerBlocks,
+          activeBlockIndex: meta.study_coach_planner?.activeBlockIndex ?? activeBlockIndex,
+          coachStrategy: meta.study_coach_planner?.coachStrategy ?? coachStrategy,
+          completedSessionsCount: meta.study_coach_planner?.completedSessionsCount ?? completedSessionsCount,
+          completedStudyMinutes: meta.study_coach_planner?.completedStudyMinutes ?? completedStudyMinutes,
+          timerGoal: meta.study_coach_planner?.timerGoal ?? timerGoal,
+          breakMaxSeconds: meta.study_coach_planner?.breakMaxSeconds ?? breakMaxSeconds,
+          targetExam: meta.study_coach_planner?.targetExam ?? targetExam,
+          timerSeconds: meta.study_coach_planner?.timerSeconds ?? timerSecondsRef.current,
+          timerActive: meta.study_coach_planner?.timerActive ?? timerActive,
+          timerMode: meta.study_coach_planner?.timerMode ?? timerMode,
+          timerMaxSeconds: meta.study_coach_planner?.timerMaxSeconds ?? timerMaxSeconds,
+          hasPlanStarted: meta.study_coach_planner?.hasPlanStarted ?? hasPlanStarted
+        },
+        study_coach_practice: {
+          quizSubject: meta.study_coach_practice?.quizSubject ?? quizSubject,
+          quizDifficulty: meta.study_coach_practice?.quizDifficulty ?? quizDifficulty,
+          quizSize: meta.study_coach_practice?.quizSize ?? quizSize,
+          quizMode: meta.study_coach_practice?.quizMode ?? quizMode,
+          quizTargetExam: meta.study_coach_practice?.quizTargetExam ?? quizTargetExam,
+          activeQuiz: meta.study_coach_practice?.activeQuiz ?? activeQuiz,
+          selectedAnswers: meta.study_coach_practice?.selectedAnswers ?? selectedAnswers,
+          quizSubmitted: meta.study_coach_practice?.quizSubmitted ?? quizSubmitted,
+          quizHistory: meta.study_coach_practice?.quizHistory ?? quizHistory,
+          bookmarkedQuestions: meta.study_coach_practice?.bookmarkedQuestions ?? bookmarkedQuestions
+        },
+        study_coach_syllabus: {
+          collections: meta.study_coach_syllabus?.collections ?? collections,
+          activeCollectionId: meta.study_coach_syllabus?.activeCollectionId ?? activeCollectionId
+        },
+        study_coach_formulas: {
+          formulaCategories: meta.study_coach_formulas?.formulaCategories ?? formulaCategories,
+          activeFormulaCatId: meta.study_coach_formulas?.activeFormulaCatId ?? activeFormulaCatId
+        },
+        study_coach_user_exams: meta.study_coach_user_exams ?? userExams,
+        study_coach_target_exam: meta.study_coach_target_exam ?? targetExam
+      });
+
       
       toast.success("🔄 Sync complete: study profile updated from cloud.", { id: 'cloud-sync-success', duration: 3000 });
     }
