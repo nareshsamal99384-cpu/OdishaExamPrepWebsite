@@ -67,13 +67,17 @@
           } catch(e) {}
         }
         window.addEventListener('error', function(e) {
+          // Ignore resource loading errors (which trigger on script/link/img tags and lack e.message)
+          if (e.target && (e.target.tagName === 'IMG' || e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
+            return;
+          }
           var msg = e.message || '';
           if (msg.indexOf('Failed to fetch dynamically') !== -1 || 
               msg.indexOf('loading chunk') !== -1 || 
               msg.indexOf('Failed to fetch') !== -1) {
             reloadPage();
-          } else {
-            showErrorOverlay(e.message, e.error ? e.error.stack : '');
+          } else if (msg) {
+            showErrorOverlay(msg, e.error ? e.error.stack : '');
           }
         }, true);
         window.addEventListener('unhandledrejection', function(e) {
@@ -82,7 +86,7 @@
               reason.indexOf('loading chunk') !== -1 || 
               reason.indexOf('Failed to fetch') !== -1) {
             reloadPage();
-          } else {
+          } else if (reason) {
             showErrorOverlay(reason, e.reason && e.reason.stack || '');
           }
         });
