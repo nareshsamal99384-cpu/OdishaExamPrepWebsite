@@ -46,6 +46,15 @@ function routeToRegex(route: string): RegExp {
 async function startServer() {
   const app = express();
   app.set('trust proxy', true);
+  
+  // Redirect all incoming /app-api/... requests to /api/... transparently to bypass Hostinger /api/ conflicts
+  app.use((req: any, res, next) => {
+    if (req.url.startsWith('/app-api/')) {
+      req.url = req.url.replace('/app-api/', '/api/');
+    }
+    next();
+  });
+
   const PORT = process.env.PORT || "3000";
 
   const distPath = __dirname.endsWith('build') || __dirname.endsWith('build/') || __dirname.endsWith('build\\')

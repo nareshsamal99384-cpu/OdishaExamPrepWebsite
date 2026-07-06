@@ -62,6 +62,12 @@ function routeToRegex(route) {
 async function startServer() {
   const app = express();
   app.set("trust proxy", true);
+  app.use((req, res, next) => {
+    if (req.url.startsWith("/app-api/")) {
+      req.url = req.url.replace("/app-api/", "/api/");
+    }
+    next();
+  });
   const PORT = process.env.PORT || "3000";
   const distPath = __dirname.endsWith("build") || __dirname.endsWith("build/") || __dirname.endsWith("build\\") ? path.resolve(__dirname, ".") : path.resolve(__dirname, "build");
   try {

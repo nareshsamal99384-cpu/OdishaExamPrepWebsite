@@ -58,27 +58,11 @@ if (isCapacitor) {
       const apiMatch = urlString.match(/\/api\/(.*)/) || urlString.match(/^api\/(.*)/);
       const apiPath = apiMatch ? apiMatch[1] : urlString.replace(/.*\/api\//, '');
       
-      const redirectedUrl = `https://www.odishaexamprep.in/api/${apiPath}`;
-      console.log(`[Mobile Shim] Redirecting API call: ${urlString} -> ${redirectedUrl}`);
+      const redirectedUrl = `https://www.odishaexamprep.in/app-api/${apiPath}`;
+      console.log(`[Mobile Shim] Redirecting API call to production app-api: ${urlString} -> ${redirectedUrl}`);
 
-      // If the input was a Request object, we must clone it or extract its properties
       if (input instanceof Request) {
-        const { method, headers, body, mode, credentials, cache, redirect, referrer, integrity, keepalive, signal } = input;
-        const newInit: RequestInit = {
-          method,
-          headers,
-          body,
-          mode,
-          credentials,
-          cache,
-          redirect,
-          referrer,
-          integrity,
-          keepalive,
-          signal,
-          ...init
-        };
-        return originalFetch(redirectedUrl, newInit);
+        return originalFetch(new Request(redirectedUrl, input), init);
       }
 
       return originalFetch(redirectedUrl, init);
@@ -87,7 +71,32 @@ if (isCapacitor) {
     return originalFetch(input, init);
   };
 } else {
-  console.log('[Mobile Shim] Running in standard browser environment.');
+  console.log('[Mobile Shim] Running in standard browser environment. Enabling relative API rewrite shim.');
+  
+  const originalFetch = window.fetch;
+  window.fetch = function (input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    let urlString = '';
+    
+    if (typeof input === 'string') {
+      urlString = input;
+    } else if (input instanceof URL) {
+      urlString = input.toString();
+    } else if (input && typeof input === 'object' && 'url' in input) {
+      urlString = (input as any).url;
+    }
+
+    if (urlString.startsWith('/api/') || urlString.startsWith('api/')) {
+      const path = urlString.startsWith('/api/') ? urlString.substring(5) : urlString.substring(4);
+      const redirectedUrl = '/app-api/' + path;
+      
+      if (input instanceof Request) {
+        return originalFetch(new Request(redirectedUrl, input), init);
+      }
+      return originalFetch(redirectedUrl, init);
+    }
+    
+    return originalFetch(input, init);
+  };
 }
 
 export { isCapacitor };
