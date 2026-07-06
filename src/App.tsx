@@ -3585,11 +3585,6 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         <AnimatePresence mode="wait">
           {selectedBankItem && (
             <>
-              {/* Instant static blur layer */}
-              <div 
-                className="fixed inset-0 z-[99]"
-                style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
-              />
               {/* Animated dimming layer */}
               <motion.div
                 key="detail-backdrop-color"
@@ -3931,12 +3926,6 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           {showPracticeConfig && (
             <React.Suspense fallback={<LoadingPortal />}>
               <>
-                {/* Animated backdrop */}
-                {/* Instant static blur layer */}
-                <div 
-                  className="fixed inset-0 z-[99]"
-                  style={{ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
-                />
                 {/* Animated dimming layer */}
                 <motion.div
                   key="practice-backdrop-color"
@@ -4252,11 +4241,6 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         <AnimatePresence mode="wait">
           {showPaywall && (
             <>
-              {/* Instant static blur layer */}
-              <div 
-                className="fixed inset-0 z-[249]"
-                style={{ backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}
-              />
               {/* Animated dimming layer */}
               <motion.div
                 key="paywall-backdrop-color"
@@ -4743,11 +4727,6 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         <AnimatePresence mode="wait">
           {showLoginPrompt && (
             <>
-              {/* Instant static blur layer */}
-              <div 
-                className="fixed inset-0 z-[199]"
-                style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
-              />
               {/* Animated dimming layer */}
               <motion.div
                 key="login-backdrop-color"
@@ -4802,11 +4781,6 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         <AnimatePresence mode="wait">
           {infoModal && infoModal.isOpen && (
             <>
-              {/* Instant static blur layer */}
-              <div 
-                className="fixed inset-0 z-[299]"
-                style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
-              />
               {/* Animated dimming layer */}
               <motion.div
                 key="info-backdrop-color"
@@ -4896,22 +4870,26 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   const [paywallProductType, setPaywallProductType] = useState<string>('full_access');
   const [loadingPractice, setLoadingPractice] = useState(false);
 
-  // Hide WhatsApp button on mobile when any dashboard modal is open and lock body scroll
+  // Hide WhatsApp button on mobile when any dashboard modal is open, lock body scroll, and apply background blur
   useEffect(() => {
-    if (showPaywall || showLoginPrompt || showPracticeConfig) {
+    const isAnyModalOpen = !!(showPaywall || showLoginPrompt || showPracticeConfig || selectedBankItem || (infoModal && infoModal.isOpen));
+    if (isAnyModalOpen) {
       document.body.style.overflow = 'hidden';
+      document.body.setAttribute('data-premium-blur', 'true');
       if (window.innerWidth < 768) {
         document.body.setAttribute('data-modal-open', 'true');
       }
     } else {
       document.body.style.overflow = '';
+      document.body.removeAttribute('data-premium-blur');
       document.body.removeAttribute('data-modal-open');
     }
     return () => {
       document.body.style.overflow = '';
+      document.body.removeAttribute('data-premium-blur');
       document.body.removeAttribute('data-modal-open');
     };
-  }, [showPaywall, showLoginPrompt, showPracticeConfig]);
+  }, [showPaywall, showLoginPrompt, showPracticeConfig, selectedBankItem, infoModal]);
   const [topicMaxQuestions, setTopicMaxQuestions] = useState<number>(0);
   const [practiceSettings, setPracticeSettings] = useState(() => {
     const saved = sessionStorage.getItem('oep_practiceSettings');

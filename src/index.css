@@ -51,6 +51,10 @@ body {
   font-family: var(--font-sans);
 }
 
+body[data-premium-blur="true"] #root {
+  filter: blur(10px);
+}
+
 /* ============================================================
    DESIGN TOKENS — GLASS + SHADOWS
    ============================================================ */
