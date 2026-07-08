@@ -38,7 +38,7 @@ export default function AnimatedRoutes({ children }: { children: React.ReactNode
             {/* Typography Details */}
             <div className="text-center space-y-1.5">
               <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                Odisha<span className="font-serif italic font-normal text-[#8A1C36]">ExamPrep</span>
+                Odisha<span className="font-serif italic font-normal text-[#2563EB]">ExamPrep</span>
               </h1>
               <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
                 Loading Portal...

@@ -631,9 +631,9 @@ const normalizeDiagramData = (raw: any): any => {
       id: 'poly-shape',
       type: 'polygon',
       points: pts,
-      stroke: raw.stroke || '#8a1c36',
+      stroke: raw.stroke || '#2563eb',
       strokeWidth: 3,
-      fill: raw.fill || 'rgba(138, 28, 54, 0.05)'
+      fill: raw.fill || 'rgba(37, 99, 235, 0.05)'
     });
 
     pts.forEach((p: any, idx: number) => {
@@ -2049,7 +2049,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
       {/* 1. Header Toolbar Panel */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 bg-slate-50 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 select-none backdrop-blur-md z-20 gap-3 rounded-t-2xl sm:rounded-t-[22px]">
         <div className="flex items-center gap-2">
-          <Layers className="w-4 h-4 text-[#8A1C36]" />
+          <Layers className="w-4 h-4 text-[#2563EB]" />
           <span className="text-[10px] font-black font-sans uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
             {data.type?.toUpperCase() || 'MATH'} DIAGRAM ENGINE v2.0
           </span>
@@ -2062,7 +2062,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
             className={cn(
               "p-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer",
               showLabels 
-                ? "bg-brand-50 border-brand-200 text-[#8A1C36]" 
+                ? "bg-brand-50 border-brand-200 text-[#2563EB]" 
                 : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400"
             )}
             title="Toggle Labels"
@@ -2075,7 +2075,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
             className={cn(
               "p-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer",
               showMeasurements 
-                ? "bg-brand-50 border-brand-200 text-[#8A1C36]" 
+                ? "bg-brand-50 border-brand-200 text-[#2563EB]" 
                 : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400"
             )}
             title="Toggle Measurements"
@@ -2088,7 +2088,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
             className={cn(
               "p-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer",
               showCoordinates 
-                ? "bg-brand-50 border-brand-200 text-[#8A1C36]" 
+                ? "bg-brand-50 border-brand-200 text-[#2563EB]" 
                 : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400"
             )}
             title="Toggle Cursor Coordinates"
@@ -3472,12 +3472,12 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                       const cy3 = my(-1.2);
                       return (
                         <g key={shapeKey} opacity={opacity}>
-                          <circle cx={cx1} cy={cyVal} r={rVal} fill="rgba(138,28,54,0.05)" stroke="#8a1c36" strokeWidth={sWidth} />
+                          <circle cx={cx1} cy={cyVal} r={rVal} fill="rgba(37,99,235,0.05)" stroke="#2563eb" strokeWidth={sWidth} />
                           <circle cx={cx2} cy={cyVal} r={rVal} fill="rgba(99,102,241,0.05)" stroke="#4f46e5" strokeWidth={sWidth} />
                           <circle cx={cx3} cy={cy3} r={rVal} fill="rgba(16,185,129,0.05)" stroke="#059669" strokeWidth={sWidth} />
                           {showLabels && (
                             <>
-                              <text x={cx1 - rVal * 0.4} y={cyVal} className={cn("font-black fill-[#8a1c36]", isMobile ? "text-[14px]" : "text-xs")}>Set A</text>
+                              <text x={cx1 - rVal * 0.4} y={cyVal} className={cn("font-black fill-[#2563eb]", isMobile ? "text-[14px]" : "text-xs")}>Set A</text>
                               <text x={cx2 + rVal * 0.4} y={cyVal} className={cn("font-black fill-[#4f46e5]", isMobile ? "text-[14px]" : "text-xs")}>Set B</text>
                               <text x={cx3} y={cy3 - rVal * 0.4} className={cn("font-black fill-[#059669]", isMobile ? "text-[14px]" : "text-xs")} textAnchor="middle">Set C</text>
                             </>
@@ -3489,11 +3489,11 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                       const cx2 = mx(1.2);
                       return (
                         <g key={shapeKey} opacity={opacity}>
-                          <circle cx={cx1} cy={cyVal} r={rVal} fill="rgba(138,28,54,0.06)" stroke="#8a1c36" strokeWidth={sWidth} />
+                          <circle cx={cx1} cy={cyVal} r={rVal} fill="rgba(37,99,235,0.06)" stroke="#2563eb" strokeWidth={sWidth} />
                           <circle cx={cx2} cy={cyVal} r={rVal} fill="rgba(99,102,241,0.06)" stroke="#4f46e5" strokeWidth={sWidth} />
                           {showLabels && (
                             <>
-                              <text x={cx1 - 30} y={cyVal - rVal - 10} className={cn("font-black fill-[#8a1c36]", isMobile ? "text-[14px]" : "text-xs")} textAnchor="middle">Set A</text>
+                              <text x={cx1 - 30} y={cyVal - rVal - 10} className={cn("font-black fill-[#2563eb]", isMobile ? "text-[14px]" : "text-xs")} textAnchor="middle">Set A</text>
                               <text x={cx2 + 30} y={cyVal - rVal - 10} className={cn("font-black fill-[#4f46e5]", isMobile ? "text-[14px]" : "text-xs")} textAnchor="middle">Set B</text>
                             </>
                           )}
@@ -3516,13 +3516,13 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                     return (
                       <g key={shapeKey} className="clock-group">
                         <circle cx={cxVal} cy={cyVal} r={rVal} fill="#ffffff" stroke={strokeColor} strokeWidth={sWidth} />
-                        <circle cx={cxVal} cy={cyVal} r={isMobile ? 8 : 5} fill="#8a1c36" />
+                        <circle cx={cxVal} cy={cyVal} r={isMobile ? 8 : 5} fill="#2563eb" />
                         
                         <line 
                           x1={cxVal} y1={cyVal} 
                           x2={cxVal + rVal * 0.5 * Math.cos(hrAngle * Math.PI / 180)} 
                           y2={cyVal + rVal * 0.5 * Math.sin(hrAngle * Math.PI / 180)} 
-                          stroke="#8a1c36" strokeWidth={isMobile ? 6 : 4} strokeLinecap="round"
+                          stroke="#2563eb" strokeWidth={isMobile ? 6 : 4} strokeLinecap="round"
                         />
                         
                         <line 
@@ -4167,8 +4167,8 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
                     
                     return (
                       <g key={shapeKey}>
-                        <line x1={cx} y1={cy - 120} x2={cx} y2={cy + 120} stroke="#8a1c36" strokeWidth={3} strokeDasharray="6 4" />
-                        <text x={cx} y={cy - 130} className="text-[10px] font-black fill-[#8a1c36]" textAnchor="middle">MIRROR</text>
+                        <line x1={cx} y1={cy - 120} x2={cx} y2={cy + 120} stroke="#2563eb" strokeWidth={3} strokeDasharray="6 4" />
+                        <text x={cx} y={cy - 130} className="text-[10px] font-black fill-[#2563eb]" textAnchor="middle">MIRROR</text>
                         <text x={cx - 80} y={cy} className="text-2xl font-black fill-current" textAnchor="middle" dominantBaseline="middle">
                           {mirrorText}
                         </text>
@@ -4246,7 +4246,7 @@ export default function UniversalMathDiagramEngine({ data: rawData }: UniversalM
 
             {/* F. Crosshair tracker lines */}
             {showCoordinates && isMouseOverCanvas && cursorPos.svgX >= 60 && cursorPos.svgX <= vWidth - 60 && cursorPos.svgY >= 60 && cursorPos.svgY <= vHeight - 60 && (
-              <g className="crosshair-layer pointer-events-none opacity-50 text-[#8A1C36] dark:text-[#fda4af]">
+              <g className="crosshair-layer pointer-events-none opacity-50 text-[#2563EB] dark:text-[#fda4af]">
                 <line 
                   x1={cursorPos.svgX} 
                   y1={60} 

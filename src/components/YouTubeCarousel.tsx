@@ -201,7 +201,7 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
         <div className="px-4 mb-3 relative z-10">
           {/* Single row: icon + title/subtitle + subscribe button */}
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-[#8A1C36] text-white rounded-xl flex items-center justify-center border-2 border-slate-900 shrink-0 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+            <div className="w-8 h-8 bg-[#2563EB] text-white rounded-xl flex items-center justify-center border-2 border-slate-900 shrink-0 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
               <Youtube className="w-4 h-4 text-white" />
             </div>
             <div className="min-w-0 flex-1">
@@ -228,7 +228,7 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
         /* ── DESKTOP HEADER ───────────────────────────────────────────── */
         <div className="flex flex-row sm:items-center justify-between gap-4 px-10 mb-8 relative z-10">
           <div className="flex items-center gap-4 min-w-0">
-            <div className="w-12 h-12 bg-[#8A1C36] text-white rounded-xl flex items-center justify-center border-2 border-slate-900 shrink-0 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
+            <div className="w-12 h-12 bg-[#2563EB] text-white rounded-xl flex items-center justify-center border-2 border-slate-900 shrink-0 shadow-[2px_2px_0px_rgba(0,0,0,1)]">
               <Youtube className="w-6 h-6 text-white" />
             </div>
             <div className="min-w-0">
@@ -292,7 +292,7 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
                   "relative shrink-0 rounded-2xl overflow-hidden border-2 border-slate-900 bg-[#FAF8F5] group/video transition-all cursor-pointer flex flex-col",
                   isMobile
                     ? "shadow-[3px_3px_0px_rgba(0,0,0,0.85)] active:shadow-[1px_1px_0px_rgba(0,0,0,0.85)] active:translate-x-[2px] active:translate-y-[2px]"
-                    : "shadow-[4px_4px_0px_rgba(0,0,0,1)] md:hover:-translate-x-0.5 md:hover:-translate-y-0.5 md:hover:shadow-[6px_6px_0px_rgba(138,28,54,0.15)]"
+                    : "shadow-[4px_4px_0px_rgba(0,0,0,1)] md:hover:-translate-x-0.5 md:hover:-translate-y-0.5 md:hover:shadow-[6px_6px_0px_rgba(37,99,235,0.15)]"
                 )}
                 style={{ width: cardWidth }}
               >
@@ -321,7 +321,7 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
                   {/* Play Button */}
                   <div className="absolute inset-0 flex items-center justify-center z-10">
                     <div className={cn(
-                      "bg-[#8A1C36] text-white rounded-full border-2 border-slate-900 flex items-center justify-center shadow-lg transition-transform duration-300",
+                      "bg-[#2563EB] text-white rounded-full border-2 border-slate-900 flex items-center justify-center shadow-lg transition-transform duration-300",
                       isMobile ? "w-10 h-10" : "w-11 h-11 md:group-hover/video:scale-110"
                     )}>
                       <Play className={cn("text-white fill-white ml-0.5", isMobile ? "w-4 h-4" : "w-5 h-5")} />
@@ -348,7 +348,7 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
 
                     {/* Title */}
                     <h3 className={cn(
-                      "text-slate-900 font-serif font-extrabold line-clamp-2 leading-snug md:group-hover/video:text-[#8A1C36] transition-colors",
+                      "text-slate-900 font-serif font-extrabold line-clamp-2 leading-snug md:group-hover/video:text-[#2563EB] transition-colors",
                       isMobile ? "text-[12.5px]" : "text-base"
                     )}>
                       {video.title}
@@ -367,10 +367,10 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
                       Free Lecture
                     </span>
                     <span className={cn(
-                      "text-[#8A1C36] flex items-center gap-1 font-bold uppercase tracking-wider",
+                      "text-[#2563EB] flex items-center gap-1 font-bold uppercase tracking-wider",
                       isMobile ? "text-[9px]" : "text-[9px]"
                     )}>
-                      Watch Now <Play className="w-3 h-3 fill-[#8A1C36] stroke-none" />
+                      Watch Now <Play className="w-3 h-3 fill-[#2563EB] stroke-none" />
                     </span>
                   </div>
                 </div>
@@ -402,7 +402,7 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
             >
               <button
                 onClick={() => setActiveVideo(null)}
-                className="absolute top-4 right-4 z-50 w-10 h-10 bg-black/50 hover:bg-[#8A1C36] backdrop-blur rounded-full flex items-center justify-center text-white transition-colors border border-white/20"
+                className="absolute top-4 right-4 z-50 w-10 h-10 bg-black/50 hover:bg-[#2563EB] backdrop-blur rounded-full flex items-center justify-center text-white transition-colors border border-white/20"
               >
                 <X className="w-5 h-5" />
               </button>

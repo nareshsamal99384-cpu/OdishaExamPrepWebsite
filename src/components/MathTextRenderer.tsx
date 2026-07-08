@@ -1338,10 +1338,10 @@ export function splitTextIntoBlocks(text: string): TextBlock[] {
 
 export const TableRenderer: React.FC<{ tableData: TableData; isOption?: boolean }> = ({ tableData, isOption }) => {
   return (
-    <div className="overflow-x-auto my-4 rounded-2xl border border-[#8A1C36]/15 shadow-sm max-w-full">
+    <div className="overflow-x-auto my-4 rounded-2xl border border-[#2563EB]/15 shadow-sm max-w-full">
       <table className="min-w-full border-collapse text-left text-slate-800 text-sm md:text-[15px]">
         <thead>
-          <tr className="bg-[#8A1C36] text-white border-b border-[#8A1C36]">
+          <tr className="bg-[#2563EB] text-white border-b border-[#2563EB]">
             {tableData.headers.map((h, i) => (
               <th 
                 key={i} 
@@ -1435,7 +1435,7 @@ export const MathTextRenderer: React.FC<MathTextRendererProps> = React.memo(({
   className,
   blockSize = 'md',
   isOption = false,
-}) => {
+}: MathTextRendererProps) => {
   // Always render the wrapper span to keep hooks consistent;
   // render nothing inside when text is empty.
   const rawContent = text || '';

@@ -1836,7 +1836,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
               <X className="w-3 h-3 text-slate-300" strokeWidth={3} />
             </span>
             <span className="absolute inset-0 rounded-2xl bg-brand-500 animate-ping opacity-20 group-hover:opacity-30 transition-opacity" />
-            <div className="relative w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl flex items-center justify-center shadow-[0_8px_30px_rgba(138,28,54,0.4)] group-hover:shadow-[0_14px_40px_rgba(138,28,54,0.55)] transition-[box-shadow] duration-300 overflow-hidden">
+            <div className="relative w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl flex items-center justify-center shadow-[0_8px_30px_rgba(37,99,235,0.4)] group-hover:shadow-[0_14px_40px_rgba(37,99,235,0.55)] transition-[box-shadow] duration-300 overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
               <Bot className="w-7 h-7 sm:w-8 sm:h-8 text-white relative z-10 drop-shadow-sm" />
             </div>
@@ -1877,7 +1877,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
                     // Mobile open style: docked bottom sheet
                     'left-0 right-0 bottom-0 rounded-t-[1.75rem] rounded-b-none w-full h-[78dvh] max-h-[85dvh] shadow-[0_-8px_30px_rgba(0,0,0,0.08)] border-t border-slate-200/40',
                     // Desktop open style: floating card
-                    'sm:left-auto sm:right-6 sm:bottom-auto sm:w-[390px] sm:rounded-3xl sm:shadow-[0_24px_70px_rgba(0,0,0,0.12),0_8px_24px_rgba(138,28,54,0.04)] sm:border sm:border-slate-200/50',
+                    'sm:left-auto sm:right-6 sm:bottom-auto sm:w-[390px] sm:rounded-3xl sm:shadow-[0_24px_70px_rgba(0,0,0,0.12),0_8px_24px_rgba(37,99,235,0.04)] sm:border sm:border-slate-200/50',
                     effectiveBottomNavVisible ? 'sm:h-[540px]' : 'sm:h-[570px]',
                     getBaseCompanionBottomClass(true)
                   )

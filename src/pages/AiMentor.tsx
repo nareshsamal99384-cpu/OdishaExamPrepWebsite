@@ -564,7 +564,7 @@ const GENERATING_STEPS = [
         if (isBullet) {
           return (
             <div key={lineIdx} className="flex items-start gap-2 pl-3 my-0.5">
-              <span className={cn("w-1.5 h-1.5 rounded-full shrink-0 mt-2", isUser ? "bg-brand-200" : "bg-[#8A1C36]")} />
+              <span className={cn("w-1.5 h-1.5 rounded-full shrink-0 mt-2", isUser ? "bg-brand-200" : "bg-[#2563EB]")} />
               <span className={cn("leading-relaxed font-medium flex-1 text-sm md:text-[15px]", isUser ? "text-brand-50" : "text-slate-700")}>{renderInline(listContent)}</span>
             </div>
           );
@@ -573,7 +573,7 @@ const GENERATING_STEPS = [
         if (isNumbered) {
           return (
             <div key={lineIdx} className="flex items-start gap-2 pl-3 my-0.5">
-              <span className={cn("font-black text-xs shrink-0 mt-0.5", isUser ? "text-brand-200" : "text-[#8A1C36]")}>{numLabel}.</span>
+              <span className={cn("font-black text-xs shrink-0 mt-0.5", isUser ? "text-brand-200" : "text-[#2563EB]")}>{numLabel}.</span>
               <span className={cn("leading-relaxed font-medium flex-1 text-sm md:text-[15px]", isUser ? "text-brand-50" : "text-slate-700")}>{renderInline(listContent)}</span>
             </div>
           );
@@ -3104,9 +3104,9 @@ JSON structure:
         <div className="space-y-2">
           <div className="flex justify-between items-center text-xs sm:text-[10px] font-bold text-slate-500">
             <span className="flex items-center gap-1.5 uppercase tracking-wider text-[11px] sm:text-[10px]">
-              <Timer className="w-3.5 h-3.5 text-[#8A1C36]" /> Focus Target Progress
+              <Timer className="w-3.5 h-3.5 text-[#2563EB]" /> Focus Target Progress
             </span>
-            <span className="font-mono text-[#8A1C36] text-xs sm:text-[11px] bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-lg font-bold">
+            <span className="font-mono text-[#2563EB] text-xs sm:text-[11px] bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-lg font-bold">
               {currentMins} / {dailyTargetMins} min
             </span>
           </div>
@@ -3309,7 +3309,7 @@ JSON structure:
 
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="bg-slate-50 border border-slate-200/50 p-2 rounded-xl flex flex-col justify-center relative hover:border-teal-500/10 transition-all">
-            <span className="text-[10px] font-black text-[#8A1C36] mb-0.5 flex justify-center">
+            <span className="text-[10px] font-black text-[#2563EB] mb-0.5 flex justify-center">
               <Trophy className="w-3.5 h-3.5" />
             </span>
             <span className="text-sm font-black text-slate-800 font-mono leading-none block">
@@ -3417,7 +3417,7 @@ JSON structure:
       {/* Header and Chip */}
       <div className="flex flex-col items-center text-center space-y-2 md:space-y-4 mb-2 md:mb-4">
         <span className="section-chip text-[10px] md:text-xs">
-          <Sparkles className="w-3 md:w-3.5 h-3 md:h-3.5 animate-pulse text-[#8A1C36]" />
+          <Sparkles className="w-3 md:w-3.5 h-3 md:h-3.5 animate-pulse text-[#2563EB]" />
           Smart Study Suite
         </span>
         <h2 className="text-2xl md:text-5xl font-serif font-extrabold text-slate-900 tracking-tight">
@@ -3436,7 +3436,7 @@ JSON structure:
           onClick={() => setMobileTab('chat')}
           className={cn(
             "flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-300 cursor-pointer relative",
-            mobileTab === 'chat' ? "text-[#8A1C36]" : "text-slate-500 hover:text-slate-800"
+            mobileTab === 'chat' ? "text-[#2563EB]" : "text-slate-500 hover:text-slate-800"
           )}
         >
           {mobileTab === 'chat' && (
@@ -3549,7 +3549,7 @@ JSON structure:
                                       e.stopPropagation();
                                       handleDeleteExam(exam);
                                     }}
-                                    className="opacity-70 md:opacity-0 md:group-hover:opacity-100 hover:opacity-100 hover:bg-rose-500/20 p-1 rounded transition-all text-slate-500 hover:text-[#8A1C36] cursor-pointer flex items-center justify-center shrink-0"
+                                    className="opacity-70 md:opacity-0 md:group-hover:opacity-100 hover:opacity-100 hover:bg-rose-500/20 p-1 rounded transition-all text-slate-500 hover:text-[#2563EB] cursor-pointer flex items-center justify-center shrink-0"
                                     title="Delete Target Exam"
                                   >
                                     <X className="w-3.5 h-3.5" />
@@ -3576,7 +3576,7 @@ JSON structure:
                               />
                               <button
                                 type="submit"
-                                className="px-2.5 py-1 bg-[#8A1C36] hover:bg-[#76142c] text-white font-black text-[9px] uppercase tracking-wider rounded-lg transition-all shrink-0 cursor-pointer shadow-md shadow-teal-500/10"
+                                className="px-2.5 py-1 bg-[#2563EB] hover:bg-[#1d4ed8] text-white font-black text-[9px] uppercase tracking-wider rounded-lg transition-all shrink-0 cursor-pointer shadow-md shadow-teal-500/10"
                               >
                                 Add
                               </button>
@@ -3594,7 +3594,7 @@ JSON structure:
                     setMessages([{ role: 'assistant', content: "Chat cleared! What shall we revise next?" }]);
                     setLoading(false);
                   }}
-                  className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-rose-500/10 text-slate-650 hover:text-[#8A1C36] border border-slate-200/60 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+                  className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-rose-500/10 text-slate-650 hover:text-[#2563EB] border border-slate-200/60 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
                   title="Clear Chat History"
                 >
                   <Trash2 className="w-3.5 h-3.5 text-slate-400" />
@@ -3803,7 +3803,7 @@ JSON structure:
           <div className="flex border-b border-slate-200/60 bg-slate-50   p-1.5 px-4 gap-1 shrink-0 z-10">
             {[
               { id: 'planner', label: 'Planner', icon: Calendar, color: 'text-indigo-650' },
-              { id: 'quiz', label: 'Practice', icon: HelpCircle, color: 'text-[#8A1C36]' },
+              { id: 'quiz', label: 'Practice', icon: HelpCircle, color: 'text-[#2563EB]' },
               { id: 'syllabus', label: 'Syllabus', icon: BookOpen, color: 'text-amber-650' },
               { id: 'formulas', label: 'Formulas', icon: Award, color: 'text-brand-600' }
             ].map((tab) => {
@@ -3871,12 +3871,12 @@ JSON structure:
                   "inline-flex px-2 py-0.5 rounded text-[10px] sm:text-[9px] font-black uppercase tracking-wider",
                   coachMode === 'ai' 
                     ? "bg-indigo-500/15 border border-indigo-500/20 text-indigo-650" 
-                    : "bg-rose-500/10 border border-rose-500/20 text-[#8A1C36]"
+                    : "bg-rose-500/10 border border-rose-500/20 text-[#2563EB]"
                 )}>
                   {coachMode === 'ai' ? 'AI Session Planner' : 'Focus Station'}
                 </span>
                 <h4 className="font-serif font-extrabold text-slate-900 text-base flex items-center gap-1.5 mt-0.5">
-                  {coachMode === 'ai' ? <Sparkles className="w-4.5 h-4.5 text-indigo-650 animate-pulse" /> : <Timer className="w-4.5 h-4.5 text-[#8A1C36]" />}
+                  {coachMode === 'ai' ? <Sparkles className="w-4.5 h-4.5 text-indigo-650 animate-pulse" /> : <Timer className="w-4.5 h-4.5 text-[#2563EB]" />}
                   {coachMode === 'ai' ? 'AI Study Coach' : 'Study Timer (Pomodoro)'}
                 </h4>
               </div>
@@ -3900,7 +3900,7 @@ JSON structure:
                   {coachMode === 'manual' && (
                     <motion.div
                       layoutId="activeCoachModeBg"
-                      className="absolute inset-0 bg-gradient-to-r from-[#8a1c36] to-[#b83a55] rounded-md z-0 shadow-sm"
+                      className="absolute inset-0 bg-gradient-to-r from-[#2563eb] to-[#3b82f6] rounded-md z-0 shadow-sm"
                       transition={{ type: "spring", stiffness: 350, damping: 28 }}
                     />
                   )}
@@ -3957,13 +3957,13 @@ JSON structure:
                     className={cn(
                       "relative z-10 inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-300 cursor-pointer active:scale-95",
                       timerMode === 'study'
-                        ? "bg-rose-500/8 border-rose-500/20 text-[#8a1c36]"
+                        ? "bg-rose-500/8 border-rose-500/20 text-[#2563eb]"
                         : "bg-emerald-500/10 border-emerald-500/25 text-emerald-700"
                     )}
                   >
                     <span className={cn(
                       "w-1.5 h-1.5 rounded-full shrink-0",
-                      timerMode === 'study' ? (timerActive ? "bg-[#8a1c36] animate-ping" : "bg-[#8a1c36]") : "bg-emerald-600"
+                      timerMode === 'study' ? (timerActive ? "bg-[#2563eb] animate-ping" : "bg-[#2563eb]") : "bg-emerald-600"
                     )} />
                     {timerMode === 'study' ? 'Focus Mode' : 'Break Mode'}
                     <span className="opacity-40 font-normal normal-case tracking-normal">&nbsp;· tap to switch</span>
@@ -3974,8 +3974,8 @@ JSON structure:
                     <svg className="w-full h-full transform -rotate-90" viewBox="0 0 112 112">
                       <defs>
                         <linearGradient id="studyTimerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#8a1c36" />
-                          <stop offset="100%" stopColor="#b83a55" />
+                          <stop offset="0%" stopColor="#2563eb" />
+                          <stop offset="100%" stopColor="#3b82f6" />
                         </linearGradient>
                         <linearGradient id="breakTimerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                           <stop offset="0%" stopColor="#059669" />
@@ -4016,7 +4016,7 @@ JSON structure:
                       </span>
                       <span className={cn(
                         "text-[9px] sm:text-[8px] font-black uppercase tracking-widest mt-0.5",
-                        timerMode === 'study' ? "text-[#8a1c36]" : "text-emerald-600"
+                        timerMode === 'study' ? "text-[#2563eb]" : "text-emerald-600"
                       )}>
                         {timerMode === 'study' ? 'focus' : 'break'}
                       </span>
@@ -4041,7 +4041,7 @@ JSON structure:
                         "w-full py-3.5 sm:py-2.5 rounded-xl text-sm sm:text-xs font-black uppercase tracking-widest transition-all duration-300 cursor-pointer active:scale-[0.98] text-center text-white shadow-md premium-btn-transition",
                         timerActive
                           ? "bg-gradient-to-r from-amber-600 to-amber-500 shadow-amber-600/20"
-                          : "bg-gradient-to-r from-[#8a1c36] to-[#b83a55] shadow-[#8a1c36]/20"
+                          : "bg-gradient-to-r from-[#2563eb] to-[#3b82f6] shadow-[#2563eb]/20"
                       )}
                     >
                       {timerActive ? 'Pause Focus' : (timerSeconds < (timerMode === 'study' ? timerMaxSeconds : breakMaxSeconds) ? 'Resume' : 'Start Focus')}
@@ -4103,7 +4103,7 @@ JSON structure:
                                 className={cn(
                                   "flex-1 py-2 sm:py-1.5 rounded-xl text-[11px] sm:text-[10px] font-black uppercase transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border",
                                   isSelected
-                                    ? "bg-[#8a1c36] text-white border-[#8a1c36] shadow-sm shadow-[#8a1c36]/20"
+                                    ? "bg-[#2563eb] text-white border-[#2563eb] shadow-sm shadow-[#2563eb]/20"
                                     : "bg-slate-50 text-slate-500 border-slate-200/60 hover:border-slate-300 hover:text-slate-700"
                                 )}
                               >
@@ -4115,7 +4115,7 @@ JSON structure:
                           <div className={cn(
                             "flex-1 py-1.5 rounded-xl border flex items-center justify-center gap-0.5 transition-all duration-200",
                             ![1500, 2700, 3600].includes(timerMaxSeconds)
-                              ? "bg-[#8a1c36] border-[#8a1c36] shadow-sm shadow-[#8a1c36]/20"
+                              ? "bg-[#2563eb] border-[#2563eb] shadow-sm shadow-[#2563eb]/20"
                               : "bg-slate-50 border-slate-200/60"
                           )}>
                             <input
@@ -4212,8 +4212,8 @@ JSON structure:
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Session Target</label>
                     {timerActive ? (
-                      <div className="bg-rose-500/5 border border-rose-500/15 px-3 py-2.5 rounded-xl text-xs font-extrabold text-[#8a1c36] flex items-center gap-2 truncate">
-                        <span className="w-1.5 h-1.5 bg-[#8a1c36] rounded-full animate-ping shrink-0" />
+                      <div className="bg-rose-500/5 border border-rose-500/15 px-3 py-2.5 rounded-xl text-xs font-extrabold text-[#2563eb] flex items-center gap-2 truncate">
+                        <span className="w-1.5 h-1.5 bg-[#2563eb] rounded-full animate-ping shrink-0" />
                         <span className="truncate">{timerGoal.trim() || "Deep Study Block"}</span>
                       </div>
                     ) : (
@@ -4222,7 +4222,7 @@ JSON structure:
                         value={timerGoal}
                         onChange={(e) => setTimerGoal(e.target.value)}
                         placeholder="e.g. History — Modern India"
-                        className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 sm:py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#8a1c36]/10 focus:border-[#8a1c36] transition-all duration-300 font-semibold"
+                        className="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3 py-2.5 sm:py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2563eb]/10 focus:border-[#2563eb] transition-all duration-300 font-semibold"
                       />
                     )}
                   </div>
@@ -4234,7 +4234,7 @@ JSON structure:
                   onClick={handleNotifyCoachTimer}
                   className="w-full py-2.5 sm:py-2 bg-white border border-slate-200/70 hover:border-slate-800 hover:bg-slate-950 hover:text-white text-slate-600 rounded-xl text-[10px] sm:text-[9px] font-black uppercase tracking-widest transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs hover:shadow-sm active:scale-[0.98] group"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-[#8a1c36] group-hover:text-rose-300 transition-colors animate-pulse shrink-0" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#2563eb] group-hover:text-rose-300 transition-colors animate-pulse shrink-0" />
                   Notify AI Coach &middot; Get Motivation
                 </button>
 
@@ -4717,7 +4717,7 @@ JSON structure:
                   {!showBookmarksOnly && (
                     <motion.div
                       layoutId="activeQuizSubViewBg"
-                      className="absolute inset-0 bg-[#8A1C36] rounded-md z-0 shadow-sm"
+                      className="absolute inset-0 bg-[#2563EB] rounded-md z-0 shadow-sm"
                       transition={{ type: "spring", stiffness: 350, damping: 28 }}
                     />
                   )}
@@ -4733,7 +4733,7 @@ JSON structure:
                   {showBookmarksOnly && (
                     <motion.div
                       layoutId="activeQuizSubViewBg"
-                      className="absolute inset-0 bg-[#8A1C36] rounded-md z-0 shadow-sm"
+                      className="absolute inset-0 bg-[#2563EB] rounded-md z-0 shadow-sm"
                       transition={{ type: "spring", stiffness: 350, damping: 28 }}
                     />
                   )}
@@ -4854,7 +4854,7 @@ JSON structure:
                             className={cn(
                               "inline-flex items-center gap-1.5 px-2.5 py-1 border text-[9px] font-black uppercase tracking-wider rounded-lg transition-all shrink-0 select-none",
                               quizSubject.toLowerCase() === s.toLowerCase()
-                                ? "bg-teal-500/10 border-teal-500/35 text-[#8A1C36] font-bold"
+                                ? "bg-teal-500/10 border-teal-500/35 text-[#2563EB] font-bold"
                                 : "bg-white border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50"
                             )}
                           >
@@ -4905,7 +4905,7 @@ JSON structure:
                             />
                             <button 
                               type="submit" 
-                              className="px-2 py-1 bg-[#8A1C36] hover:bg-[#76142c] text-white rounded text-[10px] sm:text-[9px] font-black cursor-pointer"
+                              className="px-2 py-1 bg-[#2563EB] hover:bg-[#1d4ed8] text-white rounded text-[10px] sm:text-[9px] font-black cursor-pointer"
                             >
                               ✓
                             </button>
@@ -5087,7 +5087,7 @@ JSON structure:
                             {quizMode === 'quick' && (
                               <motion.div
                                 layoutId="activeQuizModeBg"
-                                className="absolute inset-0 bg-[#8A1C36] rounded-lg z-0 shadow-sm"
+                                className="absolute inset-0 bg-[#2563EB] rounded-lg z-0 shadow-sm"
                                 transition={{ type: "spring", stiffness: 350, damping: 28 }}
                               />
                             )}
@@ -5107,7 +5107,7 @@ JSON structure:
                             {quizMode === 'best' && (
                               <motion.div
                                 layoutId="activeQuizModeBg"
-                                className="absolute inset-0 bg-[#8A1C36] rounded-lg z-0 shadow-sm"
+                                className="absolute inset-0 bg-[#2563EB] rounded-lg z-0 shadow-sm"
                                 transition={{ type: "spring", stiffness: 350, damping: 28 }}
                               />
                             )}
@@ -5123,7 +5123,7 @@ JSON structure:
 
                     <button
                       onClick={() => triggerCustomQuiz(quizSubject, quizDifficulty, quizSize)}
-                      className="w-full inline-flex items-center justify-center gap-2 px-6 h-[50px] rounded-2xl bg-gradient-to-r from-[#8A1C36] to-[#b83a55] text-white text-xs font-black uppercase tracking-widest hover:premium-glow transition-all duration-300 cursor-pointer shadow-md shadow-[#8A1C36]/15 active:scale-98 hover:scale-[1.01] border-none animate-pulse-soft"
+                      className="w-full inline-flex items-center justify-center gap-2 px-6 h-[50px] rounded-2xl bg-gradient-to-r from-[#2563EB] to-[#3b82f6] text-white text-xs font-black uppercase tracking-widest hover:premium-glow transition-all duration-300 cursor-pointer shadow-md shadow-[#2563EB]/15 active:scale-98 hover:scale-[1.01] border-none animate-pulse-soft"
                     >
                       <Sparkles className="w-4 h-4 text-white animate-pulse" />
                       Generate AI Practice Quiz
@@ -5860,7 +5860,7 @@ JSON structure:
                                           handleSendMessage(`Provide a comprehensive, exam-oriented study summary for: "${topic.name}" (${topic.desc}) under the context of the "${targetExam}" syllabus. List 3 high-yield exam subtopics, 2 historical/factual reference points or formulas to memorize for the exam, and 1 core takeaway/practical tip.`);
                                           setTimeout(() => scrollToElement('chat-pane', { block: 'start' }), 150);
                                         }}
-                                        className="flex-1 py-2.5 bg-slate-50 border border-slate-200/60 hover:bg-[#8A1C36]/8 hover:border-[#8A1C36]/30 hover:text-[#8A1C36] text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs cursor-pointer"
+                                        className="flex-1 py-2.5 bg-slate-50 border border-slate-200/60 hover:bg-[#2563EB]/8 hover:border-[#2563EB]/30 hover:text-[#2563EB] text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs cursor-pointer"
                                         title="Ask personal AI tutor for summary"
                                       >
                                         <HelpCircle className="w-3.5 h-3.5" />
@@ -5872,7 +5872,7 @@ JSON structure:
                                           handleTriggerQuizFromSyllabus(topic.name);
                                           setTimeout(() => scrollToElement('quiz-pane', { block: 'start' }), 200);
                                         }}
-                                        className="flex-1 py-2.5 bg-[#8A1C36] hover:bg-[#a12340] text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 shadow-md shadow-red-950/10 border-none cursor-pointer"
+                                        className="flex-1 py-2.5 bg-[#2563EB] hover:bg-[#1d4ed8] text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 shadow-md shadow-red-950/10 border-none cursor-pointer"
                                         title="Test yourself with dynamic MCQs"
                                       >
                                         <Target className="w-3.5 h-3.5" />

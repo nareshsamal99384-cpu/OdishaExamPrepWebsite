@@ -382,12 +382,12 @@ export default function TestResultsView({ results, onClose }: { results: any, on
           {/* Overall Score Card */}
           <div className="lg:col-span-1 relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl px-4 py-5 sm:p-8 rounded-2xl sm:rounded-[2.5rem] border border-slate-200/60 lg:border-white/85 shadow-[0_8px_32px_rgba(0,0,0,0.015)] flex flex-col justify-between group transition-all duration-500 cursor-default">
             {/* Background Glow */}
-            <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#8a1c36]/5 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#2563eb]/5 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-indigo-500/3 rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative z-10 text-center">
               <h3 className="text-[10px] font-sans font-black text-slate-400/90 uppercase tracking-widest mb-2 sm:mb-4">Total Score</h3>
-              <div className="text-5xl sm:text-6xl font-serif font-black text-[#8a1c36] tracking-tight mb-1 sm:mb-2 drop-shadow-sm">
+              <div className="text-5xl sm:text-6xl font-serif font-black text-[#2563eb] tracking-tight mb-1 sm:mb-2 drop-shadow-sm">
                 {Number.isInteger(finalScore) ? finalScore : finalScore.toFixed(2)}
                 <span className="text-xl sm:text-2xl font-sans font-extrabold text-slate-400"> / {totalMarks}</span>
               </div>
@@ -415,7 +415,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
               )}
               <div className="border-t border-slate-200/50 pt-2 flex justify-between items-center text-xs sm:text-sm font-black text-slate-700">
                 <span>Final Score</span>
-                <span className="text-[#8a1c36] font-black">{Number.isInteger(finalScore) ? finalScore : finalScore.toFixed(2)} / {totalMarks}</span>
+                <span className="text-[#2563eb] font-black">{Number.isInteger(finalScore) ? finalScore : finalScore.toFixed(2)} / {totalMarks}</span>
               </div>
             </div>
           </div>
@@ -425,10 +425,10 @@ export default function TestResultsView({ results, onClose }: { results: any, on
             
             {/* Time Taken */}
             <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl px-3.5 py-3.5 sm:p-6 rounded-xl sm:rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-sm hover:shadow-md flex flex-col justify-between group transition-all duration-300 cursor-default">
-              <div className="absolute -top-12 -right-12 w-28 h-28 bg-[#8a1c36]/5 rounded-full blur-2xl" />
+              <div className="absolute -top-12 -right-12 w-28 h-28 bg-[#2563eb]/5 rounded-full blur-2xl" />
               <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-4 relative z-10">
                 <span className="text-[9px] sm:text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Time Taken</span>
-                <div className="p-1.5 sm:p-2 bg-[#8a1c36]/5 border border-[#8a1c36]/10 rounded-lg sm:rounded-xl text-[#8a1c36]">
+                <div className="p-1.5 sm:p-2 bg-[#2563eb]/5 border border-[#2563eb]/10 rounded-lg sm:rounded-xl text-[#2563eb]">
                   <Clock className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 shrink-0"/>
                 </div>
               </div>
@@ -439,10 +439,10 @@ export default function TestResultsView({ results, onClose }: { results: any, on
 
             {/* Average Speed */}
             <div className="relative overflow-hidden bg-white/90 lg:bg-white/65 backdrop-blur-none lg:backdrop-blur-xl px-3.5 py-3.5 sm:p-6 rounded-xl sm:rounded-[2rem] border border-slate-200/60 lg:border-white/80 shadow-sm hover:shadow-md flex flex-col justify-between group transition-all duration-300 cursor-default">
-              <div className="absolute -top-12 -right-12 w-28 h-28 bg-[#8a1c36]/5 rounded-full blur-2xl" />
+              <div className="absolute -top-12 -right-12 w-28 h-28 bg-[#2563eb]/5 rounded-full blur-2xl" />
               <div className="flex items-center justify-between gap-2 mb-2.5 sm:mb-4 relative z-10">
                 <span className="text-[9px] sm:text-[10px] font-sans font-black text-slate-400 uppercase tracking-widest leading-none">Avg Speed</span>
-                <div className="p-1.5 sm:p-2 bg-[#8a1c36]/5 border border-[#8a1c36]/10 rounded-lg sm:rounded-xl text-[#8a1c36]">
+                <div className="p-1.5 sm:p-2 bg-[#2563eb]/5 border border-[#2563eb]/10 rounded-lg sm:rounded-xl text-[#2563eb]">
                   <BarChart className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 shrink-0"/>
                 </div>
               </div>

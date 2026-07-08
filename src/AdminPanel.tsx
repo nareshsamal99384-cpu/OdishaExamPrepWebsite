@@ -2524,18 +2524,18 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   {/* RIGHT: Live Preview */}
                   <div className="space-y-3">
                     <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Live Preview</label>
-                    <div className="w-full bg-white border-2 border-slate-900/80 rounded-[1.5rem] p-6 shadow-[6px_6px_0px_rgba(138,28,54,1)] relative overflow-hidden font-sans">
+                    <div className="w-full bg-white border-2 border-slate-900/80 rounded-[1.5rem] p-6 shadow-[6px_6px_0px_rgba(37,99,235,1)] relative overflow-hidden font-sans">
                       <div className="absolute inset-0 pointer-events-none opacity-[0.03] grid-bg" />
 
                       {/* Card Header */}
                       <div className="flex items-center justify-between border-b-2 border-slate-100 pb-3 mb-4">
                         <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 bg-[#8A1C36] rounded-full" />
+                          <span className="w-2 h-2 bg-[#2563EB] rounded-full" />
                           <span className="text-[9px] font-black text-slate-800 uppercase tracking-widest">{heroCard.examLabel || 'EXAM LABEL'}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] font-mono font-black text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">⏱ 08:42</span>
-                          <span className="text-[10px] font-extrabold text-[#8A1C36] bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100">{heroCard.questionNumber || 'Q. 1'}</span>
+                          <span className="text-[10px] font-extrabold text-[#2563EB] bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100">{heroCard.questionNumber || 'Q. 1'}</span>
                         </div>
                       </div>
 
@@ -2960,10 +2960,10 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                       {((syllabusRoadmaps[syllabusActiveTab]?.topics) || []).slice(0, 6).map((topic: any, i: number) => (
                         <div key={i} className="bg-white border-2 border-slate-900/70 rounded-xl p-3 shadow-[3px_3px_0px_rgba(0,0,0,0.9)] flex items-center justify-between gap-3">
                           <div className="space-y-0.5 min-w-0">
-                            <p className="text-[8px] font-black uppercase tracking-wider text-[#8A1C36] truncate">{topic.label || 'Badge Label'}</p>
+                            <p className="text-[8px] font-black uppercase tracking-wider text-[#2563EB] truncate">{topic.label || 'Badge Label'}</p>
                             <p className="text-xs font-serif font-extrabold text-slate-900 leading-tight truncate">{topic.name || 'Topic Name'}</p>
                           </div>
-                          <span className="shrink-0 inline-flex px-2 py-0.5 bg-brand-50 text-[#8A1C36] rounded font-mono text-[9px] font-black border border-brand-100">{topic.count || 0} Sets</span>
+                          <span className="shrink-0 inline-flex px-2 py-0.5 bg-brand-50 text-[#2563EB] rounded font-mono text-[9px] font-black border border-brand-100">{topic.count || 0} Sets</span>
                         </div>
                       ))}
                       {((syllabusRoadmaps[syllabusActiveTab]?.topics) || []).length === 0 && (
@@ -3038,7 +3038,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                           });
                           setIsAddingAchiever(true);
                         }}
-                        className="px-4 py-2 bg-[#8A1C36] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md hover:bg-[#6c152a] active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer font-extrabold"
+                        className="px-4 py-2 bg-[#2563EB] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md hover:bg-[#1d4ed8] active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer font-extrabold"
                       >
                         <Plus className="w-3.5 h-3.5" /> Add New Story
                       </button>
@@ -3661,8 +3661,8 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                 {/* Header */}
                 <div className="glass rounded-[2rem] border border-slate-200/50 shadow-xl overflow-hidden bg-white/70 p-8">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-2xl bg-[#fce7eb] border border-[#fbe1e6] flex items-center justify-center">
-                      <Bell className="w-6 h-6 text-[#8A1C36]" />
+                    <div className="w-12 h-12 rounded-2xl bg-[#dbeafe] border border-[#bfdbfe] flex items-center justify-center">
+                      <Bell className="w-6 h-6 text-[#2563EB]" />
                     </div>
                     <div>
                       <h3 className="text-2xl font-black text-slate-900 tracking-tight">Push Notification Composer</h3>
@@ -3800,7 +3800,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                             setPushSending(false);
                           }
                         }}
-                        className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#8A1C36] to-[#b83a55] text-white font-black text-sm hover:shadow-lg hover:shadow-[#8A1C36]/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+                        className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#2563EB] to-[#3B82F6] text-white font-black text-sm hover:shadow-lg hover:shadow-[#2563EB]/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
                       >
                         <Bell className="w-4 h-4" />
                         {pushSending ? 'Sending...' : pushScheduledAt ? 'Schedule Notification' : 'Send Now to All Users'}

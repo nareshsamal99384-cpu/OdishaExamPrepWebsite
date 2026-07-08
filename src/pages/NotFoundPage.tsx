@@ -45,7 +45,7 @@ export default function NotFoundPage() {
       
       <main className="flex-1 flex items-center justify-center py-16 px-4 relative overflow-hidden">
         {/* Decorative background grid and orbs */}
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#8a1c36_1px,transparent_1px),linear-gradient(to_bottom,#8a1c36_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-[0.02]" />
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#2563eb_1px,transparent_1px),linear-gradient(to_bottom,#2563eb_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-[0.02]" />
         <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-brand-500/5 blur-[120px] pointer-events-none" />
         <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-slate-500/5 blur-[120px] pointer-events-none" />
 

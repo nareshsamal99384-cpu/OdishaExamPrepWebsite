@@ -14,7 +14,7 @@ if (isCapacitor) {
   
   // Configure Status Bar
   StatusBar.setStyle({ style: Style.Light }).catch(() => {});
-  StatusBar.setBackgroundColor({ color: '#8a1c36' }).catch(() => {});
+  StatusBar.setBackgroundColor({ color: '#2563eb' }).catch(() => {});
 
   // Handle external links to open in browser instead of in-app webview
   const originalOpen = window.open;

@@ -5,17 +5,17 @@
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Fraunces", Georgia, serif;
   
-  --color-brand-50: #fdf2f4;
-  --color-brand-100: #fce7eb;
-  --color-brand-200: #f8d3dc;
-  --color-brand-300: #f4b0be;
-  --color-brand-400: #ee8198;
-  --color-brand-500: #8a1c36;
-  --color-brand-600: #76142c;
-  --color-brand-700: #630e21;
-  --color-brand-800: #520b1a;
-  --color-brand-900: #460b18;
-  --color-brand-950: #27020a;
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #2563eb;
+  --color-brand-600: #1d4ed8;
+  --color-brand-700: #1e40af;
+  --color-brand-800: #1e3a8a;
+  --color-brand-900: #172554;
+  --color-brand-950: #0f172a;
 
   --color-slate-950: #0d1117;
 
@@ -43,9 +43,9 @@ body {
   @apply antialiased selection:bg-brand-100 selection:text-brand-900;
   background-color: #fbf9f6;
   background-image:
-    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(138, 28, 54, 0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(37, 99, 235, 0.05) 0%, transparent 60%),
     radial-gradient(ellipse 60% 40% at 80% 110%, rgba(12, 35, 64, 0.04) 0%, transparent 60%),
-    radial-gradient(rgba(138, 28, 54, 0.05) 1px, transparent 1px);
+    radial-gradient(rgba(37, 99, 235, 0.05) 1px, transparent 1px);
   background-size: 100% 100%, 100% 100%, 32px 32px;
   color: #1b1b1b;
   font-family: var(--font-sans);
@@ -98,19 +98,19 @@ body[data-premium-blur="true"] #root {
 
   /* ---------- Gradient Utilities ---------- */
   .premium-gradient {
-    background: linear-gradient(135deg, #8a1c36 0%, #0c2340 100%);
+    background: linear-gradient(135deg, #2563eb 0%, #0c2340 100%);
   }
 
   .premium-gradient-diagonal {
-    background: linear-gradient(135deg, #76142c 0%, #8a1c36 40%, #0c2340 100%);
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 40%, #0c2340 100%);
   }
 
   .hero-gradient {
-    background: linear-gradient(135deg, #8a1c36 0%, #0c2340 100%);
+    background: linear-gradient(135deg, #2563eb 0%, #0c2340 100%);
   }
 
   .premium-text-gradient {
-    background: linear-gradient(135deg, #8a1c36 0%, #0c2340 50%, #b83a55 100%);
+    background: linear-gradient(135deg, #2563eb 0%, #0c2340 50%, #3b82f6 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -130,26 +130,26 @@ body[data-premium-blur="true"] #root {
     box-shadow:
       0 1px 0 rgba(255,255,255,0.6) inset,
       0 12px 40px rgba(0,0,0,0.03),
-      0 20px 80px rgba(138,28,54,0.02);
+      0 20px 80px rgba(37,99,235,0.02);
   }
 
   .premium-shadow-lg {
     box-shadow:
       0 2px 6px rgba(0,0,0,0.03),
-      0 8px 24px rgba(138,28,54,0.06),
-      0 24px 64px rgba(138,28,54,0.04),
-      0 0 0 1px rgba(138,28,54,0.03);
+      0 8px 24px rgba(37,99,235,0.06),
+      0 24px 64px rgba(37,99,235,0.04),
+      0 0 0 1px rgba(37,99,235,0.03);
   }
 
   .premium-glow {
     box-shadow:
-      0 0 20px rgba(138, 28, 54, 0.15),
-      0 0 60px rgba(138, 28, 54, 0.05),
-      0 0 0 1px rgba(138, 28, 54, 0.1) inset;
+      0 0 20px rgba(37, 99, 235, 0.15),
+      0 0 60px rgba(37, 99, 235, 0.05),
+      0 0 0 1px rgba(37, 99, 235, 0.1) inset;
   }
 
   .premium-glow-sm {
-    box-shadow: 0 0 12px rgba(138, 28, 54, 0.2), 0 4px 16px rgba(138,28,54,0.1);
+    box-shadow: 0 0 12px rgba(37, 99, 235, 0.2), 0 4px 16px rgba(37,99,235,0.1);
   }
 
   .depth-shadow {
@@ -660,16 +660,16 @@ body[data-premium-blur="true"] #root {
    DARK THEME OVERRIDES (minimal)
    ============================================================ */
 .dark body {
-  background-color: #090306;
+  background-color: #030712;
   background-image:
-    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(138, 28, 54, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(37, 99, 235, 0.12) 0%, transparent 60%),
     radial-gradient(ellipse 60% 40% at 80% 110%, rgba(12, 35, 64, 0.1) 0%, transparent 60%);
   color: #e2e8f0;
 }
 
 /* Premium Backgrounds & Text */
 .premium-text-gradient {
-  background: linear-gradient(135deg, #8a1c36 0%, #0c2340 50%, #b83a55 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #0c2340 50%, #3b82f6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -677,15 +677,15 @@ body[data-premium-blur="true"] #root {
 
 .mesh-bg {
   background: 
-    radial-gradient(at 0% 0%, rgba(138, 28, 54, 0.03) 0px, transparent 50%),
+    radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.03) 0px, transparent 50%),
     radial-gradient(at 50% 0%, rgba(12, 35, 64, 0.03) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(138, 28, 54, 0.02) 0px, transparent 50%);
+    radial-gradient(at 100% 0%, rgba(37, 99, 235, 0.02) 0px, transparent 50%);
 }
 
 .grid-bg {
   background-image: 
-    linear-gradient(rgba(138, 28, 54, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(138, 28, 54, 0.02) 1px, transparent 1px);
+    linear-gradient(rgba(37, 99, 235, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.02) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
@@ -1001,9 +1001,9 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 input[type="date"]::-webkit-calendar-picker-indicator:hover,
 input[type="time"]::-webkit-calendar-picker-indicator:hover {
-  background: rgba(138, 28, 54, 0.12); /* Soft brand-crimson glow */
+  background: rgba(37, 99, 235, 0.12); /* Soft brand-blue glow */
   transform: scale(1.1); /* Responsive micro-scale */
-  filter: invert(26%) sepia(72%) saturate(522%) hue-rotate(295deg) brightness(90%) contrast(124%); /* Premium high-contrast brand crimson */
+  filter: invert(31%) sepia(77%) saturate(5723%) hue-rotate(218deg) brightness(97%) contrast(96%); /* Premium high-contrast brand blue */
 }
 
 /* Responsive dynamic history delete button (only applies to hover-capable devices like laptops) */
@@ -1047,11 +1047,11 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   max-width: 100%;
   margin: 1rem 0;
   padding: 1rem 1.25rem;
-  background: linear-gradient(135deg, #fdf2f4 0%, #fff8f9 60%, #f8f9fc 100%);
-  border: 1px solid rgba(138, 28, 54, 0.12);
-  border-left: 3px solid rgba(138, 28, 54, 0.55);
+  background: linear-gradient(135deg, #eff6ff 0%, #f5f8ff 60%, #f8f9fc 100%);
+  border: 1px solid rgba(37, 99, 235, 0.12);
+  border-left: 3px solid rgba(37, 99, 235, 0.55);
   border-radius: 0.75rem;
-  box-shadow: 0 2px 12px rgba(138, 28, 54, 0.06), 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 12px rgba(37, 99, 235, 0.06), 0 1px 3px rgba(0,0,0,0.04);
   text-align: center;
   overflow-x: auto;
   overflow-y: hidden;
@@ -1062,7 +1062,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 /* Hide scrollbar but keep functionality */
 .math-equation-block::-webkit-scrollbar { height: 4px; }
 .math-equation-block::-webkit-scrollbar-thumb {
-  background: rgba(138, 28, 54, 0.2);
+  background: rgba(37, 99, 235, 0.2);
   border-radius: 4px;
 }
 
@@ -1152,8 +1152,8 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 /* ── Explanation area overrides ── */
 .math-explanation .math-equation-block {
   background: rgba(255, 255, 255, 0.7);
-  border-color: rgba(138, 28, 54, 0.15);
-  border-left-color: rgba(138, 28, 54, 0.5);
+  border-color: rgba(37, 99, 235, 0.15);
+  border-left-color: rgba(37, 99, 235, 0.5);
 }
 
 /* ── Responsive: on mobile, use smaller font sizes ── */
@@ -1308,7 +1308,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 
 .svg-diagram-card:hover {
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-  border-color: rgba(138, 28, 54, 0.2);
+  border-color: rgba(37, 99, 235, 0.2);
 }
 
 /* Adjust colors in dark mode automatically */

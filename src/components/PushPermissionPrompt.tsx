@@ -145,7 +145,7 @@ const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
           >
             <div className="bg-white rounded-3xl shadow-2xl shadow-slate-900/20 border border-slate-100 overflow-hidden">
               {/* Header */}
-              <div className="bg-gradient-to-r from-[#8A1C36] to-[#b83a55] px-5 pt-5 pb-4 relative">
+              <div className="bg-gradient-to-r from-[#2563EB] to-[#3B82F6] px-5 pt-5 pb-4 relative">
                 <button
                   onClick={handleDismiss}
                   className="absolute top-4 right-4 w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all"
@@ -177,7 +177,7 @@ const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
                         '3. Tap "Add" — then open the app from your Home Screen',
                       ].map((step) => (
                         <div key={step} className="flex items-start gap-2">
-                          <Smartphone className="w-3.5 h-3.5 text-[#8A1C36] mt-0.5 shrink-0" />
+                          <Smartphone className="w-3.5 h-3.5 text-[#2563EB] mt-0.5 shrink-0" />
                           <p className="text-xs font-semibold text-slate-600">{step}</p>
                         </div>
                       ))}
@@ -211,7 +211,7 @@ const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
                       <button
                         onClick={handleAllow}
                         disabled={isLoading}
-                        className="flex-[2] py-3 rounded-2xl bg-gradient-to-r from-[#8A1C36] to-[#b83a55] text-white text-sm font-black hover:shadow-lg hover:shadow-[#8A1C36]/20 transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+                        className="flex-[2] py-3 rounded-2xl bg-gradient-to-r from-[#2563EB] to-[#3B82F6] text-white text-sm font-black hover:shadow-lg hover:shadow-[#2563EB]/20 transition-all disabled:opacity-70 flex items-center justify-center gap-2"
                       >
                         <Bell className="w-4 h-4" />
                         {isLoading ? 'Enabling...' : 'Allow Notifications'}

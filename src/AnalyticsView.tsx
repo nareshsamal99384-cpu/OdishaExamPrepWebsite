@@ -28,7 +28,7 @@ const MarkdownMathRenderer = ({ text, isUser = false }: { text: string; isUser?:
       {lines.map((line, lineIdx) => {
         const trimmed = line.trim();
         if (trimmed.startsWith('### ')) {
-          return <h4 key={lineIdx} className={cn("text-xs font-black mt-3 mb-1 uppercase tracking-wider", isUser ? "text-white" : "text-[#8A1C36]")}><MathTextRenderer text={trimmed.substring(4)} isUser={isUser} /></h4>;
+          return <h4 key={lineIdx} className={cn("text-xs font-black mt-3 mb-1 uppercase tracking-wider", isUser ? "text-white" : "text-[#2563EB]")}><MathTextRenderer text={trimmed.substring(4)} isUser={isUser} /></h4>;
         }
         if (trimmed.startsWith('## ')) {
           return <h3 key={lineIdx} className={cn("text-sm font-black mt-4 mb-1.5 uppercase tracking-wide", isUser ? "text-white" : "text-slate-905")}><MathTextRenderer text={trimmed.substring(3)} isUser={isUser} /></h3>;
@@ -69,7 +69,7 @@ const MarkdownMathRenderer = ({ text, isUser = false }: { text: string; isUser?:
         if (isBullet) {
           return (
             <div key={lineIdx} className="flex items-start gap-2 pl-3 my-0.5">
-              <span className={cn("w-1.5 h-1.5 rounded-full shrink-0 mt-2", isUser ? "bg-brand-200" : "bg-[#8A1C36]")} />
+              <span className={cn("w-1.5 h-1.5 rounded-full shrink-0 mt-2", isUser ? "bg-brand-200" : "bg-[#2563EB]")} />
               <span className={cn("leading-relaxed font-medium flex-1 text-xs text-slate-700", isUser ? "text-brand-50" : "text-slate-700")}>{renderInline(listContent)}</span>
             </div>
           );
@@ -78,7 +78,7 @@ const MarkdownMathRenderer = ({ text, isUser = false }: { text: string; isUser?:
         if (isNumbered) {
           return (
             <div key={lineIdx} className="flex items-start gap-2 pl-3 my-0.5">
-              <span className={cn("font-black text-xs shrink-0 mt-0.5", isUser ? "text-brand-200" : "text-[#8A1C36]")}>{numLabel}.</span>
+              <span className={cn("font-black text-xs shrink-0 mt-0.5", isUser ? "text-brand-200" : "text-[#2563EB]")}>{numLabel}.</span>
               <span className={cn("leading-relaxed font-medium flex-1 text-xs text-slate-700", isUser ? "text-brand-50" : "text-slate-700")}>{renderInline(listContent)}</span>
             </div>
           );
@@ -164,7 +164,7 @@ const CustomTooltip = React.memo(({ active, payload, label }: any) => {
   return null;
 });
 
-const Sparkline = React.memo(({ data, color = "#8a1c36", id }: { data: number[]; color?: string; id: string }) => {
+const Sparkline = React.memo(({ data, color = "#2563eb", id }: { data: number[]; color?: string; id: string }) => {
   if (!data || data.length < 2) return null;
   const max = Math.max(...data);
   const min = Math.min(...data);
@@ -213,10 +213,10 @@ const Sparkline = React.memo(({ data, color = "#8a1c36", id }: { data: number[];
 
 const StatCard = React.memo(({ icon, title, value, suffix = "", trend, decimals = 0, sparklineData, color = "brand" }: any) => {
   const isPositive = (trend ?? 0) >= 0;
-  const strokeColor = color === "brand" ? "#8a1c36" : color === "success" ? "#10b981" : color === "warning" ? "#d97706" : "#6366f1";
+  const strokeColor = color === "brand" ? "#2563eb" : color === "success" ? "#10b981" : color === "warning" ? "#d97706" : "#6366f1";
   
   const iconBg = color === "brand" 
-    ? "bg-[#8a1c36]/5 text-[#8a1c36] border-[#8a1c36]/10 hover:bg-[#8a1c36]/10" 
+    ? "bg-[#2563eb]/5 text-[#2563eb] border-[#2563eb]/10 hover:bg-[#2563eb]/10" 
     : color === "success" 
       ? "bg-emerald-50/70 text-emerald-600 border-emerald-100/60 hover:bg-emerald-100/50" 
       : color === "warning" 
@@ -247,7 +247,7 @@ const StatCard = React.memo(({ icon, title, value, suffix = "", trend, decimals 
             className="absolute -top-24 -right-24 w-48 h-48 opacity-20 group-hover:opacity-30 transition-opacity duration-300" 
             style={{
               background: `radial-gradient(circle at center, ${
-                color === "brand" ? "#8a1c36" :
+                color === "brand" ? "#2563eb" :
                 color === "success" ? "#10b981" :
                 color === "warning" ? "#d97706" :
                 "#6366f1"
@@ -321,14 +321,14 @@ const SubjectRow = React.memo(({ subject }: { subject: any }) => {
       onClick={() => setIsExpanded(!isExpanded)}
       className={cn(
         "flex flex-col p-3 sm:p-4 bg-white/80 rounded-2xl border border-slate-100/70 shadow-[0_2px_8px_rgba(0,0,0,0.005)] hover:bg-white/95 hover:border-brand-200/40 hover:-translate-y-0.5 transition-[transform,background-color,border-color,box-shadow] duration-300 group cursor-pointer relative overflow-hidden",
-        isExpanded && "bg-white/85 border-brand-200/30 shadow-[0_8px_20px_rgba(138,28,54,0.02)]"
+        isExpanded && "bg-white/85 border-brand-200/30 shadow-[0_8px_20px_rgba(37,99,235,0.02)]"
       )}
     >
        <div className="flex items-center justify-between gap-3 relative z-10">
           <div className="flex flex-col min-w-0 flex-1">
              <span 
                 className={cn(
-                   "font-sans font-black text-slate-800 group-hover:text-[#8a1c36] transition-colors text-xs sm:text-sm", 
+                   "font-sans font-black text-slate-800 group-hover:text-[#2563eb] transition-colors text-xs sm:text-sm", 
                    isExpanded ? "" : "truncate"
                 )} 
                 title={subject.name}
@@ -337,7 +337,7 @@ const SubjectRow = React.memo(({ subject }: { subject: any }) => {
              </span>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs sm:text-sm font-sans font-black text-slate-800 group-hover:text-[#8a1c36] transition-colors">{subject.avgScore}%</span>
+            <span className="text-xs sm:text-sm font-sans font-black text-slate-800 group-hover:text-[#2563eb] transition-colors">{subject.avgScore}%</span>
             <span className={cn(
               "px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[9px] font-sans font-black uppercase tracking-wider leading-none shadow-sm border", 
               subject.status === 'Strong' 
@@ -413,15 +413,15 @@ const PerformanceTrendChart = React.memo(({ chartData }: { chartData: any[] }) =
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
              <defs>
                 <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
-                   <stop offset="0%" stopColor="#8a1c36" stopOpacity={0.22}/>
-                   <stop offset="100%" stopColor="#8a1c36" stopOpacity={0}/>
+                   <stop offset="0%" stopColor="#2563eb" stopOpacity={0.22}/>
+                   <stop offset="100%" stopColor="#2563eb" stopOpacity={0}/>
                  </linearGradient>
              </defs>
              <CartesianGrid strokeDasharray="6 6" vertical={false} stroke="#e2e8f0/60" />
              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-sans)', letterSpacing: '0.05em' }} dy={10} />
              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-sans)' }} domain={[0, 100]} />
              <Tooltip content={<CustomTooltip />} />
-             <Area type="monotone" dataKey="score" name="Score" stroke="#8a1c36" strokeWidth={3.5} fillOpacity={1} fill="url(#scoreGrad)" activeDot={{ r: 6, stroke: '#ffffff', strokeWidth: 2, fill: '#8a1c36' }} isAnimationActive={false} />
+             <Area type="monotone" dataKey="score" name="Score" stroke="#2563eb" strokeWidth={3.5} fillOpacity={1} fill="url(#scoreGrad)" activeDot={{ r: 6, stroke: '#ffffff', strokeWidth: 2, fill: '#2563eb' }} isAnimationActive={false} />
           </AreaChart>
        </ResponsiveContainer>
     </div>
@@ -470,7 +470,7 @@ const SkillRadarChart = React.memo(({ skillProfile }: { skillProfile: any[] }) =
           <RadarChart cx="50%" cy="50%" outerRadius={isMobile ? "64%" : "58%"} data={skillProfile} margin={isMobile ? { top: 10, right: 10, bottom: 10, left: 10 } : { top: 10, right: 40, bottom: 10, left: 40 }}>
              <defs>
                 <linearGradient id="overallRadarGrad" x1="0" y1="0" x2="0" y2="1">
-                   <stop offset="0%" stopColor="#8a1c36" stopOpacity={0.65}/>
+                   <stop offset="0%" stopColor="#2563eb" stopOpacity={0.65}/>
                    <stop offset="100%" stopColor="#6366f1" stopOpacity={0.10}/>
                 </linearGradient>
              </defs>
@@ -480,10 +480,10 @@ const SkillRadarChart = React.memo(({ skillProfile }: { skillProfile: any[] }) =
              <Radar 
                name="Skill Level" 
                dataKey="value" 
-               stroke="#8a1c36" 
+               stroke="#2563eb" 
                strokeWidth={2.5} 
                fill="url(#overallRadarGrad)" 
-               activeDot={{ r: 5, fill: '#8a1c36', strokeWidth: 2, stroke: '#ffffff' }} 
+               activeDot={{ r: 5, fill: '#2563eb', strokeWidth: 2, stroke: '#ffffff' }} 
                isAnimationActive={false}
              />
              <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '3 3' }} />
@@ -510,7 +510,7 @@ const SubjectBarChart = React.memo(({ uniqueSubjects }: { uniqueSubjects: any[] 
           <BarChart data={uniqueSubjects} margin={isMobile ? { top: 10, right: 10, left: -32, bottom: 0 } : { top: 10, right: 10, left: -25, bottom: 0 }}>
              <defs>
                 <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                   <stop offset="5%" stopColor="#8a1c36" stopOpacity={0.95}/>
+                   <stop offset="5%" stopColor="#2563eb" stopOpacity={0.95}/>
                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0.65}/>
                 </linearGradient>
              </defs>
@@ -1318,7 +1318,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
   };
 
   if (loading) return (
-    <div className="relative w-full min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_left,rgba(138,28,54,0.05),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.04),transparent_50%)]">
+    <div className="relative w-full min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.05),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.04),transparent_50%)]">
       <AnalyticsSkeleton />
     </div>
   );
@@ -1348,7 +1348,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
 
   return (
     <div className="relative w-full min-h-screen overflow-x-hidden" style={{ isolation: 'isolate' }}>
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(138,28,54,0.06),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.04),transparent_50%)] -z-10 pointer-events-none" />
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.06),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.04),transparent_50%)] -z-10 pointer-events-none" />
 
       <motion.div 
         variants={stagger.containerDelay(0.1, 0.1)}
@@ -1402,7 +1402,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
           {/* Subtle Glow Orbs */}
           <div 
             className="absolute top-[-100px] right-[-100px] w-80 h-80 pointer-events-none" 
-            style={{ background: 'radial-gradient(circle at center, rgba(138, 28, 54, 0.05) 0%, transparent 70%)' }} 
+            style={{ background: 'radial-gradient(circle at center, rgba(37, 99, 235, 0.05) 0%, transparent 70%)' }} 
           />
           <div 
             className="absolute bottom-[-100px] left-[-100px] w-80 h-80 pointer-events-none" 
@@ -1419,12 +1419,12 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                 <div className="flex md:hidden flex-col gap-3">
                   {/* Row 1: icon + labels + status */}
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#8A1C36]/5 border border-[#8A1C36]/15 flex items-center justify-center relative shadow-sm shrink-0">
-                      <Brain className="w-5 h-5 text-[#8A1C36] animate-pulse" />
+                    <div className="w-10 h-10 rounded-xl bg-[#2563EB]/5 border border-[#2563EB]/15 flex items-center justify-center relative shadow-sm shrink-0">
+                      <Brain className="w-5 h-5 text-[#2563EB] animate-pulse" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="px-2 py-0.5 bg-[#8A1C36]/10 border border-[#8A1C36]/20 text-[#8A1C36] text-[8px] font-black uppercase tracking-widest rounded-md flex items-center gap-1 leading-none">
+                        <span className="px-2 py-0.5 bg-[#2563EB]/10 border border-[#2563EB]/20 text-[#2563EB] text-[8px] font-black uppercase tracking-widest rounded-md flex items-center gap-1 leading-none">
                           <Cpu className="w-2 h-2" /> OdishaExamPrep AI
                         </span>
                         <span className="flex items-center gap-1">
@@ -1442,7 +1442,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                   {/* Row 3: full-width CTA button */}
                   <button
                     onClick={() => runAiAnalysis()}
-                    className="w-full h-11 rounded-2xl bg-gradient-to-r from-[#8A1C36] via-[#a32240] to-indigo-600 hover:from-[#76142c] hover:to-indigo-700 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 hover:scale-[1.01] active:scale-[0.98] transition-[transform,box-shadow] flex items-center justify-center gap-2 group cursor-pointer border-none"
+                    className="w-full h-11 rounded-2xl bg-gradient-to-r from-[#2563EB] via-[#1e40af] to-indigo-600 hover:from-[#1d4ed8] hover:to-indigo-700 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 hover:scale-[1.01] active:scale-[0.98] transition-[transform,box-shadow] flex items-center justify-center gap-2 group cursor-pointer border-none"
                   >
                     <Sparkles className="w-3.5 h-3.5 fill-white/10 group-hover:scale-110 transition-transform" />
                     Initialize AI Scan
@@ -1452,13 +1452,13 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                 {/* ── Desktop: original side-by-side layout ── */}
                 <div className="hidden md:flex flex-row items-center justify-between gap-6">
                   <div className="flex flex-row items-start gap-5 flex-1">
-                    <div className="w-16 h-16 rounded-2xl bg-[#8A1C36]/5 border border-[#8A1C36]/15 flex items-center justify-center relative shadow-sm shrink-0">
-                      <Brain className="w-9 h-9 text-[#8A1C36] animate-pulse" />
-                      <div className="absolute inset-0 rounded-2xl border-2 border-[#8A1C36]/10 animate-ping" />
+                    <div className="w-16 h-16 rounded-2xl bg-[#2563EB]/5 border border-[#2563EB]/15 flex items-center justify-center relative shadow-sm shrink-0">
+                      <Brain className="w-9 h-9 text-[#2563EB] animate-pulse" />
+                      <div className="absolute inset-0 rounded-2xl border-2 border-[#2563EB]/10 animate-ping" />
                     </div>
                     <div>
                       <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                        <span className="px-2.5 py-0.5 bg-[#8A1C36]/10 border border-[#8A1C36]/20 text-[#8A1C36] text-[9px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1 shadow-sm leading-none">
+                        <span className="px-2.5 py-0.5 bg-[#2563EB]/10 border border-[#2563EB]/20 text-[#2563EB] text-[9px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1 shadow-sm leading-none">
                           <Cpu className="w-2.5 h-2.5" /> OdishaExamPrep AI
                         </span>
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -1472,7 +1472,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                   </div>
                   <button
                     onClick={() => runAiAnalysis()}
-                    className="shrink-0 px-8 h-[52px] rounded-2xl bg-gradient-to-r from-[#8A1C36] via-[#a32240] to-indigo-600 hover:from-[#76142c] hover:to-indigo-700 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 hover:scale-[1.02] active:scale-98 transition-[transform,box-shadow] flex items-center justify-center gap-2 group cursor-pointer border-none"
+                    className="shrink-0 px-8 h-[52px] rounded-2xl bg-gradient-to-r from-[#2563EB] via-[#1e40af] to-indigo-600 hover:from-[#1d4ed8] hover:to-indigo-700 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 hover:scale-[1.02] active:scale-98 transition-[transform,box-shadow] flex items-center justify-center gap-2 group cursor-pointer border-none"
                   >
                     <Sparkles className="w-4 h-4 fill-white/10 group-hover:scale-110 transition-transform" />
                     Initialize AI Scan
@@ -1484,20 +1484,20 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
             {scanningPhase === 1 && (
               <div className="flex flex-col items-center justify-center py-10 text-center">
                 <div className="relative w-28 h-28 mb-6 flex items-center justify-center">
-                  <div className="absolute inset-0 rounded-full border-4 border-slate-100 border-t-[#8A1C36] animate-spin" />
+                  <div className="absolute inset-0 rounded-full border-4 border-slate-100 border-t-[#2563EB] animate-spin" />
                   <div className="absolute inset-3 rounded-full border-4 border-slate-100/5 border-b-indigo-400 animate-spin [animation-duration:1.5s]" />
                   <div className="absolute inset-6 rounded-full border-2 border-slate-100/10 border-t-emerald-400 animate-spin [animation-duration:0.8s]" />
-                  <Brain className="w-8 h-8 text-[#8A1C36] animate-pulse" />
+                  <Brain className="w-8 h-8 text-[#2563EB] animate-pulse" />
                 </div>
                 <div className="space-y-1">
                   <div className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5 justify-center">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#8A1C36]" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2563EB]" />
                     Holographic Scanning Active
                   </div>
                   <h4 className="text-lg font-black tracking-tight mt-1 text-slate-800">{scanStep}</h4>
                   <div className="w-full max-w-[256px] h-1.5 bg-slate-100 rounded-full mt-4 mx-auto relative overflow-hidden border border-slate-200/50">
                     <div
-                      className="absolute top-0 h-full w-[40%] bg-gradient-to-r from-[#8A1C36] to-indigo-500 rounded-full animate-scan-bar"
+                      className="absolute top-0 h-full w-[40%] bg-gradient-to-r from-[#2563EB] to-indigo-500 rounded-full animate-scan-bar"
                     />
                   </div>
                 </div>
@@ -1511,7 +1511,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                   <div className="flex items-center justify-between w-full sm:w-auto min-w-0">
                     <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                       <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center shrink-0">
-                        <Cpu className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-[#8A1C36]" />
+                        <Cpu className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-[#2563EB]" />
                       </div>
                       <div className="min-w-0">
                         <h3 className="text-base sm:text-lg font-sans font-black tracking-tight leading-snug text-slate-900">AI Diagnostics Center</h3>
@@ -1540,7 +1540,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                           onClick={() => setAiPanelTab(tab)}
                           className={cn(
                             "relative px-1.5 sm:px-4 py-1 sm:py-2 text-[9px] sm:text-xs font-black uppercase tracking-wider rounded-lg transition-colors duration-300 cursor-pointer flex-1 sm:flex-initial border-none whitespace-nowrap focus:outline-none bg-transparent",
-                            aiPanelTab === tab ? "text-[#8A1C36]" : "text-slate-500 hover:text-slate-800"
+                            aiPanelTab === tab ? "text-[#2563EB]" : "text-slate-500 hover:text-slate-800"
                           )}
                         >
                           {aiPanelTab === tab && (
@@ -1564,7 +1564,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                         "flex items-center justify-center gap-1.5 px-3 py-1.5 sm:py-2.5 sm:px-2.5 rounded-xl transition-all cursor-pointer font-bold text-[10px] sm:text-xs uppercase tracking-wider shrink-0 disabled:opacity-50 border active:scale-95",
                         loadingAi
                           ? "bg-slate-50 border-slate-200/60 text-slate-400"
-                          : "bg-[#8A1C36]/5 hover:bg-[#8A1C36]/10 border-[#8A1C36]/10 text-[#8A1C36] hover:text-[#8A1C36]"
+                          : "bg-[#2563EB]/5 hover:bg-[#2563EB]/10 border-[#2563EB]/10 text-[#2563EB] hover:text-[#2563EB]"
                       )}
                       title="Re-Scan Analytics"
                     >
@@ -1598,7 +1598,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                     >
                       <div className="lg:col-span-8 space-y-3">
                         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                          <span className="px-2 py-0.5 bg-[#8A1C36]/10 border border-[#8A1C36]/20 text-[#8A1C36] text-[9px] font-black uppercase tracking-widest rounded-lg whitespace-nowrap">Performance Report</span>
+                          <span className="px-2 py-0.5 bg-[#2563EB]/10 border border-[#2563EB]/20 text-[#2563EB] text-[9px] font-black uppercase tracking-widest rounded-lg whitespace-nowrap">Performance Report</span>
                           <span className="text-[10px] font-bold text-slate-500 leading-normal">Targeting Odisha Competitive Exams</span>
                         </div>
                         <p className="text-slate-700 text-[13px] sm:text-base font-medium leading-relaxed max-w-3xl">
@@ -1642,7 +1642,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                       className="space-y-4"
                     >
                       <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
-                        <span className="px-2 py-0.5 bg-[#8A1C36]/10 border border-[#8A1C36]/20 text-[#8A1C36] text-[9px] font-black uppercase tracking-widest rounded-lg whitespace-nowrap">Study Checklist</span>
+                        <span className="px-2 py-0.5 bg-[#2563EB]/10 border border-[#2563EB]/20 text-[#2563EB] text-[9px] font-black uppercase tracking-widest rounded-lg whitespace-nowrap">Study Checklist</span>
                         <span className="text-[10px] font-bold text-slate-500 leading-normal">Check off items as you complete them to lift your score</span>
                       </div>
 
@@ -1652,8 +1652,8 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                             key={idx}
                             onClick={() => setCheckedActions(prev => ({ ...prev, [idx]: !prev[idx] }))}
                             className={cn(
-                              "p-3 bg-slate-50/70 border border-slate-200/60 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-slate-100/50 hover:border-[#8A1C36]/30 transition-all duration-300 active:scale-[0.98]",
-                              checkedActions[idx] && "bg-[#8A1C36]/5 border-[#8A1C36]/20"
+                              "p-3 bg-slate-50/70 border border-slate-200/60 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-slate-100/50 hover:border-[#2563EB]/30 transition-all duration-300 active:scale-[0.98]",
+                              checkedActions[idx] && "bg-[#2563EB]/5 border-[#2563EB]/20"
                             )}
                           >
                             <div className={cn(
@@ -1700,7 +1700,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                           {chatHistory.length > 0 && (
                             <button
                               onClick={() => setChatHistory([])}
-                              className="text-[9px] font-black text-slate-400 hover:text-[#8A1C36] flex items-center gap-1.5 transition-colors cursor-pointer border-none bg-transparent"
+                              className="text-[9px] font-black text-slate-400 hover:text-[#2563EB] flex items-center gap-1.5 transition-colors cursor-pointer border-none bg-transparent"
                             >
                               <Trash2 className="w-3 h-3" /> CLEAR CHAT
                             </button>
@@ -1727,14 +1727,14 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                               >
                                 <div className={cn(
                                   "w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-lg flex items-center justify-center shrink-0 text-[9px] sm:text-[10px] font-black shadow-sm",
-                                  msg.role === 'user' ? "bg-[#8A1C36] text-white" : "bg-slate-200 text-slate-700"
+                                  msg.role === 'user' ? "bg-[#2563EB] text-white" : "bg-slate-200 text-slate-700"
                                 )}>
                                   {msg.role === 'user' ? 'ME' : 'AI'}
                                 </div>
                                 <div className={cn(
                                   "p-2.5 sm:p-3 rounded-2xl leading-relaxed text-xs shadow-sm",
                                   msg.role === 'user' 
-                                    ? "bg-[#8A1C36] text-white rounded-tr-none" 
+                                    ? "bg-[#2563EB] text-white rounded-tr-none" 
                                     : "bg-white border border-slate-200 text-slate-800 rounded-tl-none"
                                 )}>
                                   <MarkdownMathRenderer text={msg.content} isUser={msg.role === 'user'} />
@@ -1748,7 +1748,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                                 AI
                               </div>
                               <div className="p-2.5 sm:p-3 rounded-2xl bg-white border border-slate-200 text-slate-500 rounded-tl-none flex items-center gap-1.5 shadow-sm">
-                                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#8A1C36]" /> Thinking...
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2563EB]" /> Thinking...
                               </div>
                             </div>
                           )}
@@ -1763,12 +1763,12 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                             disabled={chatLoading}
                             placeholder="Ask about speed, scores, accuracy..."
-                            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#8A1C36]/50 focus:bg-white disabled:opacity-50 transition-all font-sans"
+                            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#2563EB]/50 focus:bg-white disabled:opacity-50 transition-all font-sans"
                           />
                           <button
                             onClick={() => sendMessage()}
                             disabled={!chatInput.trim() || chatLoading}
-                            className="p-2.5 rounded-xl bg-[#8A1C36] hover:bg-[#76142c] text-white disabled:opacity-50 transition-all cursor-pointer shrink-0 border-none flex items-center justify-center"
+                            className="p-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1d4ed8] text-white disabled:opacity-50 transition-all cursor-pointer shrink-0 border-none flex items-center justify-center"
                           >
                             <Send className="w-4 h-4" />
                           </button>
@@ -1778,7 +1778,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                       {/* Right: Quick Chips Panel */}
                       <div className="lg:col-span-4 flex flex-col gap-2.5 sm:gap-3 bg-slate-50/50 border border-slate-200/80 p-3 sm:p-4 rounded-2xl">
                         <div className="flex items-center justify-between">
-                          <h4 className="text-[10px] font-black text-[#8A1C36] uppercase tracking-widest flex items-center gap-1">
+                          <h4 className="text-[10px] font-black text-[#2563EB] uppercase tracking-widest flex items-center gap-1">
                             <Lightbulb className="w-3.5 h-3.5" /> Study Assistant
                           </h4>
                           <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest hidden sm:block">Tap a prompt</span>
@@ -1791,7 +1791,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                               key={idx}
                               onClick={() => sendMessage(chip)}
                               disabled={chatLoading}
-                              className="text-left px-3 py-2 sm:p-2.5 bg-white hover:bg-brand-50 border border-slate-200/60 hover:border-brand-200 rounded-xl text-[10px] sm:text-[11px] font-semibold text-slate-600 hover:text-[#8A1C36] transition-all cursor-pointer leading-tight disabled:opacity-50 shadow-sm shrink-0 whitespace-nowrap lg:whitespace-normal active:scale-95"
+                              className="text-left px-3 py-2 sm:p-2.5 bg-white hover:bg-brand-50 border border-slate-200/60 hover:border-brand-200 rounded-xl text-[10px] sm:text-[11px] font-semibold text-slate-600 hover:text-[#2563EB] transition-all cursor-pointer leading-tight disabled:opacity-50 shadow-sm shrink-0 whitespace-nowrap lg:whitespace-normal active:scale-95"
                             >
                               {chip}
                             </button>
@@ -1819,7 +1819,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
            >
               <div 
                 className="absolute -top-32 -right-32 w-72 h-72 pointer-events-none transition-transform duration-700 group-hover:scale-110" 
-                style={{ background: 'radial-gradient(circle at center, rgba(138, 28, 54, 0.05) 0%, transparent 70%)' }} 
+                style={{ background: 'radial-gradient(circle at center, rgba(37, 99, 235, 0.05) 0%, transparent 70%)' }} 
               />
               <div 
                 className="absolute -bottom-32 -left-32 w-72 h-72 pointer-events-none" 
@@ -1829,7 +1829,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
               <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                  <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-1 h-5 bg-[#8a1c36] rounded-full shrink-0" />
+                      <div className="w-1 h-5 bg-[#2563eb] rounded-full shrink-0" />
                       <h3 className="text-lg sm:text-xl font-sans font-black text-slate-900 tracking-tight">Performance Trend</h3>
                     </div>
                     <p className="text-xs font-semibold text-slate-400 leading-none mt-1">Your mock exam score progression history</p>
@@ -1867,11 +1867,11 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
               />
               <div 
                 className="absolute -top-24 -right-24 w-48 h-48 pointer-events-none" 
-                style={{ background: 'radial-gradient(circle at center, rgba(138, 28, 54, 0.03) 0%, transparent 70%)' }} 
+                style={{ background: 'radial-gradient(circle at center, rgba(37, 99, 235, 0.05) 0%, transparent 70%)' }} 
               />
               
               <div className="flex items-center gap-2.5 mb-8 justify-center">
-                <div className="w-1 h-5 bg-[#8a1c36] rounded-full shrink-0" />
+                <div className="w-1 h-5 bg-[#2563eb] rounded-full shrink-0" />
                 <h3 className="text-lg font-sans font-black text-slate-900 tracking-tight text-center">Accuracy Breakdown</h3>
               </div>
               
@@ -1900,7 +1900,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                
                <div className="flex flex-col gap-1.5 mb-6 text-center">
                  <div className="flex justify-center">
-                   <span className="text-[9px] font-sans font-black text-[#8a1c36] uppercase tracking-widest bg-[#8a1c36]/5 px-3 py-1 rounded-full border border-[#8a1c36]/10 leading-none">
+                   <span className="text-[9px] font-sans font-black text-[#2563eb] uppercase tracking-widest bg-[#2563eb]/5 px-3 py-1 rounded-full border border-[#2563eb]/10 leading-none">
                       Metrics Overview
                    </span>
                  </div>
@@ -1928,8 +1928,8 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                             bgClass = "bg-emerald-50/50 border-emerald-100/50";
                             textClass = "text-emerald-700";
                          } else if (skill.name === "Precision") {
-                            icon = <Crosshair className="w-4 h-4 text-[#8a1c36]" />;
-                            colorClass = "from-[#8a1c36] to-[#b83c5a]";
+                            icon = <Crosshair className="w-4 h-4 text-[#2563eb]" />;
+                            colorClass = "from-[#2563eb] to-[#3b82f6]";
                             desc = "Consistency & focus in answers";
                             bgClass = "bg-brand-50/50 border-brand-100/50";
                             textClass = "text-brand-700";
@@ -2012,7 +2012,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                    <motion.div key={idx} variants={stagger.itemFadeUp} className="bg-white/92 rounded-3xl sm:rounded-[2.5rem] p-4.5 sm:p-6 lg:p-8 shadow-sm border border-slate-200/60 hover:border-brand-200/50 hover:shadow-md transition-[border-color,box-shadow] duration-500 relative overflow-hidden flex flex-col shrink-0">
                      <div className="mb-6 relative z-10 flex flex-col gap-3">
                         <div>
-                           <span className="px-3 py-1.5 bg-[#8a1c36]/8 text-[#8a1c36] text-[9px] font-sans font-black rounded-xl uppercase tracking-widest border border-[#8a1c36]/15 shadow-sm leading-none">
+                           <span className="px-3 py-1.5 bg-[#2563eb]/8 text-[#2563eb] text-[9px] font-sans font-black rounded-xl uppercase tracking-widest border border-[#2563eb]/15 shadow-sm leading-none">
                               {exam.examName}
                            </span>
                         </div>
@@ -2021,7 +2021,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                            <p className="text-[11px] text-slate-400 font-bold flex items-center gap-1.5">
                               Attempts: <span className="text-slate-800 font-black">{exam.totalAttempts}</span>
                               <span className="text-slate-200">•</span>
-                              Last Attempt: <span className="text-[#8a1c36] font-black">{exam.lastAttemptDate}</span>
+                              Last Attempt: <span className="text-[#2563eb] font-black">{exam.lastAttemptDate}</span>
                            </p>
                         </div>
                      </div>
@@ -2112,7 +2112,7 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => onNavigate?.('home')} 
-                  className="relative z-10 px-8 py-3.5 bg-[#8A1C36] hover:bg-[#76142c] text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-2 shrink-0 whitespace-nowrap cursor-pointer shadow-lg shadow-brand-500/20"
+                  className="relative z-10 px-8 py-3.5 bg-[#2563EB] hover:bg-[#1d4ed8] text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center gap-2 shrink-0 whitespace-nowrap cursor-pointer shadow-lg shadow-brand-500/20"
                 >
                   Start Practice Mocks
                   <ArrowRight className="w-4 h-4" />

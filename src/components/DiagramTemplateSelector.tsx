@@ -173,7 +173,7 @@ const DIAGRAM_TEMPLATES = {
           "yAxis": true,
           "functions": [
             { "expr": "x^2 - 4", "color": "rgb(79, 70, 229)" },
-            { "expr": "2*x - 1", "color": "#8A1C36" }
+            { "expr": "2*x - 1", "color": "#2563EB" }
           ],
           "points": [
             { "pos": [3, 5], "label": "(3,5)" },
@@ -246,8 +246,8 @@ const DIAGRAM_TEMPLATES = {
               "type": "circle",
               "center": [5, 4],
               "r": 3,
-              "fill": "rgba(138, 28, 54, 0.1)",
-              "stroke": "#8A1C36",
+              "fill": "rgba(37, 99, 235, 0.1)",
+              "stroke": "#2563EB",
               "strokeWidth": 2.5
             }
           ],
@@ -490,7 +490,7 @@ const DIAGRAM_TEMPLATES = {
               "y": 2,
               "r": 1.2,
               "time": "10:10",
-              "stroke": "#8a1c36",
+              "stroke": "#2563eb",
               "label": "Analog Clock (10:10)",
               "labelPosition": "bottom"
             },

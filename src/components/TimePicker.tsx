@@ -81,7 +81,7 @@ export default function TimePicker({ value, onChange, className }: TimePickerPro
         )}
       >
         <span className="tabular-nums font-mono tracking-wide">{displayValue}</span>
-        <Clock className={cn("w-3.5 h-3.5 text-slate-400 transition-colors duration-200", isOpen && "text-[#8a1c36]")} />
+        <Clock className={cn("w-3.5 h-3.5 text-slate-400 transition-colors duration-200", isOpen && "text-[#2563eb]")} />
       </div>
 
       {/* Dropdown Pickers */}
@@ -106,7 +106,7 @@ export default function TimePicker({ value, onChange, className }: TimePickerPro
                       className={cn(
                         "w-full py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-center",
                         isSelected 
-                          ? "bg-[#8a1c36] text-white" 
+                          ? "bg-[#2563eb] text-white" 
                           : "text-slate-600 hover:bg-slate-100"
                       )}
                     >
@@ -135,7 +135,7 @@ export default function TimePicker({ value, onChange, className }: TimePickerPro
                       className={cn(
                         "w-full py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer text-center",
                         isSelected 
-                          ? "bg-[#8a1c36] text-white" 
+                          ? "bg-[#2563eb] text-white" 
                           : "text-slate-600 hover:bg-slate-100"
                       )}
                     >
@@ -160,7 +160,7 @@ export default function TimePicker({ value, onChange, className }: TimePickerPro
                       className={cn(
                         "w-full py-2 text-xs font-black rounded-lg transition-colors cursor-pointer text-center",
                         isSelected 
-                          ? "bg-[#8a1c36] text-white" 
+                          ? "bg-[#2563eb] text-white" 
                           : "text-slate-600 bg-slate-50 hover:bg-slate-100"
                       )}
                     >

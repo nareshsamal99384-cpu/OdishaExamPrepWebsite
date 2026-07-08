@@ -172,7 +172,7 @@ const HistoryView = ({
       <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-50 border border-slate-200/50 flex items-center justify-center shrink-0">
-            <History className="w-4 h-4 sm:w-5 sm:h-5 text-[#8A1C36]" />
+            <History className="w-4 h-4 sm:w-5 sm:h-5 text-[#2563EB]" />
           </div>
           <div className="min-w-0">
             <h2 className="text-base sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight">
@@ -600,7 +600,7 @@ const ExamRegistrySection = ({
 
         <div className={cn(
           "flex flex-col items-center w-full",
-          isMobile ? "gap-4" : "gap-6 md:items-stretch md:gap-0 md:bg-white md:border-2 md:border-slate-900/80 md:rounded-[2.5rem] md:overflow-hidden md:shadow-[6px_6px_0px_rgba(138,28,54,0.15)] md:divide-y-2 md:divide-slate-100"
+          isMobile ? "gap-4" : "gap-6 md:items-stretch md:gap-0 md:bg-white md:border-2 md:border-slate-900/80 md:rounded-[2.5rem] md:overflow-hidden md:shadow-[6px_6px_0px_rgba(37,99,235,0.15)] md:divide-y-2 md:divide-slate-100"
         )}>
           {announcements.map((item, idx) => {
             const statusMeta = EXAM_REGISTRY_STATUS_MAP[item.status] || {
@@ -615,7 +615,7 @@ const ExamRegistrySection = ({
                   "w-full flex flex-col items-center text-center md:flex-row md:items-center md:text-left md:justify-between bg-white",
                   isMobile 
                     ? cn("p-5 border border-slate-250/60 border-l-4 rounded-2xl shadow-sm gap-5", statusBorderColor)
-                    : "p-6 sm:p-8 border-2 border-slate-900/80 rounded-3xl md:rounded-none md:border-none shadow-[4px_4px_0px_rgba(138,28,54,0.15)] md:shadow-none hover:bg-slate-50/50 transition-colors gap-6"
+                    : "p-6 sm:p-8 border-2 border-slate-900/80 rounded-3xl md:rounded-none md:border-none shadow-[4px_4px_0px_rgba(37,99,235,0.15)] md:shadow-none hover:bg-slate-50/50 transition-colors gap-6"
                 )}
               >
                 <div className={cn("w-full", isMobile ? "space-y-2.5" : "space-y-3")}>
@@ -636,7 +636,7 @@ const ExamRegistrySection = ({
                   className={cn(
                     "inline-flex items-center justify-center gap-2 px-5 py-3 transition-all cursor-pointer w-full md:w-auto",
                     isMobile
-                      ? "rounded-xl bg-[#8A1C36] text-white text-xs font-black uppercase tracking-widest border border-[#8A1C36] shadow-sm active:scale-[0.97]"
+                      ? "rounded-xl bg-[#2563EB] text-white text-xs font-black uppercase tracking-widest border border-[#2563EB] shadow-sm active:scale-[0.97]"
                       : "rounded-xl border-2 border-slate-900 text-xs font-black uppercase tracking-widest text-slate-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] hover:bg-slate-900 hover:text-white hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5"
                   )}
                 >
@@ -800,13 +800,13 @@ const SYLLABUS_ROADMAPS_DEFAULT = [
                   }}
                   className={cn(
                     isMobile 
-                      ? "bg-white border border-slate-250/60 border-l-4 border-l-[#8A1C36] rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3 relative active:scale-[0.98] transition-transform duration-200"
+                      ? "bg-white border border-slate-250/60 border-l-4 border-l-[#2563EB] rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3 relative active:scale-[0.98] transition-transform duration-200"
                       : "bg-white border-2 border-slate-900/80 rounded-2xl p-5 sm:p-6 shadow-[4px_4px_0px_rgba(0,0,0,1)] flex items-start justify-between gap-4"
                   )}
                 >
                   <div className="space-y-1">
                     <p className={cn(
-                      "font-black uppercase text-[#8A1C36]",
+                      "font-black uppercase text-[#2563EB]",
                       isMobile ? "text-[9px] tracking-wider" : "text-[10px] tracking-wider"
                     )}>
                       {topic.label}
@@ -820,7 +820,7 @@ const SYLLABUS_ROADMAPS_DEFAULT = [
                   </div>
                   <div className="text-right shrink-0">
                     <span className={cn(
-                      "inline-flex bg-brand-50 text-[#8A1C36] rounded font-mono font-black uppercase border border-brand-100",
+                      "inline-flex bg-brand-50 text-[#2563EB] rounded font-mono font-black uppercase border border-brand-100",
                       isMobile ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs"
                     )}>
                       {topic.count} Sets
@@ -917,7 +917,7 @@ const AchieversJournalSection = () => {
             "bg-white p-1 flex flex-nowrap w-full sm:w-auto justify-between gap-1 shrink-0 relative z-10",
             isMobile
               ? "border border-slate-200/60 rounded-xl shadow-sm"
-              : "border-2 border-slate-900 rounded-2xl shadow-[4px_4px_0px_rgba(138,28,54,0.15)]"
+              : "border-2 border-slate-900 rounded-2xl shadow-[4px_4px_0px_rgba(37,99,235,0.15)]"
           )}>
             {(['all', 'opsc', 'ossc', 'osssc'] as const).map(filter => {
               const isFilterActive = activeFilter === filter;
@@ -937,7 +937,7 @@ const AchieversJournalSection = () => {
                     <motion.div
                       layoutId="activeAchieverFilterBg"
                       className={cn(
-                        "absolute inset-0 bg-[#8A1C36] rounded-xl z-0",
+                        "absolute inset-0 bg-[#2563EB] rounded-xl z-0",
                         isMobile ? "shadow-none" : "shadow-[2px_2px_0px_#0f172a]"
                       )}
                       transition={{ type: "spring", stiffness: 380, damping: 30 }}
@@ -969,8 +969,8 @@ const AchieversJournalSection = () => {
               className={cn(
                 "w-full pl-10 pr-4 py-2.5 rounded-xl bg-white font-bold text-xs sm:text-sm focus:outline-none transition-all duration-200",
                 isMobile
-                  ? "border border-slate-200/70 shadow-sm focus:border-[#8A1C36] focus:ring-1 focus:ring-[#8A1C36]/20"
-                  : "border-2 border-slate-900 shadow-[3px_3px_0px_rgba(138,28,54,0.1)] focus:shadow-[4px_4px_0px_#8A1C36]"
+                  ? "border border-slate-200/70 shadow-sm focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/20"
+                  : "border-2 border-slate-900 shadow-[3px_3px_0px_rgba(37,99,235,0.1)] focus:shadow-[4px_4px_0px_#2563EB]"
               )}
             />
           </div>
@@ -1005,7 +1005,7 @@ const AchieversJournalSection = () => {
                     "col-span-1 md:col-span-2 text-center py-12 bg-white flex flex-col items-center justify-center gap-2",
                     isMobile
                       ? "border border-slate-200/60 rounded-2xl p-5 shadow-sm"
-                      : "border-2 border-slate-900 rounded-3xl p-6 shadow-[4px_4px_0px_rgba(138,28,54,0.15)]"
+                      : "border-2 border-slate-900 rounded-3xl p-6 shadow-[4px_4px_0px_rgba(37,99,235,0.15)]"
                   )}
                 >
                   <div className="text-3xl">📝</div>
@@ -1024,7 +1024,7 @@ const AchieversJournalSection = () => {
                       "bg-white flex flex-col justify-between transition-all duration-300",
                       isMobile
                         ? "border border-slate-200/60 rounded-2xl p-4 shadow-md shadow-slate-100/80 active:scale-[0.99]"
-                        : "border-2 border-slate-900 rounded-[2rem] p-6 sm:p-8 shadow-[6px_6px_0px_rgba(138,28,54,0.1)] md:hover:shadow-[8px_8px_0px_#8A1C36] md:hover:-translate-y-1 md:hover:-translate-x-1"
+                        : "border-2 border-slate-900 rounded-[2rem] p-6 sm:p-8 shadow-[6px_6px_0px_rgba(37,99,235,0.1)] md:hover:shadow-[8px_8px_0px_#2563EB] md:hover:-translate-y-1 md:hover:-translate-x-1"
                     )}
                   >
                     <div className={cn(isMobile ? "space-y-3" : "space-y-4")}>
@@ -1050,7 +1050,7 @@ const AchieversJournalSection = () => {
                               "font-serif font-extrabold text-slate-900 leading-snug",
                               isMobile ? "text-[14px] truncate" : "text-base leading-none"
                             )}>{item.name}</h3>
-                            <p className="text-[9px] font-black uppercase text-[#8A1C36] tracking-widest mt-0.5">{item.rank}</p>
+                            <p className="text-[9px] font-black uppercase text-[#2563EB] tracking-widest mt-0.5">{item.rank}</p>
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-0.5 shrink-0 text-right">
@@ -1118,8 +1118,8 @@ const AchieversJournalSection = () => {
               className={cn(
                 "transition-all duration-200 cursor-pointer font-extrabold uppercase tracking-widest text-xs sm:text-sm",
                 isMobile
-                  ? "w-full py-3 rounded-xl border border-[#8A1C36]/30 text-[#8A1C36] bg-white shadow-sm active:bg-brand-50/40 active:scale-[0.98]"
-                  : "px-6 py-3 rounded-xl border-2 border-slate-900 bg-white hover:bg-slate-50 text-slate-900 shadow-[3px_3px_0px_#8A1C36] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5"
+                  ? "w-full py-3 rounded-xl border border-[#2563EB]/30 text-[#2563EB] bg-white shadow-sm active:bg-brand-50/40 active:scale-[0.98]"
+                  : "px-6 py-3 rounded-xl border-2 border-slate-900 bg-white hover:bg-slate-50 text-slate-900 shadow-[3px_3px_0px_#2563EB] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5"
               )}
             >
               Load More preparation journals (+{filteredStories.length - visibleCount} remaining)
@@ -1174,7 +1174,7 @@ export const Footer = () => {
   return (
     <footer id="contact" className={cn("bg-[#080b11] text-slate-300 relative overflow-hidden noise-overlay", isMobile ? "py-10 mt-12" : "py-16 md:py-24 mt-20")}>
       {/* Decorative background grid and orbs */}
-      <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#8a1c36_1px,transparent_1px),linear-gradient(to_bottom,#8a1c36_1px,transparent_1px)] bg-[size:3.5rem_3.5rem]" />
+      <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#2563eb_1px,transparent_1px),linear-gradient(to_bottom,#2563eb_1px,transparent_1px)] bg-[size:3.5rem_3.5rem]" />
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
       
       {/* Glowing blur spheres — hidden on mobile to prevent GPU compositing during scroll-in */}
@@ -1223,7 +1223,7 @@ export const Footer = () => {
           {/* Logo & Tagline column */}
           <div className={cn("col-span-1 md:col-span-2", isMobile ? "space-y-4" : "space-y-6")}>
             <div className="flex items-center gap-3">
-              <div role="img" aria-label="OdishaExamPrep Platform Logo" className={cn("premium-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-[#8a1c36]/10 animate-float-sm", isMobile ? "w-10 h-10 shrink-0" : "w-12 h-12")}>
+              <div role="img" aria-label="OdishaExamPrep Platform Logo" className={cn("premium-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-[#2563eb]/10 animate-float-sm", isMobile ? "w-10 h-10 shrink-0" : "w-12 h-12")}>
                 <BookOpen className={cn("text-white", isMobile ? "w-5 h-5" : "w-6 h-6")} />
               </div>
               <span className={cn("font-serif font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent", isMobile ? "text-2xl" : "text-3xl")}>
@@ -1253,7 +1253,7 @@ export const Footer = () => {
                 />
                 <button 
                   type="submit"
-                  className="shrink-0 px-4 py-2.5 bg-[#8A1C36] hover:bg-[#76142c] border border-brand-500/20 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer shadow-lg shadow-brand-500/10"
+                  className="shrink-0 px-4 py-2.5 bg-[#2563EB] hover:bg-[#1d4ed8] border border-brand-500/20 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer shadow-lg shadow-brand-500/10"
                 >
                   {subscribed ? "Done!" : (
                     <>
@@ -1279,7 +1279,7 @@ export const Footer = () => {
 
           {/* Platform navigation */}
           <div className={cn(isMobile ? "" : "space-y-6")}>
-            <h4 className={cn("text-white font-black tracking-widest uppercase text-xs relative after:content-[''] after:absolute after:-bottom-2.5 after:left-0 after:w-8 after:h-[2px] after:bg-[#8a1c36]", isMobile ? "mb-4" : "mb-6")}>
+            <h4 className={cn("text-white font-black tracking-widest uppercase text-xs relative after:content-[''] after:absolute after:-bottom-2.5 after:left-0 after:w-8 after:h-[2px] after:bg-[#2563eb]", isMobile ? "mb-4" : "mb-6")}>
               Platform
             </h4>
             <ul className={cn("font-semibold text-slate-400", isMobile ? "space-y-3" : "space-y-4")}>
@@ -1304,7 +1304,7 @@ export const Footer = () => {
 
           {/* Contact details */}
           <div className={cn(isMobile ? "" : "space-y-6")}>
-            <h4 className={cn("text-white font-black tracking-widest uppercase text-xs relative after:content-[''] after:absolute after:-bottom-2.5 after:left-0 after:w-8 after:h-[2px] after:bg-[#8a1c36]", isMobile ? "mb-4" : "mb-6")}>
+            <h4 className={cn("text-white font-black tracking-widest uppercase text-xs relative after:content-[''] after:absolute after:-bottom-2.5 after:left-0 after:w-8 after:h-[2px] after:bg-[#2563eb]", isMobile ? "mb-4" : "mb-6")}>
               Contact
             </h4>
             <ul className={cn("font-medium text-slate-400", isMobile ? "space-y-3" : "space-y-3.5")}>
@@ -1315,7 +1315,7 @@ export const Footer = () => {
                   rel="noopener noreferrer" 
                   className="flex items-center gap-2.5 group"
                 >
-                  <div className={cn("rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center shrink-0 group-hover:border-brand-500/50 group-hover:bg-[#8a1c36]/10 transition-all duration-300", isMobile ? "w-8 h-8" : "w-10 h-10")}>
+                  <div className={cn("rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center shrink-0 group-hover:border-brand-500/50 group-hover:bg-[#2563eb]/10 transition-all duration-300", isMobile ? "w-8 h-8" : "w-10 h-10")}>
                     <Mail className={cn("text-slate-400 group-hover:text-brand-400 transition-colors", isMobile ? "w-3.5 h-3.5" : "w-4 h-4")} />
                   </div>
                   <span className={cn("break-all group-hover:text-white transition-colors duration-300", isMobile ? "text-[10px] leading-snug" : "text-sm lg:whitespace-nowrap")}>
@@ -1549,11 +1549,11 @@ export const Navbar = ({
             }
           }}
         >
-          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl border-2 border-slate-900 bg-[#8A1C36] flex items-center justify-center shadow-[3px_3px_0px_#0f172a] group-hover:rotate-3 group-hover:scale-105 transition-all duration-300">
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl border-2 border-slate-900 bg-[#2563EB] flex items-center justify-center shadow-[3px_3px_0px_#0f172a] group-hover:rotate-3 group-hover:scale-105 transition-all duration-300">
             <BookOpen className="text-white w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          <span className="font-serif font-black text-lg sm:text-2xl tracking-tight text-slate-900 group-hover:text-[#8A1C36] transition-colors duration-300 uppercase">
-            Odisha<span className="text-[#8A1C36] font-serif font-black">Exam</span>Prep
+          <span className="font-serif font-black text-lg sm:text-2xl tracking-tight text-slate-900 group-hover:text-[#2563EB] transition-colors duration-300 uppercase">
+            Odisha<span className="text-[#2563EB] font-serif font-black">Exam</span>Prep
           </span>
         </div>
 
@@ -1576,8 +1576,8 @@ export const Navbar = ({
                        transition={{ type: 'spring', stiffness: 420, damping: 38, mass: 0.8 }}
                      />
                    )}
-                   <Target className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", activeSection === 'exams' ? "text-[#8A1C36]" : "text-slate-400 group-hover:text-[#8A1C36]")} />
-                   <span className={cn("relative z-10 transition-colors duration-150", activeSection === 'exams' ? "text-[#8A1C36]" : "text-slate-600 group-hover:text-[#8A1C36]")}>Exams</span>
+                   <Target className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", activeSection === 'exams' ? "text-[#2563EB]" : "text-slate-400 group-hover:text-[#2563EB]")} />
+                   <span className={cn("relative z-10 transition-colors duration-150", activeSection === 'exams' ? "text-[#2563EB]" : "text-slate-600 group-hover:text-[#2563EB]")}>Exams</span>
                  </a>
                  <div className="w-0.5 h-4 bg-slate-200 mx-0.5 shrink-0"></div>
                  {/* Syllabus */}
@@ -1593,8 +1593,8 @@ export const Navbar = ({
                        transition={{ type: 'spring', stiffness: 420, damping: 38, mass: 0.8 }}
                      />
                    )}
-                   <BookOpen className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", activeSection === 'syllabus-paths' ? "text-[#8A1C36]" : "text-slate-400 group-hover:text-[#8A1C36]")} />
-                   <span className={cn("relative z-10 transition-colors duration-150", activeSection === 'syllabus-paths' ? "text-[#8A1C36]" : "text-slate-600 group-hover:text-[#8A1C36]")}>Syllabus</span>
+                   <BookOpen className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", activeSection === 'syllabus-paths' ? "text-[#2563EB]" : "text-slate-400 group-hover:text-[#2563EB]")} />
+                   <span className={cn("relative z-10 transition-colors duration-150", activeSection === 'syllabus-paths' ? "text-[#2563EB]" : "text-slate-600 group-hover:text-[#2563EB]")}>Syllabus</span>
                  </a>
                  <div className="w-0.5 h-4 bg-slate-200 mx-0.5 shrink-0"></div>
                  {/* Registry */}
@@ -1610,8 +1610,8 @@ export const Navbar = ({
                        transition={{ type: 'spring', stiffness: 420, damping: 38, mass: 0.8 }}
                      />
                    )}
-                   <Clock3 className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", activeSection === 'exam-registry' ? "text-[#8A1C36]" : "text-slate-400 group-hover:text-[#8A1C36]")} />
-                   <span className={cn("relative z-10 transition-colors duration-150", activeSection === 'exam-registry' ? "text-[#8A1C36]" : "text-slate-600 group-hover:text-[#8A1C36]")}>Notifications</span>
+                   <Clock3 className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", activeSection === 'exam-registry' ? "text-[#2563EB]" : "text-slate-400 group-hover:text-[#2563EB]")} />
+                   <span className={cn("relative z-10 transition-colors duration-150", activeSection === 'exam-registry' ? "text-[#2563EB]" : "text-slate-600 group-hover:text-[#2563EB]")}>Notifications</span>
                  </a>
                  <div className="w-0.5 h-4 bg-slate-200 mx-0.5 shrink-0"></div>
                  {/* Achievers */}
@@ -1627,8 +1627,8 @@ export const Navbar = ({
                        transition={{ type: 'spring', stiffness: 420, damping: 38, mass: 0.8 }}
                      />
                    )}
-                   <Award className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", activeSection === 'achievers-journal' ? "text-[#8A1C36]" : "text-slate-400 group-hover:text-[#8A1C36]")} />
-                   <span className={cn("relative z-10 transition-colors duration-150", activeSection === 'achievers-journal' ? "text-[#8A1C36]" : "text-slate-600 group-hover:text-[#8A1C36]")}>Achievers</span>
+                   <Award className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", activeSection === 'achievers-journal' ? "text-[#2563EB]" : "text-slate-400 group-hover:text-[#2563EB]")} />
+                   <span className={cn("relative z-10 transition-colors duration-150", activeSection === 'achievers-journal' ? "text-[#2563EB]" : "text-slate-600 group-hover:text-[#2563EB]")}>Achievers</span>
                  </a>
                  <div className="w-0.5 h-4 bg-slate-200 mx-0.5 shrink-0"></div>
               </>
@@ -1645,14 +1645,14 @@ export const Navbar = ({
                    transition={{ type: 'spring', stiffness: 420, damping: 38, mass: 0.8 }}
                  />
                )}
-               <FileText className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", isBlogActive ? "text-[#8A1C36]" : "text-slate-400 group-hover:text-[#8A1C36]")} />
-               <span className={cn("relative z-10 transition-colors duration-150", isBlogActive ? "text-[#8A1C36]" : "text-slate-600 group-hover:text-[#8A1C36]")}>Blog</span>
+               <FileText className={cn("relative z-10 w-3.5 h-3.5 transition-colors duration-150", isBlogActive ? "text-[#2563EB]" : "text-slate-400 group-hover:text-[#2563EB]")} />
+               <span className={cn("relative z-10 transition-colors duration-150", isBlogActive ? "text-[#2563EB]" : "text-slate-600 group-hover:text-[#2563EB]")}>Blog</span>
              </Link>
             {user && (
               <>
                  <div className="w-0.5 h-4 bg-slate-200 mx-0.5 shrink-0"></div>
-                 <a href={supportUrl} target="_blank" rel="noopener noreferrer" className="relative flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-600 hover:text-[#8A1C36] px-4 py-2 rounded-lg hover:bg-slate-50 transition-all duration-200 group">
-                   <HelpCircle className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#8A1C36] transition-colors" />
+                 <a href={supportUrl} target="_blank" rel="noopener noreferrer" className="relative flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-600 hover:text-[#2563EB] px-4 py-2 rounded-lg hover:bg-slate-50 transition-all duration-200 group">
+                   <HelpCircle className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#2563EB] transition-colors" />
                    <span>Support</span>
                  </a>
               </>
@@ -1709,7 +1709,7 @@ export const Navbar = ({
               onSignIn && (
                 <button 
                   onClick={onSignIn}
-                  className="px-6 h-10 text-xs font-black uppercase tracking-widest rounded-lg border-2 border-slate-900 bg-[#8A1C36] text-white shadow-[3px_3px_0px_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all duration-200 cursor-pointer shrink-0"
+                  className="px-6 h-10 text-xs font-black uppercase tracking-widest rounded-lg border-2 border-slate-900 bg-[#2563EB] text-white shadow-[3px_3px_0px_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all duration-200 cursor-pointer shrink-0"
                 >
                   Sign In
                 </button>
@@ -1723,7 +1723,7 @@ export const Navbar = ({
           {!user && onSignIn && (
             <button 
               onClick={onSignIn}
-              className="hidden sm:inline-flex px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg border-2 border-slate-900 bg-[#8A1C36] text-white shadow-[2px_2px_0px_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all duration-200 cursor-pointer shrink-0"
+              className="hidden sm:inline-flex px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg border-2 border-slate-900 bg-[#2563EB] text-white shadow-[2px_2px_0px_#0f172a] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all duration-200 cursor-pointer shrink-0"
             >
               Sign In
             </button>
@@ -1763,7 +1763,7 @@ export const Navbar = ({
               <div className="p-4 flex flex-col gap-1.5">
                 {!user && onSignIn && (
                   <div className="p-3.5 rounded-2xl border-2 border-slate-900 bg-gradient-to-br from-slate-50 to-white shadow-[4px_4px_0px_#0f172a] mb-1">
-                    <p className="text-[10px] font-black text-[#8A1C36] uppercase tracking-widest mb-1">Welcome Aspirant</p>
+                    <p className="text-[10px] font-black text-[#2563EB] uppercase tracking-widest mb-1">Welcome Aspirant</p>
                     <h4 className="text-xs font-serif font-black text-slate-800 mb-3.5 leading-snug">Master the OPSC, OSSC, and OSSSC syllabus with precision-crafted test series.</h4>
                     <Button variant="primary" className="w-full py-2.5 rounded-xl font-black text-[10px] uppercase tracking-wider border-2 border-slate-900 shadow-[2px_2px_0px_#0f172a] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all" onClick={() => { onSignIn(); setMobileMenuOpen(false); }}>
                       Sign In to Account
@@ -1825,15 +1825,15 @@ export const Navbar = ({
                           className={cn(
                             "flex items-center gap-3 text-sm font-extrabold p-2.5 rounded-xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
                             activeSection === 'exam-registry'
-                              ? "bg-[#fce7eb] text-[#8A1C36] font-black border-[#fbe1e6] shadow-xs"
+                              ? "bg-[#fce7eb] text-[#2563EB] font-black border-[#fbe1e6] shadow-xs"
                               : "text-slate-700 hover:bg-slate-50 active:bg-slate-100"
                           )}
                         >
-                          <div className="w-8 h-8 rounded-xl bg-[#fce7eb] border border-[#fbe1e6] flex items-center justify-center text-[#8A1C36] shrink-0 shadow-xs">
+                          <div className="w-8 h-8 rounded-xl bg-[#fce7eb] border border-[#fbe1e6] flex items-center justify-center text-[#2563EB] shrink-0 shadow-xs">
                              <Clock3 className="w-4 h-4" />
                           </div>
                           <span className="tracking-wide">Notifications</span>
-                          <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", activeSection === 'exam-registry' ? "text-[#8A1C36] translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
+                          <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", activeSection === 'exam-registry' ? "text-[#2563EB] translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
                         </a>
                       </motion.div>
 
@@ -1865,15 +1865,15 @@ export const Navbar = ({
                       className={cn(
                         "flex items-center gap-3 text-sm font-extrabold p-2.5 rounded-xl transition-all border border-transparent group relative active:scale-[0.98] select-none",
                         isBlogActive
-                          ? "bg-[#fce7eb] text-[#8A1C36] font-black border-[#fbe1e6] shadow-xs"
+                          ? "bg-[#fce7eb] text-[#2563EB] font-black border-[#fbe1e6] shadow-xs"
                           : "text-slate-700 hover:bg-slate-50 active:bg-slate-100"
                       )}
                     >
-                      <div className="w-8 h-8 rounded-xl bg-[#fce7eb] border border-[#fbe1e6] flex items-center justify-center text-[#8A1C36] shrink-0 shadow-xs">
+                      <div className="w-8 h-8 rounded-xl bg-[#fce7eb] border border-[#fbe1e6] flex items-center justify-center text-[#2563EB] shrink-0 shadow-xs">
                          <FileText className="w-4 h-4" />
                       </div>
                       <span className="tracking-wide">Latest Updates &amp; Blog</span>
-                      <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", isBlogActive ? "text-[#8A1C36] translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
+                      <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", isBlogActive ? "text-[#2563EB] translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
                     </Link>
                   </motion.div>
 
@@ -1886,7 +1886,7 @@ export const Navbar = ({
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-3 text-sm font-extrabold p-2.5 rounded-xl transition-all border border-transparent group relative hover:bg-slate-50 active:bg-slate-100 active:scale-[0.98] select-none"
                       >
-                        <div className="w-8 h-8 rounded-xl bg-[#fce7eb]/50 border border-[#fce7eb]/80 flex items-center justify-center text-[#8A1C36] shrink-0 shadow-xs">
+                        <div className="w-8 h-8 rounded-xl bg-[#fce7eb]/50 border border-[#fce7eb]/80 flex items-center justify-center text-[#2563EB] shrink-0 shadow-xs">
                            <HelpCircle className="w-4 h-4" />
                         </div>
                         <span className="tracking-wide">Help &amp; Support</span>
@@ -2009,12 +2009,12 @@ const InteractiveHeroPreview = () => {
   const penaltyLabel = card.penalty?.toFixed(2) ?? '0.25';
 
   return (
-    <div className="w-full bg-white border-2 border-slate-900/80 rounded-[2rem] p-6 sm:p-8 shadow-[8px_8px_0px_rgba(138,28,54,1)] relative overflow-hidden font-sans">
+    <div className="w-full bg-white border-2 border-slate-900/80 rounded-[2rem] p-6 sm:p-8 shadow-[8px_8px_0px_rgba(37,99,235,1)] relative overflow-hidden font-sans">
       <div className="absolute inset-0 pointer-events-none opacity-[0.03] grid-bg" />
       
       <div className="flex items-center justify-between border-b-2 border-slate-100 pb-4 mb-5 shrink-0 relative z-10">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 bg-[#8A1C36] rounded-full animate-pulse" />
+          <span className="w-2.5 h-2.5 bg-[#2563EB] rounded-full animate-pulse" />
           <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest leading-none">{card.examLabel}</span>
         </div>
         <div className="flex items-center gap-3">
@@ -2022,7 +2022,7 @@ const InteractiveHeroPreview = () => {
             <Clock3 className="w-3.5 h-3.5 text-slate-500" />
             {formatTimer(secondsLeft)}
           </div>
-          <span className="text-xs font-extrabold text-[#8A1C36] bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100">
+          <span className="text-xs font-extrabold text-[#2563EB] bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100">
             {card.questionNumber}
           </span>
         </div>
@@ -2065,8 +2065,8 @@ const InteractiveHeroPreview = () => {
               optionStyle = "border-slate-100 bg-slate-50/50 opacity-60";
             }
           } else if (isSelected) {
-            optionStyle = "border-[#8A1C36] bg-[#8A1C36]/5 text-slate-900";
-            badgeStyle = "bg-[#8A1C36] text-white";
+            optionStyle = "border-[#2563EB] bg-[#2563EB]/5 text-slate-900";
+            badgeStyle = "bg-[#2563EB] text-white";
           }
 
           return (
@@ -2110,7 +2110,7 @@ const InteractiveHeroPreview = () => {
                 </span>
                 <button 
                   onClick={handleReset}
-                  className="text-xs font-black text-slate-400 hover:text-[#8A1C36] transition-colors ml-auto uppercase tracking-wider cursor-pointer"
+                  className="text-xs font-black text-slate-400 hover:text-[#2563EB] transition-colors ml-auto uppercase tracking-wider cursor-pointer"
                 >
                   Try Again
                 </button>
@@ -2552,7 +2552,7 @@ const LandingPage = () => {
       {/* Top Professional Announcement Bar */}
       <div className="ticker-bar relative z-50 bg-[#0F172A] border-b-2 border-slate-900 overflow-hidden">
         <div className="max-w-7xl mx-auto flex items-center h-10 relative">
-          <div className="flex items-center gap-2 px-4 h-full bg-[#8A1C36] text-white border-r-2 border-slate-900 shrink-0 relative z-20 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">
+          <div className="flex items-center gap-2 px-4 h-full bg-[#2563EB] text-white border-r-2 border-slate-900 shrink-0 relative z-20 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">
             <span className="flex h-2 w-2 rounded-full bg-white animate-pulse" />
             <span className="text-[10px] font-black uppercase tracking-widest leading-none">Exam Updates</span>
           </div>
@@ -2561,14 +2561,14 @@ const LandingPage = () => {
             <div className="flex items-center gap-12 animate-marquee-lr whitespace-nowrap px-6">
               {announcements.map((text, i) => (
                 <div key={i} className="flex items-center gap-2 text-[10px] font-bold text-slate-300 uppercase tracking-tight">
-                  <span className="text-[#8A1C36] font-black">•</span>
+                  <span className="text-[#2563EB] font-black">•</span>
                   {text}
                 </div>
               ))}
               {/* Duplicate the EXACT same list to create a seamless infinite loop with marquee-lr (-50% to 0) */}
               {announcements.map((text, i) => (
                 <div key={`dup-${i}`} className="flex items-center gap-2 text-[10px] font-bold text-slate-300 uppercase tracking-tight">
-                  <span className="text-[#8A1C36] font-black">•</span>
+                  <span className="text-[#2563EB] font-black">•</span>
                   {text}
                 </div>
               ))}
@@ -2590,7 +2590,7 @@ const LandingPage = () => {
           <div className="absolute inset-0 -z-10 mesh-bg" />
           <div className="absolute inset-0 -z-10 grid-bg opacity-60" />
           {/* Glowing Orbs */}
-          <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full -z-10 animate-orb" style={{background: 'radial-gradient(circle, rgba(138,28,54,0.06) 0%, transparent 70%)', filter: 'blur(40px)'}} />
+          <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full -z-10 animate-orb" style={{background: 'radial-gradient(circle, rgba(37,99,235,0.06) 0%, transparent 70%)', filter: 'blur(40px)'}} />
           <div className="absolute bottom-0 -left-40 w-[500px] h-[500px] rounded-full -z-10 animate-orb" style={{background: 'radial-gradient(circle, rgba(0,0,0,0.02) 0%, transparent 70%)', filter: 'blur(50px)', animationDelay: '2.5s'}} />
           
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 overflow-hidden">
@@ -3696,7 +3696,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     <div className="space-y-4">
                       {/* Topic Title (Visible on mobile and laptop) */}
                       <div className="space-y-1.5 text-left md:text-left">
-                        <span className="inline-flex items-center px-2 py-0.5 bg-brand-50 text-[#8A1C36] rounded text-[9px] font-black uppercase tracking-wider border border-brand-100">
+                        <span className="inline-flex items-center px-2 py-0.5 bg-brand-50 text-[#2563EB] rounded text-[9px] font-black uppercase tracking-wider border border-brand-100">
                           Topic Focus
                         </span>
                         <h2 
@@ -3727,7 +3727,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         </div>
                         <div className="p-3 bg-white border border-slate-200/60 rounded-2xl shadow-sm">
                           <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Highlight</p>
-                          <p className="text-[10px] font-black text-[#8A1C36] line-clamp-2 leading-tight" title={selectedBankItem.tagline || "Comprehensive"}>
+                          <p className="text-[10px] font-black text-[#2563EB] line-clamp-2 leading-tight" title={selectedBankItem.tagline || "Comprehensive"}>
                             {selectedBankItem.tagline || "Comprehensive"}
                           </p>
                         </div>
@@ -3739,7 +3739,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       <div className="flex items-center justify-between px-1 shrink-0">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Study Materials</p>
                         {selectedBankItem.pdfLinks && selectedBankItem.pdfLinks.length > 2 && (
-                          <span className="text-[9px] font-bold text-[#8A1C36] animate-pulse">Scroll to view all</span>
+                          <span className="text-[9px] font-bold text-[#2563EB] animate-pulse">Scroll to view all</span>
                         )}
                       </div>
                       
@@ -3815,8 +3815,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
                               <div className="flex items-center gap-3 relative z-10 min-w-0 flex-1 pl-1">
                                 <div className={cn(
-                                  "w-8.5 h-8.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[#8A1C36] shadow-sm shrink-0",
-                                  !isMobile && "group-hover:scale-110 group-hover:bg-[#8A1C36] group-hover:text-white transition-all"
+                                  "w-8.5 h-8.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[#2563EB] shadow-sm shrink-0",
+                                  !isMobile && "group-hover:scale-110 group-hover:bg-[#2563EB] group-hover:text-white transition-all"
                                 )}>
                                   <Download className="w-4 h-4" />
                                 </div>
@@ -3830,7 +3830,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                               
                               <div className={cn(
                                 "w-7 h-7 rounded-full bg-slate-50 border border-slate-100/50 flex items-center justify-center text-slate-400 shrink-0 shadow-2xs group-active:translate-x-0.5 transition-all duration-300",
-                                !isMobile && "group-hover:bg-[#8A1C36] group-hover:text-white group-hover:border-transparent"
+                                !isMobile && "group-hover:bg-[#2563EB] group-hover:text-white group-hover:border-transparent"
                               )}>
                                 {selectedBankItem.isPremium && !hasAccessTo(selectedBankItem) ? (
                                   <Lock className="w-3.5 h-3.5" />
@@ -4310,7 +4310,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         <motion.div 
                           animate={{ y: [0, -4, 0] }}
                           transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-                          className="w-11 h-11 sm:w-14 sm:h-14 bg-gradient-to-tr from-brand-600 via-brand-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-[0_6px_20px_rgba(138,28,54,0.25)] border border-white/10 relative group shrink-0"
+                          className="w-11 h-11 sm:w-14 sm:h-14 bg-gradient-to-tr from-brand-600 via-brand-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-[0_6px_20px_rgba(37,99,235,0.25)] border border-white/10 relative group shrink-0"
                         >
                           <Award className="text-white w-5.5 h-5.5 sm:w-7 sm:h-7 filter drop-shadow-[0_2px_6px_rgba(255,255,255,0.2)]" />
                           <div className="absolute inset-0 border border-brand-400/25 rounded-2xl animate-ping opacity-25 pointer-events-none" />
@@ -4382,7 +4382,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
                           {/* CTA Button */}
                           <Button 
-                            className="w-full h-11 sm:h-12 rounded-xl text-sm sm:text-base font-black bg-gradient-to-r from-brand-600 via-brand-500 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white shadow-[0_6px_20px_rgba(138,28,54,0.25)] hover:shadow-[0_12px_35px_rgba(138,28,54,0.4)] group/btn relative overflow-hidden transition-all duration-300 active:scale-[0.98] border border-white/10"
+                            className="w-full h-11 sm:h-12 rounded-xl text-sm sm:text-base font-black bg-gradient-to-r from-brand-600 via-brand-500 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white shadow-[0_6px_20px_rgba(37,99,235,0.25)] hover:shadow-[0_12px_35px_rgba(37,99,235,0.4)] group/btn relative overflow-hidden transition-all duration-300 active:scale-[0.98] border border-white/10"
                             onClick={async () => {
                             try {
                               const res = await loadRazorpay();
@@ -4553,7 +4553,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           <motion.div 
                             animate={{ rotate: 360 }}
                             transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
-                            className="absolute inset-0 border-4 border-t-brand-500 border-r-indigo-500 border-b-transparent border-l-transparent rounded-full shadow-[0_0_15px_rgba(138,28,54,0.4)]"
+                            className="absolute inset-0 border-4 border-t-brand-500 border-r-indigo-500 border-b-transparent border-l-transparent rounded-full shadow-[0_0_15px_rgba(37,99,235,0.4)]"
                           />
                           <Lock className="w-8 h-8 text-slate-400 animate-bounce" />
                         </div>
@@ -6137,7 +6137,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         <div className="flex flex-col space-y-5 sm:space-y-7">
           {/* Controls Bar */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-            <div className="border border-slate-200/80 sm:border-2 sm:border-slate-900 bg-slate-50/50 sm:bg-white p-1 rounded-2xl flex gap-1.5 w-full sm:w-auto shrink-0 shadow-none sm:shadow-[4px_4px_0px_rgba(138,28,54,0.15)] relative">
+            <div className="border border-slate-200/80 sm:border-2 sm:border-slate-900 bg-slate-50/50 sm:bg-white p-1 rounded-2xl flex gap-1.5 w-full sm:w-auto shrink-0 shadow-none sm:shadow-[4px_4px_0px_rgba(37,99,235,0.15)] relative">
               {(['upcoming', 'popular'] as const).map((tab) => {
                 const isTabActive = examSearchQuery 
                   ? filteredExams.some(e => e.category === tab) 
@@ -6162,7 +6162,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     {isTabActive && (
                       <motion.div
                         layoutId="activeExamTabBg"
-                        className="absolute inset-0 bg-[#8A1C36] rounded-xl shadow-[1px_2px_4px_rgba(138,28,54,0.2)] sm:shadow-[2px_2px_0px_#0f172a] z-0"
+                        className="absolute inset-0 bg-[#2563EB] rounded-xl shadow-[1px_2px_4px_rgba(37,99,235,0.2)] sm:shadow-[2px_2px_0px_#0f172a] z-0"
                         transition={{ type: "spring", stiffness: 380, damping: 30 }}
                       />
                     )}
@@ -6183,7 +6183,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   setExamSearchQuery(val);
                   sessionStorage.setItem('oep_exam_search_query', val);
                 }}
-                className="pl-10 sm:pl-14 pr-12 py-2.5 sm:py-3.5 rounded-2xl font-bold text-sm sm:text-base w-full border border-slate-200 bg-white/95 sm:border-2 sm:border-slate-900 shadow-sm sm:shadow-[4px_4px_0px_rgba(138,28,54,0.15)] focus:border-brand-500/80 sm:focus:border-slate-900 focus:ring-2 focus:ring-brand-500/10 sm:focus:ring-0 focus:shadow-none sm:focus:shadow-[6px_6px_0px_#8A1C36] focus:outline-none transition-all duration-200"
+                className="pl-10 sm:pl-14 pr-12 py-2.5 sm:py-3.5 rounded-2xl font-bold text-sm sm:text-base w-full border border-slate-200 bg-white/95 sm:border-2 sm:border-slate-900 shadow-sm sm:shadow-[4px_4px_0px_rgba(37,99,235,0.15)] focus:border-brand-500/80 sm:focus:border-slate-900 focus:ring-2 focus:ring-brand-500/10 sm:focus:ring-0 focus:shadow-none sm:focus:shadow-[6px_6px_0px_#2563EB] focus:outline-none transition-all duration-200"
               />
               {examSearchQuery && (
                 <button onClick={() => { setExamSearchQuery(''); sessionStorage.removeItem('oep_exam_search_query'); }} className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-900 transition-colors">
@@ -6198,7 +6198,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             <div className="absolute top-0.5 left-0.5 right-0.5 h-8 bg-gradient-to-b from-[#FAF8F5] to-transparent z-20 pointer-events-none rounded-t-3xl hidden sm:block" />
 
             <div 
-              className="max-h-[420px] sm:max-h-[500px] md:max-h-[600px] overflow-y-auto no-scrollbar pb-2 pt-2 px-1 sm:pb-6 sm:pt-6 sm:px-4 rounded-3xl border-0 sm:border-2 border-transparent sm:border-slate-900 bg-transparent sm:bg-[#FAF8F5] shadow-none sm:shadow-[6px_6px_0px_rgba(138,28,54,0.15)]"
+              className="max-h-[420px] sm:max-h-[500px] md:max-h-[600px] overflow-y-auto no-scrollbar pb-2 pt-2 px-1 sm:pb-6 sm:pt-6 sm:px-4 rounded-3xl border-0 sm:border-2 border-transparent sm:border-slate-900 bg-transparent sm:bg-[#FAF8F5] shadow-none sm:shadow-[6px_6px_0px_rgba(37,99,235,0.15)]"
               style={{ scrollbarGutter: 'stable' }}
               onWheel={(e) => {
                 const el = e.currentTarget;
@@ -6221,7 +6221,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     Array.from({ length: 6 }).map((_, i) => (
                       <motion.div
                         key={`skeleton-${i}`}
-                        className="h-28 sm:h-40 md:h-56 rounded-2xl border-2 border-slate-900 bg-white animate-pulse shadow-[4px_4px_0px_rgba(138,28,54,0.1)]"
+                        className="h-28 sm:h-40 md:h-56 rounded-2xl border-2 border-slate-900 bg-white animate-pulse shadow-[4px_4px_0px_rgba(37,99,235,0.1)]"
                       />
                     ))
                   ) : filteredExams.length === 0 ? (
@@ -6229,9 +6229,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       key="empty-exams"
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="col-span-2 sm:col-span-3 lg:col-span-4 flex flex-col items-center justify-center py-12 text-center gap-3 bg-white border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_rgba(138,28,54,0.15)]"
+                      className="col-span-2 sm:col-span-3 lg:col-span-4 flex flex-col items-center justify-center py-12 text-center gap-3 bg-white border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_rgba(37,99,235,0.15)]"
                     >
-                      <div className="w-14 h-14 rounded-2xl border-2 border-slate-900 bg-[#FAF8F5] flex items-center justify-center text-3xl shadow-[2px_2px_0px_#8A1C36]">📚</div>
+                      <div className="w-14 h-14 rounded-2xl border-2 border-slate-900 bg-[#FAF8F5] flex items-center justify-center text-3xl shadow-[2px_2px_0px_#2563EB]">📚</div>
                       <p className="font-serif font-bold text-slate-900 text-lg">
                         {examSearchQuery ? `No results for "${examSearchQuery}"` : `No ${activeTab} exams yet`}
                       </p>
@@ -6241,7 +6241,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       {!examSearchQuery && activeTab === 'upcoming' && (
                         <button 
                           onClick={() => setActiveTab('popular')} 
-                          className="mt-1 px-5 py-2 text-sm font-extrabold text-white bg-[#8A1C36] hover:bg-[#76142c] border-2 border-slate-900 rounded-xl transition-all duration-200 shadow-[2px_2px_0px_#0f172a] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_#0f172a] cursor-pointer"
+                          className="mt-1 px-5 py-2 text-sm font-extrabold text-white bg-[#2563EB] hover:bg-[#1d4ed8] border-2 border-slate-900 rounded-xl transition-all duration-200 shadow-[2px_2px_0px_#0f172a] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_#0f172a] cursor-pointer"
                         >
                           View Popular Exams
                         </button>
@@ -6293,7 +6293,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                             // Sleek Premium Mobile Row Item
                             <div className="p-3.5 bg-white border border-slate-100/90 rounded-2xl flex flex-row items-center justify-between gap-3.5 relative shadow-[0_4px_16px_rgba(0,0,0,0.035)] active:scale-[0.98] active:border-brand-300 transition-all duration-300">
                               {/* Soft brand left indicator */}
-                              <div className="absolute left-0 top-3.5 bottom-3.5 w-1 bg-gradient-to-b from-[#8A1C36] to-brand-700 rounded-r-md opacity-80" />
+                              <div className="absolute left-0 top-3.5 bottom-3.5 w-1 bg-gradient-to-b from-[#2563EB] to-brand-700 rounded-r-md opacity-80" />
                               
                               {/* Left Content (Icon & Text) */}
                               <div className="flex items-center gap-3.5 min-w-0 flex-1 pl-1.5">
@@ -6324,14 +6324,14 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                             </div>
                           ) : (
                             // Desktop Card
-                            <div className="p-3 sm:p-5 md:p-6 h-full bg-white border sm:border-2 border-slate-900 rounded-2xl sm:rounded-3xl flex flex-col items-center text-center justify-center space-y-2 sm:space-y-4 md:space-y-5 relative shadow-[0_4px_16px_rgba(0,0,0,0.035)] sm:shadow-[4px_4px_0px_#8A1C36] md:group-hover/card:shadow-[8px_8px_0px_#8A1C36] md:group-hover/card:-translate-y-1 md:group-hover/card:-translate-x-1 transition-all duration-300 active:scale-[0.98] sm:active:scale-100 active:bg-slate-50/70 sm:active:bg-white">
+                            <div className="p-3 sm:p-5 md:p-6 h-full bg-white border sm:border-2 border-slate-900 rounded-2xl sm:rounded-3xl flex flex-col items-center text-center justify-center space-y-2 sm:space-y-4 md:space-y-5 relative shadow-[0_4px_16px_rgba(0,0,0,0.035)] sm:shadow-[4px_4px_0px_#2563EB] md:group-hover/card:shadow-[8px_8px_0px_#2563EB] md:group-hover/card:-translate-y-1 md:group-hover/card:-translate-x-1 transition-all duration-300 active:scale-[0.98] sm:active:scale-100 active:bg-slate-50/70 sm:active:bg-white">
                               {/* Corner arrow - structured circle */}
-                              <div className="absolute top-2 right-2 sm:top-4 sm:right-4 md:top-5 md:right-5 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full border-2 border-slate-900 bg-white flex items-center justify-center transition-all duration-300 shadow-[2px_2px_0px_#8A1C36] group-hover/card:bg-[#8A1C36] group-hover/card:shadow-none group-hover/card:translate-x-0.5 group-hover/card:translate-y-0.5">
+                              <div className="absolute top-2 right-2 sm:top-4 sm:right-4 md:top-5 md:right-5 w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full border-2 border-slate-900 bg-white flex items-center justify-center transition-all duration-300 shadow-[2px_2px_0px_#2563EB] group-hover/card:bg-[#2563EB] group-hover/card:shadow-none group-hover/card:translate-x-0.5 group-hover/card:translate-y-0.5">
                                 <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-slate-900 group-hover/card:text-white transition-colors" />
                               </div>
  
                               {/* Icon Container */}
-                              <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl border sm:border-2 border-brand-100/20 sm:border-slate-900 bg-brand-50/60 sm:bg-[#FAF8F5] flex justify-center items-center shrink-0 shadow-none sm:shadow-[3px_3px_0px_rgba(138,28,54,0.15)] md:group-hover/card:shadow-[4px_4px_0px_#8A1C36] transition-all duration-300 relative overflow-hidden">
+                              <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl border sm:border-2 border-brand-100/20 sm:border-slate-900 bg-brand-50/60 sm:bg-[#FAF8F5] flex justify-center items-center shrink-0 shadow-none sm:shadow-[3px_3px_0px_rgba(37,99,235,0.15)] md:group-hover/card:shadow-[4px_4px_0px_#2563EB] transition-all duration-300 relative overflow-hidden">
                                 {(exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/'))) ? (
                                   <img src={getDirectImageUrl(exam.icon)} alt={`Odisha Exam Prep Icon: ${exam.name}`} className="w-8/12 h-8/12 object-contain relative z-10" referrerPolicy="no-referrer" />
                                 ) : (
@@ -6341,7 +6341,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                               
                               <div className="flex-1 w-full flex flex-col justify-start">
                                 <h3 
-                                  className="text-[12px] sm:text-base md:text-lg lg:text-xl font-serif font-black text-slate-900 md:group-hover/card:text-[#8A1C36] transition-all duration-300 leading-snug tracking-tight uppercase"
+                                  className="text-[12px] sm:text-base md:text-lg lg:text-xl font-serif font-black text-slate-900 md:group-hover/card:text-[#2563EB] transition-all duration-300 leading-snug tracking-tight uppercase"
                                   style={{
                                     display: '-webkit-box',
                                     WebkitLineClamp: 2,
@@ -6436,8 +6436,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   className={cn(
                     "w-full flex items-center justify-between gap-2 pl-3.5 pr-3 py-2.5 rounded-xl border text-xs font-bold tracking-wide transition-all duration-200 cursor-pointer outline-none",
                     bankSortOpen
-                      ? "bg-[#8A1C36]/5 border-[#8A1C36]/40 text-[#8A1C36] shadow-md shadow-[#8A1C36]/10"
-                      : "bg-white border-slate-200 text-slate-700 hover:border-[#8A1C36]/30 hover:bg-[#8A1C36]/5 hover:text-[#8A1C36] shadow-sm"
+                      ? "bg-[#2563EB]/5 border-[#2563EB]/40 text-[#2563EB] shadow-md shadow-[#2563EB]/10"
+                      : "bg-white border-slate-200 text-slate-700 hover:border-[#2563EB]/30 hover:bg-[#2563EB]/5 hover:text-[#2563EB] shadow-sm"
                   )}
                 >
                   <span className="flex items-center gap-1.5">
@@ -6476,12 +6476,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                               className={cn(
                                 "w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all duration-150 cursor-pointer flex items-center gap-2.5",
                                 bankSortBy === opt.value
-                                  ? "bg-gradient-to-r from-[#8A1C36]/10 to-[#8A1C36]/5 text-[#8A1C36]"
+                                  ? "bg-gradient-to-r from-[#2563EB]/10 to-[#2563EB]/5 text-[#2563EB]"
                                   : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                               )}
                             >
                               {bankSortBy === opt.value && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#8A1C36] shrink-0" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB] shrink-0" />
                               )}
                               {bankSortBy !== opt.value && (
                                 <span className="w-1.5 h-1.5 rounded-full bg-slate-200 shrink-0" />
@@ -6549,7 +6549,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       "p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300",
                       isLocked 
                         ? "shadow-[0_4px_16px_-4px_rgba(245,158,11,0.06),0_1px_2px_rgba(245,158,11,0.02)] active:border-amber-300"
-                        : "shadow-[0_4px_16px_-4px_rgba(138,28,54,0.06),0_1px_2px_rgba(138,28,54,0.02)] active:border-brand-300"
+                        : "shadow-[0_4px_16px_-4px_rgba(37,99,235,0.06),0_1px_2px_rgba(37,99,235,0.02)] active:border-brand-300"
                     )}
                   >
                     <div className={cn(
@@ -6657,7 +6657,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       {isLocked && (
                         <div className={cn("absolute inset-0 bg-slate-950/20 flex items-center justify-center", !isMobile && "backdrop-blur-[2px]")}>
                           <div className="w-12 h-12 bg-white/95 rounded-2xl flex items-center justify-center shadow-lg border border-slate-200/50">
-                             <Lock className="w-5 h-5 text-[#8A1C36]" />
+                             <Lock className="w-5 h-5 text-[#2563EB]" />
                           </div>
                         </div>
                       )}
@@ -6671,8 +6671,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         </h3>
                         {isLocked ? (
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <Lock className="w-3.5 h-3.5 text-[#8A1C36]" />
-                            <span className="px-2 py-0.5 bg-rose-50 text-[#8A1C36] text-[8px] font-black uppercase tracking-wider rounded border border-rose-200/40">
+                            <Lock className="w-3.5 h-3.5 text-[#2563EB]" />
+                            <span className="px-2 py-0.5 bg-rose-50 text-[#2563EB] text-[8px] font-black uppercase tracking-wider rounded border border-rose-200/40">
                               Premium
                             </span>
                           </div>
@@ -6949,7 +6949,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 {isMobile ? (
                   <div
                     onClick={() => setSelectedBankType(item.id)}
-                    className="p-4 bg-white border border-slate-100 hover:border-brand-200/50 shadow-[0_4px_16px_-4px_rgba(138,28,54,0.03),0_1px_2px_rgba(138,28,54,0.01)] active:scale-[0.98] active:border-brand-300 active:shadow-md rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300"
+                    className="p-4 bg-white border border-slate-100 hover:border-brand-200/50 shadow-[0_4px_16px_-4px_rgba(37,99,235,0.03),0_1px_2px_rgba(37,99,235,0.01)] active:scale-[0.98] active:border-brand-300 active:shadow-md rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-brand-500/0 via-brand-500/[0.01] to-brand-500/0 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none" />
                     <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-gradient-to-b from-brand-500 to-brand-650 rounded-r-sm opacity-90" />
@@ -8293,7 +8293,7 @@ const ExamDetailPage = () => {
         {/* Announcement Bar */}
         <div className="ticker-bar relative z-50 bg-[#0F172A] border-b-2 border-slate-900 overflow-hidden">
           <div className="max-w-7xl mx-auto flex items-center h-10 relative">
-            <div className="flex items-center gap-2 px-4 h-full bg-[#8A1C36] text-white border-r-2 border-slate-900 shrink-0 relative z-20 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">
+            <div className="flex items-center gap-2 px-4 h-full bg-[#2563EB] text-white border-r-2 border-slate-900 shrink-0 relative z-20 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">
               <span className="flex h-2 w-2 rounded-full bg-white animate-pulse" />
               <span className="text-[10px] font-black uppercase tracking-widest leading-none">Exam Updates</span>
             </div>
@@ -8302,13 +8302,13 @@ const ExamDetailPage = () => {
               <div className="flex items-center gap-12 animate-marquee-lr whitespace-nowrap px-6">
                 {announcements.map((text, i) => (
                   <div key={i} className="flex items-center gap-2 text-[10px] font-bold text-slate-300 uppercase tracking-tight">
-                    <span className="text-[#8A1C36] font-black">•</span>
+                    <span className="text-[#2563EB] font-black">•</span>
                     {text}
                   </div>
                 ))}
                 {announcements.map((text, i) => (
                   <div key={`dup-${i}`} className="flex items-center gap-2 text-[10px] font-bold text-slate-300 uppercase tracking-tight">
-                    <span className="text-[#8A1C36] font-black">•</span>
+                    <span className="text-[#2563EB] font-black">•</span>
                     {text}
                   </div>
                 ))}
