@@ -1337,16 +1337,77 @@ export function splitTextIntoBlocks(text: string): TextBlock[] {
 }
 
 export const TableRenderer: React.FC<{ tableData: TableData; isOption?: boolean }> = ({ tableData, isOption }) => {
+  const colWidths = React.useMemo(() => {
+    const numCols = tableData.headers.length;
+    if (numCols === 0) return [];
+
+    // Calculate maximum character length of content in each column
+    const colMaxLens = tableData.headers.map((h, i) => {
+      const headerLen = (h || '').trim().length;
+      const rowLens = tableData.rows.map(row => (row[i] || '').trim().length);
+      return Math.max(headerLen, ...rowLens, 5); // Enforce minimum of 5 characters
+    });
+
+    const totalLen = colMaxLens.reduce((sum, len) => sum + len, 0);
+    const pcts = colMaxLens.map(len => (len / totalLen) * 100);
+
+    // Determine minimum column percentage based on column count to prevent squishing
+    let minPct = 12;
+    if (numCols === 2) {
+      minPct = 30; // 30% - 70% range for 2-column tables to keep them balanced
+    } else if (numCols === 3) {
+      minPct = 20; // 20% - 60% range
+    }
+
+    // Apply minimum constraint and calculate overflow
+    let overflow = 0;
+    const clampedPcts = pcts.map(pct => {
+      if (pct < minPct) {
+        overflow += (minPct - pct);
+        return minPct;
+      }
+      return pct;
+    });
+
+    // Calculate sum of columns that were not clamped below minPct
+    const underconstrainedSum = pcts.reduce((sum, pct, idx) => {
+      return sum + (pct >= minPct ? pct : 0);
+    }, 0);
+
+    // Distribute the overflow difference proportionally among non-clamped columns
+    if (overflow > 0 && underconstrainedSum > 0) {
+      const adjustedPcts = clampedPcts.map((pct, idx) => {
+        if (pcts[idx] >= minPct) {
+          const share = (pcts[idx] / underconstrainedSum) * overflow;
+          return Math.max(minPct, pct - share);
+        }
+        return pct;
+      });
+
+      const finalSum = adjustedPcts.reduce((sum, p) => sum + p, 0);
+      return adjustedPcts.map(p => (p / finalSum) * 100);
+    }
+
+    return clampedPcts;
+  }, [tableData]);
+
   return (
     <div className="overflow-x-auto my-4 rounded-2xl border border-[#2563EB]/15 shadow-sm max-w-full">
-      <table className="min-w-full border-collapse text-left text-slate-800 text-sm md:text-[15px]">
+      <table className="w-full table-fixed border-collapse text-left text-slate-800 text-sm md:text-[15px]">
+        {colWidths.length > 0 && (
+          <colgroup>
+            {colWidths.map((width, idx) => (
+              <col key={idx} style={{ width: `${width}%` }} />
+            ))}
+          </colgroup>
+        )}
         <thead>
           <tr className="bg-[#2563EB] text-white border-b border-[#2563EB]">
             {tableData.headers.map((h, i) => (
               <th 
                 key={i} 
                 className={cn(
-                  "px-6 py-3 font-extrabold border-r border-white/20 last:border-r-0 text-xs md:text-sm uppercase tracking-wider",
+                  "px-3 py-2.5 sm:px-4 md:px-6 md:py-3 font-extrabold border-r border-white/20 last:border-r-0 text-xs md:text-sm uppercase tracking-wider break-words",
                   tableData.alignments[i] === 'center' && 'text-center',
                   tableData.alignments[i] === 'right' && 'text-right'
                 )}
@@ -1363,7 +1424,7 @@ export const TableRenderer: React.FC<{ tableData: TableData; isOption?: boolean 
                 <td 
                   key={cIdx} 
                   className={cn(
-                    "px-6 py-3.5 border-r border-slate-200 last:border-r-0 font-medium text-slate-700",
+                    "px-3 py-3 sm:px-4 md:px-6 md:py-3.5 border-r border-slate-200 last:border-r-0 font-medium text-slate-700 break-words",
                     tableData.alignments[cIdx] === 'center' && 'text-center',
                     tableData.alignments[cIdx] === 'right' && 'text-right'
                   )}
