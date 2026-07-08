@@ -7688,7 +7688,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   <div
                     onClick={() => handleStartTest({ ...test, isPremium, price })}
                     className={cn(
-                      "p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300",
+                      "px-3 py-2.5 sm:p-4 bg-white border border-slate-100 rounded-xl sm:rounded-2xl flex items-center justify-between gap-3 cursor-pointer group relative overflow-hidden transition-all duration-300",
                       isLocked 
                         ? "shadow-[0_4px_16px_-4px_rgba(245,158,11,0.03),0_1px_2px_rgba(245,158,11,0.01)] active:border-amber-300"
                         : isPremiumUnlocked
@@ -7713,21 +7713,21 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           : "bg-gradient-to-b from-indigo-500 to-purple-600"
                     )} />
 
-                    <div className="flex items-center gap-3.5 min-w-0 flex-1 pl-1">
+                    <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1 pl-1">
                       <div className={cn(
-                        "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border relative",
+                        "w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border relative",
                         isLocked 
                           ? "bg-amber-50/60 border-amber-100/30 text-amber-600" 
                           : isPremiumUnlocked 
                             ? "bg-emerald-50/60 border-emerald-100/30 text-emerald-600" 
                             : "bg-indigo-50/60 border-indigo-100/30 text-indigo-650"
                       )}>
-                        <Target className="w-5 h-5 relative z-10" />
+                        <Target className="w-4 h-4 sm:w-5 sm:h-5 relative z-10" />
                       </div>
                       
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <h4 className="font-extrabold text-[13.5px] text-slate-900 tracking-tight leading-snug line-clamp-2 uppercase pr-2">{test.title}</h4>
+                          <h4 className="font-extrabold text-[12.5px] sm:text-[13.5px] text-slate-900 tracking-tight leading-snug line-clamp-1 sm:line-clamp-2 uppercase pr-1">{test.title}</h4>
                           {isPremium && (
                             isLocked ? (
                               <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 text-[8.5px] font-black rounded border border-amber-100 uppercase tracking-wider shrink-0">Premium</span>
@@ -7737,23 +7737,23 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           )}
                         </div>
                         
-                        <div className="flex items-center gap-2 mt-2 text-[10px] font-extrabold text-slate-500 flex-wrap">
-                          <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100/60"><Clock className="w-3 h-3 text-slate-400" /> {test.durationMinutes} Mins</span>
-                          <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100/60"><Award className="w-3 h-3 text-slate-400" /> {test.totalMarks} Marks</span>
-                          <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100/60"><FileText className="w-3 h-3 text-slate-400" /> {test.questions?.length || test._questionCount || 0} Qs</span>
+                        <div className="flex items-center gap-1.5 mt-1.5 sm:mt-2 text-[9.5px] sm:text-[10px] font-extrabold text-slate-500 flex-nowrap overflow-hidden">
+                          <span className="flex items-center gap-0.5 bg-slate-50 px-1.5 py-0.5 rounded-md border border-slate-100/60 shrink-0"><Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-400" /> {test.durationMinutes}m</span>
+                          <span className="flex items-center gap-0.5 bg-slate-50 px-1.5 py-0.5 rounded-md border border-slate-100/60 shrink-0"><Award className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-400" /> {test.totalMarks}M</span>
+                          <span className="flex items-center gap-0.5 bg-slate-50 px-1.5 py-0.5 rounded-md border border-slate-100/60 shrink-0"><FileText className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-400" /> {test.questions?.length || test._questionCount || 0}Q</span>
                         </div>
                       </div>
                     </div>
 
                     <div className={cn(
-                      "w-8 h-8 rounded-full border flex items-center justify-center shrink-0 shadow-2xs group-active:translate-x-0.5 transition-all duration-300",
+                      "w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center shrink-0 shadow-2xs group-active:translate-x-0.5 transition-all duration-300",
                       isLocked
                         ? "bg-amber-50 border-amber-100 text-amber-600 group-active:bg-amber-500 group-active:text-white"
                         : isPremiumUnlocked
                           ? "bg-emerald-50 border-emerald-100 text-emerald-600 group-active:bg-emerald-500 group-active:text-white"
                           : "bg-slate-50 border-slate-100 text-slate-400 group-active:bg-brand-50 group-active:border-brand-100 group-active:text-brand-600"
                     )}>
-                      {isLocked ? <Lock className="w-3.5 h-3.5" /> : <ChevronRight className="w-4 h-4" />}
+                      {isLocked ? <Lock className="w-3 h-3" /> : <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                     </div>
                   </div>
                 ) : (
@@ -7949,8 +7949,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             );
 
           return (
-            <div className="space-y-8">
-              <div className="flex items-center gap-2.5 sm:gap-4 border-b border-slate-100 pb-4 sm:pb-6">
+            <div className="space-y-5 sm:space-y-8">
+              <div className="flex items-center gap-2 sm:gap-4 border-b border-slate-100 pb-3 sm:pb-6">
                 <Button variant="ghost" onClick={() => {
                   setSelectedMockCategory(null);
                   scrollToElement('test-series', { block: 'start', delay: 50 });
@@ -7958,7 +7958,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 rotate-180 text-brand-600" />
                 </Button>
                 <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-                  <h3 className="text-xl sm:text-3xl font-black text-slate-900 capitalize truncate flex items-center gap-2">
+                  <h3 className="text-lg sm:text-3xl font-black text-slate-900 capitalize truncate flex items-center gap-2">
                     {selectedMockCategory.replace('-', ' ')} Tests
                   </h3>
                   {selectedMockCategory === 'sectional' && (
@@ -7993,11 +7993,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                   }, {} as Record<string, any[]>);
 
                   return (
-                    <div className="space-y-12">
+                    <div className="space-y-5 sm:space-y-10">
                       {Object.entries(groupedBySubject).map(([subject, tests]) => (
-                        <div key={subject} className="space-y-6">
-                          <h4 className="text-xl font-black text-brand-700 px-5 py-2.5 bg-brand-50/80 rounded-xl inline-block border border-brand-100/50 shadow-sm">{subject}</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div key={subject} className="space-y-2.5 sm:space-y-5">
+                          <h4 className="text-[13px] sm:text-xl font-black text-brand-700 px-3 py-1.5 sm:px-5 sm:py-2.5 bg-brand-50/80 rounded-lg sm:rounded-xl inline-flex items-center gap-1.5 border border-brand-100/50 shadow-sm">{subject}</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-6">
                             {(tests as any[]).map(test => renderMockTestCard(test))}
                           </div>
                         </div>
