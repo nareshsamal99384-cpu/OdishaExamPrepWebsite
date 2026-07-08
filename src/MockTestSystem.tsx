@@ -90,13 +90,27 @@ const isAsciiDiagram = (para: string): boolean => {
   return lineIsDiagram(para);
 };
 
+/** True when text contains a markdown pipe table */
+const hasMarkdownTable = (text: string): boolean => {
+  if (!text) return false;
+  // A markdown table must have at least one line with | ... | pattern
+  // AND a separator row like |---|---|
+  const lines = text.split('\n');
+  const pipeLines = lines.filter(l => l.trim().startsWith('|') && l.trim().endsWith('|'));
+  if (pipeLines.length < 2) return false;
+  // Check for at least one separator row (|---|---| pattern)
+  return pipeLines.some(l => /^\|[-:\s|]+\|$/.test(l.trim()));
+};
+
 /** True when a question needs the full-width stacked layout */
 const isMathHeavyQuestion = (text: string): boolean => {
   if (!text) return false;
   const blocks = countMathBlocks(text);
   // Also trigger stacked layout if question contains a diagram
   const hasDiagram = text.split('\n\n').some(p => isAsciiDiagram(p));
-  return blocks >= 2 || text.length > 320 || hasDiagram;
+  // Tables need the stacked scrollable layout too — without it, options are clipped
+  const table = hasMarkdownTable(text);
+  return blocks >= 2 || text.length > 320 || hasDiagram || table;
 };
 
 interface Question {
