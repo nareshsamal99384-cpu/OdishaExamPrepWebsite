@@ -1,6 +1,7 @@
 import React, { Component, ReactNode } from 'react';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
+import DOMPurify from 'dompurify';
 import { cn } from '../lib/utils';
 import UniversalMathDiagramEngine from './UniversalMathDiagramEngine';
 
@@ -208,6 +209,16 @@ const InlineMath: React.FC<{
 // ─────────────────────────────────────────────────────────────
 
 const PlainText: React.FC<{ text: string; index: number }> = ({ text, index }) => {
+  // Safe HTML rendering for basic tags like <br>, <b>, <strong>, <i>, <u>, <sup>, <sub>
+  const hasHtml = /<[a-z/][\s\S]*?>/i.test(text);
+  if (hasHtml) {
+    const clean = DOMPurify.sanitize(text, {
+      ALLOWED_TAGS: ['br', 'b', 'strong', 'i', 'em', 'u', 'span', 'sub', 'sup', 'code', 'p'],
+      ALLOWED_ATTR: ['class', 'style']
+    });
+    return <span key={index} dangerouslySetInnerHTML={{ __html: clean }} />;
+  }
+
   if (!text.includes('\n')) return <span key={index}>{text}</span>;
   return (
     <span key={index}>
@@ -306,23 +317,37 @@ export const repairJSStringLatex = (str: string): string => {
 
 export const repairLatexBackslashes = (str: string): string => {
   // Pre-repair raw control characters introduced by JSON parser escaping bugs
+  // We use suffix checks so we don't destroy formatting newlines (\x0a) and tabs (\x09) in the JSON
   let preCleaned = str
     .replace(/\x0c(rac|orall|rown|lat|otnote)(?![a-zA-Z])/g, '\\\\f$1') // Form Feed (\f) -> \\f
     .replace(/\x08(eta|ar|ox|ullet|igcap|igcup|igsqcup|iguplus|igodot|mod|owtie)(?![a-zA-Z])/g, '\\\\b$1') // Backspace (\b) -> \\b
     .replace(/\x09(heta|imes|riangle|an|tilde|ext|tfrac|tau|o|op|hickspace|iny|today|binom|extbf|extit|exttt|extsf)(?![a-zA-Z])/g, '\\\\t$1') // Tab (\t) -> \\t
     .replace(/\x0d(ight|ho|angle|ightarrow|ightharpoonup|ightharpoondown|brace|floor|ceil)(?![a-zA-Z])/g, '\\\\r$1') // Carriage Return (\r) -> \\r
-    .replace(/\x0a(eq|earrow|abla|eg|ode|u|otin|olimits|ormalsize|obreak|cong|parallel|exists|geq|leq|sub|sube|supe|sup|mid|succ|prec|sim|simeq|um)(?![a-zA-Z])/g, '\\\\n$1'); // Newline (\n) -> \\n
+    .replace(/\x0a(eq|earrow|abla|eg|ode)(?![a-zA-Z])/g, '\\\\n$1'); // Newline (\n) -> \\n
 
-  // Escape backslash followed by a sequence of letters (length >= 2, or length 1 not in bfnrtu)
-  return preCleaned.replace(/\\\\|\\([a-zA-Z]+)/g, (match, p1) => {
-    if (match === '\\\\') {
-      return '\\\\';
-    }
-    if (p1.length === 1 && 'bfnrtu'.includes(p1)) {
-      return match;
-    }
-    return '\\\\' + p1;
+  // 1. Escape backslash if followed by a character that is NOT a valid JSON escape char, consuming double backslashes first
+  preCleaned = preCleaned.replace(/\\\\|\\([^bfnrtu"\\/])/g, (match, p1) => {
+    return match === '\\\\' ? '\\\\' : '\\\\' + p1;
   });
+
+  // 2. Escape \u if NOT followed by 4 hex digits (e.g. \underline)
+  preCleaned = preCleaned.replace(/\\\\|\\u(?![0-9a-fA-F]{4})/g, (match) => {
+    return match === '\\\\' ? '\\\\' : '\\\\u';
+  });
+
+  // 3. Escape known LaTeX commands starting with b, f, n, r, t
+  const latexCommands = 'theta|imes|riangle|an|tilde|text|tfrac|tau|to|top|thickspace|tiny|today|tbinom|textbf|textit|texttt|textsf|frac|forall|frown|flat|footnote|beta|bar|box|bullet|bigcap|bigcup|bigsqcup|biguplus|bigodot|bmod|bowtie|right|rho|rangle|rightarrow|Rightarrow|rightharpoonup|rightharpoondown|rbrace|rfloor|rceil|neq|nearrow|nabla|neg|node';
+  const latexRegex = new RegExp(`\\\\\\\\|\\\\(${latexCommands})(?![a-zA-Z])`, 'g');
+  preCleaned = preCleaned.replace(latexRegex, (match, p1) => {
+    return match === '\\\\' ? '\\\\' : '\\\\' + p1;
+  });
+
+  // 4. Escape \ne (if not followed by other letters)
+  preCleaned = preCleaned.replace(/\\\\|\\ne(?![a-zA-Z])/g, (match) => {
+    return match === '\\\\' ? '\\\\' : '\\\\ne';
+  });
+
+  return preCleaned;
 };
 
 export const cleanJsonString = (str: string): string => {
@@ -1163,28 +1188,219 @@ function renderTextAndDiagramsWithAscii(text: string, isOption: boolean, keyPref
 }
 
 // ─────────────────────────────────────────────────────────────
+// Markdown Table Parser and Renderer
+// ─────────────────────────────────────────────────────────────
+
+export interface TableData {
+  headers: string[];
+  alignments: ('left' | 'center' | 'right')[];
+  rows: string[][];
+}
+
+export function parseMarkdownTable(text: string): TableData | null {
+  const lines = text.split('\n').map(l => l.trim());
+  if (lines.length < 2) return null;
+
+  // Find a line that looks like a separator line: |---|---| or |:---:|---:|
+  const separatorIndex = lines.findIndex((line, idx) => {
+    if (idx === 0) return false;
+    const cleaned = line.replace(/\s+/g, '');
+    return /^\|?(:?-+:?\|?)+$/.test(cleaned) && cleaned.includes('-');
+  });
+
+  if (separatorIndex === -1) return null;
+
+  const headerLine = lines[separatorIndex - 1];
+  if (!headerLine.includes('|')) return null;
+
+  const splitRow = (rowStr: string): string[] => {
+    let str = rowStr.trim();
+    if (str.startsWith('|')) str = str.slice(1);
+    if (str.endsWith('|')) str = str.slice(0, -1);
+    
+    const cells: string[] = [];
+    let currentCell = '';
+    for (let i = 0; i < str.length; i++) {
+      if (str[i] === '\\' && str[i + 1] === '|') {
+        currentCell += '|';
+        i++;
+      } else if (str[i] === '|') {
+        cells.push(currentCell.trim());
+        currentCell = '';
+      } else {
+        currentCell += str[i];
+      }
+    }
+    cells.push(currentCell.trim());
+    return cells;
+  };
+
+  const headers = splitRow(headerLine);
+  const separatorCells = splitRow(lines[separatorIndex]);
+
+  const alignments = separatorCells.map(cell => {
+    const trimmed = cell.trim();
+    const starts = trimmed.startsWith(':');
+    const ends = trimmed.endsWith(':');
+    if (starts && ends) return 'center';
+    if (ends) return 'right';
+    return 'left';
+  });
+
+  while (alignments.length < headers.length) {
+    alignments.push('left');
+  }
+
+  const rows: string[][] = [];
+  for (let i = separatorIndex + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line) continue;
+    if (!line.includes('|')) {
+      break; // end of table
+    }
+    const cells = splitRow(line);
+    while (cells.length < headers.length) cells.push('');
+    rows.push(cells.slice(0, headers.length));
+  }
+
+  return { headers, alignments, rows };
+}
+
+export interface TextBlock {
+  type: 'text' | 'table';
+  content: string;
+  tableData?: TableData;
+}
+
+export function splitTextIntoBlocks(text: string): TextBlock[] {
+  const lines = text.split('\n');
+  const blocks: TextBlock[] = [];
+  let currentTextLines: string[] = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    const isSeparator = (l: string) => {
+      const cleaned = l.trim().replace(/\s+/g, '');
+      return /^\|?(:?-+:?\|?)+$/.test(cleaned) && cleaned.includes('-');
+    };
+    
+    const looksLikeTableHeader = line.includes('|');
+    const nextLineIsSeparator = i + 1 < lines.length && isSeparator(lines[i + 1]);
+    
+    if (looksLikeTableHeader && nextLineIsSeparator) {
+      if (currentTextLines.length > 0) {
+        blocks.push({
+          type: 'text',
+          content: currentTextLines.join('\n')
+        });
+        currentTextLines = [];
+      }
+      
+      const tableLines = [line, lines[i + 1]];
+      i += 2;
+      
+      while (i < lines.length) {
+        const nextLine = lines[i];
+        if (nextLine.trim() === '' || !nextLine.includes('|')) {
+          i--;
+          break;
+        }
+        tableLines.push(nextLine);
+        i++;
+      }
+      
+      const tableRawText = tableLines.join('\n');
+      const parsedTable = parseMarkdownTable(tableRawText);
+      if (parsedTable) {
+        blocks.push({
+          type: 'table',
+          content: tableRawText,
+          tableData: parsedTable
+        });
+      } else {
+        currentTextLines.push(...tableLines);
+      }
+    } else {
+      currentTextLines.push(line);
+    }
+  }
+  
+  if (currentTextLines.length > 0) {
+    blocks.push({
+      type: 'text',
+      content: currentTextLines.join('\n')
+    });
+  }
+  
+  return blocks;
+}
+
+export const TableRenderer: React.FC<{ tableData: TableData; isOption?: boolean }> = ({ tableData, isOption }) => {
+  return (
+    <div className="overflow-x-auto my-4 rounded-2xl border border-slate-200 shadow-sm max-w-full">
+      <table className="min-w-full border-collapse text-left text-slate-800 text-sm md:text-[15px]">
+        <thead>
+          <tr className="bg-[#00a8b5] text-white border-b border-[#00a8b5]">
+            {tableData.headers.map((h, i) => (
+              <th 
+                key={i} 
+                className={cn(
+                  "px-6 py-3 font-extrabold border-r border-white/20 last:border-r-0 text-xs md:text-sm uppercase tracking-wider",
+                  tableData.alignments[i] === 'center' && 'text-center',
+                  tableData.alignments[i] === 'right' && 'text-right'
+                )}
+              >
+                <MathTextRenderer text={h} isOption={isOption} />
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-200 bg-white">
+          {tableData.rows.map((row, rIdx) => (
+            <tr key={rIdx} className="hover:bg-slate-50/50 transition-colors">
+              {row.map((cell, cIdx) => (
+                <td 
+                  key={cIdx} 
+                  className={cn(
+                    "px-6 py-3.5 border-r border-slate-200 last:border-r-0 font-medium text-slate-700",
+                    tableData.alignments[cIdx] === 'center' && 'text-center',
+                    tableData.alignments[cIdx] === 'right' && 'text-right'
+                  )}
+                >
+                  <MathTextRenderer text={cell} isOption={isOption} />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────
 
-export const MathTextRenderer: React.FC<MathTextRendererProps> = React.memo(({
-  text,
-  isUser = false,
-  className,
-  blockSize = 'md',
-  isOption = false,
-}) => {
-  if (!text) return null;
-
-  const repairedText = repairJSStringLatex(text);
+/**
+ * Internal renderer for a single text-only block (no tables).
+ * Extracts math, ASCII diagrams, and plain text from a single prose string.
+ */
+function renderMathBlock(
+  content: string,
+  isUser: boolean,
+  isOption: boolean,
+  blockSize: 'sm' | 'md' | 'lg',
+  keyPrefix: string
+): React.ReactNode {
+  const repairedText = repairJSStringLatex(content);
   const parts = repairedText.split(MATH_REGEX);
-
   return (
-    <span className={cn('math-text-container break-words', className)}>
+    <React.Fragment key={keyPrefix}>
       {parts.map((part, index) => {
         if (!part) return null;
-
         const classified = classifyPart(part);
-
         if (classified.display === 'block') {
           return (
             <BlockMath
@@ -1196,7 +1412,6 @@ export const MathTextRenderer: React.FC<MathTextRendererProps> = React.memo(({
             />
           );
         }
-
         if (classified.display === 'inline') {
           return (
             <InlineMath
@@ -1208,9 +1423,48 @@ export const MathTextRenderer: React.FC<MathTextRendererProps> = React.memo(({
             />
           );
         }
+        return renderTextAndDiagrams(part, isOption, `${keyPrefix}-text-${index}`);
+      })}
+    </React.Fragment>
+  );
+}
 
-        return renderTextAndDiagrams(part, isOption, `text-${index}`);
+export const MathTextRenderer: React.FC<MathTextRendererProps> = React.memo(({
+  text,
+  isUser = false,
+  className,
+  blockSize = 'md',
+  isOption = false,
+}) => {
+  // Always render the wrapper span to keep hooks consistent;
+  // render nothing inside when text is empty.
+  const rawContent = text || '';
+
+  // Normalize literal escape sequences (e.g. "\\n" stored as two chars in DB)
+  // to their real control character equivalents before block splitting.
+  // This fixes questions where \n was stored literally instead of as a real newline.
+  const content = rawContent
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t')
+    .replace(/\\r/g, '');
+
+  const blocks = content ? splitTextIntoBlocks(content) : [];
+
+  return (
+    <span className={cn('math-text-container break-words', className)}>
+      {blocks.map((block, bIdx) => {
+        if (block.type === 'table' && block.tableData) {
+          return (
+            <TableRenderer
+              key={`table-${bIdx}`}
+              tableData={block.tableData}
+              isOption={isOption}
+            />
+          );
+        }
+        return renderMathBlock(block.content, isUser, isOption, blockSize, `block-${bIdx}`);
       })}
     </span>
   );
 });
+

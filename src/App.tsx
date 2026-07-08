@@ -2135,7 +2135,7 @@ const InteractiveHeroPreview = () => {
 
 // --- Pages ---
 
-const AuthModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+const AuthModal = ({ isOpen, onClose, hideCloseButton = false }: { isOpen: boolean; onClose: () => void; hideCloseButton?: boolean }) => {
   const [authMode, setAuthMode] = useState<'login' | 'signup' | 'forgotPassword' | 'resetPassword'>('login');
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
@@ -2277,7 +2277,7 @@ const AuthModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
             transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
             className="fixed inset-0 bg-slate-950/50 z-[100] backdrop-blur-md"
             style={{ willChange: 'opacity' }}
-            onClick={onClose}
+            onClick={hideCloseButton ? undefined : onClose}
           />
 
           {/* Modal panel */}
@@ -2306,9 +2306,11 @@ const AuthModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
                 {authMode === 'forgotPassword' && 'Reset Password'}
                 {authMode === 'resetPassword' && 'Create New Password'}
               </h3>
-              <button onClick={onClose} className="p-2 -mr-2 bg-slate-100/50 hover:bg-slate-200/50 rounded-full transition-colors backdrop-blur-md border-none cursor-pointer">
-                <X className="w-6 h-6 text-slate-400" />
-              </button>
+              {!hideCloseButton && (
+                <button onClick={onClose} className="p-2 -mr-2 bg-slate-100/50 hover:bg-slate-200/50 rounded-full transition-colors backdrop-blur-md border-none cursor-pointer">
+                  <X className="w-6 h-6 text-slate-400" />
+                </button>
+              )}
             </div>
 
             {authMessage && (
@@ -8508,6 +8510,26 @@ function AppContent() {
     registerServiceWorker().catch(console.error);
   }, []);
 
+  // Listen for navigation messages from the service worker (e.g. on push notification click)
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'NAVIGATE' && event.data.url) {
+        try {
+          const url = new URL(event.data.url);
+          const path = url.pathname + url.search + url.hash;
+          navigate(path);
+        } catch (err) {
+          console.error('[SW Message] Failed to parse URL:', err);
+        }
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('message', handleMessage);
+    return () => navigator.serviceWorker.removeEventListener('message', handleMessage);
+  }, [navigate]);
+
   const [mainTab, setMainTab] = useState<'home' | 'courses' | 'analytics' | 'history' | 'library' | 'ai_mentor'>(() => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab');
@@ -8802,10 +8824,32 @@ function AppContent() {
     navigate('/');
   };
 
+
+  const isMobileApp = React.useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('app') === 'true') {
+      localStorage.setItem('oep_is_mobile_app', 'true');
+      return true;
+    }
+    return localStorage.getItem('oep_is_mobile_app') === 'true' || navigator.userAgent.includes('OdishaExamPrepApp');
+  }, []);
+
   const isAIOctive = !!(user && mainTab === 'ai_mentor' && location.pathname === '/');
 
   if (loading) {
     return <LoadingPortal />;
+  }
+
+  if (isMobileApp && !user) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center relative overflow-hidden">
+        {/* Same mesh and grid backgrounds as LandingPage to feel premium and continuous */}
+        <div className="absolute inset-0 -z-10 mesh-bg" />
+        <div className="absolute inset-0 -z-10 grid-bg opacity-60" />
+        <AuthModal isOpen={true} onClose={() => {}} hideCloseButton={true} />
+      </div>
+    );
   }
 
   return (
