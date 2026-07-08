@@ -1338,10 +1338,10 @@ export function splitTextIntoBlocks(text: string): TextBlock[] {
 
 export const TableRenderer: React.FC<{ tableData: TableData; isOption?: boolean }> = ({ tableData, isOption }) => {
   return (
-    <div className="overflow-x-auto my-4 rounded-2xl border border-slate-200 shadow-sm max-w-full">
+    <div className="overflow-x-auto my-4 rounded-2xl border border-[#8A1C36]/15 shadow-sm max-w-full">
       <table className="min-w-full border-collapse text-left text-slate-800 text-sm md:text-[15px]">
         <thead>
-          <tr className="bg-[#00a8b5] text-white border-b border-[#00a8b5]">
+          <tr className="bg-[#8A1C36] text-white border-b border-[#8A1C36]">
             {tableData.headers.map((h, i) => (
               <th 
                 key={i} 
