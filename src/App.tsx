@@ -3343,6 +3343,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   const [testSeries, setTestSeries] = useState<any[]>(() => _dashboardCache.testSeries);
   const [mockTests, setMockTests] = useState<any[]>(() => _dashboardCache.mockTests);
   const [loadingExams, setLoadingExams] = useState(() => _dashboardCache.exams.length === 0);
+  const [loadingDashboardData, setLoadingDashboardData] = useState(() => !_dashboardCache.hasFetchedThisSession);
   const [selectedMockCategory, setSelectedMockCategory] = useState<string | null>(() => sessionStorage.getItem('oep_selectedMockCategory') || null);
   const [selectedPracticeCategory, setSelectedPracticeCategory] = useState<string | null>(() => sessionStorage.getItem('oep_selectedPracticeCategory') || null);
   const [internalSelectedExam, setInternalSelectedExam] = useState<string | null>(() => sessionStorage.getItem('oep_selectedExam') || null);
@@ -4968,12 +4969,20 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      // Skip re-fetch if we already fetched database updates in this session (e.g., from tab switching)
-      if (_dashboardCache.hasFetchedThisSession && _dashboardCache.loadedForUserId === (user?.id || 'guest') && _dashboardCache.exams.length > 0) {
-        // Data is already in state (from cache initializer) — just ensure loading is off
+      const hasValidCache = 
+        _dashboardCache.hasFetchedThisSession && 
+        _dashboardCache.loadedForUserId === (user?.id || 'guest') && 
+        _dashboardCache.exams.length > 0 &&
+        _dashboardCache.mockTests.length > 0 &&
+        Object.keys(_dashboardCache.dynamicQuestionBanks).length > 0;
+
+      if (hasValidCache) {
         setLoadingExams(false);
+        setLoadingDashboardData(false);
         return;
       }
+
+      setLoadingDashboardData(true);
 
       try {
         // Use allSettled so one failing table doesn't block everything else.
@@ -5172,6 +5181,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         }
       } finally {
         setLoadingExams(false);
+        setLoadingDashboardData(false);
       }
     };
     fetchDashboardData();
@@ -6499,15 +6509,24 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         </div>
 
         {items.length === 0 ? (
-          <div className="w-full p-12 bg-white rounded-[2rem] border border-slate-200/60 shadow-sm flex flex-col items-center justify-center text-center space-y-4">
-            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center">
-              <Search className="w-8 h-8 text-slate-300" />
+          loadingDashboardData ? (
+            <div className="flex flex-col items-center justify-center p-24 space-y-4 bg-white rounded-[2rem] border border-slate-200/60 shadow-sm">
+              <div className="relative w-12 h-12 flex items-center justify-center">
+                <div className="absolute inset-0 rounded-full border-4 border-slate-100 border-t-[#2563EB] animate-[spin_1s_linear_infinite]" />
+              </div>
+              <p className="text-slate-500 font-bold text-sm tracking-wide animate-pulse">Loading question banks...</p>
             </div>
-            <div>
-              <h3 className="text-xl font-bold text-slate-900">No matching banks found</h3>
-              <p className="text-slate-500">Try adjusting your search filters.</p>
+          ) : (
+            <div className="w-full p-12 bg-white rounded-[2rem] border border-slate-200/60 shadow-sm flex flex-col items-center justify-center text-center space-y-4">
+              <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center">
+                <Search className="w-8 h-8 text-slate-300" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">No matching banks found</h3>
+                <p className="text-slate-500">Try adjusting your search filters.</p>
+              </div>
             </div>
-          </div>
+          )
         ) : (
           <div className="relative">
             <div className="pb-12 pt-4">
@@ -6738,6 +6757,11 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   }
 
     const currentExam = exams.find(e => e.id === selectedExam);
+
+    if (loadingDashboardData && !currentExam) {
+      return <LoadingPortal />;
+    }
+
     let bundlePrice = 0;
     let bundleOriginalPrice = 0;
     let examDescription = currentExam?.description || '';
@@ -7468,6 +7492,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     .filter((item: any) => item.examId === selectedExam && (!item.is_archived || hasAccessTo(item)) && item.hasPracticeMode !== false);
 
                   if (matchingBanks.length === 0) {
+                    if (loadingDashboardData) {
+                      return (
+                        <div className="flex flex-col items-center justify-center p-12 space-y-4 bg-slate-50 rounded-[2rem] border border-slate-200">
+                          <div className="relative w-12 h-12 flex items-center justify-center">
+                            <div className="absolute inset-0 rounded-full border-4 border-slate-100 border-t-[#2563EB] animate-[spin_1s_linear_infinite]" />
+                          </div>
+                          <p className="text-slate-500 font-bold text-sm tracking-wide animate-pulse">Loading practice sets...</p>
+                        </div>
+                      );
+                    }
                     return (
                       <div className="p-8 text-center bg-slate-50 rounded-[2rem] border border-slate-200 text-slate-500 font-bold">
                         No practice sets found in this category for the selected exam.
@@ -7977,6 +8011,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 });
 
                 if (matchingTests.length === 0) {
+                  if (loadingDashboardData) {
+                    return (
+                      <div className="flex flex-col items-center justify-center p-12 space-y-4 bg-slate-50 rounded-[2rem] border border-slate-200">
+                        <div className="relative w-12 h-12 flex items-center justify-center">
+                          <div className="absolute inset-0 rounded-full border-4 border-slate-100 border-t-[#2563EB] animate-[spin_1s_linear_infinite]" />
+                        </div>
+                        <p className="text-slate-500 font-bold text-sm tracking-wide animate-pulse">Loading mock tests...</p>
+                      </div>
+                    );
+                  }
                   return (
                     <div className="p-8 text-center bg-slate-50 rounded-[2rem] border border-slate-200 text-slate-500 font-bold">
                       No tests found in this category for the selected exam.
