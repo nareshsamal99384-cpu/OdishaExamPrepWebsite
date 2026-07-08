@@ -589,8 +589,21 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       list = filtered;
     }
     
-    // Sort local items by sortOrder if available
-    const sorted = [...list].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    // Sort local items: new items (null/undefined sortOrder) at the top, sorted by createdAt descending.
+    // Manually ordered items follow, sorted by sortOrder ascending.
+    const sorted = [...list].sort((a, b) => {
+      const aHasOrder = a.sortOrder !== null && a.sortOrder !== undefined;
+      const bHasOrder = b.sortOrder !== null && b.sortOrder !== undefined;
+
+      if (!aHasOrder && !bHasOrder) {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bTime - aTime;
+      }
+      if (!aHasOrder) return -1;
+      if (!bHasOrder) return 1;
+      return a.sortOrder - b.sortOrder;
+    });
     setItems(sorted);
   }, [activeTab, questions, series, mockTests, exams, banks, users, filterExamId, searchQuery, examFilter, questionFilter, testFilter, bankFilter]);
 
@@ -980,19 +993,24 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
     // 1. Update local state immediately for smooth UI
     setItems(newOrder);
 
-    // 2. Persist new sortOrder to DB
+    // 2. Persist new sortOrder to DB in a single batch request
     try {
-      const promises = newOrder.map((item, index) => {
-        const targetOrder = index + 1; // 1-based order
-        if (activeTab === 'questions') return examService.updateQuestion(item.id, { sortOrder: targetOrder });
-        if (activeTab === 'series') return examService.updateTestSeries(item.id, { sortOrder: targetOrder });
-        if (activeTab === 'tests') return examService.updateMockTest(item.id, { sortOrder: targetOrder });
-        if (activeTab === 'exams' || activeTab === 'blogs') return examService.updateExam(item.id, { sortOrder: targetOrder });
-        if (activeTab === 'banks') return examService.updateQuestionBank(item.id, { sortOrder: targetOrder });
-        return Promise.resolve();
-      });
+      const updates = newOrder.map((item, index) => ({
+        id: item.id,
+        values: { sortOrder: index + 1 }
+      }));
 
-      await Promise.all(promises);
+      let tableKey: 'exams' | 'testSeries' | 'mockTests' | 'questions' | 'questionBanks' | 'users' | null = null;
+      if (activeTab === 'questions') tableKey = 'questions';
+      else if (activeTab === 'series') tableKey = 'testSeries';
+      else if (activeTab === 'tests') tableKey = 'mockTests';
+      else if (activeTab === 'exams' || activeTab === 'blogs') tableKey = 'exams';
+      else if (activeTab === 'banks') tableKey = 'questionBanks';
+
+      if (tableKey) {
+        await examService.batchUpdate(tableKey, updates);
+      }
+
       if (activeTab === 'questions') {
         await fetchQuestions(questionsPage, searchQuery, filterExamId, questionFilter);
       } else {

@@ -1315,6 +1315,19 @@ async function startServer() {
         const { data, error } = await supabaseAdmin.from(table).insert(Array.isArray(payload) ? payload : [payload]).select();
         if (error) throw error;
         result = data;
+      } else if (action === 'batch_update') {
+        if (!Array.isArray(payload)) {
+          return res.status(400).json({ error: "Payload must be an array for batch_update" });
+        }
+        const promises = payload.map(async (item) => {
+          if (!item.id || !item.values) {
+            throw new Error("Each batch update item must have an id and values");
+          }
+          const { data, error } = await supabaseAdmin.from(table).update(item.values).eq('id', item.id).select();
+          if (error) throw error;
+          return data?.[0] || data;
+        });
+        result = await Promise.all(promises);
       } else {
         // Build base query for UPDATE or DELETE
         let query: any;
