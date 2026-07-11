@@ -978,10 +978,14 @@ async function startServer() {
       const search = (req.query.search || "").trim().replace(/,/g, "");
       const examId = req.query.examId || "all";
       const questionFilter = req.query.questionFilter || "all";
+      const topic = req.query.topic || "";
       const offset = (page - 1) * limit;
       let query = supabaseAdmin.from("questions").select("*", { count: "exact" });
       if (examId !== "all") {
         query = query.eq("examId", examId);
+      }
+      if (topic) {
+        query = query.eq("topic", topic);
       }
       if (questionFilter === "practice") {
         query = query.not("topic", "ilike", "mocktest__%");
@@ -1020,20 +1024,6 @@ async function startServer() {
         if (error)
           throw error;
         result = data;
-      } else if (action === "batch_update") {
-        if (!Array.isArray(payload)) {
-          return res.status(400).json({ error: "Payload must be an array for batch_update" });
-        }
-        const promises = payload.map(async (item) => {
-          if (!item.id || !item.values) {
-            throw new Error("Each batch update item must have an id and values");
-          }
-          const { data, error } = await supabaseAdmin.from(table).update(item.values).eq("id", item.id).select();
-          if (error)
-            throw error;
-          return data?.[0] || data;
-        });
-        result = await Promise.all(promises);
       } else {
         let query;
         if (action === "update") {

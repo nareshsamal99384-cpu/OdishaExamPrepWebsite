@@ -20,12 +20,14 @@ import {
   BookMarked,
   GripVertical,
   Bell,
-  Mail
+  Mail,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { Reorder } from 'framer-motion';
 import { examService, Question, TestSeries, MockTest, Exam } from './lib/examService';
 import { DEFAULT_ACHIEVERS_JOURNAL, AchieverStory } from './lib/defaultAchievers';
-import { cn } from './lib/utils';
+import { cn, getDirectImageUrl } from './lib/utils';
 import { supabase } from './lib/supabase';
 import { dropdown, modalContent, scaleIn } from './lib/animations';
 import { MathTextRenderer, DiagramRenderer, cleanJsonString, extractEmbeddedDiagram, diagramValidator } from './components/MathTextRenderer';
@@ -116,7 +118,19 @@ const SearchableDropdown = ({ value, onChange, options, placeholder, required, d
   );
 };
 
-// --- Admin Components ---
+const getMockTestScope = (t: any) => {
+  try {
+    if (t.seriesId) {
+      const parsed = JSON.parse(t.seriesId);
+      return {
+        examId: parsed.examId || '',
+        category: parsed.category || 'full-length',
+        subject: parsed.category === 'sectional' ? (parsed.subject || '') : null
+      };
+    }
+  } catch (e) {}
+  return { examId: '', category: 'full-length', subject: null };
+};
 
 const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () => void }) => {
   const [activeTab, setActiveTab] = useState<'questions' | 'series' | 'tests' | 'exams' | 'banks' | 'users' | 'updates' | 'settings' | 'subscribers' | 'notifications'>(() => {
@@ -129,6 +143,9 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
   const [questionFilter, setQuestionFilter] = useState<'all' | 'practice' | 'mock'>('all');
   const [examFilter, setExamFilter] = useState<'all' | 'popular' | 'upcoming'>('all');
   const [testFilter, setTestFilter] = useState<'all' | 'full-length' | 'sectional' | 'pyq' | 'daily'>('all');
+  const [testSortDirection, setTestSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [selectedExamIdForTests, setSelectedExamIdForTests] = useState<string | null>(null);
+  const [selectedCategoryForTests, setSelectedCategoryForTests] = useState<string | null>(null);
   const [bankFilter, setBankFilter] = useState<'all' | 'topic-wise' | 'exam-focused' | 'revision-sets' | 'pyq-collections'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterExamId, setFilterExamId] = useState('all');
@@ -205,6 +222,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
     durationMinutes: 60,
     totalMarks: 100,
     negativeMarking: 0,
+    sortOrder: '' as any,
     
     // Question
     topic: '',
@@ -434,6 +452,14 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         } catch(e) {}
       }
 
+      const mockTestConfigSettings = ex.find(e => e.name === 'SYSTEM_SETTINGS_MOCK_TEST_CONFIG');
+      if (mockTestConfigSettings && mockTestConfigSettings.description) {
+        try {
+          const parsed = JSON.parse(mockTestConfigSettings.description);
+          if (parsed.sortDirection) setTestSortDirection(parsed.sortDirection);
+        } catch(e) {}
+      }
+
       try {
         const { data: subs, error: subsErr } = await supabase
           .from('newsletter_subscribers')
@@ -511,18 +537,18 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
        list = filtered;
     } else if (activeTab === 'tests') {
       let filtered = mockTests;
-      if (testFilter !== 'all') {
+      if (selectedCategoryForTests) {
         filtered = filtered.filter(mt => {
           let cat = 'full-length';
           try { if (mt.seriesId) cat = JSON.parse(mt.seriesId).category || 'full-length'; } catch(e){}
-          return cat === testFilter;
+          return cat === selectedCategoryForTests;
         });
       }
-      if (filterExamId !== 'all') {
+      if (selectedExamIdForTests) {
         filtered = filtered.filter(mt => {
           let mtExam = '';
           try { if (mt.seriesId) mtExam = JSON.parse(mt.seriesId).examId || ''; } catch(e){}
-          return mtExam === filterExamId;
+          return mtExam === selectedExamIdForTests;
         });
       }
       if (searchQuery.trim()) {
@@ -589,23 +615,43 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       list = filtered;
     }
     
-    // Sort local items: new items (null/undefined sortOrder) at the top, sorted by createdAt descending.
-    // Manually ordered items follow, sorted by sortOrder ascending.
-    const sorted = [...list].sort((a, b) => {
-      const aHasOrder = a.sortOrder !== null && a.sortOrder !== undefined;
-      const bHasOrder = b.sortOrder !== null && b.sortOrder !== undefined;
-
-      if (!aHasOrder && !bHasOrder) {
-        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return bTime - aTime;
-      }
-      if (!aHasOrder) return -1;
-      if (!bHasOrder) return 1;
-      return a.sortOrder - b.sortOrder;
-    });
+    // Sort local items by sortOrder if available
+    let sorted = [...list];
+    if (activeTab === 'tests') {
+      const dir = testSortDirection;
+      sorted.sort((a, b) => {
+        let subjectA = '';
+        let subjectB = '';
+        try {
+          if (a.seriesId) {
+            const parsed = JSON.parse(a.seriesId);
+            if (parsed.category === 'sectional') {
+              subjectA = parsed.subject || '';
+            }
+          }
+        } catch(e) {}
+        try {
+          if (b.seriesId) {
+            const parsed = JSON.parse(b.seriesId);
+            if (parsed.category === 'sectional') {
+              subjectB = parsed.subject || '';
+            }
+          }
+        } catch(e) {}
+        
+        if (subjectA !== subjectB) {
+          return subjectA.localeCompare(subjectB);
+        }
+        
+        const orderA = a.sortOrder ?? 9999;
+        const orderB = b.sortOrder ?? 9999;
+        return dir === 'desc' ? orderB - orderA : orderA - orderB;
+      });
+    } else {
+      sorted.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    }
     setItems(sorted);
-  }, [activeTab, questions, series, mockTests, exams, banks, users, filterExamId, searchQuery, examFilter, questionFilter, testFilter, bankFilter]);
+  }, [activeTab, questions, series, mockTests, exams, banks, users, filterExamId, searchQuery, examFilter, questionFilter, testFilter, bankFilter, testSortDirection, selectedExamIdForTests, selectedCategoryForTests]);
 
   const actualExams = React.useMemo(() => {
     return exams.filter(e => e.category !== 'blog' && e.category !== 'system' && !(e.name || '').startsWith('SYSTEM_SETTINGS_'));
@@ -852,7 +898,8 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         title: item.title || '',
         durationMinutes: item.durationMinutes || 60,
         totalMarks: item.totalMarks || 100,
-        negativeMarking: item.negativeMarking || 0
+        negativeMarking: item.negativeMarking || 0,
+        sortOrder: item.sortOrder || ''
       };
     }
     
@@ -928,12 +975,25 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
            originalPrice: Number(formData.originalPrice) || ((Number(formData.price) || 499) * 2)
         });
 
+        const targetExamId = formData.examId;
+        const targetCategory = formData.mockCategory;
+        const targetSubject = targetCategory === 'sectional' ? formData.mockSubject : null;
+
+        const scopedTests = mockTests.filter(t => {
+          const s = getMockTestScope(t);
+          return s.examId === targetExamId && s.category === targetCategory && s.subject === targetSubject;
+        });
+
+        const maxOrder = scopedTests.reduce((max, t) => (t.sortOrder && t.sortOrder > max ? t.sortOrder : max), 0);
+        const targetOrder = Number(formData.sortOrder) || (maxOrder + 1);
+
         const payload = {
           seriesId: mockConfig,
           title: formData.title,
           durationMinutes: Number(formData.durationMinutes),
           totalMarks: Number(formData.totalMarks),
-          negativeMarking: Number(formData.negativeMarking) || 0
+          negativeMarking: Number(formData.negativeMarking) || 0,
+          sortOrder: targetOrder
         };
 
         const virtualMockTest = {
@@ -943,8 +1003,45 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         };
 
         if (!validateChangeBeforePublish('test', virtualMockTest, !!editingId)) return;
-        if (editingId) await examService.updateMockTest(editingId, payload);
-        else await examService.createMockTest(payload);
+
+        // Conflict resolution within the same scope
+        let otherTests = scopedTests
+          .filter(t => t.id !== editingId)
+          .sort((a, b) => (a.sortOrder || 9999) - (b.sortOrder || 9999));
+
+        const finalOrderList: { id?: string, sortOrder: number, isSelf?: boolean }[] = [];
+        let inserted = false;
+        
+        for (const test of otherTests) {
+          const currentOrder = test.sortOrder || 9999;
+          if (!inserted && currentOrder >= targetOrder) {
+            finalOrderList.push({ id: editingId || undefined, sortOrder: targetOrder, isSelf: true });
+            inserted = true;
+          }
+          finalOrderList.push({ id: test.id, sortOrder: currentOrder });
+        }
+        if (!inserted) {
+          finalOrderList.push({ id: editingId || undefined, sortOrder: targetOrder, isSelf: true });
+        }
+
+        let savedTestId = editingId;
+        if (editingId) {
+          await examService.updateMockTest(editingId, payload);
+        } else {
+          const created = await examService.createMockTest(payload);
+          savedTestId = created.id;
+        }
+
+        const promises = finalOrderList.map((item, index) => {
+          const targetIndexOrder = index + 1;
+          const actualId = item.isSelf ? savedTestId : item.id;
+          const currentOrder = item.isSelf ? targetOrder : (mockTests.find(t => t.id === item.id)?.sortOrder || 9999);
+          if (actualId && currentOrder !== targetIndexOrder) {
+            return examService.updateMockTest(actualId, { sortOrder: targetIndexOrder });
+          }
+          return Promise.resolve();
+        });
+        await Promise.all(promises);
       } else if (activeTab === 'exams' || activeTab === 'blogs') {
         const payload = {
           name: formData.name,
@@ -993,22 +1090,45 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
     // 1. Update local state immediately for smooth UI
     setItems(newOrder);
 
-    // 2. Persist new sortOrder to DB in a single batch request
+    // 2. Persist new sortOrder to DB
     try {
-      const updates = newOrder.map((item, index) => ({
-        id: item.id,
-        values: { sortOrder: index + 1 }
-      }));
+      if (activeTab === 'tests') {
+        const groups: Record<string, any[]> = {};
+        newOrder.forEach(item => {
+          let subject = '';
+          try {
+            if (item.seriesId) {
+              subject = JSON.parse(item.seriesId).subject || '';
+            }
+          } catch(e) {}
+          if (!groups[subject]) groups[subject] = [];
+          groups[subject].push(item);
+        });
 
-      let tableKey: 'exams' | 'testSeries' | 'mockTests' | 'questions' | 'questionBanks' | 'users' | null = null;
-      if (activeTab === 'questions') tableKey = 'questions';
-      else if (activeTab === 'series') tableKey = 'testSeries';
-      else if (activeTab === 'tests') tableKey = 'mockTests';
-      else if (activeTab === 'exams' || activeTab === 'blogs') tableKey = 'exams';
-      else if (activeTab === 'banks') tableKey = 'questionBanks';
+        const updates: { id: string, sortOrder: number }[] = [];
+        Object.keys(groups).forEach(subject => {
+          const groupItems = groups[subject];
+          groupItems.forEach((item, idx) => {
+            let targetOrder = idx + 1;
+            if (testSortDirection === 'desc') {
+              targetOrder = groupItems.length - idx;
+            }
+            updates.push({ id: item.id, sortOrder: targetOrder });
+          });
+        });
 
-      if (tableKey) {
-        await examService.batchUpdate(tableKey, updates);
+        const promises = updates.map(u => examService.updateMockTest(u.id, { sortOrder: u.sortOrder }));
+        await Promise.all(promises);
+      } else {
+        const promises = newOrder.map((item, index) => {
+          let targetOrder = index + 1; // 1-based order
+          if (activeTab === 'questions') return examService.updateQuestion(item.id, { sortOrder: targetOrder });
+          if (activeTab === 'series') return examService.updateTestSeries(item.id, { sortOrder: targetOrder });
+          if (activeTab === 'exams' || activeTab === 'blogs') return examService.updateExam(item.id, { sortOrder: targetOrder });
+          if (activeTab === 'banks') return examService.updateQuestionBank(item.id, { sortOrder: targetOrder });
+          return Promise.resolve();
+        });
+        await Promise.all(promises);
       }
 
       if (activeTab === 'questions') {
@@ -1018,6 +1138,78 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       }
     } catch (e) {
       console.error("Reorder failed", e);
+    }
+  };
+  
+  const saveMockTestSortDirection = async (direction: 'asc' | 'desc') => {
+    try {
+      setTestSortDirection(direction);
+      const updated = {
+        name: 'SYSTEM_SETTINGS_MOCK_TEST_CONFIG',
+        description: JSON.stringify({ sortDirection: direction }),
+        icon: '⚙️',
+        category: 'system' as const
+      };
+      const exists = exams.find(e => e.name === 'SYSTEM_SETTINGS_MOCK_TEST_CONFIG');
+      if (exists && exists.id) {
+        await examService.updateExam(exists.id, updated);
+      } else {
+        await examService.addExam(updated);
+      }
+    } catch (err: any) {
+      alert(`Failed to save sort direction preference: ${err.message || 'Unknown error'}`);
+    }
+  };
+
+  const handleInlineOrderChange = async (itemId: string, newOrderVal: number) => {
+    try {
+      const targetTest = mockTests.find(t => t.id === itemId);
+      if (!targetTest) return;
+      const targetScope = getMockTestScope(targetTest);
+
+      // 1. Save the target test with new sortOrder
+      await examService.updateMockTest(itemId, { sortOrder: newOrderVal });
+
+      const scopedTests = mockTests.filter(t => {
+        const s = getMockTestScope(t);
+        return s.examId === targetScope.examId && s.category === targetScope.category && s.subject === targetScope.subject;
+      });
+
+      // 2. Perform conflict resolution within the same scope
+      let otherTests = scopedTests
+        .filter(t => t.id !== itemId)
+        .sort((a, b) => (a.sortOrder || 9999) - (b.sortOrder || 9999));
+
+      const finalOrderList: { id: string, sortOrder: number }[] = [];
+      let inserted = false;
+      
+      for (const test of otherTests) {
+        const currentOrder = test.sortOrder || 9999;
+        if (!inserted && currentOrder >= newOrderVal) {
+          finalOrderList.push({ id: itemId, sortOrder: newOrderVal });
+          inserted = true;
+        }
+        finalOrderList.push({ id: test.id!, sortOrder: currentOrder });
+      }
+      if (!inserted) {
+        finalOrderList.push({ id: itemId, sortOrder: newOrderVal });
+      }
+
+      const promises = finalOrderList.map((test, index) => {
+        const targetOrder = index + 1;
+        const currentOrder = test.id === itemId ? newOrderVal : (mockTests.find(t => t.id === test.id)?.sortOrder || 9999);
+        if (currentOrder !== targetOrder) {
+          return examService.updateMockTest(test.id, { sortOrder: targetOrder });
+        }
+        return Promise.resolve();
+      });
+
+      await Promise.all(promises);
+      await fetchData();
+    } catch (e: any) {
+      console.error("Inline order update failed", e);
+      alert("Error updating order: " + e.message);
+      await fetchData();
     }
   };
 
@@ -1358,12 +1550,13 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   onChange={v => setFormData({ ...formData, examId: v })} 
                   options={actualExams.map(ex => ({ value: ex.id as string, label: ex.name }))}
                   placeholder="-- Choose Exam --"
+                  disabled={!!selectedExamIdForTests}
                 />
               </div>
               <div className="space-y-2">
                 <label className={labelClass}>Select Category *</label>
                 <div className={selectWrapperClass}>
-                  <select required value={formData.mockCategory} onChange={e => setFormData({ ...formData, mockCategory: e.target.value })} className={selectClass}>
+                  <select required value={formData.mockCategory} onChange={e => setFormData({ ...formData, mockCategory: e.target.value })} className={selectClass} disabled={!!selectedCategoryForTests}>
                     <option value="full-length">Full-Length Mock Tests</option>
                     <option value="sectional">Sectional Tests</option>
                     <option value="pyq">PYQ Tests</option>
@@ -1429,6 +1622,18 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                     </button>
                   ))}
                 </div>
+              </div>
+              <div className="space-y-2">
+                <label className={labelClass}>Order Number *</label>
+                <input 
+                  required 
+                  type="number" 
+                  min="1" 
+                  value={formData.sortOrder ?? ''} 
+                  onChange={e => setFormData({ ...formData, sortOrder: e.target.value })} 
+                  className={inputClass} 
+                  placeholder="e.g. 1, 2, 3..." 
+                />
               </div>
             </div>
             <div className="mt-8 flex flex-col gap-4 bg-slate-50/40 p-6 rounded-3xl border border-slate-200/60 shadow-sm">
@@ -2151,7 +2356,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   className="px-4 py-2 border border-slate-200 rounded-xl text-sm font-medium w-40 outline-none focus:border-brand-500 bg-white flex-shrink-0"
                 />
               )}
-              {['questions', 'tests', 'banks', 'series'].includes(activeTab) && (
+              {['questions', 'banks', 'series'].includes(activeTab) && (
                 <select
                   value={filterExamId}
                   onChange={(e) => setFilterExamId(e.target.value)}
@@ -2207,23 +2412,47 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   })()}
                 </>
               )}
-              {activeTab === 'tests' && (
+              {activeTab === 'tests' && selectedExamIdForTests && selectedCategoryForTests && (
                 <>
-                  <div className="hidden lg:flex items-center bg-slate-100 p-1 rounded-xl mr-2 h-10 border border-slate-200/50 flex-shrink-0">
-                    <button onClick={() => setTestFilter('all')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", testFilter === 'all' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>All</button>
-                    <button onClick={() => setTestFilter('full-length')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", testFilter === 'full-length' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Full-Length</button>
-                    <button onClick={() => setTestFilter('sectional')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", testFilter === 'sectional' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Sectional</button>
-                    <button onClick={() => setTestFilter('pyq')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", testFilter === 'pyq' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>PYQ</button>
-                    <button onClick={() => setTestFilter('daily')} className={cn("px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full", testFilter === 'daily' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Daily</button>
+                  <div className="flex items-center bg-slate-100 p-1 rounded-xl mr-2 h-10 border border-slate-200/50 flex-shrink-0">
+                    <button 
+                      onClick={() => saveMockTestSortDirection('asc')} 
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full flex items-center gap-1.5", 
+                        testSortDirection === 'asc' ? "bg-white shadow-sm text-brand-600 font-extrabold" : "text-slate-500 hover:text-slate-700"
+                      )}
+                      title="Sort Ascending (1 at top)"
+                    >
+                      <ArrowUp className="w-4 h-4" />
+                      <span className="hidden sm:inline">Asc</span>
+                    </button>
+                    <button 
+                      onClick={() => saveMockTestSortDirection('desc')} 
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-sm font-bold transition-all h-full flex items-center gap-1.5", 
+                        testSortDirection === 'desc' ? "bg-white shadow-sm text-brand-600 font-extrabold" : "text-slate-500 hover:text-slate-700"
+                      )}
+                      title="Sort Descending (highest at top)"
+                    >
+                      <ArrowDown className="w-4 h-4" />
+                      <span className="hidden sm:inline">Desc</span>
+                    </button>
                   </div>
                   <button 
-                    onClick={() => setShowMockUploadModal(true)}
+                    onClick={() => {
+                      if (items.length > 0) {
+                        setAttachMockTestId(items[0].id);
+                      } else {
+                        setAttachMockTestId(null);
+                      }
+                      setShowMockUploadModal(true);
+                    }}
                     className="flex items-center justify-center gap-2 px-6 py-2.5 glass border border-slate-200 rounded-xl text-sm font-extrabold hover:bg-white transition-all premium-shadow flex-shrink-0"
                   >
                     <Upload className="w-4 h-4" /> Bulk Upload Questions
                   </button>
                   {(() => {
-                     if (items.length === 0 || filterExamId === 'all') return null;
+                     if (items.length === 0 || !selectedExamIdForTests) return null;
                      return (
                        <button 
                          onClick={async () => {
@@ -2290,11 +2519,21 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   <button onClick={() => setExamFilter('upcoming')} className={cn("px-4 py-1.5 rounded-lg text-sm font-bold transition-all h-full", examFilter === 'upcoming' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Upcoming</button>
                 </div>
               )}
-              {['questions', 'tests', 'banks', 'exams', 'series', 'blogs'].includes(activeTab) && (
+              {(['questions', 'banks', 'exams', 'series', 'blogs'].includes(activeTab) || (activeTab === 'tests' && selectedExamIdForTests && selectedCategoryForTests)) && (
                 <button 
                   onClick={() => {
                     setEditingId(null);
-                    setFormData(initialFormData);
+                    if (activeTab === 'tests') {
+                      const maxOrder = mockTests.reduce((max, t) => (t.sortOrder && t.sortOrder > max ? t.sortOrder : max), 0);
+                      setFormData({
+                        ...initialFormData,
+                        examId: selectedExamIdForTests || '',
+                        mockCategory: selectedCategoryForTests || 'full-length',
+                        sortOrder: maxOrder + 1
+                      });
+                    } else {
+                      setFormData(initialFormData);
+                    }
                     setDiagramText('');
                     setShowAddModal(true);
                   }}
@@ -3944,92 +4183,339 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                     </tbody>
                  </table>
               </div>
-          ) : (
-              <div className="glass rounded-[2rem] border border-slate-200/50 shadow-xl overflow-hidden bg-white/70">
-                 <div className="grid grid-cols-12 bg-slate-100/50 border-b border-slate-200/60 px-8 py-5 text-xs font-black uppercase text-slate-500 tracking-widest">
-                    <div className="col-span-6">Basic Info</div>
-                    <div className="col-span-3">Details</div>
-                    <div className="col-span-3 text-right pr-4">Actions</div>
-                 </div>
+           ) : activeTab === 'tests' && selectedExamIdForTests === null ? (
+              <div className="space-y-6 animate-in fade-in duration-200">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-2xl font-black text-slate-800 tracking-tight">Select an Exam</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {(() => {
+                     const lowerQ = searchQuery.toLowerCase();
+                     const filteredExams = actualExams.filter(exam => (exam.name || '').toLowerCase().includes(lowerQ));
+                     if (filteredExams.length === 0) {
+                        return (
+                          <div className="col-span-full bg-white rounded-[2rem] border border-slate-200/50 p-12 text-center text-slate-400 font-extrabold shadow-sm">
+                            No exams found matching your search.
+                          </div>
+                        );
+                     }
+                     return filteredExams.map(exam => {
+                       const examTestCount = mockTests.filter(mt => {
+                         try { if (mt.seriesId) return JSON.parse(mt.seriesId).examId === exam.id; } catch(e) {}
+                         return false;
+                       }).length;
+                       return (
+                         <motion.div
+                           key={exam.id}
+                           whileHover={{ y: -4, scale: 1.02 }}
+                           whileTap={{ scale: 0.98 }}
+                           onClick={() => {
+                             setSelectedExamIdForTests(exam.id as string);
+                             setSelectedCategoryForTests(null);
+                           }}
+                           className="bg-white rounded-[2rem] border border-slate-200/60 p-6 flex flex-col justify-between hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 cursor-pointer premium-shadow group relative overflow-hidden"
+                         >
+                           <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                           
+                           <div className="relative space-y-4">
+                             <div className="flex justify-between items-start">
+                               <div className="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-3xl shadow-inner shrink-0 group-hover:bg-brand-100 transition-colors">
+                                 {exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/')) ? <img src={getDirectImageUrl(exam.icon)} alt="" className="w-8 h-8 object-contain" /> : exam.icon || '🏛️'}
+                               </div>
+                               <ChevronRight className="w-6 h-6 text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
+                             </div>
+                             
+                             <div className="space-y-2">
+                               <h4 className="text-xl font-extrabold text-slate-900 group-hover:text-brand-600 transition-colors line-clamp-2 tracking-tight leading-snug">{exam.name}</h4>
+                               <p className="text-slate-500 font-medium text-sm line-clamp-2">{exam.description || 'Manage mock tests under this exam.'}</p>
+                             </div>
+                           </div>
 
-                 {items.length === 0 ? (
-                    <div className="px-8 py-24 text-center">
-                       <div className="flex flex-col items-center gap-4 text-slate-400">
-                         <AlertCircle className="w-12 h-12 text-slate-300" />
-                         <p className="font-extrabold text-xl text-slate-500">No items found in {activeTab}</p>
-                         <button onClick={() => { setEditingId(null); setFormData(initialFormData); setDiagramText(''); setShowAddModal(true); }} className="text-brand-600 hover:text-brand-700 font-extrabold text-sm underline mt-2">Create the first record</button>
+                           <div className="relative pt-6 mt-6 border-t border-slate-100 flex items-center justify-between">
+                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-slate-50 text-slate-500 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors border border-slate-100">
+                               <Check className="w-3.5 h-3.5" />
+                               {examTestCount} {examTestCount === 1 ? 'Mock Test' : 'Mock Tests'}
+                             </span>
+                             <span className="text-xs font-bold text-slate-400 capitalize bg-slate-100 px-2.5 py-1 rounded-lg">{exam.category}</span>
+                           </div>
+                         </motion.div>
+                       );
+                     });
+                  })()}
+                </div>
+              </div>
+           ) : activeTab === 'tests' && selectedCategoryForTests === null ? (
+              <div className="space-y-6 animate-in fade-in duration-200">
+                <div className="flex items-center gap-2 text-sm font-bold text-slate-400 mb-6 bg-slate-100/50 px-4 py-2.5 rounded-2xl border border-slate-200/40 w-fit">
+                  <button onClick={() => { setSelectedExamIdForTests(null); setSelectedCategoryForTests(null); }} className="hover:text-brand-600 transition-colors flex items-center gap-1">
+                    Exams
+                  </button>
+                  <ChevronRight className="w-4 h-4" />
+                  <span className="text-slate-700 font-extrabold">{exams.find(e => e.id === selectedExamIdForTests)?.name || 'Selected Exam'}</span>
+                </div>
+
+                {(() => {
+                   const exam = exams.find(e => e.id === selectedExamIdForTests);
+                   if (!exam) return null;
+                   return (
+                     <div className="bg-white rounded-[2rem] border border-slate-200/50 p-6 flex flex-col md:flex-row gap-5 items-center justify-between shadow-sm">
+                       <div className="flex items-center gap-5">
+                         <div className="w-16 h-16 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-4xl shadow-inner shrink-0">
+                           {exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/')) ? <img src={getDirectImageUrl(exam.icon)} alt="" className="w-10 h-10 object-contain" /> : exam.icon || '🏛️'}
+                         </div>
+                         <div>
+                           <h3 className="text-2xl font-black text-slate-900 tracking-tight">{exam.name}</h3>
+                           <p className="text-slate-500 font-medium text-sm mt-1">{exam.description || 'Manage mock tests under this exam.'}</p>
+                         </div>
                        </div>
+                       <button 
+                         onClick={() => { setSelectedExamIdForTests(null); setSelectedCategoryForTests(null); }}
+                         className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-extrabold transition-all border border-slate-200 shadow-sm whitespace-nowrap"
+                       >
+                         Back to Exams
+                       </button>
+                     </div>
+                   );
+                })()}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8">
+                  {(() => {
+                     const examTests = mockTests.filter(mt => {
+                        try { if (mt.seriesId) return JSON.parse(mt.seriesId).examId === selectedExamIdForTests; } catch(e){}
+                        return false;
+                     });
+
+                     const categoriesList = [
+                       { id: 'full-length', label: 'Full Length Tests', desc: 'Complete exam-like mock tests covering all sections.', icon: '🏆', color: 'bg-emerald-50 text-emerald-600 border-emerald-100/60' },
+                       { id: 'sectional', label: 'Sectional Tests', desc: 'Subject-wise or topic-wise practice sets.', icon: '📚', color: 'bg-blue-50 text-blue-600 border-blue-100/60' },
+                       { id: 'pyq', label: 'Previous Year Questions (PYQ)', desc: 'Real questions from past papers with detailed solutions.', icon: '⏳', color: 'bg-amber-50 text-amber-600 border-amber-100/60' },
+                       { id: 'daily', label: 'Daily Tests', desc: 'Quick daily or weekly practice sets.', icon: '📅', color: 'bg-rose-50 text-rose-600 border-rose-100/60' }
+                     ];
+
+                     const customCategories = Array.from(new Set(examTests.map(mt => {
+                        try { if (mt.seriesId) return JSON.parse(mt.seriesId).category || 'full-length'; } catch(e){}
+                        return 'full-length';
+                     }).filter(cat => !['full-length', 'sectional', 'pyq', 'daily'].includes(cat))));
+
+                     const allCategories = [
+                       ...categoriesList,
+                       ...customCategories.map(cat => ({
+                         id: cat,
+                         label: cat.charAt(0).toUpperCase() + cat.slice(1).replace('-', ' ') + ' Tests',
+                         desc: `Tests belonging to category: ${cat}`,
+                         icon: '📝',
+                         color: 'bg-purple-50 text-purple-600 border-purple-100/60'
+                       }))
+                     ];
+
+                     return allCategories.map(cat => {
+                       const count = examTests.filter(mt => {
+                         try {
+                           if (mt.seriesId) {
+                             const parsed = JSON.parse(mt.seriesId);
+                             return parsed.category === cat.id || (cat.id === 'full-length' && !parsed.category);
+                           }
+                         } catch(e) {}
+                         return false;
+                       }).length;
+                       
+                       return (
+                         <motion.div
+                           key={cat.id}
+                           whileHover={{ y: -4, scale: 1.02 }}
+                           whileTap={{ scale: 0.98 }}
+                           onClick={() => setSelectedCategoryForTests(cat.id)}
+                           className="bg-white rounded-[2rem] border border-slate-200/60 p-6 flex flex-col justify-between hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 cursor-pointer premium-shadow group relative overflow-hidden"
+                         >
+                           <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                           <div className="flex gap-4">
+                             <div className={`w-14 h-14 rounded-2xl ${cat.color} border flex items-center justify-center text-3xl shadow-inner shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+                               {cat.icon}
+                             </div>
+                             <div>
+                               <h4 className="text-xl font-extrabold text-slate-900 group-hover:text-brand-600 transition-colors line-clamp-1 tracking-tight leading-snug">{cat.label}</h4>
+                               <p className="text-slate-500 font-semibold text-sm mt-1">{cat.desc}</p>
+                             </div>
+                           </div>
+                           <div className="flex justify-between items-center pt-6 mt-6 border-t border-slate-100">
+                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-slate-50 text-slate-500 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors border border-slate-100">
+                               {count} {count === 1 ? 'Test' : 'Tests'}
+                             </span>
+                             <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
+                           </div>
+                         </motion.div>
+                       );
+                     });
+                  })()}
+                </div>
+              </div>
+           ) : (
+              <div className="space-y-6">
+                {activeTab === 'tests' && selectedExamIdForTests && selectedCategoryForTests && (
+                  <div className="animate-in fade-in duration-200 space-y-6">
+                    <div className="flex items-center gap-2 text-sm font-bold text-slate-400 mb-2 bg-slate-100/50 px-4 py-2.5 rounded-2xl border border-slate-200/40 w-fit">
+                      <button onClick={() => { setSelectedExamIdForTests(null); setSelectedCategoryForTests(null); }} className="hover:text-brand-600 transition-colors">
+                        Exams
+                      </button>
+                      <ChevronRight className="w-4 h-4" />
+                      <button onClick={() => setSelectedCategoryForTests(null)} className="hover:text-brand-600 transition-colors">
+                        {exams.find(e => e.id === selectedExamIdForTests)?.name || 'Selected Exam'}
+                      </button>
+                      <ChevronRight className="w-4 h-4" />
+                      <span className="text-slate-700 font-extrabold">
+                        {(() => {
+                           const categoriesList = [
+                             { id: 'full-length', label: 'Full Length Tests' },
+                             { id: 'sectional', label: 'Sectional Tests' },
+                             { id: 'pyq', label: 'Previous Year Questions (PYQ)' },
+                             { id: 'daily', label: 'Daily Tests' }
+                           ];
+                           const standardLabel = categoriesList.find(c => c.id === selectedCategoryForTests)?.label;
+                           if (standardLabel) return standardLabel;
+                           return selectedCategoryForTests ? (selectedCategoryForTests.charAt(0).toUpperCase() + selectedCategoryForTests.slice(1).replace('-', ' ') + ' Tests') : 'Mock Tests';
+                        })()}
+                      </span>
                     </div>
-                 ) : (
-                   <Reorder.Group axis="y" values={items} onReorder={handleReorder} className="divide-y divide-slate-100">
-                     {items.map((item) => (
-                       <Reorder.Item key={item.id} value={item} className="bg-white/50">
-                          <div className="hover:bg-brand-50/30 transition-colors group px-8 py-6 grid grid-cols-12 items-center">
-                             <div className="col-span-6">
-                                <div className="font-extrabold text-slate-900 text-lg line-clamp-2 pr-4">{item.name || item.title || item.questionText || 'Untitled'}</div>
-                                <div className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-wider">{item.category || item.type || item.difficulty || 'Default'}</div>
-                             </div>
-                             <div className="col-span-3">
-                                <div className="text-sm font-bold text-slate-600">
-                                   {(() => {
-                                      if (activeTab === 'questions') return `${item.options?.length || 0} Options`;
-                                      if (activeTab === 'series') return `₹${item.price} • ${item.durationDays} Days`;
-                                      if (activeTab === 'tests') return `${item.durationMinutes} Min • ${item.totalMarks} Marks`;
-                                      if (activeTab === 'exams' || activeTab === 'blogs') {
-                                        return item.examDate ? new Date(item.examDate).toLocaleDateString() : '-';
-                                      }
-                                      if (activeTab === 'banks') return `${item.questionCount} Qs • ${item.isPremium ? 'Premium' : 'Free'}`;
-                                      return '-';
-                                   })()}
-                                </div>
-                                <div className="text-[10px] text-slate-400 font-bold uppercase mt-1">ID: {item.id?.slice(0, 8)}</div>
-                             </div>
-                             <div className="col-span-3 flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                                {['tests', 'series', 'banks'].includes(activeTab) && (
-                                  <button 
-                                    onClick={async (e) => {
-                                       e.stopPropagation();
-                                       if (!confirm('DANGER ZONE: Are you sure you want to revoke access to this content for EVERY SINGLE USER who purchased it?')) return;
-                                       
-                                       try {
-                                          const session = (await supabase.auth.getSession()).data.session;
-                                          const token = session?.access_token;
-                                          const response = await fetch('/api/admin/content/revoke', {
-                                             method: 'POST',
-                                             headers: {
-                                                'Content-Type': 'application/json',
-                                                'Authorization': `Bearer ${token}`
-                                             },
-                                             body: JSON.stringify({
-                                                productId: item.id
-                                             })
-                                          });
-                                          const resData = await response.json();
-                                          if (!response.ok) throw new Error(resData.error || 'Failed to revoke content');
-                                          alert(`Access revoked from users (processed: ${resData.count || 0}).`);
-                                       } catch (err: any) {
-                                          alert(`Failed to revoke access: ${err.message}`);
-                                       }
-                                       fetchData();
-                                    }}
-                                    className="p-2.5 text-red-500 hover:text-white hover:bg-red-500 rounded-xl transition-all"
-                                    title="Revoke Content for All Users"
-                                  >
-                                    <Users className="w-5 h-5 pointer-events-none" />
-                                  </button>
-                                )}
-                                {activeTab === 'exams' && (
-                                  <button 
-                                    onClick={async (e) => {
-                                       e.stopPropagation();
-                                       if (!confirm('DANGER ZONE / END CYCLE: Are you sure you want to REVOKE ALL ACCESS to this Exam for EVERY SINGLE USER? This instantly removes access to the Exam Bundle, all individual Mock Tests, and Question Banks under this exam. This action cannot be undone and users will need to purchase again for the next cycle.')) return;
-                                       
-                                       const relatedIds = [
-                                          `exam_bundle_${item.id}`,
-                                          ...mockTests.filter((t: any) => t.examId === item.id).map((t: any) => t.id),
-                                          ...banks.filter((b: any) => b.examId === item.id).map((b: any) => b.id)
-                                       ];
-                                       
+
+                    <div className="bg-white rounded-[2rem] border border-slate-200/50 p-6 flex flex-col md:flex-row gap-5 items-center justify-between shadow-sm">
+                      <div className="flex items-center gap-5">
+                        <div className="w-16 h-16 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-4xl shadow-inner shrink-0">
+                          📝
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                            {(() => {
+                               const categoriesList = [
+                                 { id: 'full-length', label: 'Full Length Tests' },
+                                 { id: 'sectional', label: 'Sectional Tests' },
+                                 { id: 'pyq', label: 'Previous Year Questions (PYQ)' },
+                                 { id: 'daily', label: 'Daily Tests' }
+                               ];
+                               const standardLabel = categoriesList.find(c => c.id === selectedCategoryForTests)?.label;
+                               if (standardLabel) return standardLabel;
+                               return selectedCategoryForTests ? (selectedCategoryForTests.charAt(0).toUpperCase() + selectedCategoryForTests.slice(1).replace('-', ' ') + ' Tests') : 'Mock Tests';
+                            })()}
+                          </h3>
+                          <p className="text-slate-500 font-semibold text-sm mt-1">
+                            Exam: <span className="font-extrabold text-slate-800">{exams.find(e => e.id === selectedExamIdForTests)?.name}</span> • 
+                            Category: <span className="font-extrabold text-slate-800">{selectedCategoryForTests}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => setSelectedCategoryForTests(null)}
+                        className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-extrabold transition-all border border-slate-200 shadow-sm whitespace-nowrap"
+                      >
+                        Back to Categories
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="glass rounded-[2rem] border border-slate-200/50 shadow-xl overflow-hidden bg-white/70">
+                  <div className="grid grid-cols-12 bg-slate-100/50 border-b border-slate-200/60 px-8 py-5 text-xs font-black uppercase text-slate-500 tracking-widest">
+                      {activeTab === 'tests' ? (
+                        <>
+                          <div className="col-span-2">Order</div>
+                          <div className="col-span-5">Basic Info</div>
+                          <div className="col-span-2">Details</div>
+                          <div className="col-span-3 text-right pr-4">Actions</div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="col-span-6">Basic Info</div>
+                          <div className="col-span-3">Details</div>
+                          <div className="col-span-3 text-right pr-4">Actions</div>
+                        </>
+                      )}
+                  </div>
+
+                  {items.length === 0 ? (
+                     <div className="px-8 py-24 text-center">
+                        <div className="flex flex-col items-center gap-4 text-slate-400">
+                          <AlertCircle className="w-12 h-12 text-slate-300" />
+                          <p className="font-extrabold text-xl text-slate-500">No items found in {activeTab}</p>
+                          <button onClick={() => { setEditingId(null); setFormData(initialFormData); setDiagramText(''); setShowAddModal(true); }} className="text-brand-600 hover:text-brand-700 font-extrabold text-sm underline mt-2">Create the first record</button>
+                        </div>
+                     </div>
+                  ) : (
+                    <Reorder.Group axis="y" values={items} onReorder={handleReorder} className="divide-y divide-slate-100">
+                      {items.map((item) => (
+                        <Reorder.Item key={item.id} value={item} className="bg-white/50">
+                           <div className="hover:bg-brand-50/30 transition-colors group px-8 py-6 grid grid-cols-12 items-center">
+                              {activeTab === 'tests' ? (
+                                 <>
+                                   <div className="col-span-2 flex items-center gap-2">
+                                     <input 
+                                       type="number" 
+                                       min="1"
+                                       value={item.sortOrder ?? ''} 
+                                       onChange={(e) => {
+                                         const newVal = parseInt(e.target.value);
+                                         if (!isNaN(newVal) && newVal > 0) {
+                                           const updatedItems = items.map(it => it.id === item.id ? { ...it, sortOrder: newVal } : it);
+                                           setItems(updatedItems);
+                                         }
+                                       }}
+                                       onBlur={(e) => {
+                                         const newVal = parseInt(e.target.value);
+                                         if (!isNaN(newVal) && newVal > 0 && newVal !== (mockTests.find(t => t.id === item.id)?.sortOrder || 0)) {
+                                           handleInlineOrderChange(item.id, newVal);
+                                         }
+                                       }}
+                                       onKeyDown={(e) => {
+                                         if (e.key === 'Enter') {
+                                           const newVal = parseInt((e.target as HTMLInputElement).value);
+                                           if (!isNaN(newVal) && newVal > 0 && newVal !== (mockTests.find(t => t.id === item.id)?.sortOrder || 0)) {
+                                             handleInlineOrderChange(item.id, newVal);
+                                             (e.target as HTMLInputElement).blur();
+                                           }
+                                         }
+                                       }}
+                                       className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-center font-black focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 outline-none transition-all shadow-sm bg-slate-50/50"
+                                     />
+                                   </div>
+                                   <div className="col-span-5">
+                                      <div className="font-extrabold text-slate-900 text-lg line-clamp-2 pr-4">{item.name || item.title || item.questionText || 'Untitled'}</div>
+                                      <div className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-wider">{item.category || item.type || item.difficulty || 'Default'}</div>
+                                   </div>
+                                   <div className="col-span-2">
+                                      <div className="text-sm font-bold text-slate-600">
+                                         {item.durationMinutes} Min • {item.totalMarks} Marks
+                                      </div>
+                                      <div className="text-[10px] text-slate-400 font-bold uppercase mt-1">ID: {item.id?.slice(0, 8)}</div>
+                                   </div>
+                                 </>
+                              ) : (
+                                 <>
+                                   <div className="col-span-6">
+                                      <div className="font-extrabold text-slate-900 text-lg line-clamp-2 pr-4">{item.name || item.title || item.questionText || 'Untitled'}</div>
+                                      <div className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-wider">{item.category || item.type || item.difficulty || 'Default'}</div>
+                                   </div>
+                                   <div className="col-span-3">
+                                      <div className="text-sm font-bold text-slate-600">
+                                         {(() => {
+                                            if (activeTab === 'questions') return `${item.options?.length || 0} Options`;
+                                            if (activeTab === 'series') return `₹${item.price} • ${item.durationDays} Days`;
+                                            if (activeTab === 'tests') return `${item.durationMinutes} Min • ${item.totalMarks} Marks`;
+                                            if (activeTab === 'exams' || activeTab === 'blogs') {
+                                              return item.examDate ? new Date(item.examDate).toLocaleDateString() : '-';
+                                            }
+                                            if (activeTab === 'banks') return `${item.questionCount} Qs • ${item.isPremium ? 'Premium' : 'Free'}`;
+                                            return '-';
+                                         })()}
+                                      </div>
+                                      <div className="text-[10px] text-slate-400 font-bold uppercase mt-1">ID: {item.id?.slice(0, 8)}</div>
+                                   </div>
+                                 </>
+                              )}
+                              <div className="col-span-3 flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                 {['tests', 'series', 'banks'].includes(activeTab) && (
+                                   <button 
+                                     onClick={async (e) => {
+                                        e.stopPropagation();
+                                        if (!confirm('DANGER ZONE: Are you sure you want to revoke access to this content for EVERY SINGLE USER who purchased it?')) return;
+                                        
                                         try {
                                            const session = (await supabase.auth.getSession()).data.session;
                                            const token = session?.access_token;
@@ -4040,48 +4526,87 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                                                  'Authorization': `Bearer ${token}`
                                               },
                                               body: JSON.stringify({
-                                                 productId: `exam_bundle_${item.id}`,
-                                                 relatedIds
+                                                 productId: item.id
                                               })
                                            });
                                            const resData = await response.json();
-                                           if (!response.ok) throw new Error(resData.error || 'Failed to revoke exam access');
-                                           alert(`Cycle Reset Complete: Exam access and all related content revoked (processed: ${resData.count || 0}).`);
+                                           if (!response.ok) throw new Error(resData.error || 'Failed to revoke content');
+                                           alert(`Access revoked from users (processed: ${resData.count || 0}).`);
                                         } catch (err: any) {
                                            alert(`Failed to revoke access: ${err.message}`);
                                         }
-                                       fetchData();
-                                    }}
-                                    className="p-2.5 text-red-500 hover:text-white hover:bg-red-500 rounded-xl transition-all"
-                                    title="End Cycle: Revoke All Exam Content Access"
-                                  >
-                                    <Users className="w-5 h-5 pointer-events-none" />
-                                  </button>
-                                )}
-                                {activeTab === 'tests' && (
-                                  <button 
-                                    onClick={(e) => {
-                                       e.stopPropagation();
-                                       setAttachMockTestId(item.id);
-                                       setShowMockUploadModal(true);
-                                    }}
-                                    className="p-2.5 text-brand-600 hover:text-brand-700 hover:bg-brand-50 rounded-xl transition-all"
-                                    title="Upload Questions JSON"
-                                  >
-                                    <Upload className="w-5 h-5" />
-                                  </button>
-                                )}
-                                <div className="p-2.5 text-slate-300 group-hover:text-slate-400 cursor-grab active:cursor-grabbing" title="Drag to reorder">
-                                  <GripVertical className="w-5 h-5" />
-                                </div>
-                                <button onClick={(e) => handleEditClick(item, e)} className="p-2.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-all"><Edit2 className="w-5 h-5" /></button>
-                                <button onClick={(e) => handleDelete(item.id, e)} className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 className="w-5 h-5" /></button>
-                             </div>
-                          </div>
-                       </Reorder.Item>
-                     ))}
-                   </Reorder.Group>
-                 )}
+                                        fetchData();
+                                     }}
+                                     className="p-2.5 text-red-500 hover:text-white hover:bg-red-500 rounded-xl transition-all"
+                                     title="Revoke Content for All Users"
+                                   >
+                                     <Users className="w-5 h-5 pointer-events-none" />
+                                   </button>
+                                 )}
+                                 {activeTab === 'exams' && (
+                                   <button 
+                                     onClick={async (e) => {
+                                        e.stopPropagation();
+                                        if (!confirm('DANGER ZONE / END CYCLE: Are you sure you want to REVOKE ALL ACCESS to this Exam for EVERY SINGLE USER? This instantly removes access to the Exam Bundle, all individual Mock Tests, and Question Banks under this exam. This action cannot be undone and users will need to purchase again for the next cycle.')) return;
+                                        
+                                        const relatedIds = [
+                                           `exam_bundle_${item.id}`,
+                                           ...mockTests.filter((t: any) => t.examId === item.id).map((t: any) => t.id),
+                                           ...banks.filter((b: any) => b.examId === item.id).map((b: any) => b.id)
+                                        ];
+                                        
+                                         try {
+                                            const session = (await supabase.auth.getSession()).data.session;
+                                            const token = session?.access_token;
+                                            const response = await fetch('/api/admin/content/revoke', {
+                                               method: 'POST',
+                                               headers: {
+                                                  'Content-Type': 'application/json',
+                                                  'Authorization': `Bearer ${token}`
+                                               },
+                                               body: JSON.stringify({
+                                                  productId: `exam_bundle_${item.id}`,
+                                                  relatedIds
+                                               })
+                                            });
+                                            const resData = await response.json();
+                                            if (!response.ok) throw new Error(resData.error || 'Failed to revoke exam access');
+                                            alert(`Cycle Reset Complete: Exam access and all related content revoked (processed: ${resData.count || 0}).`);
+                                         } catch (err: any) {
+                                            alert(`Failed to revoke access: ${err.message}`);
+                                         }
+                                        fetchData();
+                                     }}
+                                     className="p-2.5 text-red-500 hover:text-white hover:bg-red-500 rounded-xl transition-all"
+                                     title="End Cycle: Revoke All Exam Content Access"
+                                   >
+                                     <Users className="w-5 h-5 pointer-events-none" />
+                                   </button>
+                                 )}
+                                 {activeTab === 'tests' && (
+                                   <button 
+                                     onClick={(e) => {
+                                        e.stopPropagation();
+                                        setAttachMockTestId(item.id);
+                                        setShowMockUploadModal(true);
+                                     }}
+                                     className="p-2.5 text-brand-600 hover:text-brand-700 hover:bg-brand-50 rounded-xl transition-all"
+                                     title="Upload Questions JSON"
+                                   >
+                                     <Upload className="w-5 h-5" />
+                                   </button>
+                                 )}
+                                 <div className="p-2.5 text-slate-300 group-hover:text-slate-400 cursor-grab active:cursor-grabbing" title="Drag to reorder">
+                                   <GripVertical className="w-5 h-5" />
+                                 </div>
+                                 <button onClick={(e) => handleEditClick(item, e)} className="p-2.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-all"><Edit2 className="w-5 h-5" /></button>
+                                 <button onClick={(e) => handleDelete(item.id, e)} className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 className="w-5 h-5" /></button>
+                              </div>
+                           </div>
+                        </Reorder.Item>
+                      ))}
+                    </Reorder.Group>
+                  )}
 
                   {/* Pagination Controls */}
                   {activeTab === 'questions' && questionsTotalCount > questionsLimit && (
@@ -4114,8 +4639,9 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                       </div>
                     </div>
                   )}
+                </div>
               </div>
-          )}
+           )}
         </div>
       </main>
 
@@ -4282,7 +4808,18 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                     className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 focus:border-brand-500 font-bold bg-white"
                   >
                     <option value="">-- Select Mock Test --</option>
-                    {mockTests.map(t => (
+                    {mockTests.filter(t => {
+                      if (activeTab === 'tests' && selectedExamIdForTests) {
+                        try {
+                          if (t.seriesId) {
+                            const parsed = JSON.parse(t.seriesId);
+                            if (parsed.examId !== selectedExamIdForTests) return false;
+                            if (selectedCategoryForTests && parsed.category !== selectedCategoryForTests) return false;
+                          }
+                        } catch(e) { return false; }
+                      }
+                      return true;
+                    }).map(t => (
                       <option key={t.id} value={t.id}>{t.title}</option>
                     ))}
                   </select>

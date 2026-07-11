@@ -5063,10 +5063,25 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           });
         });
 
+        const mockConfig = finalExams.find((e: any) => e.name === 'SYSTEM_SETTINGS_MOCK_TEST_CONFIG');
+        let sortDirection: 'asc' | 'desc' = 'asc';
+        if (mockConfig && mockConfig.description) {
+          try {
+            const parsed = JSON.parse(mockConfig.description);
+            if (parsed.sortDirection) sortDirection = parsed.sortDirection;
+          } catch (e) {}
+        }
+
+        const sortedTests = [...(fetchedTests || [])].sort((a, b) => {
+          const orderA = a.sortOrder ?? 9999;
+          const orderB = b.sortOrder ?? 9999;
+          return sortDirection === 'desc' ? orderB - orderA : orderA - orderB;
+        });
+
         // Write to module-level cache before updating state
         _dashboardCache.exams = finalExams;
         _dashboardCache.testSeries = fetchedSeries || [];
-        _dashboardCache.mockTests = fetchedTests || [];
+        _dashboardCache.mockTests = sortedTests;
         _dashboardCache.dynamicQuestionBanks = groupedBanks;
         _dashboardCache.loadedForUserId = user?.id || 'guest';
         _dashboardCache.hasFetchedThisSession = true;
@@ -5075,7 +5090,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         try {
           sessionStorage.setItem('oep_cached_exams', JSON.stringify(finalExams));
           sessionStorage.setItem('oep_cached_testSeries', JSON.stringify(fetchedSeries || []));
-          sessionStorage.setItem('oep_cached_mockTests', JSON.stringify(fetchedTests || []));
+          sessionStorage.setItem('oep_cached_mockTests', JSON.stringify(sortedTests));
           sessionStorage.setItem('oep_cached_dynamicQuestionBanks', JSON.stringify(groupedBanks));
           sessionStorage.setItem('oep_cached_loadedForUserId', user?.id || 'guest');
         } catch (e) {}
@@ -5083,13 +5098,13 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         // Update React state
         setExams(finalExams);
         setTestSeries(fetchedSeries || []);
-        setMockTests(fetchedTests || []);
+        setMockTests(sortedTests);
         setDynamicQuestionBanks(groupedBanks);
 
         // Clean up activities in localStorage and state that belong to deleted exams/tests/banks
         if (user?.id && finalExams.length > 1) {
           const activeExamNames = new Set(finalExams.map((e: any) => e.name));
-          const activeMockTestIds = new Set((fetchedTests || []).map((t: any) => t.id));
+          const activeMockTestIds = new Set(sortedTests.map((t: any) => t.id));
           const activeBankIds = new Set((fetchedBanks || []).map((b: any) => b.id));
 
           try {

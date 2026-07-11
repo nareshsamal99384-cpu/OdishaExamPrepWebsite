@@ -16,7 +16,7 @@ async function checkSchemaHasDiagram(): Promise<boolean> {
   return schemaHasDiagram;
 }
 
-async function callAdminDbProxy(table: string, action: 'insert' | 'update' | 'delete' | 'batch_update', payload?: any, id?: string, filters?: any) {
+async function callAdminDbProxy(table: string, action: 'insert' | 'update' | 'delete', payload?: any, id?: string, filters?: any) {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
   if (!token) {
@@ -298,10 +298,6 @@ export const examService = {
   },
 
   // Mock Tests
-  async batchUpdate(table: 'exams' | 'testSeries' | 'mockTests' | 'questions' | 'questionBanks' | 'users', updates: { id: string, values: any }[]) {
-    return callAdminDbProxy(table, 'batch_update', updates);
-  },
-
   async createMockTest(test: MockTest) {
     const { questions, ...testData } = test;
     const data = await callAdminDbProxy('mockTests', 'insert', testData);
@@ -312,8 +308,7 @@ export const examService = {
     const { data: tests, error: testsError } = await supabase
       .from('mockTests')
       .select('*')
-      .order('sortOrder', { ascending: true, nullsFirst: true })
-      .order('createdAt', { ascending: false });
+      .order('sortOrder', { ascending: true });
     if (testsError) throw testsError;
 
     if (!tests || tests.length === 0) return [];
@@ -344,8 +339,7 @@ export const examService = {
     const { data: tests, error } = await supabase
       .from('mockTests')
       .select('*')
-      .order('sortOrder', { ascending: true, nullsFirst: true })
-      .order('createdAt', { ascending: false });
+      .order('sortOrder', { ascending: true });
     if (error) throw error;
 
     // Fast query to get question counts by fetching only the topic string
