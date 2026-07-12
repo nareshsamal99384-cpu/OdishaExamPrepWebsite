@@ -8056,8 +8056,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     );
                   }
                   return (
-                    <div className="p-8 text-center bg-slate-50 rounded-[2rem] border border-slate-200 text-slate-500 font-bold">
-                      No tests found in this category for the selected exam.
+                    <div className="w-full p-12 bg-white rounded-[2rem] border border-slate-200/60 shadow-sm flex flex-col items-center justify-center text-center space-y-4">
+                      <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center border border-brand-100/50">
+                        <Sparkles className="w-8 h-8 text-brand-600 animate-pulse" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-xl font-bold text-slate-900">Tests Coming Soon</h3>
+                        <p className="text-slate-500 max-w-sm mx-auto text-sm leading-relaxed">
+                          We're preparing high-quality mock tests for this category. Stay tuned—new tests will be available soon.
+                        </p>
+                      </div>
                     </div>
                   );
                 }
