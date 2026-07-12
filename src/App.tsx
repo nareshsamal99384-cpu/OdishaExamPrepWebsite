@@ -3559,7 +3559,6 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     }
     setTestResults(finalResults);
   };
-
   // Stats for comparisons
   // (Moving these inside the component so activities is in scope)
   const [selectedBankItem, setSelectedBankItem] = useState<any | null>(() => {
@@ -4864,6 +4863,84 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
   useEffect(() => {
     sessionStorage.setItem('oep_mobileExamTab', mobileExamTab);
   }, [mobileExamTab]);
+
+  // --- New Content mobile indicator tracking ---
+  const [viewedCategories, setViewedCategories] = useState<Record<string, number>>(() => {
+    try {
+      const saved = localStorage.getItem('oep_category_views');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+
+  const markCategoryAsViewed = useCallback((tabName: 'bank' | 'practice' | 'mock', categoryId: string) => {
+    if (!selectedExam) return;
+    const key = `${selectedExam}_${tabName}_${categoryId}`;
+    const now = Date.now();
+    setViewedCategories(prev => {
+      const updated = { ...prev, [key]: now };
+      try {
+        localStorage.setItem('oep_category_views', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+  }, [selectedExam]);
+
+  // Observer hooks to automatically mark categories as read when they are viewed
+  useEffect(() => {
+    if (selectedBankType) {
+      markCategoryAsViewed('bank', selectedBankType);
+    }
+  }, [selectedBankType, markCategoryAsViewed]);
+
+  useEffect(() => {
+    if (selectedPracticeCategory) {
+      markCategoryAsViewed('practice', selectedPracticeCategory);
+    }
+  }, [selectedPracticeCategory, markCategoryAsViewed]);
+
+  useEffect(() => {
+    if (selectedMockCategory) {
+      markCategoryAsViewed('mock', selectedMockCategory);
+    }
+  }, [selectedMockCategory, markCategoryAsViewed]);
+
+  // Helper to determine if a specific category has new unread content
+  const hasNewUnreadContent = useCallback((tabName: 'bank' | 'practice' | 'mock', categoryId: string): boolean => {
+    if (!selectedExam) return false;
+    const NEW_CONTENT_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
+    const viewKey = `${selectedExam}_${tabName}_${categoryId}`;
+    const lastViewTime = viewedCategories[viewKey] || 0;
+    const now = Date.now();
+
+    if (tabName === 'mock') {
+      // For mock tests, check in-memory list
+      const matched = mockTests.filter(mt => {
+        if (mt.is_archived) return false;
+        try {
+          const cfg = JSON.parse(mt.seriesId);
+          return cfg.examId === selectedExam && cfg.category === categoryId;
+        } catch (e) {
+          return false;
+        }
+      });
+      return matched.some(mt => {
+        const createTime = new Date(mt.created_at || mt.createdAt || 0).getTime();
+        return (now - createTime < NEW_CONTENT_THRESHOLD_MS) && (lastViewTime < createTime);
+      });
+    } else {
+      // For question bank or practice tests, check in-memory banks list
+      const banks = (dynamicQuestionBanks[categoryId] || []).filter((b: any) => {
+        if (b.is_archived) return false;
+        return b.examId === selectedExam;
+      });
+      return banks.some(b => {
+        const createTime = new Date(b.created_at || b.createdAt || 0).getTime();
+        return (now - createTime < NEW_CONTENT_THRESHOLD_MS) && (lastViewTime < createTime);
+      });
+    }
+  }, [selectedExam, viewedCategories, mockTests, dynamicQuestionBanks]);
 
   console.log("[DIAG] === DashboardContent Render ===");
   console.log("[DIAG] propsSelectedExam:", propsSelectedExam);
@@ -7016,7 +7093,15 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         {React.cloneElement(item.icon, { className: "w-5 h-5 text-brand-700 relative z-10" })}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h4 className="font-extrabold text-[14.5px] text-slate-850 tracking-tight leading-snug">{item.title}</h4>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h4 className="font-extrabold text-[14.5px] text-slate-850 tracking-tight leading-snug">{item.title}</h4>
+                          {hasNewUnreadContent('bank', item.id) && (
+                            <span className="px-1.5 py-0.5 bg-brand-500 text-white text-[8.5px] font-black uppercase tracking-wider rounded-md shrink-0 flex items-center gap-1 animate-pulse">
+                              <span className="w-1 h-1 rounded-full bg-white animate-ping shrink-0" />
+                              New
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[11.5px] text-slate-500 font-medium leading-relaxed mt-0.5 line-clamp-2 pr-1">{item.desc}</p>
                       </div>
                     </div>
@@ -7041,7 +7126,15 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         <div className="absolute inset-0 border-2 border-white/20 rounded-xl sm:rounded-2xl animate-pulse" />
                       </div>
                     </div>
-                    <h4 className="font-extrabold text-base sm:text-lg lg:text-xl text-slate-900 mb-2 group-hover:text-brand-650 transition-colors tracking-tight line-clamp-2 md:line-clamp-none leading-snug">{item.title}</h4>
+                    <h4 className="font-extrabold text-base sm:text-lg lg:text-xl text-slate-900 mb-2 group-hover:text-brand-650 transition-colors tracking-tight line-clamp-2 md:line-clamp-none leading-snug flex items-center gap-2 flex-wrap">
+                      {item.title}
+                      {hasNewUnreadContent('bank', item.id) && (
+                        <span className="px-1.5 py-0.5 bg-brand-500 text-white text-[8.5px] font-black uppercase tracking-wider rounded-md shrink-0 flex items-center gap-1 animate-pulse">
+                          <span className="w-1 h-1 rounded-full bg-white animate-ping shrink-0" />
+                          New
+                        </span>
+                      )}
+                    </h4>
                     <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">{item.desc}</p>
                   </div>
                   
@@ -7448,7 +7541,14 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <h4 className="font-extrabold text-[14.5px] text-slate-850 tracking-tight leading-snug">{test.title}</h4>
-                                  <span className="px-1.5 py-0.5 bg-slate-50 text-slate-400 text-[8.5px] font-black rounded border border-slate-100 uppercase tracking-wider shrink-0">{test.tag}</span>
+                                  {hasNewUnreadContent('practice', test.id) ? (
+                                    <span className="px-1.5 py-0.5 bg-brand-500 text-white text-[8.5px] font-black uppercase tracking-wider rounded-md shrink-0 flex items-center gap-1 animate-pulse">
+                                      <span className="w-1 h-1 rounded-full bg-white animate-ping shrink-0" />
+                                      New
+                                    </span>
+                                  ) : (
+                                    <span className="px-1.5 py-0.5 bg-slate-50 text-slate-400 text-[8.5px] font-black rounded border border-slate-100 uppercase tracking-wider shrink-0">{test.tag}</span>
+                                  )}
                                 </div>
                                 <p className="text-[11.5px] text-slate-500 font-medium leading-relaxed mt-0.5 line-clamp-2 pr-1">{test.desc}</p>
                               </div>
@@ -7483,9 +7583,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                             <div className="space-y-4 flex-1 relative z-10">
                               <p className="text-slate-500 font-medium text-xs sm:text-sm leading-relaxed">{test.desc}</p>
                               <div className="flex">
-                                <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 bg-slate-50 text-slate-400 rounded-lg border border-slate-100 group-hover:bg-brand-50 group-hover:text-brand-600 group-hover:border-brand-100 transition-colors">
-                                  {test.tag}
-                                </span>
+                                {hasNewUnreadContent('practice', test.id) ? (
+                                  <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 bg-brand-500 text-white rounded-lg flex items-center gap-1 animate-pulse">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping shrink-0" />
+                                    New
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 bg-slate-50 text-slate-400 rounded-lg border border-slate-100 group-hover:bg-brand-50 group-hover:text-brand-600 group-hover:border-brand-100 transition-colors">
+                                    {test.tag}
+                                  </span>
+                                )}
                               </div>
                             </div>
 
@@ -7959,7 +8066,14 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <h4 className="font-extrabold text-[14.5px] text-slate-855 tracking-tight leading-snug">{test.title}</h4>
-                                <span className="px-1.5 py-0.5 bg-slate-50 text-slate-400 text-[8.5px] font-black rounded border border-slate-100 uppercase tracking-wider shrink-0">{test.tag}</span>
+                                {hasNewUnreadContent('mock', test.id) ? (
+                                  <span className="px-1.5 py-0.5 bg-brand-500 text-white text-[8.5px] font-black uppercase tracking-wider rounded-md shrink-0 flex items-center gap-1 animate-pulse">
+                                    <span className="w-1 h-1 rounded-full bg-white animate-ping shrink-0" />
+                                    New
+                                  </span>
+                                ) : (
+                                  <span className="px-1.5 py-0.5 bg-slate-50 text-slate-400 text-[8.5px] font-black rounded border border-slate-100 uppercase tracking-wider shrink-0">{test.tag}</span>
+                                )}
                               </div>
                               <p className="text-[11.5px] text-slate-500 font-medium leading-relaxed mt-0.5 line-clamp-2 pr-1">{test.desc}</p>
                             </div>
@@ -7994,9 +8108,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           <div className="space-y-4 flex-1 relative z-10">
                             <p className="text-slate-500 font-medium text-xs sm:text-sm leading-relaxed">{test.desc}</p>
                             <div className="flex">
-                              <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 bg-slate-50 text-slate-400 rounded-lg border border-slate-100 group-hover:bg-brand-50 group-hover:text-brand-600 group-hover:border-brand-100 transition-colors">
-                                {test.tag}
-                              </span>
+                              {hasNewUnreadContent('mock', test.id) ? (
+                                <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 bg-brand-500 text-white rounded-lg flex items-center gap-1 animate-pulse">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping shrink-0" />
+                                  New
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 bg-slate-50 text-slate-400 rounded-lg border border-slate-100 group-hover:bg-brand-50 group-hover:text-brand-600 group-hover:border-brand-100 transition-colors">
+                                  {test.tag}
+                                </span>
+                              )}
                             </div>
                           </div>
 
