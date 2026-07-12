@@ -3570,6 +3570,23 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     return null;
   });
 
+  const [isModalAnimateOpen, setIsModalAnimateOpen] = useState(false);
+
+  useEffect(() => {
+    if (selectedBankItem) {
+      // Defer triggering the transition animation by 60ms to let browser layout/reflow settle
+      const frame = requestAnimationFrame(() => {
+        const timer = setTimeout(() => {
+          setIsModalAnimateOpen(true);
+        }, 60);
+        return () => clearTimeout(timer);
+      });
+      return () => cancelAnimationFrame(frame);
+    } else {
+      setIsModalAnimateOpen(false);
+    }
+  }, [selectedBankItem]);
+
   useEffect(() => {
     if (selectedBankItem) sessionStorage.setItem('oep_selectedBankItem', JSON.stringify(selectedBankItem));
     else sessionStorage.removeItem('oep_selectedBankItem');
@@ -3584,33 +3601,35 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     if (typeof document === 'undefined') return null;
     return createPortal(
       <>
-        {/* Detail View Modal */}
-        <AnimatePresence mode="wait">
+        {/* Detail View Modal Backdrop */}
+        <AnimatePresence>
           {selectedBankItem && (
-            <>
-              {/* Animated dimming layer */}
-              <motion.div
-                key="detail-backdrop-color"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
-                className="fixed inset-0 bg-black/50 z-[100]"
-                style={{ willChange: 'opacity' }}
-                onClick={() => setSelectedBankItem(null)}
-              />
+            <motion.div
+              key="detail-backdrop-color"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+              className="fixed inset-0 bg-black/50 z-[100]"
+              style={{ willChange: 'opacity' }}
+              onClick={() => setSelectedBankItem(null)}
+            />
+          )}
+        </AnimatePresence>
 
-              {/* Modal panel wrapper */}
-              <div className="fixed inset-0 z-[101] flex items-end md:items-center justify-center pointer-events-none px-3 pb-3 md:p-4" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 56px)' }}>
-                <motion.div 
-                  key="detail-modal"
-                  variants={premiumModalVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  className="bg-[#FAF8F5] rounded-[2rem] w-full md:w-full max-w-xl md:max-w-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] flex flex-col md:flex-row border border-slate-200/50 relative pointer-events-auto mx-auto"
-                  style={{ willChange: 'transform, opacity' }}
-                >
+        {/* Detail View Modal Panel */}
+        <AnimatePresence>
+          {selectedBankItem && isModalAnimateOpen && (
+            <div className="fixed inset-0 z-[101] flex items-end md:items-center justify-center pointer-events-none px-3 pb-3 md:p-4" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 56px)' }}>
+              <motion.div 
+                key="detail-modal"
+                variants={premiumModalVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="bg-[#FAF8F5] rounded-[2rem] w-full md:w-full max-w-xl md:max-w-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] flex flex-col md:flex-row border border-slate-200/50 relative pointer-events-auto"
+                style={{ willChange: 'transform, opacity' }}
+              >
                   {/* Unified Close Button */}
                   <button 
                     onClick={() => setSelectedBankItem(null)}
@@ -3920,7 +3939,6 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                 </div>
                 </motion.div>
               </div>
-            </>
           )}
         </AnimatePresence>
 
@@ -5101,90 +5119,92 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         setMockTests(sortedTests);
         setDynamicQuestionBanks(groupedBanks);
 
-        // Clean up activities in localStorage and state that belong to deleted exams/tests/banks
-        if (user?.id && finalExams.length > 1) {
-          const activeExamNames = new Set(finalExams.map((e: any) => e.name));
-          const activeMockTestIds = new Set(sortedTests.map((t: any) => t.id));
-          const activeBankIds = new Set((fetchedBanks || []).map((b: any) => b.id));
+        // Clean up activities in localStorage and state that belong to deleted exams/tests/banks (deferred to prevent main thread blocking)
+        setTimeout(async () => {
+          if (user?.id && finalExams.length > 1) {
+            const activeExamNames = new Set(finalExams.map((e: any) => e.name));
+            const activeMockTestIds = new Set(sortedTests.map((t: any) => t.id));
+            const activeBankIds = new Set((fetchedBanks || []).map((b: any) => b.id));
 
-          try {
-            const localKey = `oep_activities_${user.id}`;
-            const localActivitiesStr = localStorage.getItem(localKey);
-            if (localActivitiesStr) {
-              const localActivities = JSON.parse(localActivitiesStr);
-              if (Array.isArray(localActivities)) {
-                const filtered = localActivities.filter((act: any) => {
-                  if (!act) return false;
+            try {
+              const localKey = `oep_activities_${user.id}`;
+              const localActivitiesStr = localStorage.getItem(localKey);
+              if (localActivitiesStr) {
+                const localActivities = JSON.parse(localActivitiesStr);
+                if (Array.isArray(localActivities)) {
+                  const filtered = localActivities.filter((act: any) => {
+                    if (!act) return false;
 
-                  // 1. Filter out by examName (if deleted)
-                  const actExamName = act.metadata?.examName;
-                  if (actExamName && actExamName !== 'General' && !activeExamNames.has(actExamName)) {
-                    return false;
-                  }
-
-                  // 2. Filter out by mockTestId (if deleted)
-                  const testId = act.metadata?.test?.id;
-                  if (testId && !testId.startsWith('practice-') && (act.type === 'mock_test_completed' || act.type === 'test_incomplete')) {
-                    if (!activeMockTestIds.has(testId)) {
+                    // 1. Filter out by examName (if deleted)
+                    const actExamName = act.metadata?.examName;
+                    if (actExamName && actExamName !== 'General' && !activeExamNames.has(actExamName)) {
                       return false;
                     }
-                  }
 
-                  // 3. Filter out by bankId (if deleted)
-                  const bankId = act.metadata?.bankId;
-                  if (bankId && act.type === 'question_bank_accessed') {
-                    if (!activeBankIds.has(bankId)) {
-                      return false;
-                    }
-                  }
-
-                  return true;
-                });
-
-                if (filtered.length !== localActivities.length) {
-                  localStorage.setItem(localKey, JSON.stringify(filtered));
-                  
-                  // Sync updated activities to user cloud metadata
-                  const cloudPayload = filtered.slice(0, 50).map((a: any) => {
-                    try {
-                      const m = a.metadata || {};
-                      const lightMeta: any = {
-                        examName: m.examName,
-                        testCategory: m.testCategory,
-                        bankType: m.bankType,
-                        bankId: m.bankId,
-                        resumeSessionId: m.resumeSessionId,
-                      };
-                      if (a.type === 'test_incomplete') {
-                        lightMeta.currentQuestionIndex = m.currentQuestionIndex;
-                        lightMeta.timeLeft = m.timeLeft;
-                        if (m.test && typeof m.test === 'object') {
-                          lightMeta.test = {
-                            id: m.test.id,
-                            title: m.test.title,
-                            durationMinutes: m.test.durationMinutes,
-                            _questionCount: m.test._questionCount || (Array.isArray(m.test.questions) ? m.test.questions.length : 0),
-                          };
-                        }
-                        lightMeta.totalQuestions = m.totalQuestions || lightMeta.test?._questionCount || 0;
+                    // 2. Filter out by mockTestId (if deleted)
+                    const testId = act.metadata?.test?.id;
+                    if (testId && !testId.startsWith('practice-') && (act.type === 'mock_test_completed' || act.type === 'test_incomplete')) {
+                      if (!activeMockTestIds.has(testId)) {
+                        return false;
                       }
-                      return { ...a, metadata: lightMeta };
-                    } catch {
-                      return { id: a.id, userId: a.userId, type: a.type, title: a.title, timestamp: a.timestamp, score: a.score, accuracy: a.accuracy };
                     }
-                  });
-                  await supabase.auth.updateUser({
-                    data: { activities: cloudPayload },
+
+                    // 3. Filter out by bankId (if deleted)
+                    const bankId = act.metadata?.bankId;
+                    if (bankId && act.type === 'question_bank_accessed') {
+                      if (!activeBankIds.has(bankId)) {
+                        return false;
+                      }
+                    }
+
+                    return true;
                   });
 
-                  if (onActivityLogged) onActivityLogged();
+                  if (filtered.length !== localActivities.length) {
+                    localStorage.setItem(localKey, JSON.stringify(filtered));
+                    
+                    // Sync updated activities to user cloud metadata
+                    const cloudPayload = filtered.slice(0, 50).map((a: any) => {
+                      try {
+                        const m = a.metadata || {};
+                        const lightMeta: any = {
+                          examName: m.examName,
+                          testCategory: m.testCategory,
+                          bankType: m.bankType,
+                          bankId: m.bankId,
+                          resumeSessionId: m.resumeSessionId,
+                        };
+                        if (a.type === 'test_incomplete') {
+                          lightMeta.currentQuestionIndex = m.currentQuestionIndex;
+                          lightMeta.timeLeft = m.timeLeft;
+                          if (m.test && typeof m.test === 'object') {
+                            lightMeta.test = {
+                              id: m.test.id,
+                              title: m.test.title,
+                              durationMinutes: m.test.durationMinutes,
+                              _questionCount: m.test._questionCount || (Array.isArray(m.test.questions) ? m.test.questions.length : 0),
+                            };
+                          }
+                          lightMeta.totalQuestions = m.totalQuestions || lightMeta.test?._questionCount || 0;
+                        }
+                        return { ...a, metadata: lightMeta };
+                      } catch {
+                        return { id: a.id, userId: a.userId, type: a.type, title: a.title, timestamp: a.timestamp, score: a.score, accuracy: a.accuracy };
+                      }
+                    });
+                    await supabase.auth.updateUser({
+                      data: { activities: cloudPayload },
+                    });
+
+                    if (onActivityLogged) onActivityLogged();
+                  }
                 }
               }
+            } catch (e) {
+              console.error("Error cleaning up local activities:", e);
             }
-          } catch (e) {
-            console.error("Error cleaning up local activities:", e);
           }
-        }
+        }, 4000);
 
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -8774,46 +8794,46 @@ function AppContent() {
       )
       .subscribe();
 
-    // ── One-time metadata repair for old accounts ──────────────────────────────
-    // Run whenever user_metadata is large (> 2KB). Strips ALL heavy session state
-    // (answers, markedForReview, timeSpent, questions) so the JWT stays small.
-    const cloudActivities = user.user_metadata?.activities;
-    const metaSize = JSON.stringify(user.user_metadata || {}).length;
-    if (Array.isArray(cloudActivities) && metaSize > 2000) {
-      const repaired = cloudActivities.slice(0, 30).map((a: any) => {
-        if (!a) return null;
-        const m = a.metadata || {};
-        const lightMeta: any = {
-          examName: m.examName,
-          testCategory: m.testCategory,
-          bankType: m.bankType,
-          bankId: m.bankId,
-          resumeSessionId: m.resumeSessionId,
-        };
-        if (a.type === 'test_incomplete') {
-          lightMeta.currentQuestionIndex = m.currentQuestionIndex;
-          lightMeta.timeLeft = m.timeLeft;
-          lightMeta.totalQuestions = m.totalQuestions || 0;
-          if (m.test && typeof m.test === 'object') {
-            lightMeta.test = {
-              id: m.test.id,
-              title: m.test.title,
-              durationMinutes: m.test.durationMinutes,
-              _questionCount: m.test._questionCount ||
-                (Array.isArray(m.test.questions) ? m.test.questions.length : 0),
-            };
+    // ── One-time metadata repair for old accounts (deferred to idle time) ────────
+    const repairTimer = setTimeout(() => {
+      const cloudActivities = user?.user_metadata?.activities;
+      const metaSize = JSON.stringify(user?.user_metadata || {}).length;
+      if (Array.isArray(cloudActivities) && metaSize > 2000) {
+        const repaired = cloudActivities.slice(0, 30).map((a: any) => {
+          if (!a) return null;
+          const m = a.metadata || {};
+          const lightMeta: any = {
+            examName: m.examName,
+            testCategory: m.testCategory,
+            bankType: m.bankType,
+            bankId: m.bankId,
+            resumeSessionId: m.resumeSessionId,
+          };
+          if (a.type === 'test_incomplete') {
+            lightMeta.currentQuestionIndex = m.currentQuestionIndex;
+            lightMeta.timeLeft = m.timeLeft;
+            lightMeta.totalQuestions = m.totalQuestions || 0;
+            if (m.test && typeof m.test === 'object') {
+              lightMeta.test = {
+                id: m.test.id,
+                title: m.test.title,
+                durationMinutes: m.test.durationMinutes,
+                _questionCount: m.test._questionCount ||
+                  (Array.isArray(m.test.questions) ? m.test.questions.length : 0),
+              };
+            }
           }
-        }
-        return { id: a.id, type: a.type, title: a.title, timestamp: a.timestamp,
-                 score: a.score, accuracy: a.accuracy, metadata: lightMeta };
-      }).filter(Boolean);
-      supabase.auth.updateUser({ data: { activities: repaired } }).catch(
-        (e: any) => console.warn('Metadata repair failed (non-fatal):', e)
-      );
-    }
-    // ─────────────────────────────────────────────────────────────────────────
+          return { id: a.id, type: a.type, title: a.title, timestamp: a.timestamp,
+                   score: a.score, accuracy: a.accuracy, metadata: lightMeta };
+        }).filter(Boolean);
+        supabase.auth.updateUser({ data: { activities: repaired } }).catch(
+          (e: any) => console.warn('Metadata repair failed (non-fatal):', e)
+        );
+      }
+    }, 3000);
 
     return () => {
+      clearTimeout(repairTimer);
       supabase.removeChannel(channel);
     };
   }, [user?.id, user?.user_metadata, fetchActivitiesFromDB]);
