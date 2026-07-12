@@ -159,7 +159,7 @@ export const examService = {
     return data.data;
   },
 
-  async getQuestionsPaginated(page = 1, limit = 50, search = '', examId = 'all', questionFilter = 'all') {
+  async getQuestionsPaginated(page = 1, limit = 50, search = '', examId = 'all', questionFilter = 'all', topic = 'all', signal?: AbortSignal) {
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
     if (!token) {
@@ -171,13 +171,15 @@ export const examService = {
       limit: limit.toString(),
       search,
       examId,
-      questionFilter
+      questionFilter,
+      topic
     });
 
     const res = await fetch(`/api/admin/questions?${params.toString()}`, {
       headers: {
         'Authorization': `Bearer ${token}`
-      }
+      },
+      signal // Pass the AbortSignal so the request can be cancelled
     });
 
     const data = await res.json();
@@ -186,6 +188,7 @@ export const examService = {
     }
     return data;
   },
+
 
   async getAllQuestions() {
     const { data, error } = await supabase
@@ -314,14 +317,34 @@ export const examService = {
     if (!tests || tests.length === 0) return [];
 
     const testIds = tests.map(t => `mockTest__${t.id}`);
-    const { data: questions, error: qError } = await supabase
-      .from('questions')
-      .select('*')
-      .in('topic', testIds);
-
-    if (qError) {
-      console.error("Error fetching mock test questions", qError);
-      return tests as MockTest[];
+    
+    // Fetch all questions in batches to avoid Supabase's 1000-row limit
+    let questions: any[] = [];
+    let page = 0;
+    const pageSize = 1000;
+    let keepFetching = true;
+    while (keepFetching) {
+      const { data, error } = await supabase
+        .from('questions')
+        .select('*')
+        .in('topic', testIds)
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+      
+      if (error) {
+        console.error("Error fetching mock test questions", error);
+        return tests as MockTest[];
+      }
+      
+      if (!data || data.length === 0) {
+        keepFetching = false;
+      } else {
+        questions = questions.concat(data);
+        if (data.length < pageSize) {
+          keepFetching = false;
+        } else {
+          page++;
+        }
+      }
     }
 
     return tests.map(t => ({
@@ -344,10 +367,35 @@ export const examService = {
 
     // Fast query to get question counts by fetching only the topic string
     const testIds = (tests ?? []).map(t => `mockTest__${t.id}`);
-    const { data: qTopics } = await supabase
-      .from('questions')
-      .select('topic')
-      .in('topic', testIds);
+    
+    // Fetch all topics in batches to avoid Supabase's 1000-row limit
+    let qTopics: any[] = [];
+    let page = 0;
+    const pageSize = 1000;
+    let keepFetching = true;
+    while (keepFetching) {
+      const { data, error } = await supabase
+        .from('questions')
+        .select('topic')
+        .in('topic', testIds)
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+        
+      if (error) {
+        console.error("Error fetching question topics", error);
+        break;
+      }
+      
+      if (!data || data.length === 0) {
+        keepFetching = false;
+      } else {
+        qTopics = qTopics.concat(data);
+        if (data.length < pageSize) {
+          keepFetching = false;
+        } else {
+          page++;
+        }
+      }
+    }
       
     const countMap: Record<string, number> = {};
     if (qTopics) {
@@ -410,12 +458,29 @@ export const examService = {
   },
 
   async getQuestionsForMockTest(mockTestId: string) {
-    const { data, error } = await supabase
-      .from('questions')
-      .select('*')
-      .eq('topic', `mockTest__${mockTestId}`);
-    if (error) throw error;
-    return data as Question[];
+    let allQuestions: Question[] = [];
+    let page = 0;
+    const pageSize = 1000;
+    let keepFetching = true;
+    while (keepFetching) {
+      const { data, error } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('topic', `mockTest__${mockTestId}`)
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        keepFetching = false;
+      } else {
+        allQuestions = allQuestions.concat(data as Question[]);
+        if (data.length < pageSize) {
+          keepFetching = false;
+        } else {
+          page++;
+        }
+      }
+    }
+    return allQuestions;
   },
 
   async addQuestionsToMockTest(mockTestId: string, examId: string, questions: Partial<Question>[]) {

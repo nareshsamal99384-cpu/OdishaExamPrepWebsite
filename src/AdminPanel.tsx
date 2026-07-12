@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, 
@@ -146,6 +146,12 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
   const [testSortDirection, setTestSortDirection] = useState<'asc' | 'desc'>('asc');
   const [selectedExamIdForTests, setSelectedExamIdForTests] = useState<string | null>(null);
   const [selectedCategoryForTests, setSelectedCategoryForTests] = useState<string | null>(null);
+  const [selectedExamIdForBanks, setSelectedExamIdForBanks] = useState<string | null>(null);
+  const [selectedExamIdForSeries, setSelectedExamIdForSeries] = useState<string | null>(null);
+  const [selectedExamIdForQuestions, setSelectedExamIdForQuestions] = useState<string | null>(() => sessionStorage.getItem('oep_qs_examId') || null);
+  const [selectedTypeForQuestions, setSelectedTypeForQuestions] = useState<'mock' | 'bank' | null>(() => (sessionStorage.getItem('oep_qs_type') as 'mock' | 'bank' | null) || null);
+  const [selectedCategoryForQuestions, setSelectedCategoryForQuestions] = useState<string | null>(() => sessionStorage.getItem('oep_qs_category') || null);
+  const [selectedTargetIdForQuestions, setSelectedTargetIdForQuestions] = useState<string | null>(() => sessionStorage.getItem('oep_qs_targetId') || null);
   const [bankFilter, setBankFilter] = useState<'all' | 'topic-wise' | 'exam-focused' | 'revision-sets' | 'pyq-collections'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterExamId, setFilterExamId] = useState('all');
@@ -337,24 +343,45 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
     { label: 'Forest Guard', examId: '' }
   ]);
 
+  // Ref to abort in-flight question fetches when a newer request comes in
+  const fetchQuestionsAbortRef = useRef<AbortController | null>(null);
+
   const [questionsPage, setQuestionsPage] = useState(1);
   const [questionsLimit] = useState(50);
   const [questionsTotalCount, setQuestionsTotalCount] = useState(0);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
-  const [isInitialMount, setIsInitialMount] = useState(true);
 
-  const fetchQuestions = async (page = questionsPage, search = searchQuery, examId = filterExamId, qFilter = questionFilter) => {
+  const fetchQuestions = async (
+    page = questionsPage, 
+    search = searchQuery, 
+    examId = filterExamId, 
+    qFilter = questionFilter,
+    topicVal = selectedTypeForQuestions === 'mock' 
+      ? (selectedTargetIdForQuestions ? `mockTest__${selectedTargetIdForQuestions}` : 'all')
+      : (selectedTypeForQuestions === 'bank' ? (selectedTargetIdForQuestions || 'all') : 'all')
+  ) => {
+    // Cancel any in-flight request to prevent stale responses overwriting fresh ones
+    if (fetchQuestionsAbortRef.current) {
+      fetchQuestionsAbortRef.current.abort();
+    }
+    const abortController = new AbortController();
+    fetchQuestionsAbortRef.current = abortController;
+
     setLoadingQuestions(true);
     try {
-      const result = await examService.getQuestionsPaginated(page, questionsLimit, search, examId, qFilter);
+      const result = await examService.getQuestionsPaginated(page, questionsLimit, search, examId, qFilter, topicVal, abortController.signal);
+      if (abortController.signal.aborted) return; // Superseded — ignore result
       if (result.success) {
         setQuestions(result.data || []);
         setQuestionsTotalCount(result.totalCount || 0);
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.name === 'AbortError') return; // Gracefully ignore cancelled request
       console.error("Failed to load paginated questions:", err);
     } finally {
-      setLoadingQuestions(false);
+      if (!abortController.signal.aborted) {
+        setLoadingQuestions(false);
+      }
     }
   };
 
@@ -379,15 +406,14 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
          console.error("Error setting up user fetch:", e);
       }
 
-      const [qs, ss, ts, ex, bks, fetchedUsers] = await Promise.all([
-        Promise.resolve([] as Question[]),
+      // Load structural data only — questions are managed independently by fetchQuestions()
+      const [ss, ts, ex, bks, fetchedUsers] = await Promise.all([
         examService.getAllTestSeries(),
         examService.getAllMockTests(),
         examService.getAllExams(),
         examService.getAllQuestionBanks(),
         usersFetchPromise
       ]);
-      setQuestions(qs);
       setSeries(ss);
       setMockTests(ts);
       setExams(ex);
@@ -468,9 +494,8 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
         if (!subsErr && subs) setSubscribers(subs);
       } catch (e) {}
 
-      if (activeTab === 'questions') {
-        await fetchQuestions(questionsPage, searchQuery, filterExamId, questionFilter);
-      }
+      // Questions are fetched independently by the questions useEffect below —
+      // do NOT call fetchQuestions here to avoid race conditions and state wipes.
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -480,33 +505,63 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
 
   useEffect(() => {
     fetchData();
-    setIsInitialMount(false);
   }, []);
 
   useEffect(() => {
     sessionStorage.setItem('oep_adminActiveTab', activeTab);
   }, [activeTab]);
 
+  // Persist questions navigation state to sessionStorage so a page refresh restores the view
   useEffect(() => {
-    if (activeTab === 'questions' && !isInitialMount) {
+    if (selectedExamIdForQuestions) sessionStorage.setItem('oep_qs_examId', selectedExamIdForQuestions);
+    else sessionStorage.removeItem('oep_qs_examId');
+  }, [selectedExamIdForQuestions]);
+
+  useEffect(() => {
+    if (selectedTypeForQuestions) sessionStorage.setItem('oep_qs_type', selectedTypeForQuestions);
+    else sessionStorage.removeItem('oep_qs_type');
+  }, [selectedTypeForQuestions]);
+
+  useEffect(() => {
+    if (selectedCategoryForQuestions) sessionStorage.setItem('oep_qs_category', selectedCategoryForQuestions);
+    else sessionStorage.removeItem('oep_qs_category');
+  }, [selectedCategoryForQuestions]);
+
+  useEffect(() => {
+    if (selectedTargetIdForQuestions) sessionStorage.setItem('oep_qs_targetId', selectedTargetIdForQuestions);
+    else sessionStorage.removeItem('oep_qs_targetId');
+  }, [selectedTargetIdForQuestions]);
+
+  // Fetch questions whenever the active tab, page, filters, or selection changes
+  useEffect(() => {
+    if (activeTab === 'questions') {
       fetchQuestions(questionsPage, searchQuery, filterExamId, questionFilter);
     }
-  }, [activeTab, questionsPage, searchQuery, filterExamId, questionFilter, isInitialMount]);
+  }, [activeTab, questionsPage, searchQuery, filterExamId, questionFilter, selectedTargetIdForQuestions, selectedTypeForQuestions]);
 
   useEffect(() => {
     setQuestionsPage(1);
-  }, [searchQuery, filterExamId, questionFilter]);
+  }, [searchQuery, filterExamId, questionFilter, selectedTargetIdForQuestions, selectedTypeForQuestions]);
 
   useEffect(() => {
     let list: any[] = [];
     if (activeTab === 'questions') {
       let filtered = questions;
-      if (questionFilter === 'practice') {
-        filtered = filtered.filter(q => !(q.topic || '').toLowerCase().startsWith('mocktest__'));
-      } else if (questionFilter === 'mock') {
-        filtered = filtered.filter(q => (q.topic || '').toLowerCase().startsWith('mocktest__'));
+      if (selectedExamIdForQuestions) {
+        filtered = filtered.filter(q => q.examId === selectedExamIdForQuestions);
       }
-      if (filterExamId !== 'all') filtered = filtered.filter(q => q.examId === filterExamId);
+      if (selectedTypeForQuestions === 'mock') {
+        // Use exact prefix casing from DB: 'mockTest__' (capital T)
+        filtered = filtered.filter(q => (q.topic || '').startsWith('mockTest__'));
+        if (selectedTargetIdForQuestions) {
+          filtered = filtered.filter(q => q.topic === `mockTest__${selectedTargetIdForQuestions}`);
+        }
+      } else if (selectedTypeForQuestions === 'bank') {
+        filtered = filtered.filter(q => !(q.topic || '').startsWith('mockTest__'));
+        if (selectedTargetIdForQuestions) {
+          filtered = filtered.filter(q => q.topic === selectedTargetIdForQuestions);
+        }
+      }
       if (searchQuery.trim()) {
         const lowerQ = searchQuery.toLowerCase();
         filtered = filtered.filter(q => {
@@ -518,7 +573,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
              const ex = exams.find(e => e.id === q.examId);
              if (ex && ex.name.toLowerCase().includes(lowerQ)) examNameMatch = true;
           }
-          if ((q.topic || '').toLowerCase().startsWith('mocktest__')) {
+          if ((q.topic || '').startsWith('mockTest__')) {
             const testId = q.topic.split('__')[1];
             const mt = mockTests.find(m => m.id === testId);
             if (mt && mt.title.toLowerCase().includes(lowerQ)) mockTitleMatch = true;
@@ -529,7 +584,9 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       list = filtered;
     } else if (activeTab === 'series') {
        let filtered = series;
-       if (filterExamId !== 'all') filtered = filtered.filter(s => s.examId === filterExamId);
+       if (selectedExamIdForSeries) {
+         filtered = filtered.filter(s => s.examId === selectedExamIdForSeries);
+       }
        if (searchQuery.trim()) {
          const lowerQ = searchQuery.toLowerCase();
          filtered = filtered.filter(s => (s.title || '').toLowerCase().includes(lowerQ));
@@ -586,8 +643,10 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       list = filtered;
     } else if (activeTab === 'banks') {
       let filtered = banks;
+      if (selectedExamIdForBanks) {
+        filtered = filtered.filter(b => b.examId === selectedExamIdForBanks);
+      }
       if (bankFilter !== 'all') filtered = filtered.filter(b => b.type === bankFilter);
-      if (filterExamId !== 'all') filtered = filtered.filter(b => b.examId === filterExamId);
       if (searchQuery.trim()) {
         const lowerQ = searchQuery.toLowerCase();
         filtered = filtered.filter(b => {
@@ -651,7 +710,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       sorted.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
     }
     setItems(sorted);
-  }, [activeTab, questions, series, mockTests, exams, banks, users, filterExamId, searchQuery, examFilter, questionFilter, testFilter, bankFilter, testSortDirection, selectedExamIdForTests, selectedCategoryForTests]);
+  }, [activeTab, questions, series, mockTests, exams, banks, users, filterExamId, searchQuery, examFilter, questionFilter, testFilter, bankFilter, testSortDirection, selectedExamIdForTests, selectedCategoryForTests, selectedExamIdForBanks, selectedExamIdForSeries, selectedExamIdForQuestions, selectedTypeForQuestions, selectedCategoryForQuestions, selectedTargetIdForQuestions]);
 
   const actualExams = React.useMemo(() => {
     return exams.filter(e => e.category !== 'blog' && e.category !== 'system' && !(e.name || '').startsWith('SYSTEM_SETTINGS_'));
@@ -850,8 +909,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       };
     } else if (activeTab === 'questions') {
       let mockCategory = 'full-length';
-      const t = (item.topic || '').toLowerCase();
-      if (t.startsWith('mocktest__')) {
+      if ((item.topic || '').startsWith('mockTest__')) {
         const testId = item.topic.split('__')[1];
         const mt = mockTests.find(m => m.id === testId);
         if (mt && mt.seriesId) {
@@ -1517,6 +1575,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   onChange={v => setFormData({ ...formData, examId: v })} 
                   options={actualExams.map(ex => ({ value: ex.id as string, label: ex.name }))}
                   placeholder="-- Choose Exam --"
+                  disabled={!!selectedExamIdForSeries}
                 />
               </div>
               <div className="space-y-2">
@@ -1671,6 +1730,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   onChange={v => setFormData({ ...formData, examId: v })} 
                   options={actualExams.map(ex => ({ value: ex.id as string, label: ex.name }))}
                   placeholder="-- Choose Exam --"
+                  disabled={!!selectedExamIdForBanks}
                 />
               </div>
               <div className="space-y-2">
@@ -1812,9 +1872,10 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   onChange={v => setFormData({ ...formData, examId: v })} 
                   options={actualExams.map(ex => ({ value: ex.id as string, label: ex.name }))}
                   placeholder="-- Choose Exam --"
+                  disabled={!!selectedExamIdForQuestions}
                 />
               </div>
-              { ((formData.topic || '').toLowerCase().startsWith('mocktest__') || questionFilter === 'mock') ? (
+              { ((formData.topic || '').startsWith('mockTest__') || questionFilter === 'mock' || selectedTypeForQuestions === 'mock') ? (
                 <>
                   <div className="space-y-2">
                     <label className={labelClass}>Select Category *</label>
@@ -1824,6 +1885,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                         value={formData.mockCategory || 'full-length'} 
                         onChange={e => setFormData({ ...formData, mockCategory: e.target.value })} 
                         className={selectClass}
+                        disabled={!!selectedCategoryForQuestions}
                       >
                         <option value="full-length">Full-Length Mock Tests</option>
                         <option value="sectional">Sectional Tests</option>
@@ -1841,7 +1903,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                         value={formData.topic} 
                         onChange={e => setFormData({ ...formData, topic: e.target.value })} 
                         className={selectClass}
-                        disabled={!formData.examId}
+                        disabled={!formData.examId || !!selectedTargetIdForQuestions}
                       >
                         <option value="">-- Choose Mock Test --</option>
                         {mockTests
@@ -1875,7 +1937,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                         value={formData.topic} 
                         onChange={e => setFormData({ ...formData, topic: e.target.value })} 
                         className={selectClass}
-                        disabled={!formData.examId}
+                        disabled={!formData.examId || !!selectedTargetIdForQuestions}
                       >
                         <option value="">-- Choose Topic --</option>
                         {banks.filter((b: any) => b.examId === formData.examId).map((bank: any) => (
@@ -2033,8 +2095,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       const examObj = exams.find(e => e.id === item.examId);
       const examName = examObj ? examObj.name : 'Unknown Exam';
       
-      const t = (item.topic || '').toLowerCase();
-      if (t.startsWith('mocktest__')) {
+      if ((item.topic || '').startsWith('mockTest__')) {
         const testId = item.topic.split('__')[1];
         const mt = mockTests.find(m => m.id === testId);
         if (mt) {
@@ -2390,7 +2451,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                      return (
                        <button 
                          onClick={async () => {
-                            const subjectName = (targetTopic || '').toLowerCase().startsWith('mocktest__') ? 'this Mock Test' : `the subject '${targetTopic}'`;
+                            const subjectName = (targetTopic || '').startsWith('mockTest__') ? 'this Mock Test' : `the subject '${targetTopic}'`;
                             const confirmMessage = `WARNING: Are you sure you want to delete ALL ${items.length} questions for ${subjectName}?\n\nThis action cannot be undone.`;
                             if (!confirm(confirmMessage)) return;
                             
@@ -2440,11 +2501,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   </div>
                   <button 
                     onClick={() => {
-                      if (items.length > 0) {
-                        setAttachMockTestId(items[0].id);
-                      } else {
-                        setAttachMockTestId(null);
-                      }
+                      setAttachMockTestId(null);
                       setShowMockUploadModal(true);
                     }}
                     className="flex items-center justify-center gap-2 px-6 py-2.5 glass border border-slate-200 rounded-xl text-sm font-extrabold hover:bg-white transition-all premium-shadow flex-shrink-0"
@@ -4183,8 +4240,377 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                     </tbody>
                  </table>
               </div>
-           ) : activeTab === 'tests' && selectedExamIdForTests === null ? (
-              <div className="space-y-6 animate-in fade-in duration-200">
+           ) : activeTab === 'banks' && selectedExamIdForBanks === null ? (
+               <div className="space-y-6 animate-in fade-in duration-200">
+                 <div className="flex justify-between items-center">
+                   <h3 className="text-2xl font-black text-slate-800 tracking-tight">Select an Exam for Content Banks</h3>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                   {(() => {
+                      const lowerQ = searchQuery.toLowerCase();
+                      const filteredExams = actualExams.filter(exam => (exam.name || '').toLowerCase().includes(lowerQ));
+                      if (filteredExams.length === 0) {
+                         return (
+                           <div className="col-span-full bg-white rounded-[2rem] border border-slate-200/50 p-12 text-center text-slate-400 font-extrabold shadow-sm">
+                             No exams found matching your search.
+                           </div>
+                         );
+                      }
+                      return filteredExams.map(exam => {
+                        const count = banks.filter(b => b.examId === exam.id).length;
+                        return (
+                          <motion.div
+                            key={exam.id}
+                            whileHover={{ y: -4, scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setSelectedExamIdForBanks(exam.id as string)}
+                            className="bg-white rounded-[2rem] border border-slate-200/60 p-6 flex flex-col justify-between hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 cursor-pointer premium-shadow group relative overflow-hidden"
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="relative space-y-4">
+                              <div className="flex justify-between items-start">
+                                <div className="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-3xl shadow-inner shrink-0 group-hover:bg-brand-100 transition-colors">
+                                  {exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/')) ? <img src={getDirectImageUrl(exam.icon)} alt="" className="w-8 h-8 object-contain" /> : exam.icon || '🏛️'}
+                                </div>
+                                <ChevronRight className="w-6 h-6 text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
+                              </div>
+                              <div className="space-y-2">
+                                <h4 className="text-xl font-extrabold text-slate-900 group-hover:text-brand-600 transition-colors line-clamp-2 tracking-tight leading-snug">{exam.name}</h4>
+                                <p className="text-slate-500 font-medium text-sm line-clamp-2">{exam.description || 'Manage question banks under this exam.'}</p>
+                              </div>
+                            </div>
+                            <div className="relative pt-6 mt-6 border-t border-slate-100 flex items-center justify-between">
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-slate-50 text-slate-500 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors border border-slate-100">
+                                <BookMarked className="w-3.5 h-3.5" />
+                                {count} {count === 1 ? 'Question Bank' : 'Question Banks'}
+                              </span>
+                              <span className="text-xs font-bold text-slate-400 capitalize bg-slate-100 px-2.5 py-1 rounded-lg">{exam.category}</span>
+                            </div>
+                          </motion.div>
+                        );
+                      });
+                   })()}
+                 </div>
+               </div>
+            ) : activeTab === 'series' && selectedExamIdForSeries === null ? (
+               <div className="space-y-6 animate-in fade-in duration-200">
+                 <div className="flex justify-between items-center">
+                   <h3 className="text-2xl font-black text-slate-800 tracking-tight">Select an Exam for Test Series</h3>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                   {(() => {
+                      const lowerQ = searchQuery.toLowerCase();
+                      const filteredExams = actualExams.filter(exam => (exam.name || '').toLowerCase().includes(lowerQ));
+                      if (filteredExams.length === 0) {
+                         return (
+                           <div className="col-span-full bg-white rounded-[2rem] border border-slate-200/50 p-12 text-center text-slate-400 font-extrabold shadow-sm">
+                             No exams found matching your search.
+                           </div>
+                         );
+                      }
+                      return filteredExams.map(exam => {
+                        const count = series.filter(s => s.examId === exam.id).length;
+                        return (
+                          <motion.div
+                            key={exam.id}
+                            whileHover={{ y: -4, scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setSelectedExamIdForSeries(exam.id as string)}
+                            className="bg-white rounded-[2rem] border border-slate-200/60 p-6 flex flex-col justify-between hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 cursor-pointer premium-shadow group relative overflow-hidden"
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="relative space-y-4">
+                              <div className="flex justify-between items-start">
+                                <div className="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-3xl shadow-inner shrink-0 group-hover:bg-brand-100 transition-colors">
+                                  {exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/')) ? <img src={getDirectImageUrl(exam.icon)} alt="" className="w-8 h-8 object-contain" /> : exam.icon || '🏛️'}
+                                </div>
+                                <ChevronRight className="w-6 h-6 text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
+                              </div>
+                              <div className="space-y-2">
+                                <h4 className="text-xl font-extrabold text-slate-900 group-hover:text-brand-600 transition-colors line-clamp-2 tracking-tight leading-snug">{exam.name}</h4>
+                                <p className="text-slate-500 font-medium text-sm line-clamp-2">{exam.description || 'Manage test series packages under this exam.'}</p>
+                              </div>
+                            </div>
+                            <div className="relative pt-6 mt-6 border-t border-slate-100 flex items-center justify-between">
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-slate-50 text-slate-500 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors border border-slate-100">
+                                <Layers className="w-3.5 h-3.5" />
+                                {count} {count === 1 ? 'Test Series' : 'Test Series Packages'}
+                              </span>
+                              <span className="text-xs font-bold text-slate-400 capitalize bg-slate-100 px-2.5 py-1 rounded-lg">{exam.category}</span>
+                            </div>
+                          </motion.div>
+                        );
+                      });
+                   })()}
+                 </div>
+               </div>
+            ) : activeTab === 'questions' && selectedExamIdForQuestions === null ? (
+               <div className="space-y-6 animate-in fade-in duration-200">
+                 <div className="flex justify-between items-center">
+                   <h3 className="text-2xl font-black text-slate-800 tracking-tight">Select an Exam for Questions</h3>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                   {(() => {
+                      const lowerQ = searchQuery.toLowerCase();
+                      const filteredExams = actualExams.filter(exam => (exam.name || '').toLowerCase().includes(lowerQ));
+                      if (filteredExams.length === 0) {
+                         return (
+                           <div className="col-span-full bg-white rounded-[2rem] border border-slate-200/50 p-12 text-center text-slate-400 font-extrabold shadow-sm">
+                             No exams found matching your search.
+                           </div>
+                         );
+                      }
+                      return filteredExams.map(exam => {
+                        const count = questions.filter(q => q.examId === exam.id).length;
+                        return (
+                          <motion.div
+                            key={exam.id}
+                            whileHover={{ y: -4, scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setSelectedExamIdForQuestions(exam.id as string)}
+                            className="bg-white rounded-[2rem] border border-slate-200/60 p-6 flex flex-col justify-between hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 cursor-pointer premium-shadow group relative overflow-hidden"
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="relative space-y-4">
+                              <div className="flex justify-between items-start">
+                                <div className="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-3xl shadow-inner shrink-0 group-hover:bg-brand-100 transition-colors">
+                                  {exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/')) ? <img src={getDirectImageUrl(exam.icon)} alt="" className="w-8 h-8 object-contain" /> : exam.icon || '🏛️'}
+                                </div>
+                                <ChevronRight className="w-6 h-6 text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
+                              </div>
+                              <div className="space-y-2">
+                                <h4 className="text-xl font-extrabold text-slate-900 group-hover:text-brand-600 transition-colors line-clamp-2 tracking-tight leading-snug">{exam.name}</h4>
+                                <p className="text-slate-500 font-medium text-sm line-clamp-2">{exam.description || 'Manage questions under this exam.'}</p>
+                              </div>
+                            </div>
+                            <div className="relative pt-6 mt-6 border-t border-slate-100 flex items-center justify-between">
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-slate-50 text-slate-500 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors border border-slate-100">
+                                <FileText className="w-3.5 h-3.5" />
+                                {count} {count === 1 ? 'Question' : 'Questions'}
+                              </span>
+                              <span className="text-xs font-bold text-slate-400 capitalize bg-slate-100 px-2.5 py-1 rounded-lg">{exam.category}</span>
+                            </div>
+                          </motion.div>
+                        );
+                      });
+                   })()}
+                 </div>
+               </div>
+            ) : activeTab === 'questions' && selectedExamIdForQuestions !== null && selectedTargetIdForQuestions === null ? (
+               <div className="space-y-6 animate-in fade-in duration-200">
+                 <div className="flex items-center gap-2 text-sm font-bold text-slate-400 mb-6 bg-slate-100/50 px-4 py-2.5 rounded-2xl border border-slate-200/40 w-fit">
+                   <button onClick={() => { setSelectedExamIdForQuestions(null); setSelectedTypeForQuestions(null); setSelectedCategoryForQuestions(null); setSelectedTargetIdForQuestions(null); }} className="hover:text-brand-600 transition-colors flex items-center gap-1">
+                     Exams
+                   </button>
+                   <ChevronRight className="w-4 h-4" />
+                   <span className="text-slate-700 font-extrabold">{exams.find(e => e.id === selectedExamIdForQuestions)?.name || 'Selected Exam'}</span>
+                 </div>
+
+                 {selectedTypeForQuestions === null ? (
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <motion.div
+                       whileHover={{ y: -4, scale: 1.02 }}
+                       whileTap={{ scale: 0.98 }}
+                       onClick={() => setSelectedTypeForQuestions('bank')}
+                       className="bg-white rounded-[2rem] border border-slate-200/60 p-8 flex flex-col justify-between hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 cursor-pointer premium-shadow group relative overflow-hidden"
+                     >
+                       <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                       <div className="space-y-6">
+                         <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center text-4xl shadow-inner shrink-0 group-hover:scale-110 transition-transform duration-300">
+                           📚
+                         </div>
+                         <div>
+                           <h4 className="text-2xl font-black text-slate-900 group-hover:text-brand-600 transition-colors tracking-tight leading-snug">Content Bank Questions</h4>
+                           <p className="text-slate-500 font-semibold text-sm mt-2 leading-relaxed">Manage practice questions mapped to topic-wise, exam-focused, revision, or PYQ content banks.</p>
+                         </div>
+                       </div>
+                       <div className="flex justify-end pt-6 mt-6 border-t border-slate-100">
+                         <ChevronRight className="w-6 h-6 text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
+                       </div>
+                     </motion.div>
+
+                     <motion.div
+                       whileHover={{ y: -4, scale: 1.02 }}
+                       whileTap={{ scale: 0.98 }}
+                       onClick={() => setSelectedTypeForQuestions('mock')}
+                       className="bg-white rounded-[2rem] border border-slate-200/60 p-8 flex flex-col justify-between hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 cursor-pointer premium-shadow group relative overflow-hidden"
+                     >
+                       <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                       <div className="space-y-6">
+                         <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center text-4xl shadow-inner shrink-0 group-hover:scale-110 transition-transform duration-300">
+                           🏆
+                         </div>
+                         <div>
+                           <h4 className="text-2xl font-black text-slate-900 group-hover:text-brand-600 transition-colors tracking-tight leading-snug">Mock Test Questions</h4>
+                           <p className="text-slate-500 font-semibold text-sm mt-2 leading-relaxed">Manage questions assigned to mock tests, full-length tests, sectional tests, or daily papers.</p>
+                         </div>
+                       </div>
+                       <div className="flex justify-end pt-6 mt-6 border-t border-slate-100">
+                         <ChevronRight className="w-6 h-6 text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
+                       </div>
+                     </motion.div>
+                   </div>
+                 ) : selectedTypeForQuestions === 'bank' ? (
+                   <div className="space-y-6">
+                     <div className="flex items-center justify-between">
+                       <h3 className="text-xl font-extrabold text-slate-800">Select a Content Bank</h3>
+                       <button onClick={() => setSelectedTypeForQuestions(null)} className="text-sm font-bold text-brand-600 hover:text-brand-700 underline">Back</button>
+                     </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                       {banks.filter(b => b.examId === selectedExamIdForQuestions).map(bank => {
+                         const count = questions.filter(q => q.examId === selectedExamIdForQuestions && q.topic === bank.title).length;
+                         return (
+                           <motion.div
+                             key={bank.id}
+                             whileHover={{ y: -4, scale: 1.02 }}
+                             whileTap={{ scale: 0.98 }}
+                             onClick={() => setSelectedTargetIdForQuestions(bank.title)}
+                             className="bg-white rounded-[2rem] border border-slate-200/60 p-6 flex flex-col justify-between hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 cursor-pointer premium-shadow group relative overflow-hidden"
+                           >
+                             <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                             <div className="space-y-4">
+                               <div className="w-12 h-12 rounded-xl bg-slate-50 border flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-300">
+                                 📚
+                               </div>
+                               <div>
+                                 <h4 className="text-lg font-black text-slate-900 group-hover:text-brand-600 transition-colors line-clamp-2 tracking-tight leading-snug">{bank.title}</h4>
+                                 <p className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-wider">{bank.type}</p>
+                               </div>
+                             </div>
+                             <div className="flex justify-between items-center pt-6 mt-6 border-t border-slate-100">
+                               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-slate-50 text-slate-500 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors border border-slate-100">
+                                 {count} Questions
+                               </span>
+                               <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
+                             </div>
+                           </motion.div>
+                         );
+                       })}
+                       {banks.filter(b => b.examId === selectedExamIdForQuestions).length === 0 && (
+                         <div className="col-span-full bg-white rounded-[2rem] border border-slate-200/50 p-12 text-center text-slate-400 font-extrabold shadow-sm">
+                           No content banks created for this exam yet.
+                         </div>
+                       )}
+                     </div>
+                   </div>
+                 ) : (
+                   selectedCategoryForQuestions === null ? (
+                     <div className="space-y-6">
+                       <div className="flex items-center justify-between">
+                         <h3 className="text-xl font-extrabold text-slate-800">Select Mock Test Category</h3>
+                         <button onClick={() => setSelectedTypeForQuestions(null)} className="text-sm font-bold text-brand-600 hover:text-brand-700 underline">Back</button>
+                       </div>
+                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                         {[
+                           { id: 'full-length', label: 'Full Length Tests', desc: 'Complete exam-like mock tests covering all sections.', icon: '🏆', color: 'bg-emerald-50 text-emerald-600 border-emerald-100/60' },
+                           { id: 'sectional', label: 'Sectional Tests', desc: 'Subject-wise or topic-wise practice sets.', icon: '📚', color: 'bg-blue-50 text-blue-600 border-blue-100/60' },
+                           { id: 'pyq', label: 'Previous Year Questions (PYQ)', desc: 'Real questions from past papers with detailed solutions.', icon: '⏳', color: 'bg-amber-50 text-amber-600 border-amber-100/60' },
+                           { id: 'daily', label: 'Daily Tests', desc: 'Quick daily or weekly practice sets.', icon: '📅', color: 'bg-rose-50 text-rose-600 border-rose-100/60' }
+                         ].map(cat => {
+                           const count = mockTests.filter(mt => {
+                             try {
+                               if (mt.seriesId) {
+                                 const parsed = JSON.parse(mt.seriesId);
+                                 return parsed.examId === selectedExamIdForQuestions && (parsed.category === cat.id || (cat.id === 'full-length' && !parsed.category));
+                               }
+                             } catch(e){}
+                             return false;
+                           }).length;
+                           return (
+                             <motion.div
+                               key={cat.id}
+                               whileHover={{ y: -4, scale: 1.02 }}
+                               whileTap={{ scale: 0.98 }}
+                               onClick={() => setSelectedCategoryForQuestions(cat.id)}
+                               className="bg-white rounded-[2rem] border border-slate-200/60 p-6 flex flex-col justify-between hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 cursor-pointer premium-shadow group relative overflow-hidden"
+                             >
+                               <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                               <div className="flex gap-4">
+                                 <div className={`w-14 h-14 rounded-2xl ${cat.color} border flex items-center justify-center text-3xl shadow-inner shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+                                   {cat.icon}
+                                 </div>
+                                 <div>
+                                   <h4 className="text-xl font-extrabold text-slate-900 group-hover:text-brand-600 transition-colors line-clamp-1 tracking-tight leading-snug">{cat.label}</h4>
+                                   <p className="text-slate-500 font-semibold text-sm mt-1">{cat.desc}</p>
+                                 </div>
+                               </div>
+                               <div className="flex justify-between items-center pt-6 mt-6 border-t border-slate-100">
+                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-slate-50 text-slate-500 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors border border-slate-100">
+                                   {count} Tests
+                                 </span>
+                                 <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
+                               </div>
+                             </motion.div>
+                           );
+                         })}
+                       </div>
+                     </div>
+                   ) : (
+                     <div className="space-y-6">
+                       <div className="flex items-center justify-between">
+                         <h3 className="text-xl font-extrabold text-slate-800">Select Mock Test</h3>
+                         <button onClick={() => setSelectedCategoryForQuestions(null)} className="text-sm font-bold text-brand-600 hover:text-brand-700 underline">Back</button>
+                       </div>
+                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                         {mockTests
+                           .filter(mt => {
+                             try {
+                               if (mt.seriesId) {
+                                 const parsed = JSON.parse(mt.seriesId);
+                                 return parsed.examId === selectedExamIdForQuestions && (parsed.category === selectedCategoryForQuestions || (selectedCategoryForQuestions === 'full-length' && !parsed.category));
+                               }
+                             } catch(e){}
+                             return false;
+                           })
+                           .map(mt => {
+                             const count = mt.questions?.length || 0;
+                             return (
+                               <motion.div
+                                 key={mt.id}
+                                 whileHover={{ y: -4, scale: 1.02 }}
+                                 whileTap={{ scale: 0.98 }}
+                                 onClick={() => setSelectedTargetIdForQuestions(mt.id)}
+                                 className="bg-white rounded-[2rem] border border-slate-200/60 p-6 flex flex-col justify-between hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 cursor-pointer premium-shadow group relative overflow-hidden"
+                               >
+                                 <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                 <div className="space-y-4">
+                                   <div className="w-12 h-12 rounded-xl bg-slate-50 border flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-300">
+                                     📝
+                                   </div>
+                                   <div>
+                                     <h4 className="text-lg font-black text-slate-900 group-hover:text-brand-600 transition-colors line-clamp-2 tracking-tight leading-snug">{mt.title}</h4>
+                                     <p className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-wider">{mt.durationMinutes} Mins • {mt.totalMarks} Marks</p>
+                                   </div>
+                                 </div>
+                                 <div className="flex justify-between items-center pt-6 mt-6 border-t border-slate-100">
+                                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-slate-50 text-slate-500 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors border border-slate-100">
+                                     {count} Questions
+                                   </span>
+                                   <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
+                                 </div>
+                               </motion.div>
+                             );
+                           })}
+                         {mockTests.filter(mt => {
+                           try {
+                             if (mt.seriesId) {
+                               const parsed = JSON.parse(mt.seriesId);
+                               return parsed.examId === selectedExamIdForQuestions && (parsed.category === selectedCategoryForQuestions || (selectedCategoryForQuestions === 'full-length' && !parsed.category));
+                             }
+                           } catch(e){}
+                           return false;
+                         }).length === 0 && (
+                           <div className="col-span-full bg-white rounded-[2rem] border border-slate-200/50 p-12 text-center text-slate-400 font-extrabold shadow-sm">
+                             No mock tests created under this category yet.
+                           </div>
+                         )}
+                       </div>
+                     </div>
+                   )
+                 )}
+               </div>
+            ) : activeTab === 'tests' && selectedExamIdForTests === null ? (
+               <div className="space-y-6 animate-in fade-in duration-200">
                 <div className="flex justify-between items-center">
                   <h3 className="text-2xl font-black text-slate-800 tracking-tight">Select an Exam</h3>
                 </div>
@@ -4301,7 +4727,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                        ...categoriesList,
                        ...customCategories.map(cat => ({
                          id: cat,
-                         label: cat.charAt(0).toUpperCase() + cat.slice(1).replace('-', ' ') + ' Tests',
+                         label: (cat as string).charAt(0).toUpperCase() + (cat as string).slice(1).replace('-', ' ') + ' Tests',
                          desc: `Tests belonging to category: ${cat}`,
                          icon: '📝',
                          color: 'bg-purple-50 text-purple-600 border-purple-100/60'
@@ -4351,6 +4777,154 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
               </div>
            ) : (
               <div className="space-y-6">
+                {activeTab === 'banks' && selectedExamIdForBanks && (
+                  <div className="animate-in fade-in duration-200 space-y-6">
+                    <div className="flex items-center gap-2 text-sm font-bold text-slate-400 mb-2 bg-slate-100/50 px-4 py-2.5 rounded-2xl border border-slate-200/40 w-fit">
+                      <button onClick={() => setSelectedExamIdForBanks(null)} className="hover:text-brand-600 transition-colors">
+                        Exams
+                      </button>
+                      <ChevronRight className="w-4 h-4" />
+                      <span className="text-slate-700 font-extrabold">{exams.find(e => e.id === selectedExamIdForBanks)?.name || 'Selected Exam'}</span>
+                      <ChevronRight className="w-4 h-4" />
+                      <span className="text-slate-700 font-extrabold">Question Banks</span>
+                    </div>
+
+                    <div className="bg-white rounded-[2rem] border border-slate-200/50 p-6 flex flex-col md:flex-row gap-5 items-center justify-between shadow-sm">
+                      <div className="flex items-center gap-5">
+                        <div className="w-16 h-16 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-4xl shadow-inner shrink-0">
+                          📚
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-black text-slate-900 tracking-tight">Question Banks</h3>
+                          <p className="text-slate-500 font-semibold text-sm mt-1">
+                            Exam: <span className="font-extrabold text-slate-800">{exams.find(e => e.id === selectedExamIdForBanks)?.name}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => setSelectedExamIdForBanks(null)}
+                        className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-extrabold transition-all border border-slate-200 shadow-sm whitespace-nowrap"
+                      >
+                        Back to Exams
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'series' && selectedExamIdForSeries && (
+                  <div className="animate-in fade-in duration-200 space-y-6">
+                    <div className="flex items-center gap-2 text-sm font-bold text-slate-400 mb-2 bg-slate-100/50 px-4 py-2.5 rounded-2xl border border-slate-200/40 w-fit">
+                      <button onClick={() => setSelectedExamIdForSeries(null)} className="hover:text-brand-600 transition-colors">
+                        Exams
+                      </button>
+                      <ChevronRight className="w-4 h-4" />
+                      <span className="text-slate-700 font-extrabold">{exams.find(e => e.id === selectedExamIdForSeries)?.name || 'Selected Exam'}</span>
+                      <ChevronRight className="w-4 h-4" />
+                      <span className="text-slate-700 font-extrabold">Test Series</span>
+                    </div>
+
+                    <div className="bg-white rounded-[2rem] border border-slate-200/50 p-6 flex flex-col md:flex-row gap-5 items-center justify-between shadow-sm">
+                      <div className="flex items-center gap-5">
+                        <div className="w-16 h-16 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-4xl shadow-inner shrink-0">
+                          🏆
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-black text-slate-900 tracking-tight">Test Series Packages</h3>
+                          <p className="text-slate-500 font-semibold text-sm mt-1">
+                            Exam: <span className="font-extrabold text-slate-800">{exams.find(e => e.id === selectedExamIdForSeries)?.name}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => setSelectedExamIdForSeries(null)}
+                        className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-extrabold transition-all border border-slate-200 shadow-sm whitespace-nowrap"
+                      >
+                        Back to Exams
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'questions' && selectedExamIdForQuestions && selectedTypeForQuestions && selectedTargetIdForQuestions && (
+                  <div className="animate-in fade-in duration-200 space-y-6">
+                    <div className="flex items-center gap-2 text-sm font-bold text-slate-400 mb-2 bg-slate-100/50 px-4 py-2.5 rounded-2xl border border-slate-200/40 w-fit">
+                      <button onClick={() => { setSelectedExamIdForQuestions(null); setSelectedTypeForQuestions(null); setSelectedCategoryForQuestions(null); setSelectedTargetIdForQuestions(null); }} className="hover:text-brand-600 transition-colors">
+                        Exams
+                      </button>
+                      <ChevronRight className="w-4 h-4" />
+                      <button onClick={() => { setSelectedTargetIdForQuestions(null); setSelectedCategoryForQuestions(null); }} className="hover:text-brand-600 transition-colors">
+                        {exams.find(e => e.id === selectedExamIdForQuestions)?.name || 'Selected Exam'}
+                      </button>
+                      <ChevronRight className="w-4 h-4" />
+                      <button onClick={() => { if (selectedTypeForQuestions === 'mock') { setSelectedTargetIdForQuestions(null); } else { setSelectedTypeForQuestions(null); } }} className="hover:text-brand-600 transition-colors capitalize">
+                        {selectedTypeForQuestions === 'mock' ? 'Mock Tests' : 'Content Banks'}
+                      </button>
+                      {selectedTypeForQuestions === 'mock' && typeof selectedCategoryForQuestions === 'string' && (
+                        <>
+                          <ChevronRight className="w-4 h-4" />
+                          <button onClick={() => setSelectedTargetIdForQuestions(null)} className="hover:text-brand-600 transition-colors capitalize">
+                            {selectedCategoryForQuestions}
+                          </button>
+                        </>
+                      )}
+                      <ChevronRight className="w-4 h-4" />
+                      <span className="text-slate-700 font-extrabold truncate max-w-[200px]">
+                        {selectedTypeForQuestions === 'mock' ? (mockTests.find(m => m.id === selectedTargetIdForQuestions)?.title || 'Selected Test') : selectedTargetIdForQuestions}
+                      </span>
+                    </div>
+
+                    <div className="bg-white rounded-[2rem] border border-slate-200/50 p-6 flex flex-col lg:flex-row gap-5 items-center justify-between shadow-sm">
+                      <div className="flex items-center gap-5">
+                        <div className="w-16 h-16 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-4xl shadow-inner shrink-0">
+                          ❓
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                            Questions List
+                          </h3>
+                          <p className="text-slate-500 font-semibold text-sm mt-1">
+                            Target: <span className="font-extrabold text-slate-800">{selectedTypeForQuestions === 'mock' ? (mockTests.find(m => m.id === selectedTargetIdForQuestions)?.title || 'Selected Test') : selectedTargetIdForQuestions}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 flex-wrap justify-end">
+                        {selectedTypeForQuestions === 'mock' && (
+                          <button 
+                            onClick={() => {
+                              setAttachMockTestId(selectedTargetIdForQuestions);
+                              setShowMockUploadModal(true);
+                            }}
+                            className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-extrabold transition-all shadow-md flex items-center gap-2"
+                          >
+                            <Upload className="w-4 h-4" /> Bulk Upload
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => {
+                            setEditingId(null);
+                            setFormData({
+                              ...initialFormData,
+                              examId: selectedExamIdForQuestions || '',
+                              topic: selectedTypeForQuestions === 'mock' ? `mockTest__${selectedTargetIdForQuestions}` : (selectedTargetIdForQuestions || '')
+                            });
+                            setDiagramText('');
+                            setShowAddModal(true);
+                          }}
+                          className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-extrabold transition-all shadow-md flex items-center gap-2"
+                        >
+                          <Plus className="w-4 h-4" /> Add Question
+                        </button>
+                        <button 
+                          onClick={() => setSelectedTargetIdForQuestions(null)}
+                          className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-extrabold transition-all border border-slate-200 shadow-sm whitespace-nowrap"
+                        >
+                          Back to Selection
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {activeTab === 'tests' && selectedExamIdForTests && selectedCategoryForTests && (
                   <div className="animate-in fade-in duration-200 space-y-6">
                     <div className="flex items-center gap-2 text-sm font-bold text-slate-400 mb-2 bg-slate-100/50 px-4 py-2.5 rounded-2xl border border-slate-200/40 w-fit">
@@ -4805,11 +5379,20 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   <select 
                     value={attachMockTestId || ''} 
                     onChange={e => setAttachMockTestId(e.target.value)}
-                    className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 focus:border-brand-500 font-bold bg-white"
+                    disabled={!!attachMockTestId}
+                    className="w-full px-5 py-3 rounded-2xl border-2 border-slate-100 focus:border-brand-500 font-bold bg-white disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
                   >
                     <option value="">-- Select Mock Test --</option>
                     {mockTests.filter(t => {
-                      if (activeTab === 'tests' && selectedExamIdForTests) {
+                      if (activeTab === 'questions' && selectedExamIdForQuestions) {
+                        try {
+                          if (t.seriesId) {
+                            const parsed = JSON.parse(t.seriesId);
+                            if (parsed.examId !== selectedExamIdForQuestions) return false;
+                            if (selectedCategoryForQuestions && parsed.category !== selectedCategoryForQuestions) return false;
+                          }
+                        } catch(e) { return false; }
+                      } else if (activeTab === 'tests' && selectedExamIdForTests) {
                         try {
                           if (t.seriesId) {
                             const parsed = JSON.parse(t.seriesId);

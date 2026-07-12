@@ -5315,19 +5315,15 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
           }
         }
       } else {
-        // Questions are pre-loaded, let's merge fresh ones to get latest diagrams/edits
+        // Questions are pre-loaded, let's refresh them entirely to catch any recently added/updated questions
         if (!finalTest.id.startsWith('practice-')) {
           try {
             const freshQs = await examService.getQuestionsForMockTest(finalTest.id);
             if (freshQs && freshQs.length > 0) {
-              const freshMap = new Map(freshQs.map(q => [q.id, q]));
-              finalTest.questions = finalTest.questions.map((q: any) => {
-                const fresh = freshMap.get(q.id);
-                return fresh ? { ...q, ...fresh } : q;
-              });
+              finalTest.questions = freshQs;
             }
           } catch (e) {
-            console.error("Failed to merge fresh questions on start:", e);
+            console.error("Failed to refresh questions on start:", e);
           }
         }
       }

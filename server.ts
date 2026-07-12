@@ -190,9 +190,11 @@ async function startServer() {
 
   // Middleware to verify if request is from an authorized admin
   const requireAdmin = async (req: any, res: any, next: any) => {
+    const reqUrl = req.originalUrl || req.url;
     try {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        fs.appendFileSync("c:\\Users\\Naresh Samal\\Downloads\\OdishaExamPrep Website\\scratch\\auth_requests.log", `[${new Date().toISOString()}] ${req.method} ${reqUrl} - 401 Missing token\n`, 'utf8');
         return res.status(401).json({ error: "Missing authorization token" });
       }
       const token = authHeader.split(" ")[1];
@@ -204,6 +206,7 @@ async function startServer() {
       if (!user) {
         const { data: { user: freshUser }, error } = await supabaseAdmin.auth.getUser(token);
         if (error || !freshUser) {
+          fs.appendFileSync("c:\\Users\\Naresh Samal\\Downloads\\OdishaExamPrep Website\\scratch\\auth_requests.log", `[${new Date().toISOString()}] ${req.method} ${reqUrl} - 401 Invalid token: ${error?.message || 'user not found'}\n`, 'utf8');
           return res.status(401).json({ error: "Invalid authorization token" });
         }
         user = freshUser;
@@ -227,12 +230,15 @@ async function startServer() {
       }
 
       if (!isAdmin) {
+        fs.appendFileSync("c:\\Users\\Naresh Samal\\Downloads\\OdishaExamPrep Website\\scratch\\auth_requests.log", `[${new Date().toISOString()}] ${req.method} ${reqUrl} - 403 Forbidden: user=${user.email || user.id}\n`, 'utf8');
         return res.status(403).json({ error: "Forbidden: Admin access required" });
       }
 
+      fs.appendFileSync("c:\\Users\\Naresh Samal\\Downloads\\OdishaExamPrep Website\\scratch\\auth_requests.log", `[${new Date().toISOString()}] ${req.method} ${reqUrl} - SUCCESS user=${user.email || user.id}\n`, 'utf8');
       req.user = user;
       next();
-    } catch (err) {
+    } catch (err: any) {
+      fs.appendFileSync("c:\\Users\\Naresh Samal\\Downloads\\OdishaExamPrep Website\\scratch\\auth_requests.log", `[${new Date().toISOString()}] ${req.method} ${reqUrl} - 500 ERROR: ${err.message}\n`, 'utf8');
       return res.status(500).json({ error: "Authentication check failed" });
     }
   };
@@ -1256,6 +1262,11 @@ async function startServer() {
       const search = (req.query.search as string || '').trim().replace(/,/g, '');
       const examId = req.query.examId as string || 'all';
       const questionFilter = req.query.questionFilter as string || 'all';
+      const topic = req.query.topic as string || 'all';
+
+      // Log request details to a file for diagnostics
+      const logLine = `[${new Date().toISOString()}] page=${page} limit=${limit} search="${search}" examId="${examId}" questionFilter="${questionFilter}" topic="${topic}"\n`;
+      fs.appendFileSync("c:\\Users\\Naresh Samal\\Downloads\\OdishaExamPrep Website\\scratch\\api_requests.log", logLine, 'utf8');
 
       const offset = (page - 1) * limit;
 
@@ -1274,6 +1285,11 @@ async function startServer() {
         query = query.ilike('topic', 'mocktest__%');
       }
 
+      // Apply topic filter
+      if (topic !== 'all') {
+        query = query.eq('topic', topic);
+      }
+
       // Apply search query
       if (search) {
         query = query.or(`questionText.ilike.%${search}%,topic.ilike.%${search}%`);
@@ -1287,6 +1303,8 @@ async function startServer() {
       const { data, error, count } = await query;
       if (error) throw error;
 
+      fs.appendFileSync("c:\\Users\\Naresh Samal\\Downloads\\OdishaExamPrep Website\\scratch\\api_requests.log", `[SUCCESS] returned ${data?.length} rows, totalCount=${count}\n`, 'utf8');
+
       res.json({
         success: true,
         data,
@@ -1294,6 +1312,7 @@ async function startServer() {
         totalCount: count || 0
       });
     } catch (err: any) {
+      fs.appendFileSync("c:\\Users\\Naresh Samal\\Downloads\\OdishaExamPrep Website\\scratch\\api_requests.log", `[ERROR] ${err.message}\n`, 'utf8');
       console.error("[Admin Questions Paginated Error]", err);
       res.status(500).json({ error: err.message || "Failed to fetch paginated questions" });
     }
