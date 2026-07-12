@@ -4896,17 +4896,20 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     const isAnyModalOpen = !!(showPaywall || showLoginPrompt || showPracticeConfig || selectedBankItem || (infoModal && infoModal.isOpen));
     if (isAnyModalOpen) {
       document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden'; // Lock html too to prevent swipe horizontal panning on mobile
       document.body.setAttribute('data-premium-blur', 'true');
       if (window.innerWidth < 768) {
         document.body.setAttribute('data-modal-open', 'true');
       }
     } else {
       document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
       document.body.removeAttribute('data-premium-blur');
       document.body.removeAttribute('data-modal-open');
     }
     return () => {
       document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
       document.body.removeAttribute('data-premium-blur');
       document.body.removeAttribute('data-modal-open');
     };

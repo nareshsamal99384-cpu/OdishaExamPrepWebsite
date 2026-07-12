@@ -30,7 +30,14 @@
 html {
   scroll-behavior: auto; /* Custom RAF easing in scrollManager.ts handles programmatic scrolling */
   overscroll-behavior-y: auto; /* Allow native pull-to-refresh on mobile devices */
-  scrollbar-gutter: stable; /* Reserve scrollbar space to prevent layout shift */
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+@media (min-width: 768px) {
+  html {
+    scrollbar-gutter: stable; /* Reserve scrollbar space to prevent layout shift only on desktop */
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -49,6 +56,8 @@ body {
   background-size: 100% 100%, 100% 100%, 32px 32px;
   color: #1b1b1b;
   font-family: var(--font-sans);
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 body[data-premium-blur="true"] #root {

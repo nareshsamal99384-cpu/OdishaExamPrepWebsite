@@ -44,6 +44,8 @@ const defaultCatStyle = { bg: 'bg-slate-100', text: 'text-slate-600', border: 'b
 export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -52,6 +54,20 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0.05 }
+    );
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    return () => observer.disconnect();
   }, []);
 
   // Mobile card is narrower so it feels complete and doesn't feel cut off
@@ -99,13 +115,16 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
 
   // Auto-scroll loop
   const tick = useCallback(() => {
-    if (!isPaused.current && !isDragging.current) {
+    const isModalOpen = typeof document !== 'undefined' && 
+      (document.body.getAttribute('data-premium-blur') === 'true' || 
+       document.body.getAttribute('data-modal-open') === 'true');
+
+    if (!isPaused.current && !isDragging.current && isVisible && !isModalOpen) {
       offsetRef.current += AUTO_SPEED;
+      applyOffset();
     }
-    // Always render target offset in browser paint cycles
-    applyOffset();
     rafRef.current = requestAnimationFrame(tick);
-  }, [applyOffset]);
+  }, [applyOffset, isVisible]);
 
   useEffect(() => {
     // Start positioned at the middle copy so we can scroll in both directions
@@ -192,7 +211,7 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
   if (sourceVideos.length === 0) return null;
 
   return (
-    <div className="w-full relative py-3 sm:py-12 overflow-hidden bg-[#F2EFE9] border-2 border-slate-900 rounded-[2rem] sm:rounded-[2.5rem] shadow-[6px_6px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_rgba(0,0,0,1)] select-none">
+    <div ref={containerRef} className="w-full relative py-3 sm:py-12 overflow-hidden bg-[#F2EFE9] border-2 border-slate-900 rounded-[2rem] sm:rounded-[2.5rem] shadow-[6px_6px_0px_rgba(0,0,0,1)] sm:shadow-[8px_8px_0px_rgba(0,0,0,1)] select-none">
       {/* Editorial Decorative Grid overlay — desktop only */}
       {!isMobile && <div className="absolute inset-0 grid-bg opacity-[0.02] pointer-events-none" />}
 
