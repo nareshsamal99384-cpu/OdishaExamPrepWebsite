@@ -7070,82 +7070,95 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
               { id: 'exam-focused', title: 'Exam-Focused Bank', desc: 'High-yield questions tailored for this exam.', icon: <Target className="w-5.5 h-5.5 text-brand-600" />, iconDesktop: <Target className="w-6 h-6 sm:w-7 sm:h-7" /> },
               { id: 'revision-sets', title: 'Revision Sets', desc: 'Quick revision modules for last-minute prep.', icon: <BookMarked className="w-5.5 h-5.5 text-brand-600" />, iconDesktop: <BookMarked className="w-6 h-6 sm:w-7 sm:h-7" /> },
               { id: 'pyq-collections', title: 'PYQ Collections', desc: 'Previous Year Questions with detailed solutions.', icon: <History className="w-5.5 h-5.5 text-brand-600" />, iconDesktop: <History className="w-6 h-6 sm:w-7 sm:h-7" /> },
-            ].map((item, i) => (
-              <motion.div
-                key={i}
-                variants={{
-                  hidden: { y: 15, opacity: 0 },
-                  show: { y: 0, opacity: 1 }
-                }}
-                whileHover={isMobile ? undefined : whileHover.liftTap}
-                whileTap={isMobile ? { scale: 0.98 } : whileTap.press}
-                className="w-full"
-              >
-                {isMobile ? (
-                  <div
-                    onClick={() => setSelectedBankType(item.id)}
-                    className="p-4 bg-white border border-slate-100 hover:border-brand-200/50 shadow-[0_4px_16px_-4px_rgba(37,99,235,0.03),0_1px_2px_rgba(37,99,235,0.01)] active:scale-[0.98] active:border-brand-300 active:shadow-md rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-brand-500/0 via-brand-500/[0.01] to-brand-500/0 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none" />
-                    <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-gradient-to-b from-brand-500 to-brand-650 rounded-r-sm opacity-90" />
-                    <div className="flex items-center gap-3.5 min-w-0 flex-1 pl-1">
-                      <div className="w-11 h-11 bg-brand-50/60 rounded-xl flex items-center justify-center shrink-0 border border-brand-100/30 relative">
-                        {React.cloneElement(item.icon, { className: "w-5 h-5 text-brand-700 relative z-10" })}
+            ].map((item, i) => {
+              const count = (dynamicQuestionBanks[item.id] || []).filter((b: any) => {
+                if (b.is_archived && !hasAccessTo(b.id, selectedExam)) return false;
+                return b.examId === selectedExam;
+              }).length;
+
+              return (
+                <motion.div
+                  key={i}
+                  variants={{
+                    hidden: { y: 15, opacity: 0 },
+                    show: { y: 0, opacity: 1 }
+                  }}
+                  whileHover={isMobile ? undefined : whileHover.liftTap}
+                  whileTap={isMobile ? { scale: 0.98 } : whileTap.press}
+                  className="w-full"
+                >
+                  {isMobile ? (
+                    <div
+                      onClick={() => setSelectedBankType(item.id)}
+                      className="p-4 bg-white border border-slate-100 hover:border-brand-200/50 shadow-[0_4px_16px_-4px_rgba(37,99,235,0.03),0_1px_2px_rgba(37,99,235,0.01)] active:scale-[0.98] active:border-brand-300 active:shadow-md rounded-2xl flex items-center justify-between gap-4 cursor-pointer group relative overflow-hidden transition-all duration-300"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-brand-500/0 via-brand-500/[0.01] to-brand-500/0 opacity-0 group-active:opacity-100 transition-opacity pointer-events-none" />
+                      <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-gradient-to-b from-brand-500 to-brand-650 rounded-r-sm opacity-90" />
+                      <div className="flex items-center gap-3.5 min-w-0 flex-1 pl-1">
+                        <div className="w-11 h-11 bg-brand-50/60 rounded-xl flex items-center justify-center shrink-0 border border-brand-100/30 relative">
+                          {React.cloneElement(item.icon, { className: "w-5 h-5 text-brand-700 relative z-10" })}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="font-extrabold text-[14.5px] text-slate-855 tracking-tight leading-snug">{item.title}</h4>
+                            <span className="px-1.5 py-0.5 bg-slate-100/80 text-slate-500 text-[8.5px] font-black uppercase tracking-wider rounded border border-slate-200/50 shrink-0">
+                              {count} {count === 1 ? 'Bank' : 'Banks'}
+                            </span>
+                            {hasNewUnreadContent('bank', item.id) && (
+                              <span className="px-1.5 py-0.5 bg-brand-500 text-white text-[8.5px] font-black uppercase tracking-wider rounded-md shrink-0 flex items-center gap-1 animate-pulse">
+                                <span className="w-1 h-1 rounded-full bg-white animate-ping shrink-0" />
+                                New
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11.5px] text-slate-500 font-medium leading-relaxed mt-0.5 line-clamp-2 pr-1">{item.desc}</p>
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <h4 className="font-extrabold text-[14.5px] text-slate-850 tracking-tight leading-snug">{item.title}</h4>
+                      <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 shadow-2xs group-active:bg-brand-50 group-active:border-brand-100 group-active:text-brand-600 group-active:translate-x-0.5 transition-all duration-300">
+                        <ChevronRight className="w-4 h-4" />
+                      </div>
+                    </div>
+                  ) : (
+                    <Card 
+                      onClick={() => setSelectedBankType(item.id)}
+                      className={cn(
+                        "p-5 sm:p-6 lg:p-8 flex flex-col justify-between bg-gradient-to-br from-white to-slate-50/50 border border-white/20 shadow-sm rounded-[1.5rem] cursor-pointer group relative overflow-hidden h-full",
+                        "hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 premium-shine-container"
+                      )}
+                    >
+                      <div className="absolute -right-6 -top-6 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-colors" />
+                      
+                      <div className="flex-1 pb-6 relative z-10">
+                        <div className="flex justify-between items-start mb-4 sm:mb-6">
+                          <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 premium-gradient rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-500/20 shrink-0 relative group-hover:scale-110 group-hover:premium-glow transition-all duration-500">
+                            {item.iconDesktop}
+                            <div className="absolute inset-0 border-2 border-white/20 rounded-xl sm:rounded-2xl animate-pulse" />
+                          </div>
+                        </div>
+                        <h4 className="font-extrabold text-base sm:text-lg lg:text-xl text-slate-900 mb-2 group-hover:text-brand-650 transition-colors tracking-tight line-clamp-2 md:line-clamp-none leading-snug flex items-center gap-2 flex-wrap">
+                          {item.title}
+                          <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-md shrink-0 border border-slate-200/40">
+                            {count} {count === 1 ? 'Bank' : 'Banks'}
+                          </span>
                           {hasNewUnreadContent('bank', item.id) && (
                             <span className="px-1.5 py-0.5 bg-brand-500 text-white text-[8.5px] font-black uppercase tracking-wider rounded-md shrink-0 flex items-center gap-1 animate-pulse">
                               <span className="w-1 h-1 rounded-full bg-white animate-ping shrink-0" />
                               New
                             </span>
                           )}
-                        </div>
-                        <p className="text-[11.5px] text-slate-500 font-medium leading-relaxed mt-0.5 line-clamp-2 pr-1">{item.desc}</p>
+                        </h4>
+                        <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">{item.desc}</p>
                       </div>
-                    </div>
-                    <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shrink-0 shadow-2xs group-active:bg-brand-50 group-active:border-brand-100 group-active:text-brand-600 group-active:translate-x-0.5 transition-all duration-300">
-                      <ChevronRight className="w-4 h-4" />
-                    </div>
-                  </div>
-                ) : (
-                <Card 
-                  onClick={() => setSelectedBankType(item.id)}
-                  className={cn(
-                    "p-5 sm:p-6 lg:p-8 flex flex-col justify-between bg-gradient-to-br from-white to-slate-50/50 border border-white/20 shadow-sm rounded-[1.5rem] cursor-pointer group relative overflow-hidden h-full",
-                    "hover:shadow-2xl hover:shadow-brand-500/10 transition-all duration-500 premium-shine-container"
+                      
+                      <Button className="w-full py-3 sm:py-3.5 mt-auto rounded-xl flex items-center justify-center text-xs sm:text-sm font-black premium-gradient border-none shadow-md shadow-brand-500/10 pointer-events-none relative overflow-hidden group-hover:shadow-lg group-hover:shadow-brand-500/30 transition-all">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
+                        <span className="relative z-10">View Collection</span>
+                      </Button>
+                    </Card>
                   )}
-                >
-                  <div className="absolute -right-6 -top-6 w-24 h-24 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-colors" />
-                  
-                  <div className="flex-1 pb-6 relative z-10">
-                    <div className="flex justify-between items-start mb-4 sm:mb-6">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 premium-gradient rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-500/20 shrink-0 relative group-hover:scale-110 group-hover:premium-glow transition-all duration-500">
-                        {item.iconDesktop}
-                        <div className="absolute inset-0 border-2 border-white/20 rounded-xl sm:rounded-2xl animate-pulse" />
-                      </div>
-                    </div>
-                    <h4 className="font-extrabold text-base sm:text-lg lg:text-xl text-slate-900 mb-2 group-hover:text-brand-650 transition-colors tracking-tight line-clamp-2 md:line-clamp-none leading-snug flex items-center gap-2 flex-wrap">
-                      {item.title}
-                      {hasNewUnreadContent('bank', item.id) && (
-                        <span className="px-1.5 py-0.5 bg-brand-500 text-white text-[8.5px] font-black uppercase tracking-wider rounded-md shrink-0 flex items-center gap-1 animate-pulse">
-                          <span className="w-1 h-1 rounded-full bg-white animate-ping shrink-0" />
-                          New
-                        </span>
-                      )}
-                    </h4>
-                    <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">{item.desc}</p>
-                  </div>
-                  
-                  <Button className="w-full py-3 sm:py-3.5 mt-auto rounded-xl flex items-center justify-center text-xs sm:text-sm font-black premium-gradient border-none shadow-md shadow-brand-500/10 pointer-events-none relative overflow-hidden group-hover:shadow-lg group-hover:shadow-brand-500/30 transition-all">
-                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10" />
-                     <span className="relative z-10">View Collection</span>
-                  </Button>
-                </Card>
-              )}
-            </motion.div>
-          ))}
+                </motion.div>
+              );
+            })}
         </motion.div>
       </section>
       )}
@@ -7505,6 +7518,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       'pyq-collections': { shadow: 'rgba(236,72,153,0.03)', borderActive: 'active:border-pink-300', textActive: 'group-active:bg-pink-50 group-active:border-pink-100 group-active:text-pink-600' }
                     };
                     const style = styleMap[test.id] || styleMap['topic-wise'];
+                    const count = (dynamicQuestionBanks[test.id] || []).filter((b: any) => {
+                      if (b.is_archived && !hasAccessTo(b.id, selectedExam)) return false;
+                      return b.examId === selectedExam;
+                    }).length;
 
                     return (
                       <motion.div
@@ -7541,6 +7558,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <h4 className="font-extrabold text-[14.5px] text-slate-850 tracking-tight leading-snug">{test.title}</h4>
+                                  <span className="px-1.5 py-0.5 bg-slate-100/80 text-slate-500 text-[8.5px] font-black uppercase tracking-wider rounded border border-slate-200/50 shrink-0">
+                                    {count} {count === 1 ? 'Set' : 'Sets'}
+                                  </span>
                                   {hasNewUnreadContent('practice', test.id) ? (
                                     <span className="px-1.5 py-0.5 bg-brand-500 text-white text-[8.5px] font-black uppercase tracking-wider rounded-md shrink-0 flex items-center gap-1 animate-pulse">
                                       <span className="w-1 h-1 rounded-full bg-white animate-ping shrink-0" />
@@ -7582,7 +7602,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                             
                             <div className="space-y-4 flex-1 relative z-10">
                               <p className="text-slate-500 font-medium text-xs sm:text-sm leading-relaxed">{test.desc}</p>
-                              <div className="flex">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 {hasNewUnreadContent('practice', test.id) ? (
                                   <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 bg-brand-500 text-white rounded-lg flex items-center gap-1 animate-pulse">
                                     <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping shrink-0" />
@@ -7593,6 +7613,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                     {test.tag}
                                   </span>
                                 )}
+                                <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 bg-slate-100 text-slate-650 rounded-lg border border-slate-200/40">
+                                  {count} {count === 1 ? 'Set' : 'Sets'}
+                                </span>
                               </div>
                             </div>
 
@@ -8030,6 +8053,15 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     'daily': { shadow: 'rgba(16,185,129,0.06)', borderActive: 'active:border-emerald-300', textActive: 'group-active:bg-emerald-50 group-active:border-emerald-100 group-active:text-emerald-600' }
                   };
                   const style = styleMap[test.id] || styleMap['full-length'];
+                  const count = mockTests.filter(mt => {
+                    if (mt.is_archived && !hasAccessTo(mt.id, selectedExam)) return false;
+                    try {
+                      const cfg = JSON.parse(mt.seriesId);
+                      return cfg.examId === selectedExam && cfg.category === test.id;
+                    } catch (e) {
+                      return false;
+                    }
+                  }).length;
 
                   return (
                     <motion.div
@@ -8066,6 +8098,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <h4 className="font-extrabold text-[14.5px] text-slate-855 tracking-tight leading-snug">{test.title}</h4>
+                                <span className="px-1.5 py-0.5 bg-slate-100/80 text-slate-500 text-[8.5px] font-black uppercase tracking-wider rounded border border-slate-200/50 shrink-0">
+                                  {count} {count === 1 ? 'Test' : 'Tests'}
+                                </span>
                                 {hasNewUnreadContent('mock', test.id) ? (
                                   <span className="px-1.5 py-0.5 bg-brand-500 text-white text-[8.5px] font-black uppercase tracking-wider rounded-md shrink-0 flex items-center gap-1 animate-pulse">
                                     <span className="w-1 h-1 rounded-full bg-white animate-ping shrink-0" />
@@ -8107,7 +8142,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           
                           <div className="space-y-4 flex-1 relative z-10">
                             <p className="text-slate-500 font-medium text-xs sm:text-sm leading-relaxed">{test.desc}</p>
-                            <div className="flex">
+                            <div className="flex items-center gap-2 flex-wrap">
                               {hasNewUnreadContent('mock', test.id) ? (
                                 <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 bg-brand-500 text-white rounded-lg flex items-center gap-1 animate-pulse">
                                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping shrink-0" />
@@ -8118,6 +8153,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                   {test.tag}
                                 </span>
                               )}
+                              <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 bg-slate-100 text-slate-650 rounded-lg border border-slate-200/40">
+                                {count} {count === 1 ? 'Test' : 'Tests'}
+                              </span>
                             </div>
                           </div>
 
