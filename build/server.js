@@ -1,11 +1,3 @@
-var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
-  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
-}) : x)(function(x) {
-  if (typeof require !== "undefined")
-    return require.apply(this, arguments);
-  throw Error('Dynamic require of "' + x + '" is not supported');
-});
-
 // server.ts
 import express from "express";
 import { createServer as createViteServer } from "vite";
@@ -53,6 +45,17 @@ var supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
 });
 if (supabaseUrl === "https://placeholder.supabase.co" || supabaseServiceKey === "dummy_key_to_prevent_startup_crash") {
   console.warn("\u26A0\uFE0F WARNING: VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing. Supabase admin features will fail.");
+}
+function safeAppendLog(fileName, content) {
+  try {
+    const logDir = path.resolve(process.cwd(), "scratch");
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+    fs.appendFileSync(path.join(logDir, fileName), content, "utf8");
+  } catch (err) {
+    console.error(`[Safe Logger Failed for ${fileName}]:`, err.message);
+  }
 }
 function routeToRegex(route) {
   const escaped = route.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
@@ -172,8 +175,8 @@ async function startServer() {
     try {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        fs.appendFileSync("c:\\Users\\Naresh Samal\\Downloads\\OdishaExamPrep Website\\scratch\\auth_requests.log", `[${(/* @__PURE__ */ new Date()).toISOString()}] ${req.method} ${reqUrl} - 401 Missing token
-`, "utf8");
+        safeAppendLog("auth_requests.log", `[${(/* @__PURE__ */ new Date()).toISOString()}] ${req.method} ${reqUrl} - 401 Missing token
+`);
         return res.status(401).json({ error: "Missing authorization token" });
       }
       const token = authHeader.split(" ")[1];
@@ -183,8 +186,8 @@ async function startServer() {
       if (!user) {
         const { data: { user: freshUser }, error } = await supabaseAdmin.auth.getUser(token);
         if (error || !freshUser) {
-          fs.appendFileSync("c:\\Users\\Naresh Samal\\Downloads\\OdishaExamPrep Website\\scratch\\auth_requests.log", `[${(/* @__PURE__ */ new Date()).toISOString()}] ${req.method} ${reqUrl} - 401 Invalid token: ${error?.message || "user not found"}
-`, "utf8");
+          safeAppendLog("auth_requests.log", `[${(/* @__PURE__ */ new Date()).toISOString()}] ${req.method} ${reqUrl} - 401 Invalid token: ${error?.message || "user not found"}
+`);
           return res.status(401).json({ error: "Invalid authorization token" });
         }
         user = freshUser;
@@ -201,17 +204,17 @@ async function startServer() {
         isAdmin = profile?.role === "admin";
       }
       if (!isAdmin) {
-        fs.appendFileSync("c:\\Users\\Naresh Samal\\Downloads\\OdishaExamPrep Website\\scratch\\auth_requests.log", `[${(/* @__PURE__ */ new Date()).toISOString()}] ${req.method} ${reqUrl} - 403 Forbidden: user=${user.email || user.id}
-`, "utf8");
+        safeAppendLog("auth_requests.log", `[${(/* @__PURE__ */ new Date()).toISOString()}] ${req.method} ${reqUrl} - 403 Forbidden: user=${user.email || user.id}
+`);
         return res.status(403).json({ error: "Forbidden: Admin access required" });
       }
-      fs.appendFileSync("c:\\Users\\Naresh Samal\\Downloads\\OdishaExamPrep Website\\scratch\\auth_requests.log", `[${(/* @__PURE__ */ new Date()).toISOString()}] ${req.method} ${reqUrl} - SUCCESS user=${user.email || user.id}
-`, "utf8");
+      safeAppendLog("auth_requests.log", `[${(/* @__PURE__ */ new Date()).toISOString()}] ${req.method} ${reqUrl} - SUCCESS user=${user.email || user.id}
+`);
       req.user = user;
       next();
     } catch (err) {
-      fs.appendFileSync("c:\\Users\\Naresh Samal\\Downloads\\OdishaExamPrep Website\\scratch\\auth_requests.log", `[${(/* @__PURE__ */ new Date()).toISOString()}] ${req.method} ${reqUrl} - 500 ERROR: ${err.message}
-`, "utf8");
+      safeAppendLog("auth_requests.log", `[${(/* @__PURE__ */ new Date()).toISOString()}] ${req.method} ${reqUrl} - 500 ERROR: ${err.message}
+`);
       return res.status(500).json({ error: "Authentication check failed" });
     }
   };
@@ -354,7 +357,7 @@ async function startServer() {
   app.post("/api/log-error", (req, res) => {
     try {
       console.log("[Client Error Logged]", req.body);
-      __require("fs").writeFileSync("client_error.json", JSON.stringify(req.body, null, 2));
+      fs.writeFileSync("client_error.json", JSON.stringify(req.body, null, 2));
       res.json({ success: true });
     } catch (e) {
       res.status(500).json({ error: "Failed to write error" });
@@ -992,7 +995,7 @@ async function startServer() {
       const topic = req.query.topic || "all";
       const logLine = `[${(/* @__PURE__ */ new Date()).toISOString()}] page=${page} limit=${limit} search="${search}" examId="${examId}" questionFilter="${questionFilter}" topic="${topic}"
 `;
-      fs.appendFileSync("c:\\Users\\Naresh Samal\\Downloads\\OdishaExamPrep Website\\scratch\\api_requests.log", logLine, "utf8");
+      safeAppendLog("api_requests.log", logLine);
       const offset = (page - 1) * limit;
       let query = supabaseAdmin.from("questions").select("*", { count: "exact" });
       if (examId !== "all") {
@@ -1013,8 +1016,8 @@ async function startServer() {
       const { data, error, count } = await query;
       if (error)
         throw error;
-      fs.appendFileSync("c:\\Users\\Naresh Samal\\Downloads\\OdishaExamPrep Website\\scratch\\api_requests.log", `[SUCCESS] returned ${data?.length} rows, totalCount=${count}
-`, "utf8");
+      safeAppendLog("api_requests.log", `[SUCCESS] returned ${data?.length} rows, totalCount=${count}
+`);
       res.json({
         success: true,
         data,
@@ -1022,8 +1025,8 @@ async function startServer() {
         totalCount: count || 0
       });
     } catch (err) {
-      fs.appendFileSync("c:\\Users\\Naresh Samal\\Downloads\\OdishaExamPrep Website\\scratch\\api_requests.log", `[ERROR] ${err.message}
-`, "utf8");
+      safeAppendLog("api_requests.log", `[ERROR] ${err.message}
+`);
       console.error("[Admin Questions Paginated Error]", err);
       res.status(500).json({ error: err.message || "Failed to fetch paginated questions" });
     }
