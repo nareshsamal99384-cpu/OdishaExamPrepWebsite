@@ -194,6 +194,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
   const [grantSelectedCategory, setGrantSelectedCategory] = useState("bundle");
   const [grantSelectedContentId, setGrantSelectedContentId] = useState("");
   const [items, setItems] = useState<any[]>([]);
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
 
   // Comprehensive Form State
   const initialFormData = {
@@ -542,6 +543,22 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
   useEffect(() => {
     setQuestionsPage(1);
   }, [searchQuery, filterExamId, questionFilter, selectedTargetIdForQuestions, selectedTypeForQuestions]);
+
+  useEffect(() => {
+    setSelectedItemIds(new Set());
+  }, [
+    activeTab, 
+    questionsPage, 
+    filterExamId, 
+    questionFilter, 
+    searchQuery, 
+    selectedTargetIdForQuestions, 
+    selectedTypeForQuestions,
+    selectedExamIdForBanks,
+    selectedExamIdForSeries,
+    selectedExamIdForTests,
+    selectedCategoryForTests
+  ]);
 
   useEffect(() => {
     let list: any[] = [];
@@ -2440,6 +2457,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   >
                     <Upload className="w-4 h-4" /> Bulk Upload
                   </button>
+                  {/* Selected items delete button handled generically next to Add New */}
                   {(() => {
                      if (items.length === 0 || filterExamId === 'all') return null;
                      const targetExamId = items[0].examId;
@@ -2575,6 +2593,56 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   <button onClick={() => setExamFilter('popular')} className={cn("px-4 py-1.5 rounded-lg text-sm font-bold transition-all h-full", examFilter === 'popular' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Popular</button>
                   <button onClick={() => setExamFilter('upcoming')} className={cn("px-4 py-1.5 rounded-lg text-sm font-bold transition-all h-full", examFilter === 'upcoming' ? "bg-white shadow-sm text-brand-600" : "text-slate-500 hover:text-slate-700")}>Upcoming</button>
                 </div>
+              )}
+              {selectedItemIds.size > 0 && (
+                <button 
+                  onClick={async () => {
+                    const tabLabelMap: Record<string, string> = {
+                      questions: 'question(s)',
+                      tests: 'mock test(s)',
+                      series: 'test series',
+                      banks: 'question bank(s)',
+                      exams: 'exam(s)',
+                      blogs: 'blog post(s)'
+                    };
+                    const label = tabLabelMap[activeTab] || 'item(s)';
+                    const confirmMessage = `Are you sure you want to delete the ${selectedItemIds.size} selected ${label}?\n\nThis action cannot be undone.`;
+                    if (!confirm(confirmMessage)) return;
+                    
+                    setLoading(true);
+                    const idsToDelete: string[] = Array.from(selectedItemIds);
+                    
+                    // Optimistically update UI
+                    if (activeTab === 'questions') setQuestions(prev => prev.filter(q => !selectedItemIds.has(q.id)));
+                    else if (activeTab === 'series') setSeries(prev => prev.filter(s => !selectedItemIds.has(s.id)));
+                    else if (activeTab === 'tests') setMockTests(prev => prev.filter(t => !selectedItemIds.has(t.id)));
+                    else if (activeTab === 'exams' || activeTab === 'blogs') setExams(prev => prev.filter(ex => !selectedItemIds.has(ex.id)));
+                    else if (activeTab === 'banks') setBanks(prev => prev.filter(b => !selectedItemIds.has(b.id)));
+                    
+                    setSelectedItemIds(new Set());
+                    
+                    try {
+                      const promises = idsToDelete.map(id => {
+                        if (activeTab === 'questions') return examService.deleteQuestion(id);
+                        if (activeTab === 'series') return examService.deleteTestSeries(id);
+                        if (activeTab === 'tests') return examService.deleteMockTest(id);
+                        if (activeTab === 'exams' || activeTab === 'blogs') return examService.deleteExam(id);
+                        if (activeTab === 'banks') return examService.deleteQuestionBank(id);
+                        return Promise.resolve();
+                      });
+                      await Promise.all(promises);
+                      alert(`Successfully deleted ${idsToDelete.length} ${label}.`);
+                    } catch (error: any) {
+                      alert('Error deleting items: ' + (error.message || error));
+                    } finally {
+                      setLoading(false);
+                      fetchData();
+                    }
+                  }}
+                  className="flex items-center justify-center gap-2 px-6 py-2.5 bg-red-600 text-white hover:bg-red-700 rounded-xl text-sm font-extrabold transition-all shadow-md flex-shrink-0 animate-in fade-in zoom-in-95 duration-150"
+                >
+                  <Trash2 className="w-4 h-4" /> Delete Selected ({selectedItemIds.size})
+                </button>
               )}
               {(['questions', 'banks', 'exams', 'series', 'blogs'].includes(activeTab) || (activeTab === 'tests' && selectedExamIdForTests && selectedCategoryForTests)) && (
                 <button 
@@ -4270,7 +4338,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                             <div className="relative space-y-4">
                               <div className="flex justify-between items-start">
                                 <div className="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-3xl shadow-inner shrink-0 group-hover:bg-brand-100 transition-colors">
-                                  {exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/')) ? <img src={getDirectImageUrl(exam.icon)} alt="" className="w-8 h-8 object-contain" /> : exam.icon || '🏛️'}
+                                  {exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/')) ? <img src={getDirectImageUrl(exam.icon)} alt="" className="w-8 h-8 object-contain" referrerPolicy="no-referrer" /> : exam.icon || '🏛️'}
                                 </div>
                                 <ChevronRight className="w-6 h-6 text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
                               </div>
@@ -4322,7 +4390,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                             <div className="relative space-y-4">
                               <div className="flex justify-between items-start">
                                 <div className="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-3xl shadow-inner shrink-0 group-hover:bg-brand-100 transition-colors">
-                                  {exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/')) ? <img src={getDirectImageUrl(exam.icon)} alt="" className="w-8 h-8 object-contain" /> : exam.icon || '🏛️'}
+                                  {exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/')) ? <img src={getDirectImageUrl(exam.icon)} alt="" className="w-8 h-8 object-contain" referrerPolicy="no-referrer" /> : exam.icon || '🏛️'}
                                 </div>
                                 <ChevronRight className="w-6 h-6 text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
                               </div>
@@ -4374,7 +4442,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                             <div className="relative space-y-4">
                               <div className="flex justify-between items-start">
                                 <div className="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-3xl shadow-inner shrink-0 group-hover:bg-brand-100 transition-colors">
-                                  {exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/')) ? <img src={getDirectImageUrl(exam.icon)} alt="" className="w-8 h-8 object-contain" /> : exam.icon || '🏛️'}
+                                  {exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/')) ? <img src={getDirectImageUrl(exam.icon)} alt="" className="w-8 h-8 object-contain" referrerPolicy="no-referrer" /> : exam.icon || '🏛️'}
                                 </div>
                                 <ChevronRight className="w-6 h-6 text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
                               </div>
@@ -4646,7 +4714,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                            <div className="relative space-y-4">
                              <div className="flex justify-between items-start">
                                <div className="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-3xl shadow-inner shrink-0 group-hover:bg-brand-100 transition-colors">
-                                 {exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/')) ? <img src={getDirectImageUrl(exam.icon)} alt="" className="w-8 h-8 object-contain" /> : exam.icon || '🏛️'}
+                                 {exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/')) ? <img src={getDirectImageUrl(exam.icon)} alt="" className="w-8 h-8 object-contain" referrerPolicy="no-referrer" /> : exam.icon || '🏛️'}
                                </div>
                                <ChevronRight className="w-6 h-6 text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
                              </div>
@@ -4687,7 +4755,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                      <div className="bg-white rounded-[2rem] border border-slate-200/50 p-6 flex flex-col md:flex-row gap-5 items-center justify-between shadow-sm">
                        <div className="flex items-center gap-5">
                          <div className="w-16 h-16 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-4xl shadow-inner shrink-0">
-                           {exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/')) ? <img src={getDirectImageUrl(exam.icon)} alt="" className="w-10 h-10 object-contain" /> : exam.icon || '🏛️'}
+                           {exam.icon && (exam.icon.startsWith('http') || exam.icon.startsWith('/')) ? <img src={getDirectImageUrl(exam.icon)} alt="" className="w-10 h-10 object-contain" referrerPolicy="no-referrer" /> : exam.icon || '🏛️'}
                          </div>
                          <div>
                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{exam.name}</h3>
@@ -4990,14 +5058,56 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                   <div className="grid grid-cols-12 bg-slate-100/50 border-b border-slate-200/60 px-8 py-5 text-xs font-black uppercase text-slate-500 tracking-widest">
                       {activeTab === 'tests' ? (
                         <>
-                          <div className="col-span-2">Order</div>
+                          <div className="col-span-1 flex items-center">
+                            <input 
+                              type="checkbox"
+                              checked={items.length > 0 && items.every(item => selectedItemIds.has(item.id))}
+                              ref={input => {
+                                if (input) {
+                                  const anySelected = items.some(item => selectedItemIds.has(item.id));
+                                  const allSelected = items.every(item => selectedItemIds.has(item.id));
+                                  input.indeterminate = anySelected && !allSelected;
+                                }
+                              }}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedItemIds(new Set(items.map(item => item.id)));
+                                } else {
+                                  setSelectedItemIds(new Set());
+                                }
+                              }}
+                              className="w-4 h-4 text-brand-600 border-slate-300 rounded-lg focus:ring-brand-500/10 focus:ring-2 cursor-pointer transition-all"
+                            />
+                          </div>
+                          <div className="col-span-1">Order</div>
                           <div className="col-span-5">Basic Info</div>
                           <div className="col-span-2">Details</div>
                           <div className="col-span-3 text-right pr-4">Actions</div>
                         </>
                       ) : (
                         <>
-                          <div className="col-span-6">Basic Info</div>
+                          <div className="col-span-1 flex items-center">
+                            <input 
+                              type="checkbox"
+                              checked={items.length > 0 && items.every(item => selectedItemIds.has(item.id))}
+                              ref={input => {
+                                if (input) {
+                                  const anySelected = items.some(item => selectedItemIds.has(item.id));
+                                  const allSelected = items.every(item => selectedItemIds.has(item.id));
+                                  input.indeterminate = anySelected && !allSelected;
+                                }
+                              }}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedItemIds(new Set(items.map(item => item.id)));
+                                } else {
+                                  setSelectedItemIds(new Set());
+                                }
+                              }}
+                              className="w-4 h-4 text-brand-600 border-slate-300 rounded-lg focus:ring-brand-500/10 focus:ring-2 cursor-pointer transition-all"
+                            />
+                          </div>
+                          <div className="col-span-5">Basic Info</div>
                           <div className="col-span-3">Details</div>
                           <div className="col-span-3 text-right pr-4">Actions</div>
                         </>
@@ -5019,68 +5129,100 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                            <div className="hover:bg-brand-50/30 transition-colors group px-8 py-6 grid grid-cols-12 items-center">
                               {activeTab === 'tests' ? (
                                  <>
-                                   <div className="col-span-2 flex items-center gap-2">
-                                     <input 
-                                       type="number" 
-                                       min="1"
-                                       value={item.sortOrder ?? ''} 
-                                       onChange={(e) => {
-                                         const newVal = parseInt(e.target.value);
-                                         if (!isNaN(newVal) && newVal > 0) {
-                                           const updatedItems = items.map(it => it.id === item.id ? { ...it, sortOrder: newVal } : it);
-                                           setItems(updatedItems);
-                                         }
-                                       }}
-                                       onBlur={(e) => {
-                                         const newVal = parseInt(e.target.value);
-                                         if (!isNaN(newVal) && newVal > 0 && newVal !== (mockTests.find(t => t.id === item.id)?.sortOrder || 0)) {
-                                           handleInlineOrderChange(item.id, newVal);
-                                         }
-                                       }}
-                                       onKeyDown={(e) => {
-                                         if (e.key === 'Enter') {
-                                           const newVal = parseInt((e.target as HTMLInputElement).value);
-                                           if (!isNaN(newVal) && newVal > 0 && newVal !== (mockTests.find(t => t.id === item.id)?.sortOrder || 0)) {
-                                             handleInlineOrderChange(item.id, newVal);
-                                             (e.target as HTMLInputElement).blur();
-                                           }
-                                         }
-                                       }}
-                                       className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-center font-black focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 outline-none transition-all shadow-sm bg-slate-50/50"
-                                     />
-                                   </div>
-                                   <div className="col-span-5">
-                                      <div className="font-extrabold text-slate-900 text-lg line-clamp-2 pr-4">{item.name || item.title || item.questionText || 'Untitled'}</div>
-                                      <div className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-wider">{item.category || item.type || item.difficulty || 'Default'}</div>
-                                   </div>
-                                   <div className="col-span-2">
-                                      <div className="text-sm font-bold text-slate-600">
-                                         {item.durationMinutes} Min • {item.totalMarks} Marks
-                                      </div>
-                                      <div className="text-[10px] text-slate-400 font-bold uppercase mt-1">ID: {item.id?.slice(0, 8)}</div>
-                                   </div>
+                                    <div className="col-span-1 flex items-center">
+                                      <input 
+                                        type="checkbox"
+                                        checked={selectedItemIds.has(item.id)}
+                                        onChange={(e) => {
+                                          const next = new Set(selectedItemIds);
+                                          if (e.target.checked) {
+                                            next.add(item.id);
+                                          } else {
+                                            next.delete(item.id);
+                                          }
+                                          setSelectedItemIds(next);
+                                        }}
+                                        className="w-4 h-4 text-brand-600 border-slate-300 rounded-lg focus:ring-brand-500/10 focus:ring-2 cursor-pointer transition-all"
+                                      />
+                                    </div>
+                                    <div className="col-span-1 flex items-center gap-2">
+                                      <input 
+                                        type="number" 
+                                        min="1"
+                                        value={item.sortOrder ?? ''} 
+                                        onChange={(e) => {
+                                          const newVal = parseInt(e.target.value);
+                                          if (!isNaN(newVal) && newVal > 0) {
+                                            const updatedItems = items.map(it => it.id === item.id ? { ...it, sortOrder: newVal } : it);
+                                            setItems(updatedItems);
+                                          }
+                                        }}
+                                        onBlur={(e) => {
+                                          const newVal = parseInt(e.target.value);
+                                          if (!isNaN(newVal) && newVal > 0 && newVal !== (mockTests.find(t => t.id === item.id)?.sortOrder || 0)) {
+                                            handleInlineOrderChange(item.id, newVal);
+                                          }
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            const newVal = parseInt((e.target as HTMLInputElement).value);
+                                            if (!isNaN(newVal) && newVal > 0 && newVal !== (mockTests.find(t => t.id === item.id)?.sortOrder || 0)) {
+                                              handleInlineOrderChange(item.id, newVal);
+                                              (e.target as HTMLInputElement).blur();
+                                            }
+                                          }
+                                        }}
+                                        className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-center font-black focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 outline-none transition-all shadow-sm bg-slate-50/50"
+                                      />
+                                    </div>
+                                    <div className="col-span-5">
+                                       <div className="font-extrabold text-slate-900 text-lg line-clamp-2 pr-4">{item.name || item.title || item.questionText || 'Untitled'}</div>
+                                       <div className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-wider">{item.category || item.type || item.difficulty || 'Default'}</div>
+                                    </div>
+                                    <div className="col-span-2">
+                                       <div className="text-sm font-bold text-slate-600">
+                                          {item.durationMinutes} Min • {item.totalMarks} Marks
+                                       </div>
+                                       <div className="text-[10px] text-slate-400 font-bold uppercase mt-1">ID: {item.id?.slice(0, 8)}</div>
+                                    </div>
                                  </>
                               ) : (
                                  <>
-                                   <div className="col-span-6">
-                                      <div className="font-extrabold text-slate-900 text-lg line-clamp-2 pr-4">{item.name || item.title || item.questionText || 'Untitled'}</div>
-                                      <div className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-wider">{item.category || item.type || item.difficulty || 'Default'}</div>
-                                   </div>
-                                   <div className="col-span-3">
-                                      <div className="text-sm font-bold text-slate-600">
-                                         {(() => {
-                                            if (activeTab === 'questions') return `${item.options?.length || 0} Options`;
-                                            if (activeTab === 'series') return `₹${item.price} • ${item.durationDays} Days`;
-                                            if (activeTab === 'tests') return `${item.durationMinutes} Min • ${item.totalMarks} Marks`;
-                                            if (activeTab === 'exams' || activeTab === 'blogs') {
-                                              return item.examDate ? new Date(item.examDate).toLocaleDateString() : '-';
-                                            }
-                                            if (activeTab === 'banks') return `${item.questionCount} Qs • ${item.isPremium ? 'Premium' : 'Free'}`;
-                                            return '-';
-                                         })()}
-                                      </div>
-                                      <div className="text-[10px] text-slate-400 font-bold uppercase mt-1">ID: {item.id?.slice(0, 8)}</div>
-                                   </div>
+                                    <div className="col-span-1 flex items-center">
+                                      <input 
+                                        type="checkbox"
+                                        checked={selectedItemIds.has(item.id)}
+                                        onChange={(e) => {
+                                          const next = new Set(selectedItemIds);
+                                          if (e.target.checked) {
+                                            next.add(item.id);
+                                          } else {
+                                            next.delete(item.id);
+                                          }
+                                          setSelectedItemIds(next);
+                                        }}
+                                        className="w-4 h-4 text-brand-600 border-slate-300 rounded-lg focus:ring-brand-500/10 focus:ring-2 cursor-pointer transition-all"
+                                      />
+                                    </div>
+                                    <div className="col-span-5">
+                                       <div className="font-extrabold text-slate-900 text-lg line-clamp-2 pr-4">{item.name || item.title || item.questionText || 'Untitled'}</div>
+                                       <div className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-wider">{item.category || item.type || item.difficulty || 'Default'}</div>
+                                    </div>
+                                    <div className="col-span-3">
+                                       <div className="text-sm font-bold text-slate-600">
+                                          {(() => {
+                                             if (activeTab === 'questions') return `${item.options?.length || 0} Options`;
+                                             if (activeTab === 'series') return `₹${item.price} • ${item.durationDays} Days`;
+                                             if (activeTab === 'tests') return `${item.durationMinutes} Min • ${item.totalMarks} Marks`;
+                                             if (activeTab === 'exams' || activeTab === 'blogs') {
+                                               return item.examDate ? new Date(item.examDate).toLocaleDateString() : '-';
+                                             }
+                                             if (activeTab === 'banks') return `${item.questionCount} Qs • ${item.isPremium ? 'Premium' : 'Free'}`;
+                                             return '-';
+                                          })()}
+                                       </div>
+                                       <div className="text-[10px] text-slate-400 font-bold uppercase mt-1">ID: {item.id?.slice(0, 8)}</div>
+                                    </div>
                                  </>
                               )}
                               <div className="col-span-3 flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
