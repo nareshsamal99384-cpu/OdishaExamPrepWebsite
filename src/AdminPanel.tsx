@@ -4574,7 +4574,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                      </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                        {banks.filter(b => b.examId === selectedExamIdForQuestions).map(bank => {
-                         const count = questions.filter(q => q.examId === selectedExamIdForQuestions && q.topic === bank.title).length;
+                         const count = bank.questionCount || 0;
                          return (
                            <motion.div
                              key={bank.id}
@@ -4679,7 +4679,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                              return false;
                            })
                            .map(mt => {
-                             const count = mt.questions?.length || 0;
+                             const count = mt._questionCount || mt.questions?.length || 0;
                              return (
                                <motion.div
                                  key={mt.id}
