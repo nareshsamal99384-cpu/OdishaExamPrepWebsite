@@ -18,7 +18,9 @@ import {
   TrendingDown,
   Zap,
   FileText,
-  Play
+  Play,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Button } from './components/Button';
@@ -204,6 +206,36 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
   const [showExplanation, setShowExplanation] = useState(false);
   const [showMobilePalette, setShowMobilePalette] = useState(false);
   const [isPaletteCollapsed, setIsPaletteCollapsed] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      // Clean up fullscreen mode when leaving the test (unmounting)
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch((err) => {
+          console.warn("Failed to exit fullscreen on unmount:", err);
+        });
+      }
+    };
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.warn("Failed to enter fullscreen:", err);
+      });
+    } else {
+      document.exitFullscreen().catch((err) => {
+        console.warn("Failed to exit fullscreen:", err);
+      });
+    }
+  }, []);
+
   const [currentMode, setCurrentMode] = useState<'mock' | 'practice'>(mappedInitialState?.currentMode || mode);
   const [untimedPractice, setUntimedPractice] = useState(mappedInitialState?.untimedPractice || false);
   const [targetScore, setTargetScore] = useState(() => {
@@ -960,7 +992,14 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
         {/* Sticky Fixed Bottom Start Button Container */}
         <div className="shrink-0 px-4 py-3 sm:p-6 bg-white/80 backdrop-blur-md border-t border-slate-200/60 z-20 flex justify-center shadow-[0_-8px_30px_rgba(0,0,0,0.02)]">
           <button
-            onClick={() => setIsStarted(true)}
+            onClick={() => {
+              if (window.innerWidth >= 1024 && document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch((err) => {
+                  console.warn("Auto-fullscreen failed:", err);
+                });
+              }
+              setIsStarted(true);
+            }}
             className="max-w-3xl w-full py-3.5 sm:py-4.5 rounded-xl sm:rounded-2xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-black text-sm sm:text-base transition-all duration-300 shadow-lg shadow-[#2563eb]/20 flex items-center justify-center gap-2.5 active:scale-[0.98] cursor-pointer premium-btn-transition"
           >
             <Play className="w-4.5 h-4.5 fill-white" /> Initiate Session
@@ -986,6 +1025,20 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
           >
             <X className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
           </button>
+
+          {/* Fullscreen Toggle Button (Desktop/Laptop only) */}
+          <button
+            onClick={toggleFullscreen}
+            className="hidden lg:flex w-10 h-10 sm:w-11 sm:h-11 items-center justify-center bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all duration-200 cursor-pointer text-slate-500 hover:text-[#2563eb] shrink-0"
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+            ) : (
+              <Maximize2 className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+            )}
+          </button>
+
           <div className="min-w-0 flex-1">
             <h1 className="font-serif font-extrabold text-slate-900 truncate tracking-tight leading-tight text-sm sm:text-xl">{test.title}</h1>
             <p className="text-[8px] sm:text-[10px] font-black text-[#2563EB] uppercase tracking-widest leading-none mt-0.5 sm:mt-1">Subject: General Awareness</p>
