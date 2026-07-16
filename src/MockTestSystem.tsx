@@ -203,6 +203,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [showMobilePalette, setShowMobilePalette] = useState(false);
+  const [isPaletteCollapsed, setIsPaletteCollapsed] = useState(false);
   const [currentMode, setCurrentMode] = useState<'mock' | 'practice'>(mappedInitialState?.currentMode || mode);
   const [untimedPractice, setUntimedPractice] = useState(mappedInitialState?.untimedPractice || false);
   const [targetScore, setTargetScore] = useState(() => {
@@ -1330,8 +1331,32 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
           </div>
         </div>
 
+        {/* Toggle Palette Button (Desktop/Laptop only) */}
+        <button
+          onClick={() => setIsPaletteCollapsed(!isPaletteCollapsed)}
+          className="hidden lg:flex absolute top-1/2 -translate-y-1/2 z-50 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 w-5.5 h-16 rounded-l-xl items-center justify-center cursor-pointer shadow-md transition-all duration-300 hover:w-6.5 hover:shadow-lg focus:outline-none"
+          style={{
+            right: isPaletteCollapsed ? '0px' : '320px',
+            transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s, border-color 0.2s'
+          }}
+          title={isPaletteCollapsed ? "Expand Question Palette" : "Collapse Question Palette"}
+        >
+          {isPaletteCollapsed ? (
+            <ChevronLeft className="w-4 h-4 text-slate-500 animate-[pulse_2s_infinite]" />
+          ) : (
+            <ChevronRight className="w-4 h-4 text-slate-500" />
+          )}
+        </button>
+
         {/* Right Side: CBT Candidate Profile & Question Palette (Premium Redesign) */}
-        <aside className="w-80 bg-white flex flex-col shrink-0 hidden lg:flex border-l border-slate-200/60">
+        <aside 
+          className={cn(
+            "bg-white flex flex-col shrink-0 hidden lg:flex border-l border-slate-200/60 transition-all duration-300 ease-in-out overflow-hidden relative",
+            isPaletteCollapsed ? "w-0 border-l-0" : "w-80"
+          )}
+        >
+          {/* Inner wrapper with fixed width to prevent wrapping/squishing during animation */}
+          <div className="w-80 h-full flex flex-col shrink-0">
           
           {/* Candidate Card */}
           <div className="p-5 border-b border-slate-200/60 flex items-center gap-3.5 bg-slate-50/50">
@@ -1443,6 +1468,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                 <span>Marked & Answered</span>
               </div>
             </div>
+          </div>
           </div>
         </aside>
       </div>
