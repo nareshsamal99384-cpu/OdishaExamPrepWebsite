@@ -5595,7 +5595,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         return;
       }
 
-      const limit = Math.min(25, matchedQs.length);
+      const limit = matchedQs.length;
       const duration = 30; 
       const shuffled = matchedQs.sort(() => 0.5 - Math.random());
       const finalQuestions = shuffled.slice(0, limit);
