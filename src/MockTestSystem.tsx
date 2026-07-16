@@ -1120,7 +1120,8 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                 mathHeavy ? "overflow-y-auto no-scrollbar" : "overflow-hidden"
               )}>
                 <div className={cn(
-                  "max-w-4xl lg:max-w-6xl mx-auto w-full flex flex-col space-y-2.5 sm:space-y-3 lg:space-y-4",
+                  "w-full flex flex-col space-y-2.5 sm:space-y-3 lg:space-y-4 mx-auto transition-all duration-300",
+                  isPaletteCollapsed ? "max-w-[96%] lg:max-w-[94%]" : "max-w-4xl lg:max-w-6xl",
                   !mathHeavy && "h-full overflow-hidden"
                 )}>
                   <AnimatePresence mode="wait">
@@ -1132,7 +1133,9 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                       transition={{ duration: 0.15 }}
                       className={cn(
                         "flex flex-col gap-3 sm:gap-4",
-                        !mathHeavy && "lg:grid lg:grid-cols-2 lg:grid-rows-1 lg:gap-8 lg:h-full min-h-0 flex-1"
+                        !mathHeavy && (isPaletteCollapsed 
+                          ? "lg:grid lg:grid-cols-[1.15fr_0.85fr] lg:grid-rows-1 lg:gap-10 lg:h-full min-h-0 flex-1"
+                          : "lg:grid lg:grid-cols-2 lg:grid-rows-1 lg:gap-8 lg:h-full min-h-0 flex-1")
                       )}
                     >
                       {/* ── Question Panel ── */}
