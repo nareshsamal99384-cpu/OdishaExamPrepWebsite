@@ -332,6 +332,8 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
   const mobilePaletteRef = useRef<HTMLDivElement>(null);
   const answersRef = useRef(answers);
   answersRef.current = answers;
+  const currentQuestionIndexRef = useRef(currentQuestionIndex);
+  currentQuestionIndexRef.current = currentQuestionIndex;
 
   // Scroll question text container to top when changing questions
   useEffect(() => {
@@ -366,11 +368,11 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
       }
       setTimeSpent(prev => ({
         ...prev,
-        [currentQuestionIndex]: (prev[currentQuestionIndex] || 0) + 1
+        [currentQuestionIndexRef.current]: (prev[currentQuestionIndexRef.current] || 0) + 1
       }));
     }, 1000);
     return () => clearInterval(timer);
-  }, [currentQuestionIndex, isStarted, currentMode, untimedPractice]);
+  }, [isStarted, currentMode, untimedPractice]);
 
   // Auto-scroll desktop palette to keep current question in view
   useEffect(() => {
