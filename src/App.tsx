@@ -5044,7 +5044,22 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       const topicBank = Object.values(dynamicQuestionBanks).flat().find((b: any) => b.id === practiceSettings.topic) as any;
       const bankTopicName = topicBank ? topicBank.title : practiceSettings.topic;
 
-      const { data } = await supabase.from('questions').select('topic').eq('examId', activeExamId);
+      let { data, error } = await supabase
+        .from('questions')
+        .select('topic')
+        .eq('examId', activeExamId)
+        .ilike('topic', bankTopicName);
+        
+      if (!error && (!data || data.length === 0)) {
+        const fallbackRes = await supabase
+          .from('questions')
+          .select('topic')
+          .eq('examId', activeExamId);
+        if (!fallbackRes.error) {
+          data = fallbackRes.data;
+        }
+      }
+
       let matchedQs = data || [];
       if (bankTopicName) {
         const normBank = bankTopicName.toLowerCase().replace(/[\s\-_—–:()]+/g, '').trim();
@@ -5480,7 +5495,22 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
         return;
       }
 
-      const { data, error } = await supabase.from('questions').select('*').eq('examId', effectiveExamId);
+      let { data, error } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('examId', effectiveExamId)
+        .ilike('topic', bankTopicName);
+
+      if (!error && (!data || data.length === 0)) {
+        const fallbackRes = await supabase
+          .from('questions')
+          .select('*')
+          .eq('examId', effectiveExamId);
+        if (!fallbackRes.error) {
+          data = fallbackRes.data;
+          error = null;
+        }
+      }
       if (error) throw error;
       
       let matchedQs = data || [];
@@ -5573,7 +5603,22 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
 
       const bankTopicName = topicBank.title;
 
-      const { data, error } = await supabase.from('questions').select('*').eq('examId', effectiveExamId);
+      let { data, error } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('examId', effectiveExamId)
+        .ilike('topic', bankTopicName);
+
+      if (!error && (!data || data.length === 0)) {
+        const fallbackRes = await supabase
+          .from('questions')
+          .select('*')
+          .eq('examId', effectiveExamId);
+        if (!fallbackRes.error) {
+          data = fallbackRes.data;
+          error = null;
+        }
+      }
       if (error) throw error;
 
       let matchedQs = data || [];
