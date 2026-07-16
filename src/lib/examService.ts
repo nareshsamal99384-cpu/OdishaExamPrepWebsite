@@ -741,11 +741,35 @@ export const examService = {
     if (banks && banks.length > 0) {
       try {
         const bankTitles = banks.map(b => b.title);
-        // Query the count of questions associated with these banks (where topic is the bank title)
-        const { data: qCounts, error: qError } = await supabase
-          .from('questions')
-          .select('topic')
-          .in('topic', bankTitles);
+        let qCounts: any[] = [];
+        let page = 0;
+        const pageSize = 1000;
+        let keepFetching = true;
+        let qError = null;
+
+        while (keepFetching) {
+          const { data, error } = await supabase
+            .from('questions')
+            .select('topic')
+            .in('topic', bankTitles)
+            .range(page * pageSize, (page + 1) * pageSize - 1);
+
+          if (error) {
+            qError = error;
+            break;
+          }
+
+          if (!data || data.length === 0) {
+            keepFetching = false;
+          } else {
+            qCounts = qCounts.concat(data);
+            if (data.length < pageSize) {
+              keepFetching = false;
+            } else {
+              page++;
+            }
+          }
+        }
 
         if (!qError && qCounts) {
           const countMap: Record<string, number> = {};
