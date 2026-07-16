@@ -154,7 +154,13 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
   const [selectedTargetIdForQuestions, setSelectedTargetIdForQuestions] = useState<string | null>(() => sessionStorage.getItem('oep_qs_targetId') || null);
   const [bankFilter, setBankFilter] = useState<'all' | 'topic-wise' | 'exam-focused' | 'revision-sets' | 'pyq-collections'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterExamId, setFilterExamId] = useState('all');
+  const [filterExamId, setFilterExamId] = useState(() => {
+    const savedActiveTab = sessionStorage.getItem('oep_adminActiveTab');
+    if (savedActiveTab === 'questions') {
+      return sessionStorage.getItem('oep_qs_examId') || 'all';
+    }
+    return 'all';
+  });
   const [showAddModal, setShowAddModal] = useState(false);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const [showMockUploadModal, setShowMockUploadModal] = useState(false);
@@ -532,6 +538,19 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
     if (selectedTargetIdForQuestions) sessionStorage.setItem('oep_qs_targetId', selectedTargetIdForQuestions);
     else sessionStorage.removeItem('oep_qs_targetId');
   }, [selectedTargetIdForQuestions]);
+
+  // Keep top exam selection dropdown synchronized with sub-navigation states across tabs
+  useEffect(() => {
+    if (activeTab === 'questions') {
+      setFilterExamId(selectedExamIdForQuestions || 'all');
+    } else if (activeTab === 'banks') {
+      setFilterExamId(selectedExamIdForBanks || 'all');
+    } else if (activeTab === 'series') {
+      setFilterExamId(selectedExamIdForSeries || 'all');
+    } else {
+      setFilterExamId('all');
+    }
+  }, [activeTab, selectedExamIdForQuestions, selectedExamIdForBanks, selectedExamIdForSeries]);
 
   // Fetch questions whenever the active tab, page, filters, or selection changes
   useEffect(() => {
@@ -1425,6 +1444,13 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
       
       await examService.addQuestionsBulk(formatted);
       alert(`Successfully added ${formatted.length} questions!`);
+      
+      // Auto-navigate to show the newly uploaded exam and content bank topic
+      setSelectedExamIdForQuestions(bulkExamId);
+      setSelectedTypeForQuestions('bank');
+      setSelectedTargetIdForQuestions(bulkTopic);
+      setFilterExamId(bulkExamId);
+
       setShowBulkUploadModal(false);
       setBulkFileContent('');
       setBulkExamId('');
@@ -2437,7 +2463,29 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
               {['questions', 'banks', 'series'].includes(activeTab) && (
                 <select
                   value={filterExamId}
-                  onChange={(e) => setFilterExamId(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFilterExamId(val);
+                    if (activeTab === 'questions') {
+                      if (val === 'all') {
+                        setSelectedExamIdForQuestions(null);
+                        setSelectedTypeForQuestions(null);
+                        setSelectedCategoryForQuestions(null);
+                        setSelectedTargetIdForQuestions(null);
+                      } else {
+                        setSelectedExamIdForQuestions(val);
+                        setSelectedTypeForQuestions(null);
+                        setSelectedCategoryForQuestions(null);
+                        setSelectedTargetIdForQuestions(null);
+                      }
+                    } else if (activeTab === 'banks') {
+                      if (val === 'all') setSelectedExamIdForBanks(null);
+                      else setSelectedExamIdForBanks(val);
+                    } else if (activeTab === 'series') {
+                      if (val === 'all') setSelectedExamIdForSeries(null);
+                      else setSelectedExamIdForSeries(val);
+                    }
+                  }}
                   className="px-3 py-2 border border-slate-200 rounded-xl text-sm font-bold bg-white text-slate-700 outline-none focus:border-brand-500 w-32 flex-shrink-0"
                 >
                   <option value="all">All Exams</option>
@@ -4331,7 +4379,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                             key={exam.id}
                             whileHover={{ y: -4, scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => setSelectedExamIdForBanks(exam.id as string)}
+                            onClick={() => { setSelectedExamIdForBanks(exam.id as string); setFilterExamId(exam.id as string); }}
                             className="bg-white rounded-[2rem] border border-slate-200/60 p-6 flex flex-col justify-between hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 cursor-pointer premium-shadow group relative overflow-hidden"
                           >
                             <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -4383,7 +4431,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                             key={exam.id}
                             whileHover={{ y: -4, scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => setSelectedExamIdForSeries(exam.id as string)}
+                            onClick={() => { setSelectedExamIdForSeries(exam.id as string); setFilterExamId(exam.id as string); }}
                             className="bg-white rounded-[2rem] border border-slate-200/60 p-6 flex flex-col justify-between hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 cursor-pointer premium-shadow group relative overflow-hidden"
                           >
                             <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -4435,7 +4483,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                             key={exam.id}
                             whileHover={{ y: -4, scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => setSelectedExamIdForQuestions(exam.id as string)}
+                            onClick={() => { setSelectedExamIdForQuestions(exam.id as string); setFilterExamId(exam.id as string); }}
                             className="bg-white rounded-[2rem] border border-slate-200/60 p-6 flex flex-col justify-between hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300 cursor-pointer premium-shadow group relative overflow-hidden"
                           >
                             <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -4467,7 +4515,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
             ) : activeTab === 'questions' && selectedExamIdForQuestions !== null && selectedTargetIdForQuestions === null ? (
                <div className="space-y-6 animate-in fade-in duration-200">
                  <div className="flex items-center gap-2 text-sm font-bold text-slate-400 mb-6 bg-slate-100/50 px-4 py-2.5 rounded-2xl border border-slate-200/40 w-fit">
-                   <button onClick={() => { setSelectedExamIdForQuestions(null); setSelectedTypeForQuestions(null); setSelectedCategoryForQuestions(null); setSelectedTargetIdForQuestions(null); }} className="hover:text-brand-600 transition-colors flex items-center gap-1">
+                   <button onClick={() => { setSelectedExamIdForQuestions(null); setSelectedTypeForQuestions(null); setSelectedCategoryForQuestions(null); setSelectedTargetIdForQuestions(null); setFilterExamId('all'); }} className="hover:text-brand-600 transition-colors flex items-center gap-1">
                      Exams
                    </button>
                    <ChevronRight className="w-4 h-4" />
@@ -4848,7 +4896,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                 {activeTab === 'banks' && selectedExamIdForBanks && (
                   <div className="animate-in fade-in duration-200 space-y-6">
                     <div className="flex items-center gap-2 text-sm font-bold text-slate-400 mb-2 bg-slate-100/50 px-4 py-2.5 rounded-2xl border border-slate-200/40 w-fit">
-                      <button onClick={() => setSelectedExamIdForBanks(null)} className="hover:text-brand-600 transition-colors">
+                      <button onClick={() => { setSelectedExamIdForBanks(null); setFilterExamId('all'); }} className="hover:text-brand-600 transition-colors">
                         Exams
                       </button>
                       <ChevronRight className="w-4 h-4" />
@@ -4870,7 +4918,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                         </div>
                       </div>
                       <button 
-                        onClick={() => setSelectedExamIdForBanks(null)}
+                        onClick={() => { setSelectedExamIdForBanks(null); setFilterExamId('all'); }}
                         className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-extrabold transition-all border border-slate-200 shadow-sm whitespace-nowrap"
                       >
                         Back to Exams
@@ -4882,7 +4930,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                 {activeTab === 'series' && selectedExamIdForSeries && (
                   <div className="animate-in fade-in duration-200 space-y-6">
                     <div className="flex items-center gap-2 text-sm font-bold text-slate-400 mb-2 bg-slate-100/50 px-4 py-2.5 rounded-2xl border border-slate-200/40 w-fit">
-                      <button onClick={() => setSelectedExamIdForSeries(null)} className="hover:text-brand-600 transition-colors">
+                      <button onClick={() => { setSelectedExamIdForSeries(null); setFilterExamId('all'); }} className="hover:text-brand-600 transition-colors">
                         Exams
                       </button>
                       <ChevronRight className="w-4 h-4" />
@@ -4904,7 +4952,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                         </div>
                       </div>
                       <button 
-                        onClick={() => setSelectedExamIdForSeries(null)}
+                        onClick={() => { setSelectedExamIdForSeries(null); setFilterExamId('all'); }}
                         className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-extrabold transition-all border border-slate-200 shadow-sm whitespace-nowrap"
                       >
                         Back to Exams
@@ -4916,7 +4964,7 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                 {activeTab === 'questions' && selectedExamIdForQuestions && selectedTypeForQuestions && selectedTargetIdForQuestions && (
                   <div className="animate-in fade-in duration-200 space-y-6">
                     <div className="flex items-center gap-2 text-sm font-bold text-slate-400 mb-2 bg-slate-100/50 px-4 py-2.5 rounded-2xl border border-slate-200/40 w-fit">
-                      <button onClick={() => { setSelectedExamIdForQuestions(null); setSelectedTypeForQuestions(null); setSelectedCategoryForQuestions(null); setSelectedTargetIdForQuestions(null); }} className="hover:text-brand-600 transition-colors">
+                      <button onClick={() => { setSelectedExamIdForQuestions(null); setSelectedTypeForQuestions(null); setSelectedCategoryForQuestions(null); setSelectedTargetIdForQuestions(null); setFilterExamId('all'); }} className="hover:text-brand-600 transition-colors">
                         Exams
                       </button>
                       <ChevronRight className="w-4 h-4" />
@@ -4924,7 +4972,13 @@ const AdminPanel = ({ onClose, onLogout }: { onClose: () => void, onLogout?: () 
                         {exams.find(e => e.id === selectedExamIdForQuestions)?.name || 'Selected Exam'}
                       </button>
                       <ChevronRight className="w-4 h-4" />
-                      <button onClick={() => { if (selectedTypeForQuestions === 'mock') { setSelectedTargetIdForQuestions(null); } else { setSelectedTypeForQuestions(null); } }} className="hover:text-brand-600 transition-colors capitalize">
+                      <button 
+                        onClick={() => { 
+                          setSelectedTargetIdForQuestions(null); 
+                          setSelectedCategoryForQuestions(null); 
+                        }} 
+                        className="hover:text-brand-600 transition-colors capitalize"
+                      >
                         {selectedTypeForQuestions === 'mock' ? 'Mock Tests' : 'Content Banks'}
                       </button>
                       {selectedTypeForQuestions === 'mock' && typeof selectedCategoryForQuestions === 'string' && (
