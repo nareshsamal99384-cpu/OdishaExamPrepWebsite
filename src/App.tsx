@@ -7733,6 +7733,17 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         );
                         const isCompleted = !!completedAct;
 
+                        const suffixMatch = bank.title.match(/(?:\s+|-\s*)(I{1,3}|IV|V|VI{0,3}|IX|X|\d{1,2})\s*$/i);
+                        let mainTitle = bank.title;
+                        let suffix = '';
+                        if (suffixMatch) {
+                          suffix = suffixMatch[1].toUpperCase();
+                          mainTitle = bank.title.substring(0, suffixMatch.index).trim();
+                          if (mainTitle.endsWith('-')) {
+                            mainTitle = mainTitle.substring(0, mainTitle.length - 1).trim();
+                          }
+                        }
+
                         const incompleteAct = !isCompleted && activities.find(act => 
                           act.type === 'test_incomplete' && 
                           (act.metadata?.test?.bankId === bank.id || act.metadata?.test?.id === bank.id || act.title === `${bank.title} - Practice Session`)
@@ -7814,7 +7825,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                   
                                   <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-1.5 flex-wrap">
-                                      <h4 className="font-extrabold text-[13.5px] text-slate-900 tracking-tight leading-snug line-clamp-2 uppercase pr-2">{bank.title}</h4>
+                                      <h4 className="font-extrabold text-[13.5px] text-slate-900 tracking-tight leading-snug line-clamp-2 uppercase pr-2" title={bank.title}>{mainTitle}</h4>
+                                      {suffix && (
+                                        <span className="px-1.5 py-0.5 bg-brand-50 text-brand-700 text-[8.5px] font-black rounded border border-brand-100/60 uppercase tracking-wider shrink-0">Set {suffix}</span>
+                                      )}
                                       {isCompleted ? (
                                         <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 text-[8.5px] font-black rounded border border-emerald-100 uppercase tracking-wider shrink-0 flex items-center gap-0.5"><CheckCircle2 className="w-2.5 h-2.5" /> Completed</span>
                                       ) : isInProgress ? (
@@ -7907,9 +7921,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                       <div className="absolute inset-0 border-2 border-white/20 rounded-xl" />
                                     </div>
                                     <div className="text-left min-w-0 flex-1">
-                                      <h4 className="font-black text-base sm:text-lg text-slate-950 tracking-tight group-hover:text-brand-600 transition-colors uppercase leading-snug line-clamp-2" title={bank.title}>{bank.title}</h4>
+                                      <h4 className="font-black text-base sm:text-lg text-slate-950 tracking-tight group-hover:text-brand-600 transition-colors uppercase leading-snug line-clamp-2" title={bank.title}>{mainTitle}</h4>
                                       <div className="flex items-center gap-1.5 mt-1">
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-100">Practice Set</span>
+                                        {suffix && (
+                                          <span className="text-[10px] font-black text-brand-700 uppercase tracking-widest bg-brand-50 px-2 py-0.5 rounded border border-brand-100/60 shadow-2xs">Set {suffix}</span>
+                                        )}
                                         {isCompleted && (
                                           <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-100/60 flex items-center gap-0.5"><CheckCircle2 className="w-3.5 h-3.5" /> Completed</span>
                                         )}
@@ -8064,6 +8081,17 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
             const isInProgress = !!incompleteAct;
 
             const totalQs = test.questions?.length || test._questionCount || 0;
+
+            const suffixMatch = test.title.match(/(?:\s+|-\s*)(I{1,3}|IV|V|VI{0,3}|IX|X|\d{1,2})\s*$/i);
+            let mainTitle = test.title;
+            let suffix = '';
+            if (suffixMatch) {
+              suffix = suffixMatch[1].toUpperCase();
+              mainTitle = test.title.substring(0, suffixMatch.index).trim();
+              if (mainTitle.endsWith('-')) {
+                mainTitle = mainTitle.substring(0, mainTitle.length - 1).trim();
+              }
+            }
             const currentQuestionIndex = incompleteAct ? (incompleteAct.metadata?.currentQuestionIndex || 0) : 0;
             const progressPercent = totalQs > 0 ? Math.min(100, Math.round((currentQuestionIndex / totalQs) * 100)) : 0;
 
@@ -8137,7 +8165,10 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                       
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <h4 className="font-extrabold text-[12.5px] sm:text-[13.5px] text-slate-900 tracking-tight leading-snug line-clamp-1 sm:line-clamp-2 uppercase pr-1">{test.title}</h4>
+                          <h4 className="font-extrabold text-[12.5px] sm:text-[13.5px] text-slate-900 tracking-tight leading-snug line-clamp-1 sm:line-clamp-2 uppercase pr-1" title={test.title}>{mainTitle}</h4>
+                          {suffix && (
+                            <span className="px-1.5 py-0.5 bg-brand-50 text-brand-700 text-[8.5px] font-black rounded border border-brand-100/60 uppercase tracking-wider shrink-0">Set {suffix}</span>
+                          )}
                           {isCompleted ? (
                             <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 text-[8.5px] font-black rounded border border-emerald-100 uppercase tracking-wider shrink-0 flex items-center gap-0.5"><CheckCircle2 className="w-2.5 h-2.5" /> Completed</span>
                           ) : isInProgress ? (
@@ -8232,9 +8263,12 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           <div className="absolute inset-0 border-2 border-white/20 rounded-xl" />
                         </div>
                         <div className="text-left min-w-0 flex-1">
-                          <h4 className="font-black text-base sm:text-lg text-slate-950 tracking-tight group-hover:text-brand-600 transition-colors uppercase leading-snug line-clamp-2" title={test.title}>{test.title}</h4>
+                          <h4 className="font-black text-base sm:text-lg text-slate-950 tracking-tight group-hover:text-brand-600 transition-colors uppercase leading-snug line-clamp-2" title={test.title}>{mainTitle}</h4>
                           <div className="flex items-center gap-1.5 mt-1">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-100">Official Mock</span>
+                            {suffix && (
+                              <span className="text-[10px] font-black text-brand-700 uppercase tracking-widest bg-brand-50 px-2 py-0.5 rounded border border-brand-100/60 shadow-2xs">Set {suffix}</span>
+                            )}
                             {isCompleted && (
                               <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-100/60 flex items-center gap-0.5"><CheckCircle2 className="w-3.5 h-3.5" /> Completed</span>
                             )}
