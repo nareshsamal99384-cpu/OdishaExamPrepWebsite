@@ -5643,7 +5643,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
       }
 
       const limit = matchedQs.length;
-      const duration = 30; 
+      const duration = limit; 
       const shuffled = matchedQs.sort(() => 0.5 - Math.random());
       const finalQuestions = shuffled.slice(0, limit);
 
@@ -7830,7 +7830,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                     
                                     <div className="flex items-center gap-2 mt-2 text-[10px] font-extrabold text-slate-555 flex-wrap">
                                       <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100/60"><FileText className="w-3 h-3 text-slate-400" /> {totalQs} Questions</span>
-                                      <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100/60"><Clock className="w-3 h-3 text-slate-400" /> 30 Mins</span>
+                                      <span className="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100/60"><Clock className="w-3 h-3 text-slate-400" /> {totalQs} Mins</span>
                                       {isCompleted && completedAct && (
                                         <span className="flex items-center gap-0.5 bg-emerald-50/50 text-emerald-700 px-1.5 py-0.5 rounded-md border border-emerald-100/30 shrink-0">
                                           Score: {completedAct.score}/{completedAct.totalMarks || totalQs}
@@ -7933,7 +7933,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                 <div className="space-y-4 flex-1 relative z-10 pt-2 text-left">
                                   <div className="flex gap-4 text-xs font-bold text-slate-555 flex-wrap">
                                     <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded"><FileText className="w-3.5 h-3.5 text-slate-400"/> {totalQs} Questions</span>
-                                    <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded"><Clock className="w-3.5 h-3.5 text-slate-400"/> 30 Mins Session</span>
+                                    <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded"><Clock className="w-3.5 h-3.5 text-slate-400"/> {totalQs} Mins Session</span>
                                   </div>
 
                                   {isCompleted && completedAct && (
