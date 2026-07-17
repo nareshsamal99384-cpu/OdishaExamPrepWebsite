@@ -7884,9 +7884,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                 {isPremiumUnlocked && !isCompleted && !isInProgress && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none" />}
                                 
                                 <div className="flex items-start justify-between relative z-10 w-full">
-                                  <div className="flex items-center gap-4">
+                                  <div className="flex items-start gap-4 min-w-0 flex-1">
                                     <div className={cn(
-                                      "w-14 h-14 rounded-xl flex items-center justify-center shrink-0 shadow-md text-white transition-transform group-hover:scale-110 relative", 
+                                      "w-14 h-14 rounded-xl flex items-center justify-center shrink-0 shadow-md text-white transition-transform group-hover:scale-110 relative mt-0.5", 
                                       isCompleted
                                         ? "bg-gradient-to-br from-emerald-500 to-teal-600"
                                         : isInProgress
@@ -7906,8 +7906,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                       )}
                                       <div className="absolute inset-0 border-2 border-white/20 rounded-xl" />
                                     </div>
-                                    <div className="text-left">
-                                      <h4 className="font-black text-xl text-slate-950 tracking-tight group-hover:text-brand-600 transition-colors uppercase leading-tight">{bank.title}</h4>
+                                    <div className="text-left min-w-0 flex-1">
+                                      <h4 className="font-black text-base sm:text-lg text-slate-950 tracking-tight group-hover:text-brand-600 transition-colors uppercase leading-snug line-clamp-2" title={bank.title}>{bank.title}</h4>
                                       <div className="flex items-center gap-1.5 mt-1">
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-100">Practice Set</span>
                                         {isCompleted && (
@@ -8209,9 +8209,9 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                     {isPremiumUnlocked && !isCompleted && !isInProgress && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none" />}
                     
                     <div className="flex items-start justify-between relative z-10 w-full">
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-start gap-4 min-w-0 flex-1">
                         <div className={cn(
-                          "w-14 h-14 rounded-xl flex items-center justify-center shrink-0 shadow-md text-white transition-transform group-hover:scale-110 relative", 
+                          "w-14 h-14 rounded-xl flex items-center justify-center shrink-0 shadow-md text-white transition-transform group-hover:scale-110 relative mt-0.5", 
                           isCompleted
                             ? "bg-gradient-to-br from-emerald-500 to-teal-600"
                             : isInProgress
@@ -8231,8 +8231,8 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                           )}
                           <div className="absolute inset-0 border-2 border-white/20 rounded-xl" />
                         </div>
-                        <div className="text-left">
-                          <h4 className="font-black text-xl text-slate-950 tracking-tight group-hover:text-brand-600 transition-colors uppercase leading-tight">{test.title}</h4>
+                        <div className="text-left min-w-0 flex-1">
+                          <h4 className="font-black text-base sm:text-lg text-slate-950 tracking-tight group-hover:text-brand-600 transition-colors uppercase leading-snug line-clamp-2" title={test.title}>{test.title}</h4>
                           <div className="flex items-center gap-1.5 mt-1">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-100">Official Mock</span>
                             {isCompleted && (
