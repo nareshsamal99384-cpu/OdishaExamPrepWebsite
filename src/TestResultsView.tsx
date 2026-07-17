@@ -7,18 +7,28 @@ import { fadeSlideUpSm } from './lib/animations';
 import { MathTextRenderer, DiagramRenderer } from './components/MathTextRenderer';
 
 export default function TestResultsView({ results, onClose }: { results: any, onClose: () => void }) {
+  const resultsTestId = results?.test?.id || '';
+  const savedTestId = sessionStorage.getItem('oep_reviewTestId');
+  const isSameTest = savedTestId === resultsTestId;
+
   const [currentIdx, setCurrentIdx] = useState(() => {
-    const saved = sessionStorage.getItem('oep_reviewQuestionIdx');
-    return saved ? parseInt(saved, 10) : 0;
+    if (isSameTest) {
+      const saved = sessionStorage.getItem('oep_reviewQuestionIdx');
+      return saved ? parseInt(saved, 10) : 0;
+    }
+    return 0;
   });
 
   React.useEffect(() => {
-    sessionStorage.setItem('oep_reviewQuestionIdx', currentIdx.toString());
-  }, [currentIdx]);
+    if (isSameTest) {
+      sessionStorage.setItem('oep_reviewQuestionIdx', currentIdx.toString());
+    }
+  }, [currentIdx, isSameTest]);
 
   const questionCardRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isFirstRender = useRef(true);
+  const initialIdxRef = useRef<number | null>(null);
   const [showQuestionNav, setShowQuestionNav] = useState(false);
   const [questionExpanded, setQuestionExpanded] = useState(false);
   const [questionOverflows, setQuestionOverflows] = useState(false);
@@ -38,6 +48,17 @@ export default function TestResultsView({ results, onClose }: { results: any, on
       document.body.removeAttribute('data-review-mode');
     };
   }, []);
+
+  // Sync testId changes and reset state if loading a different results object
+  useLayoutEffect(() => {
+    if (!isSameTest) {
+      setCurrentIdx(0);
+      initialIdxRef.current = null;
+      sessionStorage.setItem('oep_reviewTestId', resultsTestId);
+      sessionStorage.removeItem('oep_reviewQuestionIdx');
+      sessionStorage.removeItem('oep_reviewScrollTop');
+    }
+  }, [resultsTestId, isSameTest]);
   
   const { test, answers, score: rawScore, total, timeTaken, timeSpent = {}, markedForReview = [] } = results;
   const questions = test?.questions || [];
@@ -47,7 +68,9 @@ export default function TestResultsView({ results, onClose }: { results: any, on
   // the page is at position 0 (or restored position) before the user ever sees it.
   useLayoutEffect(() => {
     setShowQuestionNav(false);
-    const savedScroll = sessionStorage.getItem('oep_reviewScrollTop');
+    const stId = sessionStorage.getItem('oep_reviewTestId');
+    const isSame = stId === resultsTestId;
+    const savedScroll = isSame ? sessionStorage.getItem('oep_reviewScrollTop') : null;
     if (savedScroll && containerRef.current) {
       containerRef.current.scrollTop = parseInt(savedScroll, 10);
     } else {
@@ -58,11 +81,13 @@ export default function TestResultsView({ results, onClose }: { results: any, on
         containerRef.current.scrollTop = 0;
       }
     }
-  }, [results]);
+  }, [results, resultsTestId]);
 
   React.useEffect(() => {
     const handleScrollToTopOrSaved = () => {
-      const savedScroll = sessionStorage.getItem('oep_reviewScrollTop');
+      const stId = sessionStorage.getItem('oep_reviewTestId');
+      const isSame = stId === resultsTestId;
+      const savedScroll = isSame ? sessionStorage.getItem('oep_reviewScrollTop') : null;
       if (savedScroll && containerRef.current) {
         containerRef.current.scrollTop = parseInt(savedScroll, 10);
       } else {
@@ -81,7 +106,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
       cancelAnimationFrame(frameId);
       clearTimeout(timeoutId);
     };
-  }, [results]);
+  }, [results, resultsTestId]);
 
   React.useEffect(() => {
     const checkAndSetAttribute = () => {
@@ -138,10 +163,15 @@ export default function TestResultsView({ results, onClose }: { results: any, on
   }, [results]);
 
   React.useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
+    if (initialIdxRef.current === null) {
+      initialIdxRef.current = currentIdx;
       return;
     }
+    if (initialIdxRef.current === currentIdx) {
+      return;
+    }
+    initialIdxRef.current = -1; // disable the initial index block for all subsequent changes
+
     if (questionCardRef.current && containerRef.current) {
       const cardRect = questionCardRef.current.getBoundingClientRect();
       const containerRect = containerRef.current.getBoundingClientRect();

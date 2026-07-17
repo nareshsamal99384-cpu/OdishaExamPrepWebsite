@@ -1290,7 +1290,10 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
 
           {/* Bottom Official Exam Navigation Footer */}
           <div className="shrink-0 bg-white border-t border-slate-200/80 py-2 px-3 sm:py-3 sm:px-8 shadow-sm">
-            <div className="max-w-4xl lg:max-w-6xl mx-auto">
+            <div className={cn(
+              "w-full mx-auto transition-all duration-300",
+              isPaletteCollapsed ? "max-w-[96%] lg:max-w-[94%]" : "max-w-4xl lg:max-w-6xl"
+            )}>
               
               {/* Mobile View Navigation (hidden on lg and above) */}
               <div className="flex flex-col gap-2 lg:hidden w-full">

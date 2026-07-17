@@ -1655,7 +1655,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
   useEffect(() => {
     if (isOpen) loadSiteData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, examsProp, mockTestsProp, questionBanksProp]);
+  }, [isOpen, examsProp, mockTestsProp, questionBanksProp, activeTab]);
 
   // Auto-scroll
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -1668,10 +1668,10 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
   // Focus input
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
-    if (isOpen && !isMinimized) {
+    if (isOpen && !isMinimized && !isMobile) {
       setTimeout(() => inputRef.current?.focus(), 200);
     }
-  }, [isOpen, isMinimized]);
+  }, [isOpen, isMinimized, isMobile]);
 
   // Only for logged-in users
   if (!user) return null;
