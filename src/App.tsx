@@ -237,26 +237,36 @@ const HistoryView = ({
               const count = filterCounts[f.id];
               const isActive = activeFilter === f.id;
               return (
-                <button
+                <motion.button
                   key={f.id}
                   onClick={() => setActiveFilter(f.id)}
+                  disabled={count === 0}
+                  whileTap={count > 0 ? { scale: 0.94 } : undefined}
                   className={cn(
-                    "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-[9px] sm:text-[10px] font-black whitespace-nowrap transition-all border shrink-0",
+                    "relative flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-[9px] sm:text-[10px] font-black whitespace-nowrap border shrink-0 overflow-hidden transition-colors",
                     isActive
-                      ? "bg-brand-600 text-white border-brand-600 shadow-sm shadow-brand-200/60"
+                      ? "text-white border-brand-600"
                       : count === 0
                         ? "bg-white text-slate-300 border-slate-100 cursor-not-allowed"
                         : "bg-white text-slate-500 border-slate-200 hover:border-brand-300 hover:text-brand-600 cursor-pointer"
                   )}
-                  disabled={count === 0}
                 >
-                  {f.icon}
-                  <span className="uppercase tracking-wider">{f.label}</span>
-                  <span className={cn(
-                    "px-1.5 py-0.5 rounded-md text-[8px] font-black min-w-[16px] text-center",
-                    isActive ? "bg-white/25 text-white" : "bg-slate-100 text-slate-400"
-                  )}>{count}</span>
-                </button>
+                  {isActive && (
+                    <motion.div
+                      layoutId="historyFilterActivePill"
+                      className="absolute inset-0 bg-brand-600"
+                      transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-1.5">
+                    {f.icon}
+                    <span className="uppercase tracking-wider">{f.label}</span>
+                    <span className={cn(
+                      "px-1.5 py-0.5 rounded-md text-[8px] font-black min-w-[16px] text-center",
+                      isActive ? "bg-white/25 text-white" : "bg-slate-100 text-slate-400"
+                    )}>{count}</span>
+                  </span>
+                </motion.button>
               );
             })}
           </div>
@@ -273,20 +283,33 @@ const HistoryView = ({
           if (activeFilter === 'download')   return a.type === 'question_bank_accessed';
           return true;
         });
-        if (filteredActivities.length === 0) {
-          return (
-            <div className="flex flex-col items-center justify-center py-14 text-center space-y-3 bg-slate-50/50 rounded-2xl border border-slate-100">
-              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center">
-                <History className="w-6 h-6 text-slate-300" />
-              </div>
-              <p className="text-sm font-bold text-slate-400">No {activeFilter === 'ai_quiz' ? 'AI Quiz' : activeFilter} history yet</p>
-              <button onClick={() => setActiveFilter('all')} className="text-[10px] font-black uppercase tracking-wider text-brand-600 hover:text-brand-700 transition-colors cursor-pointer">View All History</button>
-            </div>
-          );
-        }
         return (
-          <div className="grid gap-2.5 sm:gap-3">
-            {filteredActivities.map((a, i) => {
+          <AnimatePresence mode="wait" initial={false}>
+            {filteredActivities.length === 0 ? (
+              <motion.div
+                key={`empty-${activeFilter}`}
+                initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, transition: { duration: 0.14 } }}
+                transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+                className="flex flex-col items-center justify-center py-14 text-center space-y-3 bg-slate-50/50 rounded-2xl border border-slate-100"
+              >
+                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center">
+                  <History className="w-6 h-6 text-slate-300" />
+                </div>
+                <p className="text-sm font-bold text-slate-400">No {activeFilter === 'ai_quiz' ? 'AI Quiz' : activeFilter} history yet</p>
+                <button onClick={() => setActiveFilter('all')} className="text-[10px] font-black uppercase tracking-wider text-brand-600 hover:text-brand-700 transition-colors cursor-pointer">View All History</button>
+              </motion.div>
+            ) : (
+              <motion.div
+                key={activeFilter}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8, transition: { duration: 0.14 } }}
+                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                className="grid gap-2.5 sm:gap-3"
+              >
+                {filteredActivities.map((a, i) => {
           const isTestResult = !!a.metadata && a.type !== 'question_bank_accessed';
           const isAiQuiz = a.type === 'practice_test_completed';
           const isDownloadable = a.type === 'question_bank_accessed' && !!a.metadata?.pdfUrl;
@@ -312,8 +335,11 @@ const HistoryView = ({
               : a.title;
 
           return (
-            <div
-              key={i}
+            <motion.div
+              key={a.id || i}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.04, duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
               onClick={() => {
                 if (isDownloadable) {
                   window.open(a.metadata.pdfUrl, '_blank');
@@ -324,7 +350,7 @@ const HistoryView = ({
                 }
               }}
               className={cn(
-                "relative bg-white rounded-2xl border border-slate-200/50 overflow-hidden transition-all group shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-md flex",
+                "relative bg-white rounded-2xl border border-slate-200/50 overflow-hidden transition-colors group shadow-[0_1px_4px_rgba(0,0,0,0.03)] hover:shadow-md flex",
                 isInteractive ? "cursor-pointer hover:border-brand-400/50 hover:shadow-brand-500/5" : ""
               )}
             >
@@ -435,10 +461,12 @@ const HistoryView = ({
                 </div>
 
               </div>
-            </div>
+            </motion.div>
           );
         })}
-          </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         );
       })()}
     </div>
