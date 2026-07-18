@@ -4936,12 +4936,7 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
     }
   }, [selectedExam, viewedCategories, mockTests, dynamicQuestionBanks]);
 
-  console.log("[DIAG] === DashboardContent Render ===");
-  console.log("[DIAG] propsSelectedExam:", propsSelectedExam);
-  console.log("[DIAG] internalSelectedExam:", internalSelectedExam);
-  console.log("[DIAG] finalSelectedExam (final):", selectedExam);
-  console.log("[DIAG] isMobile:", isMobile);
-  console.log("[DIAG] mobileExamTab:", mobileExamTab);
+
 
   const [bankSearchQuery, setBankSearchQuery] = useState("");
   const [bankSortBy, setBankSortBy] = useState("Name");
@@ -8821,17 +8816,20 @@ const ExamDetailPage = () => {
   const { user, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
 
-  console.log("[DIAG] === ExamDetailPage Render ===");
-  console.log("[DIAG] Pathname:", typeof window !== 'undefined' ? window.location.pathname : 'N/A');
-  console.log("[DIAG] params.examId:", examId);
-  console.log("[DIAG] user:", user?.email || 'guest');
-  console.log("[DIAG] loading:", loading);
+
 
   const [activities, setActivities] = useState<any[]>([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
-  const [mainTab, setMainTab] = useState<'home' | 'courses' | 'analytics' | 'history' | 'library' | 'ai_mentor'>('home');
+  const [mainTab, setMainTab] = useState<'home' | 'courses' | 'analytics' | 'history' | 'library' | 'ai_mentor'>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab === 'courses' || tab === 'analytics' || tab === 'history' || tab === 'library' || tab === 'ai_mentor') {
+      return tab as 'courses' | 'analytics' | 'history' | 'library' | 'ai_mentor';
+    }
+    return 'home';
+  });
 
   const [announcements, setAnnouncements] = useState<string[]>([
     `🚀 New Mock Test Series released for OSSC CGL ${new Date().getFullYear()}`,
@@ -8860,6 +8858,19 @@ const ExamDetailPage = () => {
   useEffect(() => {
     refreshActivities();
   }, [user?.id]);
+
+  // Sync tab changes to URL without navigating away from the exam detail page
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (mainTab === 'home') {
+      params.delete('tab');
+    } else {
+      params.set('tab', mainTab);
+    }
+    const newSearch = params.toString();
+    const newUrl = `/exams/${examId}${newSearch ? '?' + newSearch : ''}`;
+    window.history.replaceState(null, '', newUrl);
+  }, [mainTab, examId]);
 
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('oep-bottom-nav-visible', { detail: isBottomNavVisible }));
@@ -8904,12 +8915,13 @@ const ExamDetailPage = () => {
   };
 
   const handleTabClick = (tab: 'home' | 'courses' | 'analytics' | 'history' | 'library' | 'ai_mentor') => {
+    // Stay on exam detail page — tab content switches in-place, URL updated via replaceState effect
     setMainTab(tab);
-    navigate(`/?tab=${tab}`);
   };
 
   const handleHomeClick = () => {
-    navigate('/');
+    // Return to exam home tab without leaving the exam detail page
+    setMainTab('home');
   };
 
   if (!user) {

@@ -220,7 +220,9 @@ export default function TestResultsView({ results, onClose }: { results: any, on
   const avgSpeed = questions.length > 0 ? (timeTaken / questions.length).toFixed(1) : "0";
   
   const userAnswer = answers ? answers[currentIdx] : undefined;
-  const isCorrect = userAnswer === currentQ?.correctAnswerIndex;
+  const correctAnswerIdxRaw = currentQ?.correctAnswerIndex;
+  const correctAnswerIdx = correctAnswerIdxRaw != null ? Number(correctAnswerIdxRaw) : -1;
+  const isCorrect = !isNaN(correctAnswerIdx) && correctAnswerIdx >= 0 && userAnswer === correctAnswerIdx;
   const isUnanswered = userAnswer === undefined;
   const isMarked = markedForReview.includes(currentIdx);
   
@@ -240,13 +242,6 @@ export default function TestResultsView({ results, onClose }: { results: any, on
           <MathTextRenderer text={para} />
         </p>
       ))}
-      {(() => {
-        const question = currentQ;
-        console.log("QUESTION", question);
-        console.log("DIAGRAM", question?.diagram);
-        console.log("TYPE", question?.diagram?.type);
-        return null;
-      })()}
       {currentQ?.diagram ? (
         <div className="mt-5 sm:mt-6 w-full block">
           <DiagramRenderer diagram={currentQ.diagram} data={currentQ.diagram} />
@@ -321,17 +316,25 @@ export default function TestResultsView({ results, onClose }: { results: any, on
       <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-6 lg:mb-5">
          {(currentQ?.options || []).map((opt: string, i: number) => {
            const isThisSelected = userAnswer === i;
-           const isThisCorrect = currentQ?.correctAnswerIndex === i;
+           // Use Number() coercion to handle string/number type mismatch from DB or JSON parsing
+           const correctIdx = currentQ != null ? Number(currentQ.correctAnswerIndex) : -1;
+           const isThisCorrect = !isNaN(correctIdx) && correctIdx === i;
            
-           let ringClass = "border-slate-100 bg-slate-50";
+           let ringClass = "border-slate-100 bg-slate-50 text-slate-700";
            let icon = null;
            
-           if (isThisCorrect) {
-               ringClass = "border-emerald-500 bg-emerald-50/50 text-emerald-900";
-               icon = <CheckCircle2 className="w-4 h-4 sm:w-6 sm:h-6 lg:w-5 lg:h-5 text-emerald-500 ml-auto shrink-0" />;
-            } else if (isThisSelected && !isThisCorrect) {
-               ringClass = "border-rose-500 bg-rose-50/50 text-rose-900";
-               icon = <XCircle className="w-4 h-4 sm:w-6 sm:h-6 lg:w-5 lg:h-5 text-rose-500 ml-auto shrink-0" />;
+           if (isThisCorrect && isThisSelected) {
+               // User selected the correct answer
+               ringClass = "border-emerald-500 bg-emerald-50 text-emerald-900 shadow-sm shadow-emerald-100";
+               icon = <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 ml-auto shrink-0" />;
+           } else if (isThisCorrect) {
+               // Correct answer the user did NOT select (always highlight it)
+               ringClass = "border-emerald-500 bg-emerald-50 text-emerald-900 shadow-sm shadow-emerald-100";
+               icon = <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 ml-auto shrink-0" />;
+           } else if (isThisSelected && !isThisCorrect) {
+               // Wrong answer the user selected
+               ringClass = "border-rose-400 bg-rose-50 text-rose-900 shadow-sm shadow-rose-100";
+               icon = <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500 ml-auto shrink-0" />;
            }
 
            return (
@@ -343,7 +346,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
                 )}>
                   {String.fromCharCode(65 + i)}
                 </div>
-                 <span className="text-sm sm:text-lg lg:text-base font-semibold sm:font-bold leading-tight">
+                 <span className="text-sm sm:text-lg lg:text-base font-semibold sm:font-bold leading-tight min-w-0 flex-1">
                    <MathTextRenderer text={opt} isOption />
                  </span>
                 {icon}
