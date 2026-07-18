@@ -326,21 +326,21 @@ export default function TestResultsView({ results, onClose }: { results: any, on
            if (isThisCorrect && isThisSelected) {
                // User selected the correct answer
                ringClass = "border-emerald-500 bg-emerald-50 text-emerald-900 shadow-sm shadow-emerald-100";
-               icon = <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 ml-auto shrink-0" />;
+               icon = <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 ml-auto shrink-0 mt-1 sm:mt-1.5" />;
            } else if (isThisCorrect) {
                // Correct answer the user did NOT select (always highlight it)
                ringClass = "border-emerald-500 bg-emerald-50 text-emerald-900 shadow-sm shadow-emerald-100";
-               icon = <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 ml-auto shrink-0" />;
+               icon = <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 ml-auto shrink-0 mt-1 sm:mt-1.5" />;
            } else if (isThisSelected && !isThisCorrect) {
                // Wrong answer the user selected
                ringClass = "border-rose-400 bg-rose-50 text-rose-900 shadow-sm shadow-rose-100";
-               icon = <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500 ml-auto shrink-0" />;
+               icon = <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500 ml-auto shrink-0 mt-1 sm:mt-1.5" />;
            }
 
            return (
-             <div key={i} className={cn("mcq-option px-2.5 py-2 sm:p-4 lg:p-3.5 rounded-xl sm:rounded-2xl border-2 flex items-center gap-2.5 sm:gap-4 lg:gap-3 transition-all text-left w-full", ringClass)}>
+             <div key={i} className={cn("mcq-option px-2.5 py-2 sm:p-4 lg:p-3.5 rounded-xl sm:rounded-2xl border-2 flex items-start gap-2.5 sm:gap-4 lg:gap-3 transition-all text-left w-full", ringClass)}>
                 <div className={cn(
-                   "w-7 h-7 sm:w-9 sm:h-9 lg:w-8 lg:h-8 rounded-md sm:rounded-xl flex items-center justify-center font-extrabold text-xs sm:text-sm shrink-0",
+                   "w-7 h-7 sm:w-9 sm:h-9 lg:w-8 lg:h-8 rounded-md sm:rounded-xl flex items-center justify-center font-extrabold text-xs sm:text-sm shrink-0 mt-0.5 sm:mt-1",
                   isThisCorrect ? "bg-emerald-500 text-white" :
                   isThisSelected ? "bg-rose-500 text-white" : "bg-slate-200 text-slate-600"
                 )}>
