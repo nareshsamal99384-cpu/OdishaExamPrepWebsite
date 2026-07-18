@@ -8994,15 +8994,21 @@ const ExamDetailPage = () => {
             transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
             className="w-full"
           >
-            <DashboardContent 
-              mainTab={mainTab} 
-              user={user} 
-              activities={activities} 
-              onNavigate={handleTabClick} 
-              onActivityLogged={refreshActivities} 
-              selectedExam={examId} 
-              setSelectedExam={handleSetSelectedExam} 
-            />
+            {mainTab === 'ai_mentor' ? (
+              <React.Suspense fallback={<LoadingPortal />}>
+                <AiMentor user={user} />
+              </React.Suspense>
+            ) : (
+              <DashboardContent 
+                mainTab={mainTab} 
+                user={user} 
+                activities={activities} 
+                onNavigate={handleTabClick} 
+                onActivityLogged={refreshActivities} 
+                selectedExam={examId} 
+                setSelectedExam={handleSetSelectedExam} 
+              />
+            )}
           </motion.div>
         </AnimatePresence>
       </main>
