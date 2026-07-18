@@ -1270,7 +1270,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
 
                       {/* ── Options & Explanation ── */}
                       <div className={cn(
-                        "space-y-3 lg:space-y-4",
+                        "space-y-3 lg:space-y-4 px-1.5",
                         !mathHeavy && "flex-1 overflow-y-auto no-scrollbar min-h-0 py-1 lg:h-full flex flex-col justify-start",
                         mathHeavy && "py-1"
                       )}>
