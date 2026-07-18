@@ -233,7 +233,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
   const questionTextContent = React.useMemo(() => (
     <div
       ref={questionTextRef}
-      className="text-base sm:text-2xl md:text-3xl lg:text-2xl xl:text-3xl font-semibold sm:font-extrabold text-slate-900 leading-relaxed sm:leading-[1.3] tracking-tight break-words overflow-wrap-anywhere space-y-3"
+      className="text-base sm:text-[22px] md:text-[24px] lg:text-[20px] xl:text-[22px] font-semibold sm:font-extrabold text-slate-900 leading-relaxed sm:leading-[1.3] tracking-tight break-words overflow-wrap-anywhere space-y-3"
     >
       {(currentQ?.questionText || '').split('\n\n').map((para, i) => (
         <p key={i}>
@@ -257,7 +257,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
 
   const cardContent = React.useMemo(() => (
     <>
-      <div className="flex flex-row items-center justify-between mb-3 sm:mb-8 gap-2 flex-wrap">
+      <div className="flex flex-row items-center justify-between mb-3 sm:mb-6 lg:mb-5 gap-2 flex-wrap">
          <div className="flex flex-wrap items-center gap-1.5 sm:gap-4">
            <span className="px-2.5 sm:px-5 py-1 sm:py-2 bg-slate-100 text-slate-600 rounded-md sm:rounded-xl text-[10px] sm:text-sm font-extrabold tracking-widest uppercase border border-slate-200">
              Question {currentIdx + 1}
@@ -284,7 +284,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
       </div>
 
        {/* Question text with expand/collapse */}
-       <div className="bg-white rounded-xl sm:rounded-3xl px-3 py-3 sm:p-8 border border-slate-200/50 shadow-[0_10px_30px_rgba(0,0,0,0.02)] mb-3 sm:mb-10 relative overflow-hidden">
+       <div className="bg-white rounded-xl sm:rounded-2xl px-3.5 py-3.5 sm:p-6 lg:p-5 border border-slate-200/50 shadow-[0_10px_30px_rgba(0,0,0,0.015)] mb-3 sm:mb-6 lg:mb-5 relative overflow-hidden">
          <div className="absolute top-0 right-0 w-40 h-40 bg-brand-500/[0.04] rounded-full blur-3xl -mr-12 -mt-12 pointer-events-none" />
          <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-500/[0.03] rounded-full blur-3xl -ml-10 -mb-10 pointer-events-none" />
          {isMobile ? (
@@ -318,7 +318,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
          )}
        </div>
 
-      <div className="space-y-2 sm:space-y-4 mb-4 sm:mb-10">
+      <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-6 lg:mb-5">
          {(currentQ?.options || []).map((opt: string, i: number) => {
            const isThisSelected = userAnswer === i;
            const isThisCorrect = currentQ?.correctAnswerIndex === i;
@@ -335,15 +335,15 @@ export default function TestResultsView({ results, onClose }: { results: any, on
            }
 
            return (
-             <div key={i} className={cn("mcq-option px-2.5 py-2.5 sm:p-6 lg:p-5 rounded-xl sm:rounded-2xl border-2 flex items-center gap-2.5 sm:gap-5 lg:gap-4 transition-all text-left w-full", ringClass)}>
+             <div key={i} className={cn("mcq-option px-2.5 py-2 sm:p-4 lg:p-3.5 rounded-xl sm:rounded-2xl border-2 flex items-center gap-2.5 sm:gap-4 lg:gap-3 transition-all text-left w-full", ringClass)}>
                 <div className={cn(
-                   "w-7 h-7 sm:w-10 sm:h-10 lg:w-9 lg:h-9 rounded-md sm:rounded-xl flex items-center justify-center font-extrabold text-xs sm:text-base lg:text-sm shrink-0",
+                   "w-7 h-7 sm:w-9 sm:h-9 lg:w-8 lg:h-8 rounded-md sm:rounded-xl flex items-center justify-center font-extrabold text-xs sm:text-sm shrink-0",
                   isThisCorrect ? "bg-emerald-500 text-white" :
                   isThisSelected ? "bg-rose-500 text-white" : "bg-slate-200 text-slate-600"
                 )}>
                   {String.fromCharCode(65 + i)}
                 </div>
-                 <span className="text-sm sm:text-xl lg:text-lg font-semibold sm:font-bold leading-tight">
+                 <span className="text-sm sm:text-lg lg:text-base font-semibold sm:font-bold leading-tight">
                    <MathTextRenderer text={opt} isOption />
                  </span>
                 {icon}
@@ -353,12 +353,12 @@ export default function TestResultsView({ results, onClose }: { results: any, on
       </div>
 
       {currentQ?.explanation && (
-          <div className="math-explanation bg-brand-50 px-3 py-3 sm:p-8 lg:p-6 rounded-xl sm:rounded-3xl border border-brand-100 mb-2 lg:mb-10">
-           <h4 className="font-extrabold text-brand-900 flex items-center gap-2 sm:gap-3 mb-2 sm:mb-4 text-sm sm:text-lg">
+          <div className="math-explanation bg-brand-50 px-3.5 py-3.5 sm:p-6 lg:p-5 rounded-xl sm:rounded-2xl border border-brand-100 mb-2 lg:mb-6">
+           <h4 className="font-extrabold text-brand-900 flex items-center gap-2 sm:gap-2.5 mb-2 sm:mb-3 text-sm sm:text-base">
              <div className="bg-white p-1 sm:p-2 rounded-md sm:rounded-xl shadow-sm shrink-0"><AlertCircle className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-brand-600"/></div> 
              Explanation
            </h4>
-           <p className="text-brand-800 font-medium leading-relaxed text-sm sm:text-lg">
+           <p className="text-brand-800 font-medium leading-relaxed text-sm sm:text-base lg:text-[15px]">
              <MathTextRenderer text={currentQ.explanation} />
            </p>
          </div>
@@ -606,7 +606,7 @@ export default function TestResultsView({ results, onClose }: { results: any, on
 
         {/* Right Col: Detailed Question Card */}
         <div className="lg:col-span-2 space-y-6">
-          <div ref={questionCardRef} className="glass px-2.5 py-5 sm:p-10 lg:p-8 rounded-2xl sm:rounded-[2.5rem] border border-slate-200 premium-shadow bg-white">
+          <div ref={questionCardRef} className="glass px-3.5 py-5 sm:p-8 lg:p-6 rounded-2xl sm:rounded-3xl border border-slate-200 premium-shadow bg-white">
             {isMobile ? (
               <div key={currentIdx}>
                 {cardContent}
