@@ -206,7 +206,14 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
   const [showExplanation, setShowExplanation] = useState(false);
   const [showMobilePalette, setShowMobilePalette] = useState(false);
   const [isPaletteCollapsed, setIsPaletteCollapsed] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(() => {
+    if (typeof document === 'undefined') return false;
+    const doc = document as any;
+    return !!(doc.fullscreenElement || 
+              doc.webkitFullscreenElement || 
+              doc.mozFullScreenElement || 
+              doc.msFullscreenElement);
+  });
   
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -217,16 +224,31 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                         doc.msFullscreenElement;
       setIsFullscreen(!!fsElement);
     };
+
+    const handleFullscreenError = () => {
+      setIsFullscreen(false);
+    };
+
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
     document.addEventListener('mozfullscreenchange', handleFullscreenChange);
     document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    document.addEventListener('fullscreenerror', handleFullscreenError);
+    document.addEventListener('webkitfullscreenerror', handleFullscreenError);
+    document.addEventListener('mozfullscreenerror', handleFullscreenError);
+    document.addEventListener('MSFullscreenError', handleFullscreenError);
 
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
       document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
       document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+
+      document.removeEventListener('fullscreenerror', handleFullscreenError);
+      document.removeEventListener('webkitfullscreenerror', handleFullscreenError);
+      document.removeEventListener('mozfullscreenerror', handleFullscreenError);
+      document.removeEventListener('MSFullscreenError', handleFullscreenError);
 
       // Clean up fullscreen mode when leaving the test (unmounting)
       const doc = document as any;
@@ -258,10 +280,11 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                       doc.msFullscreenElement;
 
     if (!fsElement) {
-      const el = document.documentElement as any;
+      const el = document.body as any;
       if (el.requestFullscreen) {
         el.requestFullscreen().catch((err: any) => {
           console.warn("Failed to enter fullscreen:", err);
+          setIsFullscreen(false);
         });
       } else if (el.webkitRequestFullscreen) {
         el.webkitRequestFullscreen();
@@ -1045,7 +1068,7 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
           <button
             onClick={() => {
               if (window.innerWidth >= 1024) {
-                const el = document.documentElement as any;
+                const el = document.body as any;
                 if (el.requestFullscreen) {
                   el.requestFullscreen().catch((err: any) => {
                     console.warn("Auto-fullscreen failed:", err);
@@ -1234,13 +1257,6 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
                               />
                             </p>
                           ))}
-                          {(() => {
-                            const question = currentQuestion;
-                            console.log("QUESTION", question);
-                            console.log("DIAGRAM", question.diagram);
-                            console.log("TYPE", question.diagram?.type);
-                            return null;
-                          })()}
                           {currentQuestion.diagram ? (
                             <div className="mt-4 sm:mt-5 w-full block">
                               <DiagramRenderer

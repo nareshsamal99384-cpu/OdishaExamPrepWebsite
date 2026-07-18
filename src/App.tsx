@@ -2032,13 +2032,6 @@ const InteractiveHeroPreview = () => {
         <h3 className="text-base sm:text-lg font-serif font-extrabold text-slate-900 leading-relaxed">
           <MathTextRenderer text={card.questionText} />
         </h3>
-        {(() => {
-          const question = card;
-          console.log("QUESTION", question);
-          console.log("DIAGRAM", question.diagram);
-          console.log("TYPE", question.diagram?.type);
-          return null;
-        })()}
         {card.diagram ? (
           <DiagramRenderer diagram={card.diagram} data={card.diagram} />
         ) : null}
