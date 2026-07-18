@@ -210,29 +210,78 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
   
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const doc = document as any;
+      const fsElement = doc.fullscreenElement || 
+                        doc.webkitFullscreenElement || 
+                        doc.mozFullScreenElement || 
+                        doc.msFullscreenElement;
+      setIsFullscreen(!!fsElement);
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+
       // Clean up fullscreen mode when leaving the test (unmounting)
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch((err) => {
-          console.warn("Failed to exit fullscreen on unmount:", err);
-        });
+      const doc = document as any;
+      const fsElement = doc.fullscreenElement || 
+                        doc.webkitFullscreenElement || 
+                        doc.mozFullScreenElement || 
+                        doc.msFullscreenElement;
+      if (fsElement) {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch((err) => {
+            console.warn("Failed to exit fullscreen on unmount:", err);
+          });
+        } else if (doc.webkitExitFullscreen) {
+          doc.webkitExitFullscreen();
+        } else if (doc.mozCancelFullScreen) {
+          doc.mozCancelFullScreen();
+        } else if (doc.msExitFullscreen) {
+          doc.msExitFullscreen();
+        }
       }
     };
   }, []);
 
   const toggleFullscreen = useCallback(() => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch((err) => {
-        console.warn("Failed to enter fullscreen:", err);
-      });
+    const doc = document as any;
+    const fsElement = doc.fullscreenElement || 
+                      doc.webkitFullscreenElement || 
+                      doc.mozFullScreenElement || 
+                      doc.msFullscreenElement;
+
+    if (!fsElement) {
+      const el = document.documentElement as any;
+      if (el.requestFullscreen) {
+        el.requestFullscreen().catch((err: any) => {
+          console.warn("Failed to enter fullscreen:", err);
+        });
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      } else if (el.mozRequestFullScreen) {
+        el.mozRequestFullScreen();
+      } else if (el.msRequestFullscreen) {
+        el.msRequestFullscreen();
+      }
     } else {
-      document.exitFullscreen().catch((err) => {
-        console.warn("Failed to exit fullscreen:", err);
-      });
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch((err) => {
+          console.warn("Failed to exit fullscreen:", err);
+        });
+      } else if (doc.webkitExitFullscreen) {
+        doc.webkitExitFullscreen();
+      } else if (doc.mozCancelFullScreen) {
+        doc.mozCancelFullScreen();
+      } else if (doc.msExitFullscreen) {
+        doc.msExitFullscreen();
+      }
     }
   }, []);
 
@@ -995,10 +1044,19 @@ const MockTestSystem = ({ test, mode = 'mock', initialState, onComplete, onExit 
         <div className="shrink-0 px-4 py-3 sm:p-6 bg-white/80 backdrop-blur-md border-t border-slate-200/60 z-20 flex justify-center shadow-[0_-8px_30px_rgba(0,0,0,0.02)]">
           <button
             onClick={() => {
-              if (window.innerWidth >= 1024 && document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen().catch((err) => {
-                  console.warn("Auto-fullscreen failed:", err);
-                });
+              if (window.innerWidth >= 1024) {
+                const el = document.documentElement as any;
+                if (el.requestFullscreen) {
+                  el.requestFullscreen().catch((err: any) => {
+                    console.warn("Auto-fullscreen failed:", err);
+                  });
+                } else if (el.webkitRequestFullscreen) {
+                  el.webkitRequestFullscreen();
+                } else if (el.mozRequestFullScreen) {
+                  el.mozRequestFullScreen();
+                } else if (el.msRequestFullscreen) {
+                  el.msRequestFullscreen();
+                }
               }
               setIsStarted(true);
             }}
