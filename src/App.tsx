@@ -102,6 +102,7 @@ const HistoryView = ({
   const [activities, setActivities] = useState<any[]>([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmClearAll, setConfirmClearAll] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'completed' | 'incomplete' | 'ai_quiz' | 'download'>('all');
 
   const loadActivities = useCallback(() => {
     const raw = activityTracker.getActivities(user?.id, user?.user_metadata);
@@ -214,9 +215,78 @@ const HistoryView = ({
         )}
       </div>
 
+      {/* ── Filter Pills ── */}
+      {activities.length > 0 && (() => {
+        const filterCounts = {
+          all:        activities.length,
+          completed:  activities.filter(a => !!a.metadata && a.type !== 'question_bank_accessed' && a.type !== 'test_incomplete' && a.type !== 'practice_test_completed').length,
+          incomplete: activities.filter(a => a.type === 'test_incomplete').length,
+          ai_quiz:    activities.filter(a => a.type === 'practice_test_completed').length,
+          download:   activities.filter(a => a.type === 'question_bank_accessed').length,
+        };
+        const filters: { id: typeof activeFilter; label: string; icon: React.ReactNode }[] = [
+          { id: 'all',        label: 'All',        icon: <LayoutDashboard className="w-3 h-3" /> },
+          { id: 'completed',  label: 'Completed',  icon: <CheckCircle2 className="w-3 h-3" /> },
+          { id: 'incomplete', label: 'Incomplete', icon: <Clock className="w-3 h-3" /> },
+          { id: 'ai_quiz',    label: 'AI Quiz',    icon: <Sparkles className="w-3 h-3" /> },
+          { id: 'download',   label: 'Downloads',  icon: <Download className="w-3 h-3" /> },
+        ];
+        return (
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 -mx-0.5 px-0.5">
+            {filters.map(f => {
+              const count = filterCounts[f.id];
+              const isActive = activeFilter === f.id;
+              return (
+                <button
+                  key={f.id}
+                  onClick={() => setActiveFilter(f.id)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-[9px] sm:text-[10px] font-black whitespace-nowrap transition-all border shrink-0",
+                    isActive
+                      ? "bg-brand-600 text-white border-brand-600 shadow-sm shadow-brand-200/60"
+                      : count === 0
+                        ? "bg-white text-slate-300 border-slate-100 cursor-not-allowed"
+                        : "bg-white text-slate-500 border-slate-200 hover:border-brand-300 hover:text-brand-600 cursor-pointer"
+                  )}
+                  disabled={count === 0}
+                >
+                  {f.icon}
+                  <span className="uppercase tracking-wider">{f.label}</span>
+                  <span className={cn(
+                    "px-1.5 py-0.5 rounded-md text-[8px] font-black min-w-[16px] text-center",
+                    isActive ? "bg-white/25 text-white" : "bg-slate-100 text-slate-400"
+                  )}>{count}</span>
+                </button>
+              );
+            })}
+          </div>
+        );
+      })()}
+
       {/* ── Activity cards ── */}
-      <div className="grid gap-2.5 sm:gap-3">
-        {activities.map((a, i) => {
+      {(() => {
+        const filteredActivities = activities.filter(a => {
+          if (activeFilter === 'all')        return true;
+          if (activeFilter === 'completed')  return !!a.metadata && a.type !== 'question_bank_accessed' && a.type !== 'test_incomplete' && a.type !== 'practice_test_completed';
+          if (activeFilter === 'incomplete') return a.type === 'test_incomplete';
+          if (activeFilter === 'ai_quiz')    return a.type === 'practice_test_completed';
+          if (activeFilter === 'download')   return a.type === 'question_bank_accessed';
+          return true;
+        });
+        if (filteredActivities.length === 0) {
+          return (
+            <div className="flex flex-col items-center justify-center py-14 text-center space-y-3 bg-slate-50/50 rounded-2xl border border-slate-100">
+              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center">
+                <History className="w-6 h-6 text-slate-300" />
+              </div>
+              <p className="text-sm font-bold text-slate-400">No {activeFilter === 'ai_quiz' ? 'AI Quiz' : activeFilter} history yet</p>
+              <button onClick={() => setActiveFilter('all')} className="text-[10px] font-black uppercase tracking-wider text-brand-600 hover:text-brand-700 transition-colors cursor-pointer">View All History</button>
+            </div>
+          );
+        }
+        return (
+          <div className="grid gap-2.5 sm:gap-3">
+            {filteredActivities.map((a, i) => {
           const isTestResult = !!a.metadata && a.type !== 'question_bank_accessed';
           const isAiQuiz = a.type === 'practice_test_completed';
           const isDownloadable = a.type === 'question_bank_accessed' && !!a.metadata?.pdfUrl;
@@ -368,7 +438,9 @@ const HistoryView = ({
             </div>
           );
         })}
-      </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };
