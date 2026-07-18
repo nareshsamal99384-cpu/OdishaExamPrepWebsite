@@ -7915,16 +7915,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                                     </div>
                                     <div className="text-left min-w-0 flex-1">
                                       <h4 className="font-black text-base sm:text-lg text-slate-950 tracking-tight group-hover:text-brand-600 transition-colors uppercase leading-snug line-clamp-2" title={bank.title}>{mainTitle}</h4>
-                                      <div className="flex items-center gap-1.5 mt-1">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-100">Practice Set</span>
+                                      <div className="flex items-center flex-wrap gap-1.5 mt-1">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-100 whitespace-nowrap">Practice Set</span>
                                         {suffix && (
-                                          <span className="text-[10px] font-black text-brand-700 uppercase tracking-widest bg-brand-50 px-2 py-0.5 rounded border border-brand-100/60 shadow-2xs">Set {suffix}</span>
+                                          <span className="text-[10px] font-black text-brand-700 uppercase tracking-widest bg-brand-50 px-2 py-0.5 rounded border border-brand-100/60 shadow-2xs whitespace-nowrap">Set {suffix}</span>
                                         )}
                                         {isCompleted && (
-                                          <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-100/60 flex items-center gap-0.5"><CheckCircle2 className="w-3.5 h-3.5" /> Completed</span>
+                                          <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-100/60 flex items-center gap-0.5 whitespace-nowrap"><CheckCircle2 className="w-3.5 h-3.5" /> Completed</span>
                                         )}
                                         {isInProgress && (
-                                          <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest bg-amber-50 px-2.5 py-0.5 rounded border border-amber-100/60 flex items-center gap-0.5"><Clock className="w-3.5 h-3.5 animate-pulse" /> In Progress</span>
+                                          <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest bg-amber-50 px-2.5 py-0.5 rounded border border-amber-100/60 flex items-center gap-0.5 whitespace-nowrap"><Clock className="w-3.5 h-3.5 animate-pulse" /> In Progress</span>
                                         )}
                                       </div>
                                     </div>
@@ -8257,16 +8257,16 @@ const DashboardContent = ({ isGuest, onSignIn, mainTab = 'home', user, activitie
                         </div>
                         <div className="text-left min-w-0 flex-1">
                           <h4 className="font-black text-base sm:text-lg text-slate-950 tracking-tight group-hover:text-brand-600 transition-colors uppercase leading-snug line-clamp-2" title={test.title}>{mainTitle}</h4>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-100">Official Mock</span>
+                          <div className="flex items-center flex-wrap gap-1.5 mt-1">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-100 whitespace-nowrap">Official Mock</span>
                             {suffix && (
-                              <span className="text-[10px] font-black text-brand-700 uppercase tracking-widest bg-brand-50 px-2 py-0.5 rounded border border-brand-100/60 shadow-2xs">Set {suffix}</span>
+                              <span className="text-[10px] font-black text-brand-700 uppercase tracking-widest bg-brand-50 px-2 py-0.5 rounded border border-brand-100/60 shadow-2xs whitespace-nowrap">Set {suffix}</span>
                             )}
                             {isCompleted && (
-                              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-100/60 flex items-center gap-0.5"><CheckCircle2 className="w-3.5 h-3.5" /> Completed</span>
+                              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-100/60 flex items-center gap-0.5 whitespace-nowrap"><CheckCircle2 className="w-3.5 h-3.5" /> Completed</span>
                             )}
                             {isInProgress && (
-                              <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest bg-amber-50 px-2.5 py-0.5 rounded border border-amber-100/60 flex items-center gap-0.5"><Clock className="w-3.5 h-3.5 animate-pulse" /> In Progress</span>
+                              <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest bg-amber-50 px-2.5 py-0.5 rounded border border-amber-100/60 flex items-center gap-0.5 whitespace-nowrap"><Clock className="w-3.5 h-3.5 animate-pulse" /> In Progress</span>
                             )}
                           </div>
                         </div>
