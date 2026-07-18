@@ -81,7 +81,6 @@ const BlogPost = React.lazy(() => import('./pages/BlogPost'));
 const AiMentor = React.lazy(() => import('./pages/AiMentor'));
 import { ROUTE_PATHS } from './lib/routes-config';
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
-const SandboxOnboarding = React.lazy(() => import('./pages/SandboxOnboarding'));
 import StickyAICompanion from './components/StickyAICompanion';
 import LoadingPortal from './components/LoadingPortal';
 import PushPermissionPrompt from './components/PushPermissionPrompt';
@@ -9637,7 +9636,6 @@ function AppContent() {
           } 
         />
         <Route path={ROUTE_PATHS.EXAM_DETAIL} element={<ExamDetailPage />} />
-        <Route path={ROUTE_PATHS.TEST_ONBOARDING} element={<SandboxOnboarding />} />
         <Route 
           path={ROUTE_PATHS.HOME} 
           element={
