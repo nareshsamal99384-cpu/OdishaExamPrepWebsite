@@ -14,7 +14,8 @@ async function run() {
   const { data, error } = await supabase
     .from('questions')
     .select('*')
-    .eq('examId', 'f6efc518-82b0-4a6b-b957-cec4a1fd0969');
+    .eq('examId', '226fc62b-8a66-4238-9873-e69d2990ee80')
+    .eq('topic', 'Medical-Surgical Nursing I');
     
   console.log("Result Error:", error);
   console.log("Result Data Length:", data ? data.length : null);

@@ -152,7 +152,8 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
     if (!isDragging.current) return;
     const delta = dragStartX.current - e.clientX;
     offsetRef.current = dragStartOffset.current + delta;
-  }, []);
+    applyOffset();
+  }, [applyOffset]);
 
   const onMouseUp = useCallback(() => {
     if (!isDragging.current) return;
@@ -177,8 +178,9 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
     if (!isDragging.current) return;
     const delta = dragStartX.current - e.touches[0].clientX;
     offsetRef.current = dragStartOffset.current + delta;
+    applyOffset();
     e.preventDefault(); // prevent page scroll while swiping the carousel
-  }, []);
+  }, [applyOffset]);
 
   const onTouchEnd = useCallback(() => {
     if (!isDragging.current) return;
@@ -426,11 +428,12 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
                 <X className="w-5 h-5" />
               </button>
               <iframe
-                src={`https://www.youtube.com/embed/${activeVideo}?autoplay=1`}
+                src={`https://www.youtube.com/embed/${activeVideo}?autoplay=1&mute=0&rel=0&modestbranding=1&origin=${encodeURIComponent(window.location.origin)}`}
                 title="YouTube video player"
                 frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 allowFullScreen
+                referrerPolicy="no-referrer-when-downgrade"
                 className="w-full h-full absolute inset-0"
               />
             </motion.div>

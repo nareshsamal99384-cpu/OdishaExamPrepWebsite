@@ -1,0 +1,8 @@
+{
+  "type": "onerror",
+  "message": "Uncaught TypeError: className.includes is not a function",
+  "source": "http://localhost:3000/src/components/StickyAICompanion.tsx",
+  "lineno": 1204,
+  "colno": 24,
+  "stack": "TypeError: className.includes is not a function\n    at MutationObserver.checkModals (http://localhost:3000/src/components/StickyAICompanion.tsx:1204:24)"
+}
