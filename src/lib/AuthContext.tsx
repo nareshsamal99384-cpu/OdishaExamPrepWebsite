@@ -148,16 +148,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       const activeUser = freshUser || sessionUser;
-      const adminEmails = ['odishaexamprep365@gmail.com', 'nareshsamal99384@gmail.com'];
-      const isAuthorizedAdmin = adminEmails.includes(activeUser.email || '');
+      const adminEmails = ['odishaexamprep365@gmail.com'];
+      const userEmail = (activeUser.email || '').toLowerCase().trim();
+      const isAuthorizedAdmin = adminEmails.includes(userEmail);
 
       if (!isAuthorizedAdmin) {
         setManualAdmin(null);
         localStorage.removeItem('admin_session');
+        localStorage.removeItem('oep_offline_vault');
       }
 
       const meta = activeUser.user_metadata || {};
-      let currentRole = isAuthorizedAdmin ? 'admin' : (meta.role || 'user');
+      let currentRole = isAuthorizedAdmin ? 'admin' : 'user';
       let currentFullAccess = isAuthorizedAdmin || !!meta.hasFullAccess;
 
       const metaPurchased = meta.purchasedSeries || [];
@@ -302,13 +304,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
     });
 
-    // Listen for auth state changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
+        const adminEmails = ['odishaexamprep365@gmail.com'];
+        const userEmail = (session.user.email || '').toLowerCase().trim();
+        if (!adminEmails.includes(userEmail)) {
+          setManualAdmin(null);
+          localStorage.removeItem('admin_session');
+          localStorage.removeItem('oep_offline_vault');
+        }
         fetchProfile(session.user, false);
       } else {
         setProfile(null);
+        setManualAdmin(null);
+        localStorage.removeItem('admin_session');
+        localStorage.removeItem('oep_offline_vault');
       }
       setLoading(false);
     });
@@ -431,6 +442,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setProfile(null);
     setManualAdmin(null);
     localStorage.removeItem('admin_session');
+    localStorage.removeItem('oep_offline_vault');
+    localStorage.removeItem('oep_pending_payment');
     // Then sign out from Supabase (clears the session cookie/token)
     try {
       await supabase.auth.signOut({ scope: 'local' });
