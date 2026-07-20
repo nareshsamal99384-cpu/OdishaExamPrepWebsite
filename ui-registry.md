@@ -34,6 +34,7 @@ Before creating any new component, developers and AI agents MUST consult this re
 | **`LoadingPortal`** | Feedback | [`src/components/LoadingPortal.tsx`](file:///c:/Users/Naresh%20Samal/Downloads/OdishaExamPrep%20Website/src/components/LoadingPortal.tsx) | Full Screen Spinner | App.tsx | Active |
 | **`AnimatedRoutes`** | Navigation | [`src/components/AnimatedRoutes.tsx`](file:///c:/Users/Naresh%20Samal/Downloads/OdishaExamPrep%20Website/src/components/AnimatedRoutes.tsx) | Motion Fade Transition | App.tsx | Active |
 | **`ProtectedRoute`** | Guard | [`src/components/ProtectedRoute.tsx`](file:///c:/Users/Naresh%20Samal/Downloads/OdishaExamPrep%20Website/src/components/ProtectedRoute.tsx) | Auth Route Guard | App.tsx | Active |
+| **`AdminLoginPage`** | View | [`src/pages/AdminLoginPage.tsx`](file:///c:/Users/Naresh%20Samal/Downloads/OdishaExamPrep%20Website/src/pages/AdminLoginPage.tsx) | Glass Card Form | App.tsx | Active |
 
 ---
 
@@ -133,6 +134,27 @@ import { SearchableSelect } from '../components/SearchableSelect';
 - **File Path:** [`src/components/LoadingPortal.tsx`](file:///c:/Users/Naresh%20Samal/Downloads/OdishaExamPrep%20Website/src/components/LoadingPortal.tsx)
 - **Category:** Feedback
 - **Purpose:** Renders full-screen backdrop loading state with platform logo and animated pulse spinner during initial app load.
+
+---
+
+### 7. `AdminLoginPage`
+- **File Path:** [`src/pages/AdminLoginPage.tsx`](file:///c:/Users/Naresh%20Samal/Downloads/OdishaExamPrep%20Website/src/pages/AdminLoginPage.tsx)
+- **Category:** View
+- **Last Updated:** 2026-07-20
+
+| Property | Class |
+| :--- | :--- |
+| Background | `bg-white/80 backdrop-blur-xl` |
+| Border | `border-white/40` |
+| Border radius | `rounded-2xl` |
+| Text — primary | `text-slate-950 font-black tracking-tight` |
+| Text — secondary | `text-slate-500 font-medium` |
+| Input fields | `bg-white/50 border-slate-200 focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500` |
+| Button — primary | `premium-gradient text-white rounded-2xl shadow-xl shadow-brand-500/20` |
+| Alert box | `bg-red-50 text-red-600 rounded-2xl border border-red-100 text-sm font-bold` |
+
+**Pattern notes:**
+Uses standard `PageLayout` with glassmorphic elevated backdrop cards (`backdrop-blur-xl bg-white/80`). Form inputs utilize subtle focus ring effects (`focus:ring-brand-500/10`) and rounded `rounded-2xl` radius matching the system design token.
 
 ---
 
