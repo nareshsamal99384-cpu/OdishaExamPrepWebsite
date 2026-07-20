@@ -8,6 +8,7 @@ import {
   History, 
   Settings, 
   LogOut, 
+  Loader2,
   ChevronLeft,
   ChevronRight, 
   ChevronDown,
@@ -2237,12 +2238,15 @@ const AuthModal = ({ isOpen, onClose, hideCloseButton = false }: { isOpen: boole
   const [showPassword, setShowPassword] = useState(false);
   const [authMessage, setAuthMessage] = useState<{ type: 'error' | 'info' | 'success', text: string } | null>(null);
 
+  const [googleLoading, setGoogleLoading] = useState(false);
+
   useEffect(() => {
     setEmail('');
     setPassword('');
     setFullName('');
     setConfirmPassword('');
     setShowPassword(false);
+    setGoogleLoading(false);
     setAuthMessage(null);
   }, [isOpen, authMode]);
 
@@ -2262,12 +2266,23 @@ const AuthModal = ({ isOpen, onClose, hideCloseButton = false }: { isOpen: boole
   }, [isOpen]);
 
   const handleGoogleLogin = async () => {
+    setAuthMessage(null);
+    setGoogleLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+      const { error } = await supabase.auth.signInWithOAuth({ 
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
       if (error) throw error;
-      onClose();
-    } catch (error) {
-      console.error('Login failed', error);
+    } catch (error: any) {
+      console.error('Google login failed', error);
+      setAuthMessage({
+        type: 'error',
+        text: error.message || 'Failed to connect to Google. Please try again.'
+      });
+      setGoogleLoading(false);
     }
   };
 
@@ -2424,6 +2439,48 @@ const AuthModal = ({ isOpen, onClose, hideCloseButton = false }: { isOpen: boole
                   {authMessage.text}
                 </div>
               </motion.div>
+            )}
+
+            {(authMode === 'login' || authMode === 'signup') && (
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  disabled={googleLoading}
+                  className="w-full flex items-center justify-center gap-3 px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-200/80 bg-white/90 hover:bg-white text-slate-800 font-extrabold text-base shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 cursor-pointer group"
+                >
+                  {googleLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin text-brand-600" />
+                  ) : (
+                    <svg className="w-5 h-5 shrink-0 group-hover:scale-105 transition-transform" viewBox="0 0 24 24">
+                      <path
+                        fill="#4285F4"
+                        d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.25 21.3 7.31 24 12 24z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.17 0 10.03 0 12s.46 3.83 1.26 5.42l4.02-3.15z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.7 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                      />
+                    </svg>
+                  )}
+                  <span>{googleLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
+                </button>
+
+                <div className="relative flex items-center justify-center py-1">
+                  <div className="border-t border-slate-200/80 w-full" />
+                  <span className="bg-white/80 backdrop-blur-md px-3 text-[11px] font-black uppercase text-slate-400 tracking-wider absolute rounded-full border border-slate-200/40">
+                    OR
+                  </span>
+                </div>
+              </div>
             )}
 
             <form onSubmit={

@@ -213,8 +213,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const finalProfile = {
         uid: activeUser.id,
         email: activeUser.email,
-        displayName: meta.full_name || meta.displayName || activeUser.email?.split('@')[0],
-        photoURL: meta.avatar_url || meta.photoURL,
+        displayName: meta.full_name || meta.displayName || meta.name || activeUser.email?.split('@')[0],
+        photoURL: meta.avatar_url || meta.picture || meta.photoURL,
         role: currentRole,
         hasFullAccess: isFullAccess || finalPurchased.includes('full_access'),
         purchasedSeries: finalPurchased,
