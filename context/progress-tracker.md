@@ -67,6 +67,7 @@ This document is the living execution tracker for **OdishaExamPrep** (`https://w
 - [x] Task 4.2: Client entitlement engine (`entitlementEngine.ts`) calculating user access based on active purchases.
 - [x] Task 4.3: Express server 2-minute memory token cache (`tokenCache`) for authorization verification.
 - [x] Task 4.4: Database Row Level Security (RLS) policies on `mockTests` and `questions` tables.
+- [x] Task 4.5: Google (Gmail) 1-click OAuth authentication integration with automatic user metadata sync.
 
 ### Phase 5 — Razorpay Payment Gateway Integration
 - [x] Task 5.1: Razorpay Order Creation API (`/api/payment/order`) with server-side pricing validation.
