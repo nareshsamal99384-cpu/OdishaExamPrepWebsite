@@ -151,6 +151,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const adminEmails = ['odishaexamprep365@gmail.com', 'nareshsamal99384@gmail.com'];
       const isAuthorizedAdmin = adminEmails.includes(activeUser.email || '');
 
+      if (!isAuthorizedAdmin) {
+        setManualAdmin(null);
+        localStorage.removeItem('admin_session');
+      }
+
       const meta = activeUser.user_metadata || {};
       let currentRole = isAuthorizedAdmin ? 'admin' : (meta.role || 'user');
       let currentFullAccess = isAuthorizedAdmin || !!meta.hasFullAccess;
@@ -434,7 +439,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const isAdmin = profile?.role === 'admin' || manualAdmin?.role === 'admin';
+  const isAdmin = user 
+    ? profile?.role === 'admin' 
+    : manualAdmin?.role === 'admin';
   const hasFullAccess = isAdmin || profile?.hasFullAccess === true;
 
   const grantFullAccess = async () => {
