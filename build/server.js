@@ -196,7 +196,7 @@ async function startServer() {
           expiry: now + CACHE_TTL_MS
         });
       }
-      const adminEmails = ["odishaexamprep365@gmail.com", "nareshsamal99384@gmail.com"];
+      const adminEmails = ["odishaexamprep365@gmail.com"];
       const isAuthorized = adminEmails.includes(user.email || "");
       let isAdmin = isAuthorized;
       if (!isAdmin) {

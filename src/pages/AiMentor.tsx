@@ -34,7 +34,16 @@ import {
   Edit3,
   X,
   XCircle,
-  Plus
+  Plus,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  Radio,
+  Globe,
+  History,
+  MessageSquare,
+  Edit2
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import TimePicker from '../components/TimePicker';
@@ -42,6 +51,8 @@ import { MathTextRenderer, DiagramRenderer } from '../components/MathTextRendere
 import { toast } from 'react-hot-toast';
 import { scrollToElement } from '../lib/scrollManager';
 import { activityTracker } from '../lib/activityTracker';
+import { useVoiceInteraction, VoiceLanguage } from '../hooks/useVoiceInteraction';
+import { VoiceWaveVisualizer } from '../components/VoiceWaveVisualizer';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 
@@ -49,6 +60,14 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   mode?: 'quick' | 'best';
+}
+
+interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  messages: Message[];
 }
 
 interface SyllabusTopic {
@@ -638,22 +657,260 @@ export default function AiMentor({ user }: { user: any }) {
   const [generatingProgress, setGeneratingProgress] = useState(0);
   const [generatingStep, setGeneratingStep] = useState(0);
 
-  // Chat States
-  const [messages, setMessages] = useState<Message[]>(() => {
-    const saved = localStorage.getItem('study_coach_messages');
-    return saved ? JSON.parse(saved) : [
-      {
-        role: 'assistant',
-        content: "Namaskar! I am your OdishaExamPrep AI Model. I am here to help you prepare for OPSC OAS, OSSC CGL, and OSSSC RI/ARI/Amin exams. Ask me any questions about Odisha History & Geography, Indian Polity, Odia Grammar rules, or Quantitative Aptitude shortcuts! You can also select a syllabus chapter on the right to get summaries, or take a dynamic practice quiz."
+  // Default initial welcome message
+  const DEFAULT_WELCOME_MESSAGE: Message = {
+    role: 'assistant',
+    content: "Namaskar! I am your OdishaExamPrep AI Model. I am here to help you prepare for OPSC OAS, OSSC CGL, and OSSSC RI/ARI/Amin exams. Ask me any questions about Odisha History & Geography, Indian Polity, Odia Grammar rules, or Quantitative Aptitude shortcuts! You can also select a syllabus chapter on the right to get summaries, or take a dynamic practice quiz."
+  };
+
+  // Multi-Chat Sessions State
+  const [sessions, setSessions] = useState<ChatSession[]>(() => {
+    const saved = localStorage.getItem('oep_ai_chat_sessions');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {
+        console.error('Failed to parse chat sessions', e);
       }
-    ];
+    }
+
+    const singleSaved = localStorage.getItem('study_coach_messages');
+    const legacyMessages: Message[] = singleSaved ? JSON.parse(singleSaved) : [DEFAULT_WELCOME_MESSAGE];
+
+    const initialSession: ChatSession = {
+      id: 'session_' + Date.now(),
+      title: 'Welcome Chat',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      messages: legacyMessages
+    };
+
+    return [initialSession];
   });
+
+  const [activeSessionId, setActiveSessionId] = useState<string>(() => {
+    const savedActive = localStorage.getItem('oep_ai_active_session_id');
+    if (savedActive) return savedActive;
+    return 'session_' + Date.now();
+  });
+
+  // Ensure activeSessionId points to a valid session
+  useEffect(() => {
+    if (!sessions.some(s => s.id === activeSessionId) && sessions.length > 0) {
+      setActiveSessionId(sessions[0].id);
+    }
+  }, [sessions, activeSessionId]);
+
+  const activeSession = sessions.find(s => s.id === activeSessionId) || sessions[0] || {
+    id: 'session_' + Date.now(),
+    title: 'Welcome Chat',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    messages: [DEFAULT_WELCOME_MESSAGE]
+  };
+
+  const messages = activeSession.messages || [DEFAULT_WELCOME_MESSAGE];
+
+  const setMessages = (newMessagesOrFn: Message[] | ((prev: Message[]) => Message[])) => {
+    setSessions(prevSessions => {
+      return prevSessions.map(session => {
+        if (session.id === activeSessionId) {
+          const nextMessages = typeof newMessagesOrFn === 'function' ? newMessagesOrFn(session.messages) : newMessagesOrFn;
+          
+          let newTitle = session.title;
+          if (session.title === 'Welcome Chat' || session.title === 'New Chat') {
+            const firstUserMsg = nextMessages.find(m => m.role === 'user');
+            if (firstUserMsg && firstUserMsg.content) {
+              const text = firstUserMsg.content.trim();
+              newTitle = text.slice(0, 32) + (text.length > 32 ? '…' : '');
+            }
+          }
+
+          return {
+            ...session,
+            title: newTitle,
+            updatedAt: Date.now(),
+            messages: nextMessages
+          };
+        }
+        return session;
+      });
+    });
+  };
+
+  // Persist sessions & active session ID
+  useEffect(() => {
+    localStorage.setItem('oep_ai_chat_sessions', JSON.stringify(sessions));
+  }, [sessions]);
+
+  useEffect(() => {
+    localStorage.setItem('oep_ai_active_session_id', activeSessionId);
+  }, [activeSessionId]);
+
+  // History Drawer State
+  const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
+  const [historySearchQuery, setHistorySearchQuery] = useState('');
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editingTitleText, setEditingTitleText] = useState('');
+
+  const handleCreateNewChat = () => {
+    const newSession: ChatSession = {
+      id: 'session_' + Date.now(),
+      title: 'New Chat',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      messages: [DEFAULT_WELCOME_MESSAGE]
+    };
+    setSessions(prev => [newSession, ...prev]);
+    setActiveSessionId(newSession.id);
+    setIsHistoryDrawerOpen(false);
+    toast.success('Started new chat session!', { id: 'new-chat-toast' });
+  };
+
+  const handleSelectSession = (sessionId: string) => {
+    setActiveSessionId(sessionId);
+    setIsHistoryDrawerOpen(false);
+  };
+
+  const handleDeleteSession = (sessionIdToDelete: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (sessions.length <= 1) {
+      const resetSession: ChatSession = {
+        id: 'session_' + Date.now(),
+        title: 'New Chat',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        messages: [DEFAULT_WELCOME_MESSAGE]
+      };
+      setSessions([resetSession]);
+      setActiveSessionId(resetSession.id);
+      toast.success('Chat reset!', { id: 'delete-chat-toast' });
+      return;
+    }
+
+    const updatedSessions = sessions.filter(s => s.id !== sessionIdToDelete);
+    setSessions(updatedSessions);
+    if (activeSessionId === sessionIdToDelete) {
+      setActiveSessionId(updatedSessions[0].id);
+    }
+    toast.success('Chat session deleted!', { id: 'delete-chat-toast' });
+  };
+
+  const handleStartRenameSession = (session: ChatSession, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingSessionId(session.id);
+    setEditingTitleText(session.title);
+  };
+
+  const handleSaveRenameSession = (sessionId: string) => {
+    if (editingTitleText.trim()) {
+      setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, title: editingTitleText.trim(), updatedAt: Date.now() } : s));
+    }
+    setEditingSessionId(null);
+    setEditingTitleText('');
+  };
+
+  const filteredSessions = sessions.filter(s => 
+    s.title.toLowerCase().includes(historySearchQuery.toLowerCase()) ||
+    s.messages.some(m => m.content.toLowerCase().includes(historySearchQuery.toLowerCase()))
+  ).sort((a, b) => b.updatedAt - a.updatedAt);
+
+  const formatSessionDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    
+    if (isToday) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  };
+
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [responseMode, setResponseMode] = useState<'quick' | 'best'>(() => {
     const saved = localStorage.getItem('study_coach_response_mode');
     return (saved === 'quick' || saved === 'best') ? saved : 'quick';
   });
+
+  const [tempVoiceText, setTempVoiceText] = useState('');
+  const [isVoiceMuted, setIsVoiceMuted] = useState(() => localStorage.getItem('oep_voice_muted') === 'true');
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to latest chat message on mount, history restore, or message stream updates
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: loading ? 'auto' : 'smooth' });
+    }
+  }, [messages, loading]);
+
+  // Instant scroll-to-bottom on initial page load / refresh once DOM renders
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (chatEndRef.current) {
+        chatEndRef.current.scrollIntoView({ behavior: 'auto' });
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const toggleVoiceMute = () => {
+    setIsVoiceMuted(prev => {
+      const next = !prev;
+      localStorage.setItem('oep_voice_muted', String(next));
+      if (next) {
+        stopSpeaking();
+        toast('AI Speech Muted', { icon: '🔇', id: 'voice-mute' });
+      } else {
+        toast('AI Speech Unmuted', { icon: '🔊', id: 'voice-unmute' });
+      }
+      return next;
+    });
+  };
+
+  // Voice Interaction Hook
+  const {
+    language: voiceLang,
+    setLanguage: setVoiceLang,
+    isListening,
+    transcript: voiceTranscript,
+    startListening,
+    stopListening,
+    resetTranscript,
+    isSpeaking,
+    speak,
+    stopSpeaking,
+    isLiveVoiceMode,
+    setIsLiveVoiceMode,
+    toggleLiveVoiceMode,
+    startLiveVoice,
+    hasSpeechRecognitionSupport,
+    voiceError,
+  } = useVoiceInteraction({
+    language: 'en-IN',
+    onTranscriptChange: (text) => {
+      if (text) {
+        setTempVoiceText(text);
+        setInput(text);
+      }
+    },
+    onSpeechEnd: (text) => {
+      if (text && text.trim()) {
+        setTempVoiceText(text);
+        setInput(text);
+        if (isLiveVoiceMode) {
+          stopListening();
+          handleSendMessage(text);
+          // Immediately clear old transcript so next bar shows fresh
+          setTempVoiceText('');
+          setInput('');
+        }
+      }
+    },
+  });
+
+  const [activeSpeakingIdx, setActiveSpeakingIdx] = useState<number | null>(null);
 
   // Interactive Study Suite States
   const [quizSubject, setQuizSubject] = useState(() => {
@@ -1917,6 +2174,7 @@ export default function AiMentor({ user }: { user: any }) {
     setLoading(true);
     setTimeout(() => scrollToBottom(true), 30);
 
+    let assistantResponse = "";
     try {
       // Context history pruning (keep last 4 messages to save tokens)
       const recentHistory = messages.slice(-4); 
@@ -1969,7 +2227,6 @@ EXAM-ORIENTED DIRECTIVES:
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder("utf-8");
-      let assistantResponse = "";
 
       if (reader) {
         let buffer = "";
@@ -2052,6 +2309,27 @@ EXAM-ORIENTED DIRECTIVES:
     } finally {
       setLoading(false);
       abortControllerRef.current = null;
+      if (isLiveVoiceMode && assistantResponse) {
+        // Clear stale voice text so the next session starts fresh
+        setTempVoiceText('');
+        setInput('');
+        resetTranscript();
+        if (!isVoiceMuted) {
+          speak(assistantResponse, () => {
+            // Auto-restart listening for user's next spoken sentence
+            setTempVoiceText('');
+            setInput('');
+            resetTranscript();
+            startListening();
+          });
+        } else {
+          // If muted, immediately restart listening
+          setTempVoiceText('');
+          setInput('');
+          resetTranscript();
+          startListening();
+        }
+      }
     }
   };
 
@@ -3484,6 +3762,150 @@ JSON structure:
           {/* Declaring dark color-scheme on the dark chat console to enable dark-themed scrollbars and select default popups */}
           <div style={{ colorScheme: 'light' }} className="absolute inset-0 flex flex-col">
             
+            {/* Slide-over Multi-Chat History Drawer */}
+            <AnimatePresence>
+              {isHistoryDrawerOpen && (
+                <>
+                  {/* Backdrop */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setIsHistoryDrawerOpen(false)}
+                    className="absolute inset-0 bg-slate-900/20 backdrop-blur-xs z-30"
+                  />
+
+                  {/* Drawer */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -30 }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                    className="absolute inset-y-0 left-0 w-full sm:w-80 bg-white/95 backdrop-blur-xl border-r border-slate-200/80 shadow-2xl z-40 flex flex-col"
+                  >
+                    {/* Drawer Header */}
+                    <div className="p-3.5 border-b border-slate-200/60 bg-slate-50/90 flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-slate-800">
+                        <History className="w-4 h-4 text-brand-600" />
+                        <span className="text-xs font-black uppercase tracking-wider">Chat History</span>
+                        <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700">
+                          {sessions.length}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={handleCreateNewChat}
+                          className="p-1.5 hover:bg-brand-50 rounded-lg text-brand-600 transition-colors cursor-pointer"
+                          title="Start New Chat"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsHistoryDrawerOpen(false)}
+                          className="p-1.5 hover:bg-slate-200/80 rounded-lg text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* History Search Bar */}
+                    <div className="p-2.5 border-b border-slate-100 bg-white">
+                      <div className="relative">
+                        <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          value={historySearchQuery}
+                          onChange={(e) => setHistorySearchQuery(e.target.value)}
+                          placeholder="Search past conversations..."
+                          className="w-full bg-slate-50 border border-slate-200/70 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Sessions List */}
+                    <div className="flex-1 overflow-y-auto p-2 space-y-1.5 no-scrollbar">
+                      {filteredSessions.length === 0 ? (
+                        <div className="p-6 text-center text-xs text-slate-400 font-medium">
+                          No matching chats found.
+                        </div>
+                      ) : (
+                        filteredSessions.map((session) => {
+                          const isActive = session.id === activeSessionId;
+                          const isEditing = editingSessionId === session.id;
+
+                          return (
+                            <div
+                              key={session.id}
+                              onClick={() => handleSelectSession(session.id)}
+                              className={cn(
+                                "group relative flex items-center justify-between p-2.5 rounded-xl text-xs transition-all duration-200 cursor-pointer border",
+                                isActive
+                                  ? "bg-brand-50/90 border-brand-300 text-brand-950 font-semibold shadow-xs"
+                                  : "bg-white hover:bg-slate-50 border-slate-200/50 text-slate-700 hover:border-slate-300"
+                              )}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                                <MessageSquare className={cn("w-4 h-4 shrink-0", isActive ? "text-brand-600" : "text-slate-400")} />
+                                
+                                {isEditing ? (
+                                  <input
+                                    type="text"
+                                    autoFocus
+                                    value={editingTitleText}
+                                    onChange={(e) => setEditingTitleText(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') handleSaveRenameSession(session.id);
+                                      if (e.key === 'Escape') setEditingSessionId(null);
+                                    }}
+                                    onBlur={() => handleSaveRenameSession(session.id)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="w-full bg-white border border-brand-400 rounded px-1.5 py-0.5 text-xs text-slate-800 focus:outline-none"
+                                  />
+                                ) : (
+                                  <div className="truncate flex-1">
+                                    <p className="truncate font-medium text-slate-800 text-xs leading-tight">
+                                      {session.title || 'Untitled Chat'}
+                                    </p>
+                                    <p className="text-[10px] text-slate-400 mt-0.5">
+                                      {formatSessionDate(session.updatedAt)} • {session.messages.length} msgs
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-1 shrink-0 opacity-80 group-hover:opacity-100">
+                                {!isEditing && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => handleStartRenameSession(session, e)}
+                                    className="p-1 hover:bg-slate-200/70 rounded text-slate-400 hover:text-slate-700 transition-colors"
+                                    title="Rename Chat"
+                                  >
+                                    <Edit2 className="w-3 h-3" />
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleDeleteSession(session.id, e)}
+                                  className="p-1 hover:bg-rose-100 rounded text-slate-400 hover:text-rose-600 transition-colors"
+                                  title="Delete Chat"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+            
             {/* Header Control Panel */}
             <div className="p-3 border-b border-slate-200/60 bg-slate-50 flex items-center justify-between gap-3 z-10">
               <div className="flex items-center gap-2 shrink-0">
@@ -3491,7 +3913,7 @@ JSON structure:
                 <span className="text-xs font-black uppercase tracking-wider text-slate-800">OdishaExamPrep AI</span>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
                 {/* Target Exam Custom Popover Selector */}
                 <div className="relative" ref={examDropdownRef}>
                   <button
@@ -3588,17 +4010,48 @@ JSON structure:
                   </AnimatePresence>
                 </div>
 
-                {/* Clear Chat Button */}
+                {/* + New Chat Button */}
+                <button
+                  type="button"
+                  onClick={handleCreateNewChat}
+                  className="flex items-center gap-1 px-2.5 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200/80 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+                  title="Start New Chat Session"
+                >
+                  <Plus className="w-3.5 h-3.5 text-brand-600" />
+                  <span className="text-[10px] font-black uppercase tracking-wider hidden xs:inline">New Chat</span>
+                </button>
+
+                {/* History Drawer Toggle Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsHistoryDrawerOpen(!isHistoryDrawerOpen)}
+                  className={cn(
+                    "flex items-center gap-1 px-2.5 py-1.5 border rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 relative",
+                    isHistoryDrawerOpen
+                      ? "bg-slate-800 text-white border-slate-800"
+                      : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200/80"
+                  )}
+                  title="View Chat History"
+                >
+                  <History className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-black uppercase tracking-wider hidden xs:inline">History</span>
+                  {sessions.length > 1 && (
+                    <span className="w-4 h-4 bg-brand-600 text-white text-[9px] font-black rounded-full flex items-center justify-center -ml-0.5">
+                      {sessions.length}
+                    </span>
+                  )}
+                </button>
+
+                {/* Clear Active Chat Button */}
                 <button 
                   onClick={() => {
-                    setMessages([{ role: 'assistant', content: "Chat cleared! What shall we revise next?" }]);
+                    setMessages([DEFAULT_WELCOME_MESSAGE]);
                     setLoading(false);
                   }}
-                  className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-rose-500/10 text-slate-650 hover:text-[#2563EB] border border-slate-200/60 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
-                  title="Clear Chat History"
+                  className="flex items-center gap-1 px-2 py-1.5 bg-slate-100 hover:bg-rose-500/10 text-slate-650 hover:text-rose-600 border border-slate-200/60 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+                  title="Clear Active Chat Messages"
                 >
-                  <Trash2 className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="text-[10px] font-black uppercase tracking-wider hidden xs:inline">Clear</span>
+                  <Trash2 className="w-3.5 h-3.5 text-slate-400 hover:text-rose-500" />
                 </button>
               </div>
             </div>
@@ -3619,25 +4072,45 @@ JSON structure:
                   )}
                 >
                   <div className={cn(
-                    "items-center justify-between gap-1.5 text-[10px] font-black uppercase tracking-widest",
-                    m.role === 'user' 
-                      ? "text-brand-200 hidden sm:flex mb-1" 
-                      : m.mode 
-                        ? "flex mb-1 text-slate-500" 
-                        : "hidden sm:flex mb-1 text-slate-500"
+                    "items-center justify-between gap-1.5 text-[10px] font-black uppercase tracking-widest flex mb-1",
+                    m.role === 'user' ? "text-brand-200" : "text-slate-500"
                   )}>
-                    <span className="hidden sm:inline">{m.role === 'user' ? 'Student' : 'OdishaExamPrep AI'}</span>
-                    {m.role === 'assistant' && m.mode && (
-                      <span className={cn(
-                        "text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded flex items-center gap-1",
-                        m.mode === 'quick' 
-                          ? "bg-amber-500/10 text-amber-500" 
-                          : "bg-indigo-500/10 text-indigo-650"
-                      )}>
-                        {m.mode === 'quick' ? <Zap className="w-2.5 h-2.5" /> : <Sparkles className="w-2.5 h-2.5 animate-pulse" />}
-                        {m.mode === 'quick' ? 'Quick Result' : 'Best Result'}
-                      </span>
-                    )}
+                    <span className="inline">{m.role === 'user' ? 'Student' : 'OdishaExamPrep AI'}</span>
+                    <div className="flex items-center gap-1.5">
+                      {m.role === 'assistant' && m.mode && (
+                        <span className={cn(
+                          "text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded flex items-center gap-1",
+                          m.mode === 'quick' 
+                            ? "bg-amber-500/10 text-amber-500" 
+                            : "bg-indigo-500/10 text-indigo-650"
+                        )}>
+                          {m.mode === 'quick' ? <Zap className="w-2.5 h-2.5" /> : <Sparkles className="w-2.5 h-2.5 animate-pulse" />}
+                          {m.mode === 'quick' ? 'Quick Result' : 'Best Result'}
+                        </span>
+                      )}
+                      {m.role === 'assistant' && m.content && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isSpeaking && activeSpeakingIdx === idx) {
+                              stopSpeaking();
+                              setActiveSpeakingIdx(null);
+                            } else {
+                              setActiveSpeakingIdx(idx);
+                              speak(m.content, () => setActiveSpeakingIdx(null));
+                            }
+                          }}
+                          className="p-1 hover:bg-slate-200/80 rounded-lg text-slate-500 hover:text-brand-600 transition-colors cursor-pointer"
+                          title={isSpeaking && activeSpeakingIdx === idx ? "Stop Audio" : "Listen to Response"}
+                        >
+                          {isSpeaking && activeSpeakingIdx === idx ? (
+                            <VolumeX className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
+                          ) : (
+                            <Volume2 className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="whitespace-pre-wrap font-sans">
                     {m.content ? <MarkdownMathRenderer text={m.content} isUser={m.role === 'user'} /> : (
@@ -3653,10 +4126,37 @@ JSON structure:
                   </div>
                 </div>
               ))}
+              <div ref={chatEndRef} />
             </div>
 
             {/* ── Premium Chat Input Console ── */}
             <div className="relative shrink-0">
+              {/* Active Voice Wave Overlay Banner (for AI TTS Speaking) */}
+              {isSpeaking && (
+                <div className="px-4 py-2 bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900 text-white flex items-center justify-between border-t border-brand-500/30 animate-fade-in">
+                  <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
+                    <VoiceWaveVisualizer
+                      isActive={true}
+                      type="speaking"
+                      bars={12}
+                      label="AI Speaking…"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      stopSpeaking();
+                      if (isLiveVoiceMode) {
+                        startListening();
+                      }
+                    }}
+                    className="text-[10px] font-black uppercase tracking-wider px-2 py-1 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white rounded-lg border border-rose-500/40 transition-all cursor-pointer"
+                  >
+                    Stop
+                  </button>
+                </div>
+              )}
+
               {/* Top shimmer border */}
               <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
 
@@ -3665,23 +4165,14 @@ JSON structure:
                   onSubmit={(e) => { e.preventDefault(); if (input.trim()) handleSendMessage(input); }}
                   className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5"
                 >
-                  {/* Segmented pill — shrink-0 so it doesn't compress, width auto on desktop */}
+                  {/* Segmented pill stack */}
                   <div className="relative flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/50 shadow-inner overflow-hidden shrink-0 w-full sm:w-auto">
-                    {/* Gliding active background */}
-                    <div
-                      className={cn(
-                        "absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-[10px] shadow-lg transition-all duration-300 ease-in-out",
-                        responseMode === 'quick'
-                          ? "left-0.5 bg-gradient-to-r from-brand-600 to-brand-500"
-                          : "left-[50%] bg-gradient-to-r from-indigo-600 to-violet-600"
-                      )}
-                    />
                     <button
                       type="button"
                       onClick={() => setResponseMode('quick')}
                       className={cn(
-                        "relative z-10 flex-1 sm:flex-initial flex items-center justify-center gap-1 py-1.5 px-3 rounded-[10px] text-[10px] font-black uppercase tracking-widest transition-colors duration-200 cursor-pointer min-w-[70px]",
-                        responseMode === 'quick' ? "text-white" : "text-slate-500 hover:text-slate-800"
+                        "relative z-10 flex-1 sm:flex-initial flex items-center justify-center gap-1 py-1.5 px-3 rounded-[10px] text-[10px] font-black uppercase tracking-widest transition-colors duration-200 cursor-pointer min-w-[65px]",
+                        responseMode === 'quick' ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-sm" : "text-slate-500 hover:text-slate-800"
                       )}
                     >
                       <Zap className={cn(
@@ -3694,8 +4185,8 @@ JSON structure:
                       type="button"
                       onClick={() => setResponseMode('best')}
                       className={cn(
-                        "relative z-10 flex-1 sm:flex-initial flex items-center justify-center gap-1 py-1.5 px-3 rounded-[10px] text-[10px] font-black uppercase tracking-widest transition-colors duration-200 cursor-pointer min-w-[70px]",
-                        responseMode === 'best' ? "text-white" : "text-slate-500 hover:text-slate-800"
+                        "relative z-10 flex-1 sm:flex-initial flex items-center justify-center gap-1 py-1.5 px-3 rounded-[10px] text-[10px] font-black uppercase tracking-widest transition-colors duration-200 cursor-pointer min-w-[65px]",
+                        responseMode === 'best' ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-800"
                       )}
                     >
                       <Sparkles className={cn(
@@ -3706,76 +4197,239 @@ JSON structure:
                     </button>
                   </div>
 
-                  {/* Input Wrapper and Send Button Row */}
-                  <div className="flex items-center gap-2 flex-1">
-                    {/* Glowing Input Wrapper */}
-                    <div className={cn(
-                      "relative flex-1 group transition-all duration-300",
-                      loading && "opacity-70"
-                    )}>
-                      {/* Ambient glow on focus */}
-                      <div className={cn(
-                        "absolute -inset-px rounded-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 blur-sm pointer-events-none",
-                        responseMode === 'quick'
-                          ? "bg-gradient-to-r from-brand-500/40 to-brand-600/20"
-                          : "bg-gradient-to-r from-indigo-500/40 to-violet-600/20"
-                      )} />
-                      <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        placeholder="Ask about Odisha history, GS, math, grammar…"
-                        disabled={loading}
-                        className={cn(
-                          "relative w-full bg-white border rounded-xl pl-3.5 pr-10 sm:pl-4 sm:pr-12 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-500 focus:outline-none transition-all duration-300 font-semibold shadow-inner",
-                          "border-slate-200/60 focus:border-slate-300/80",
-                          loading && "cursor-not-allowed"
-                        )}
-                      />
-                      {/* Character count hint when typing */}
-                      {input.length > 0 && (
-                        <motion.span
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-slate-600 font-mono pointer-events-none"
-                        >
-                          {input.length}
-                        </motion.span>
-                      )}
-                    </div>
+                  {/* Input Wrapper & Dynamic Action Button Row */}
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {/* Active ChatGPT-Style Realtime Voice Recording Bar */}
+                    {isListening ? (
+                      <div className="relative flex-1 min-w-0 flex items-center justify-between bg-slate-950/95 backdrop-blur-xl text-white rounded-xl px-2.5 py-2 sm:px-4 sm:py-2.5 border border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.15)] overflow-hidden min-h-[44px]">
+                        <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent pointer-events-none" />
+                        <div className="flex items-center gap-2 min-w-0 flex-1 z-10 px-1">
+                          <VoiceWaveVisualizer
+                            isActive={true}
+                            type="listening"
+                            bars={16}
+                            className="shrink-0 max-w-[100px] sm:max-w-[150px]"
+                          />
+                          <span className="text-xs text-emerald-300 font-semibold italic animate-pulse truncate flex-1 min-w-0 tracking-wide">
+                            {tempVoiceText || voiceTranscript || input || 'Speak now…'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 z-10 shrink-0 ml-1">
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
 
-                    {/* Send / Stop Button */}
-                    {loading ? (
-                      <motion.button
-                        type="button"
-                        onClick={handleCancelGeneration}
-                        whileTap={{ scale: 0.92 }}
-                        className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white shadow-lg shadow-amber-900/30 transition-colors duration-200 shrink-0 cursor-pointer overflow-hidden group"
-                        title="Stop Generation"
-                      >
-                        <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
-                        <Square className="w-3.5 h-3.5 fill-white text-white" />
-                      </motion.button>
+                              // Snapshot current text BEFORE stopping (onend clears tempVoiceText in live mode)
+                              const textSnapshot = (tempVoiceText || voiceTranscript || input || '').trim();
+
+                              if (textSnapshot) {
+                                // Text already available — commit immediately
+                                setInput(textSnapshot);
+                                toast.success('Voice dictation inserted into prompt box!', { id: 'voice-success' });
+                                setTempVoiceText('');
+                                stopListening();
+                              } else {
+                                // Text not yet arrived (Google API still processing) — stop mic to flush
+                                stopListening();
+                                // Wait briefly for onSpeechEnd to fire with the buffered result
+                                await new Promise(res => setTimeout(res, 400));
+                                const flushedText = (tempVoiceText || voiceTranscript || input || '').trim();
+                                if (flushedText) {
+                                  setInput(flushedText);
+                                  toast.success('Voice dictation inserted into prompt box!', { id: 'voice-success' });
+                                } else {
+                                  // Genuinely nothing captured — show error
+                                  try {
+                                    const isBrave = (navigator as any).brave && typeof (navigator as any).brave.isBrave === 'function'
+                                      ? await (navigator as any).brave.isBrave()
+                                      : false;
+                                    if (isBrave) {
+                                      toast.error('Brave Browser blocks Google Speech API. Enable "Google services for speech recognition" in brave://settings/privacy', { duration: 7000, id: 'brave-err' });
+                                    } else {
+                                      toast.error('No voice speech captured. Please check your microphone and speak clearly.', { id: 'mic-empty' });
+                                    }
+                                  } catch (_) {}
+                                }
+                                setTempVoiceText('');
+                              }
+                            }}
+                            className="flex items-center justify-center w-7 sm:w-7.5 h-7 sm:h-7.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/90 text-emerald-300 hover:text-white border border-emerald-500/40 hover:border-emerald-400 transition-all duration-200 shadow-xs cursor-pointer active:scale-95 group"
+                            title="Confirm Voice Dictation"
+                          >
+                            <Check className="w-4 h-4 stroke-[3] group-hover:scale-110 transition-transform" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setIsLiveVoiceMode(false);
+                              setTempVoiceText('');
+                              setInput('');
+                              stopListening();
+                              stopSpeaking();
+                            }}
+                            className="flex items-center justify-center w-7 sm:w-7.5 h-7 sm:h-7.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/90 text-rose-300 hover:text-white border border-rose-500/40 hover:border-rose-400 transition-all duration-200 shadow-xs cursor-pointer active:scale-95 group"
+                            title="Cancel Voice Dictation"
+                          >
+                            <X className="w-4 h-4 stroke-[2.5] group-hover:scale-110 transition-transform" />
+                          </button>
+                        </div>
+                      </div>
                     ) : (
-                      <motion.button
-                        type="submit"
-                        disabled={!input.trim()}
-                        whileTap={{ scale: 0.9 }}
-                        className={cn(
-                          "relative flex items-center justify-center w-10 h-10 rounded-xl text-white shadow-lg transition-all duration-300 shrink-0 overflow-hidden group cursor-pointer",
-                          input.trim()
-                            ? responseMode === 'quick'
+                      <div className={cn(
+                        "relative flex-1 group transition-all duration-300",
+                        loading && "opacity-70"
+                      )}>
+                        {/* Ambient glow on focus */}
+                        <div className={cn(
+                          "absolute -inset-px rounded-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 blur-sm pointer-events-none",
+                          responseMode === 'quick'
+                            ? "bg-gradient-to-r from-brand-500/40 to-brand-600/20"
+                            : "bg-gradient-to-r from-indigo-500/40 to-violet-600/20"
+                        )} />
+                        <input
+                          type="text"
+                          value={input}
+                          onChange={(e) => setInput(e.target.value)}
+                          placeholder="Ask about Odisha history, GS, math, grammar…"
+                          disabled={loading}
+                          className={cn(
+                            "relative w-full bg-white border rounded-xl pl-3.5 pr-10 sm:pl-4 sm:pr-10 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-500 focus:outline-none transition-all duration-300 font-semibold shadow-inner",
+                            "border-slate-200/60 focus:border-slate-300/80",
+                            loading && "cursor-not-allowed"
+                          )}
+                        />
+                        {/* Voice Dictation Mic button inside prompt field (vanishes when typing) */}
+                        <AnimatePresence>
+                          {!input.trim() && (
+                            <motion.button
+                              type="button"
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.8 }}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                startListening();
+                              }}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-slate-100 transition-all cursor-pointer z-10"
+                              title="Voice Dictation (Speech-to-Text)"
+                            >
+                              <Mic className="w-3.5 h-3.5" />
+                            </motion.button>
+                          )}
+                        </AnimatePresence>
+
+                        {/* Character count hint when typing */}
+                        {input.length > 0 && (
+                          <motion.span
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-slate-600 font-mono pointer-events-none"
+                          >
+                            {input.length}
+                          </motion.span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Dynamic Action Button: Stop | AI Live Voice | Send */}
+                    <AnimatePresence mode="wait" initial={false}>
+                      {loading ? (
+                        <motion.button
+                          key="stop"
+                          type="button"
+                          onClick={handleCancelGeneration}
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.8, opacity: 0 }}
+                          whileTap={{ scale: 0.92 }}
+                          className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white shadow-lg shadow-amber-900/30 transition-colors duration-200 shrink-0 cursor-pointer overflow-hidden group"
+                          title="Stop Generation"
+                        >
+                          <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
+                          <Square className="w-3.5 h-3.5 fill-white text-white" />
+                        </motion.button>
+                      ) : !input.trim() ? (
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {/* AI Speech Voice Mute Toggle */}
+                          <motion.button
+                            type="button"
+                            onClick={toggleVoiceMute}
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            whileTap={{ scale: 0.9 }}
+                            className={cn(
+                              "relative flex items-center justify-center w-10 h-10 rounded-xl border transition-all duration-300 cursor-pointer overflow-hidden group shadow-sm",
+                              isVoiceMuted
+                                ? "bg-slate-100 border-slate-200 text-slate-400"
+                                : "bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 border-indigo-200/80 text-indigo-600"
+                            )}
+                            title={isVoiceMuted ? "AI Speech Muted (Click to unmute)" : "AI Speech Active (Click to mute)"}
+                          >
+                            {isVoiceMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                          </motion.button>
+
+                          {/* AI Live Voice Action Button */}
+                          <motion.button
+                            key="live-voice"
+                            type="button"
+                            onClick={() => {
+                              if (isLiveVoiceMode || isListening) {
+                                // User clicked active live voice button to STOP/EXIT Live Voice mode
+                                setIsLiveVoiceMode(false);
+                                stopListening();
+                                stopSpeaking();
+                              } else {
+                                // First click: atomically set live mode + open mic
+                                startLiveVoice();
+                              }
+                            }}
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            whileTap={{ scale: 0.92 }}
+                            className={cn(
+                              "relative flex items-center justify-center w-10 h-10 rounded-xl border transition-all duration-300 shrink-0 cursor-pointer overflow-hidden group shadow-sm",
+                              isLiveVoiceMode || isListening
+                                ? "bg-gradient-to-br from-emerald-500 to-teal-700 border-emerald-600 text-white shadow-emerald-500/30"
+                                : "bg-gradient-to-br from-slate-100 to-slate-200/80 hover:from-emerald-50 hover:to-emerald-100 border-slate-200/80 hover:border-emerald-300 text-slate-700 hover:text-emerald-600"
+                            )}
+                            title={isLiveVoiceMode ? "AI Live Voice Active (Click to talk)" : "Start AI Live Voice"}
+                          >
+                            {(isLiveVoiceMode || isListening) && (
+                              <span className="absolute inset-0 bg-white/20 animate-ping rounded-xl opacity-30 pointer-events-none" />
+                            )}
+                            <Radio className={cn(
+                              "w-4 h-4 relative z-10 transition-transform duration-300 group-hover:scale-110",
+                              (isLiveVoiceMode || isListening) ? "text-white animate-pulse" : "text-slate-700 group-hover:text-emerald-600"
+                            )} />
+                          </motion.button>
+                        </div>
+                      ) : (
+                        <motion.button
+                          key="send"
+                          type="submit"
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.8, opacity: 0 }}
+                          whileTap={{ scale: 0.9 }}
+                          className={cn(
+                            "relative flex items-center justify-center w-10 h-10 rounded-xl text-white shadow-lg transition-all duration-300 shrink-0 overflow-hidden group cursor-pointer",
+                            responseMode === 'quick'
                               ? "bg-gradient-to-br from-brand-500 to-brand-700 shadow-brand-900/40 hover:shadow-brand-500/30 hover:scale-105"
                               : "bg-gradient-to-br from-indigo-500 to-violet-700 shadow-indigo-900/40 hover:shadow-indigo-500/30 hover:scale-105"
-                            : "bg-slate-800/80 opacity-40 cursor-not-allowed"
-                        )}
-                        title="Send Message"
-                      >
-                        {/* Lighten overlay on hover */}
-                        <span className="absolute inset-0 bg-white/15 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
-                        <Send className="w-4 h-4 relative z-10" strokeWidth={2.5} />
-                      </motion.button>
-                    )}
+                          )}
+                          title="Send Message"
+                        >
+                          <span className="absolute inset-0 bg-white/15 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
+                          <Send className="w-4 h-4 relative z-10" strokeWidth={2.5} />
+                        </motion.button>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </form>
               </div>
@@ -4861,9 +5515,9 @@ JSON structure:
                             <button
                               type="button"
                               onClick={() => setQuizSubject(s)}
-                              className="cursor-pointer transition-colors focus:outline-none"
+                              className="cursor-pointer transition-colors focus:outline-none flex items-center"
                             >
-                              {s.replace(/\s*\(.*\)/, '').replace(/\s*&\s*/, ' & ')}
+                              <span>{s.replace(/\s*\(.*\)/, '').replace(/\s*&\s*/, ' & ')}</span>
                             </button>
                             <button
                               type="button"
@@ -4871,10 +5525,10 @@ JSON structure:
                                 e.stopPropagation();
                                 setQuizTabs(prev => prev.filter(t => t !== s));
                               }}
-                              className="text-slate-500 hover:text-red-400 font-black transition-colors pl-1 cursor-pointer text-xs leading-none focus:outline-none"
+                              className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-100/80 transition-all ml-0.5 cursor-pointer shrink-0 focus:outline-none"
                               title={`Delete ${s}`}
                             >
-                              ×
+                              <X className="w-2.5 h-2.5 stroke-[2.5]" />
                             </button>
                           </div>
                         ))}

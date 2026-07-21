@@ -37,7 +37,7 @@ This document is the living execution tracker for **OdishaExamPrep** (`https://w
 - **Current Milestone:** Production Maintenance & Mobile PWA Sync
 - **Current Priority:** Maintenance & Documentation Verification
 - **Status Badge:** ✅ **Production Ready**
-- **Last Completed Task:** Generated 100% comprehensive documentation suite (`project-overview.md`, `architecture.md`, `build-plan.md`, `code-standards.md`, `library-docs.md`, `ui-tokens.md`, `ui-rules.md`, `ui-registry.md`).
+- **Last Completed Task:** Added Voice Typing & Live AI Voice Chat to AI Mentor (`AiMentor.tsx`) and floating companion (`StickyAICompanion.tsx`), supporting speech recognition (EN/OR/HI) and speech synthesis readouts with LaTeX parsing.
 
 ---
 
@@ -80,6 +80,7 @@ This document is the living execution tracker for **OdishaExamPrep** (`https://w
 - [x] Task 6.2: Server-Sent Events (SSE) streaming support for AI completions.
 - [x] Task 6.3: AI Mentor workspace (`AiMentor.tsx`) with LaTeX equation formatting.
 - [x] Task 6.4: Floating Sticky AI Companion widget (`StickyAICompanion.tsx`) for test hints.
+- [x] Task 6.5: Voice Typing dictation (English/Odia/Hindi) and Live Interactive voice chat readout mode.
 
 ### Phase 7 — Administrative Management Suite
 - [x] Task 7.1: Secure Admin Login portal (`AdminLoginPage.tsx` & `/api/admin/login`).

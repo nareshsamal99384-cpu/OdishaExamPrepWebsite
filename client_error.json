@@ -1,8 +1,6 @@
 {
-  "type": "onerror",
-  "message": "Uncaught TypeError: className.includes is not a function",
-  "source": "http://localhost:3000/src/components/StickyAICompanion.tsx",
-  "lineno": 1204,
-  "colno": 24,
-  "stack": "TypeError: className.includes is not a function\n    at MutationObserver.checkModals (http://localhost:3000/src/components/StickyAICompanion.tsx:1204:24)"
+  "type": "unhandledrejection",
+  "message": "Unhandled Promise Rejection",
+  "reason": "Maximum call stack size exceeded",
+  "stack": "RangeError: Maximum call stack size exceeded\n    at scheduleUpdateOnFiber (http://localhost:3000/node_modules/.vite/deps/react-dom_client.js?v=fd353ee5:11668:37)\n    at dispatchSetStateInternal (http://localhost:3000/node_modules/.vite/deps/react-dom_client.js?v=fd353ee5:6834:20)\n    at dispatchSetState (http://localhost:3000/node_modules/.vite/deps/react-dom_client.js?v=fd353ee5:6803:9)\n    at Object.onTranscriptChange [as current] (http://localhost:3000/src/pages/AiMentor.tsx?t=1784600646195:628:9)\n    at flushCaptured (http://localhost:3000/src/hooks/useVoiceInteraction.ts?t=1784600053135:251:33)\n    at http://localhost:3000/src/hooks/useVoiceInteraction.ts?t=1784600053135:259:5\n    at Object.onSpeechEnd [as current] (http://localhost:3000/src/pages/AiMentor.tsx?t=1784600646195:637:11)\n    at flushCaptured (http://localhost:3000/src/hooks/useVoiceInteraction.ts?t=1784600053135:254:26)\n    at http://localhost:3000/src/hooks/useVoiceInteraction.ts?t=1784600053135:259:5\n    at Object.onSpeechEnd [as current] (http://localhost:3000/src/pages/AiMentor.tsx?t=1784600646195:637:11)"
 }

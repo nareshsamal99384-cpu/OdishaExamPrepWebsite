@@ -11,7 +11,7 @@ import {
   Timer, History, LayoutDashboard, Rocket,
   ArrowRight, ChevronDown, Crosshair, Flame,
   Sparkles, Brain, Cpu, Send, Activity, 
-  Gauge, Lightbulb, Loader2, RefreshCw, Trash2, X
+  Gauge, Lightbulb, Loader2, RefreshCw, Trash2, X, Check
 } from 'lucide-react';
 import { activityTracker } from './lib/activityTracker';
 import { cn } from './lib/utils';
@@ -1646,34 +1646,39 @@ ${stats?.examAnalysis ? stats.examAnalysis.map(e => `  * Exam: "${e.examName}" (
                         <span className="text-[10px] font-bold text-slate-500 leading-normal">Check off items as you complete them to lift your score</span>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 items-stretch">
                         {actionItems.map((item, idx) => (
                           <div 
                             key={idx}
                             onClick={() => setCheckedActions(prev => ({ ...prev, [idx]: !prev[idx] }))}
                             className={cn(
-                              "p-3 bg-slate-50/70 border border-slate-200/60 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-slate-100/50 hover:border-[#2563EB]/30 transition-all duration-300 active:scale-[0.98]",
+                              "p-3.5 sm:p-4 bg-slate-50/80 border border-slate-200/70 rounded-2xl flex items-start gap-3 cursor-pointer hover:bg-white hover:border-[#2563EB]/40 hover:shadow-sm transition-all duration-300 active:scale-[0.98] group relative",
                               checkedActions[idx] && "bg-[#2563EB]/5 border-[#2563EB]/20"
                             )}
                           >
                             <div className={cn(
-                              "w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors",
+                              "w-5 h-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-colors",
                               checkedActions[idx] 
-                                ? "bg-emerald-500 border-emerald-400 text-white" 
-                                : "border-slate-300 text-transparent"
+                                ? "bg-emerald-500 border-emerald-400 text-white shadow-xs" 
+                                : "border-slate-300 text-transparent bg-white group-hover:border-slate-400"
                             )}>
-                              <span className="text-[10px] font-black leading-none">✓</span>
+                              <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className={cn(
-                                "text-slate-700 text-xs font-semibold leading-snug truncate",
+                                "text-slate-800 text-xs sm:text-sm font-semibold leading-relaxed whitespace-normal break-words",
                                 checkedActions[idx] && "line-through text-slate-400"
                               )}>
                                 {item.task}
                               </p>
+                              {item.timeframe && (
+                                <span className="inline-block text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1.5">
+                                  Target: {item.timeframe}
+                                </span>
+                              )}
                             </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 text-[8px] font-black rounded-lg border border-emerald-200/30 uppercase">
+                            <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[9px] font-black rounded-lg border border-emerald-200/50 uppercase">
                                 {item.boost || '+5%'}
                               </span>
                             </div>

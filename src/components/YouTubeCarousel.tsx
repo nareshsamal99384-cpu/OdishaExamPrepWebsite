@@ -7,28 +7,21 @@ import { cn } from '../lib/utils';
 const AUTO_SPEED = 0.6;  // px per animation frame (~36px/s at 60fps)
 const RESUME_DELAY_MS = 2000; // ms after last user interaction before auto-scroll resumes
 
-// Dynamic title and category resolver to eliminate AI generic slop
-const getVideoTitle = (id: string) => {
-  const mapping: Record<string, { title: string, category: string }> = {
-    'jNQXAC9IVRw': { title: 'Averages Shortcut Tricks for OSSC & OSSSC', category: 'Aptitude' },
-    'dQw4w9WgXcQ': { title: 'Exam Strategy & Time Management Guide', category: 'Strategy' },
-    'EngW7tCbLHY': { title: 'General Studies: Odisha History & Heritage', category: 'General Studies' },
-  };
-  
-  if (mapping[id]) return mapping[id];
-  
-  const fallbacks = [
-    { title: 'Odisha History & Heritage Masterclass', category: 'General Studies' },
-    { title: 'OSSC Quantitative Aptitude: Shortcut Tricks', category: 'Aptitude' },
-    { title: 'OPSC Civil Services Preparation Roadmap', category: 'Strategy' },
-    { title: 'Odia Grammar: High-scoring Rules & PYQs', category: 'Language' },
-    { title: 'OSSSC RI/ARI General Awareness Practice Set', category: 'General Studies' },
-    { title: 'Daily Current Affairs Analysis for OPSC Mains', category: 'Current Affairs' }
-  ];
-  
-  let sum = 0;
-  for (let i = 0; i < id.length; i++) sum += id.charCodeAt(i);
-  return fallbacks[sum % fallbacks.length];
+// Dynamic category resolver based on title keywords
+const inferCategory = (title: string): string => {
+  const t = title.toLowerCase();
+  if (t.includes('aptitude') || t.includes('tricks') || t.includes('math') || t.includes('average') || t.includes('reasoning') || t.includes('series') || t.includes('quant')) return 'Aptitude';
+  if (t.includes('strategy') || t.includes('guide') || t.includes('roadmap') || t.includes('tips') || t.includes('syllabus')) return 'Strategy';
+  if (t.includes('history') || t.includes('heritage') || t.includes('computer') || t.includes('gk') || t.includes('awareness') || t.includes('gs') || t.includes('general') || t.includes('science') || t.includes('gate') || t.includes('concept')) return 'General Studies';
+  if (t.includes('odia') || t.includes('english') || t.includes('grammar') || t.includes('language')) return 'Language';
+  if (t.includes('current affairs') || t.includes('daily') || t.includes('news')) return 'Current Affairs';
+  return 'General Studies';
+};
+
+const staticMapping: Record<string, { title: string, category: string }> = {
+  'jNQXAC9IVRw': { title: 'Averages Shortcut Tricks for OSSC & OSSSC', category: 'Aptitude' },
+  'dQw4w9WgXcQ': { title: 'Exam Strategy & Time Management Guide', category: 'Strategy' },
+  'EngW7tCbLHY': { title: 'General Studies: Odisha History & Heritage', category: 'General Studies' },
 };
 
 // Category badge colour mapping for premium look
@@ -45,7 +38,26 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const [fetchedTitles, setFetchedTitles] = useState<Record<string, string>>({});
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Fetch authentic YouTube titles dynamically via noembed endpoint
+  const videoIdsKey = videoIds ? videoIds.join(',') : '';
+  useEffect(() => {
+    if (!videoIds || videoIds.length === 0) return;
+    let isMounted = true;
+    videoIds.forEach(id => {
+      fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.title && isMounted) {
+            setFetchedTitles(prev => ({ ...prev, [id]: data.title }));
+          }
+        })
+        .catch(() => {});
+    });
+    return () => { isMounted = false; };
+  }, [videoIdsKey]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -70,16 +82,17 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
     return () => observer.disconnect();
   }, []);
 
-  // Mobile card is narrower so it feels complete and doesn't feel cut off
+  // Mobile card width adjustment
   const cardWidth = isMobile ? 240 : 320;
   const cardGap   = isMobile ? 12 : 24;
   const itemStep  = cardWidth + cardGap;
 
-  // Map dynamic videos to their academic titles and categories
+  // Map dynamic videos to authentic fetched YouTube titles and categories
   const sourceVideos = videoIds && videoIds.length > 0
     ? videoIds.map(id => {
-        const meta = getVideoTitle(id);
-        return { id, title: meta.title, category: meta.category };
+        const title = fetchedTitles[id] || staticMapping[id]?.title || `Odisha Exam Prep Masterclass`;
+        const category = staticMapping[id]?.category || inferCategory(title);
+        return { id, title, category };
       })
     : [];
 
@@ -415,27 +428,46 @@ export default function YouTubeCarousel({ videoIds }: { videoIds?: string[] }) {
         {activeVideo && (
           <motion.div
             {...modalBackdrop}
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80"
+            className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 backdrop-blur-2xl bg-slate-950/85"
           >
             <div className="absolute inset-0" onClick={() => setActiveVideo(null)} />
-            <motion.div {...modalContent}
-              className="relative w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border-2 border-slate-900"
+            <motion.div
+              {...modalContent}
+              className="relative w-full max-w-5xl bg-slate-900 rounded-2xl sm:rounded-3xl border-2 border-slate-800 shadow-2xl overflow-hidden flex flex-col z-10"
             >
-              <button
-                onClick={() => setActiveVideo(null)}
-                className="absolute top-4 right-4 z-50 w-10 h-10 bg-black/50 hover:bg-[#2563EB] backdrop-blur rounded-full flex items-center justify-center text-white transition-colors border border-white/20"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              <iframe
-                src={`https://www.youtube.com/embed/${activeVideo}?autoplay=1&mute=0&rel=0&modestbranding=1&origin=${encodeURIComponent(window.location.origin)}`}
-                title="YouTube video player"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                allowFullScreen
-                referrerPolicy="no-referrer-when-downgrade"
-                className="w-full h-full absolute inset-0"
-              />
+              {/* Modal Window Header Bar */}
+              <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 bg-slate-900 border-b border-slate-800/90 shrink-0">
+                <div className="flex items-center gap-3 min-w-0 pr-4">
+                  <div className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center shrink-0">
+                    <Youtube className="w-4 h-4 fill-rose-500 text-rose-500" />
+                  </div>
+                  <h3 className="text-xs sm:text-sm md:text-base font-extrabold text-slate-100 truncate font-serif tracking-tight">
+                    {sourceVideos.find(v => v.id === activeVideo)?.title || 'OdishaExamPrep Video Lecture'}
+                  </h3>
+                </div>
+
+                {/* Integrated Close Button */}
+                <button
+                  onClick={() => setActiveVideo(null)}
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-800/80 hover:bg-rose-600 text-slate-400 hover:text-white transition-all duration-200 flex items-center justify-center shrink-0 border border-slate-700/60 active:scale-95 cursor-pointer shadow-sm"
+                  title="Close Video"
+                >
+                  <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+              </div>
+
+              {/* Video Player Frame */}
+              <div className="w-full aspect-video relative bg-black">
+                <iframe
+                  src={`https://www.youtube.com/embed/${activeVideo}?autoplay=1&mute=0&rel=0&modestbranding=1&origin=${encodeURIComponent(window.location.origin)}`}
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="w-full h-full absolute inset-0"
+                />
+              </div>
             </motion.div>
           </motion.div>
         )}

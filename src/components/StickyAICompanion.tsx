@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DOMPurify from 'dompurify';
+import { toast } from 'react-hot-toast';
 import { cn } from '../lib/utils';
 import { useAuth } from '../lib/AuthContext';
 import { examService } from '../lib/examService';
@@ -21,7 +22,15 @@ import {
   Trophy,
   Award,
   ChevronRight,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  Radio,
+  Check
 } from 'lucide-react';
+import { useVoiceInteraction, VoiceLanguage } from '../hooks/useVoiceInteraction';
+import { VoiceWaveVisualizer } from './VoiceWaveVisualizer';
 
 /* ─────────────────────────────────────────────
    Types
@@ -816,6 +825,70 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [showBadge, setShowBadge] = useState(true);
+
+  const [tempVoiceText, setTempVoiceText] = useState('');
+  const [isVoiceMuted, setIsVoiceMuted] = useState<boolean>(() => {
+    try { return localStorage.getItem('oep-companion-voice-muted') === 'true'; } catch { return false; }
+  });
+
+  // Voice Interaction Hook
+  const {
+    language: voiceLang,
+    setLanguage: setVoiceLang,
+    isListening,
+    transcript: voiceTranscript,
+    startListening,
+    stopListening,
+    resetTranscript,
+    isSpeaking,
+    speak,
+    stopSpeaking,
+    isLiveVoiceMode,
+    setIsLiveVoiceMode,
+    toggleLiveVoiceMode,
+    startLiveVoice,
+    hasSpeechRecognitionSupport,
+  } = useVoiceInteraction({
+    language: 'en-IN',
+    onTranscriptChange: (text) => {
+      if (text) {
+        setTempVoiceText(text);
+        setInput(text);
+      }
+    },
+    onSpeechEnd: (text) => {
+      if (text && text.trim()) {
+        setTempVoiceText(text);
+        setInput(text);
+        if (isLiveVoiceMode) {
+          stopListening();
+          sendMessage(text);
+          // Immediately clear old transcript so next bar shows fresh
+          setTempVoiceText('');
+          setInput('');
+        }
+      }
+    },
+  });
+
+  // Live Voice auto-restart: when mic closes unexpectedly (no-speech timeout, Chrome auto-stop)
+  // but Live Voice is still active, reopen the mic — guarded by ALL three conditions.
+  useEffect(() => {
+    if (!isLiveVoiceMode || isListening || isSpeaking || loading) return;
+    // All three safe: live mode active, mic closed, AI not speaking, not sending
+    const timer = setTimeout(() => {
+      if (isLiveVoiceMode && !isListening && !isSpeaking && !loading) {
+        setTempVoiceText('');
+        setInput('');
+        resetTranscript();
+        startListening();
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [isLiveVoiceMode, isListening, isSpeaking, loading]);
+
+  const [activeSpeakingIdx, setActiveSpeakingIdx] = useState<number | null>(null);
+
   const [siteData, setSiteData] = useState<LiveSiteData | null>(null);
   const [dataLoading, setDataLoading] = useState(false);
   const [dataError, setDataError] = useState(false);
@@ -1485,7 +1558,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
       let found = false;
       for (let i = 0; i < fixedElements.length; i++) {
         const el = fixedElements[i];
-        const className = el.className || '';
+        const className = el.getAttribute('class') || (typeof el.className === 'string' ? el.className : '');
         if (
           (className.includes('bg-black') || className.includes('bg-slate-950') || className.includes('bg-slate-900')) &&
           className.includes('backdrop-blur')
@@ -1693,6 +1766,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
 
     const controller = new AbortController();
     abortRef.current = controller;
+    let fullAssistantText = '';
 
     try {
       const history = messages.slice(-6).map(m => ({ role: m.role, content: m.content }));
@@ -1740,6 +1814,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
             const json = JSON.parse(data);
             const delta = json.choices?.[0]?.delta?.content || '';
             if (delta) {
+              fullAssistantText += delta;
               setMessages(prev => {
                 const updated = [...prev];
                 updated[updated.length - 1] = {
@@ -1754,11 +1829,12 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
       }
     } catch (err: any) {
       if (err.name !== 'AbortError') {
+        const errMsg = "Sorry, I couldn't connect right now. Please try again in a moment, or reach us on WhatsApp at +91 7377431715 🙏";
         setMessages(prev => {
           const updated = [...prev];
           updated[updated.length - 1] = {
             ...updated[updated.length - 1],
-            content: "Sorry, I couldn't connect right now. Please try again in a moment, or reach us on WhatsApp at +91 7377431715 🙏",
+            content: errMsg,
           };
           return updated;
         });
@@ -1766,6 +1842,25 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
     } finally {
       setLoading(false);
       abortRef.current = null;
+
+      if (isLiveVoiceMode && fullAssistantText) {
+        setTempVoiceText('');
+        setInput('');
+        resetTranscript();
+        if (!isVoiceMuted) {
+          speak(fullAssistantText, () => {
+            setTempVoiceText('');
+            setInput('');
+            resetTranscript();
+            startListening();
+          });
+        } else {
+          setTempVoiceText('');
+          setInput('');
+          resetTranscript();
+          startListening();
+        }
+      }
     }
   };
 
@@ -1811,6 +1906,7 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
               "fixed right-4 sm:right-6 z-[80] group focus:outline-none cursor-pointer",
               getBaseCompanionBottomClass(false)
             )}
+            data-tour="ai-companion"
             style={{ pointerEvents: (hasModalActive || !isVisible) ? 'none' : 'auto' }}
             title="Ask OEP Buddy"
             aria-label="Open AI Companion"
@@ -2095,7 +2191,34 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
                           {isUser ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5 text-brand-600" />}
                         </div>
                         <div className={cn('px-3 py-2.5 rounded-2xl max-w-[84%] shadow-sm text-xs leading-relaxed', isUser ? 'bg-gradient-to-br from-brand-600 to-brand-700 text-white rounded-tr-sm' : 'bg-slate-50 border border-slate-100/80 text-slate-700 rounded-tl-sm')}>
-                          {isUser ? <p>{msg.content}</p> : <RenderMessage text={msg.content} />}
+                          {isUser ? <p>{msg.content}</p> : (
+                            <>
+                              <RenderMessage text={msg.content} />
+                              <div className="flex items-center justify-between gap-2 mt-1 border-t border-slate-200/40 pt-1">
+                                <span className="text-[8px] uppercase tracking-wider text-slate-405 font-extrabold">OEP Buddy</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (isSpeaking && activeSpeakingIdx === idx) {
+                                      stopSpeaking();
+                                      setActiveSpeakingIdx(null);
+                                    } else {
+                                      setActiveSpeakingIdx(idx);
+                                      speak(msg.content, () => setActiveSpeakingIdx(null));
+                                    }
+                                  }}
+                                  className="p-1 hover:bg-slate-200/80 rounded-lg text-slate-450 hover:text-brand-600 transition-colors cursor-pointer"
+                                  title={isSpeaking && activeSpeakingIdx === idx ? "Stop Audio" : "Listen to Response"}
+                                >
+                                  {isSpeaking && activeSpeakingIdx === idx ? (
+                                    <VolumeX className="w-3 h-3 text-rose-500 animate-pulse" />
+                                  ) : (
+                                    <Volume2 className="w-3 h-3" />
+                                  )}
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </motion.div>
                     );
@@ -2105,34 +2228,243 @@ const StickyAICompanion: React.FC<StickyAICompanionProps> = ({
 
                 {/* Input Bar */}
                 <div className="shrink-0 border-t border-slate-100 bg-white/95 backdrop-blur-sm px-3 py-2 sm:px-4 sm:py-3 pb-[calc(8px+env(safe-area-inset-bottom))] sm:pb-3">
-                  <form onSubmit={e => { e.preventDefault(); sendMessage(input); }} className="flex items-center gap-2">
-                    <div className="flex-1 relative">
-                      <input
-                        ref={inputRef}
-                        type="text"
-                        value={input}
-                        onChange={e => setInput(e.target.value)}
-                        placeholder="Ask about exams, pricing, features…"
-                        disabled={loading}
-                        className="w-full text-xs bg-slate-50/70 border border-slate-200/60 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-brand-400/80 focus:bg-white transition-all duration-300 font-medium disabled:opacity-60 disabled:cursor-not-allowed"
-                      />
+                  {/* Active Voice Wave Overlay Banner (for AI TTS Speaking) */}
+                  {isSpeaking && (
+                    <div className="px-3 py-1.5 bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900 text-white flex items-center justify-between border border-brand-500/20 animate-fade-in mb-2 rounded-xl">
+                      <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                        <VoiceWaveVisualizer
+                          isActive={true}
+                          type="speaking"
+                          bars={10}
+                          label="AI Speaking…"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          stopSpeaking();
+                          if (isLiveVoiceMode) {
+                            // Reopen mic immediately when user interrupts AI speech
+                            setTempVoiceText('');
+                            setInput('');
+                            resetTranscript();
+                            startListening();
+                          }
+                        }}
+                        className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white rounded-lg border border-rose-500/30 transition-all cursor-pointer"
+                      >
+                        Stop
+                      </button>
                     </div>
-                    <button
-                      type="submit"
-                      disabled={!input.trim() || loading}
-                      className={cn(
-                        'w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300',
-                        input.trim() && !loading
-                          ? 'bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-900/15 hover:shadow-brand-500/25 hover:scale-105 active:scale-95'
-                          : 'bg-slate-100 text-slate-300 cursor-not-allowed'
+                  )}
+
+                  <form onSubmit={e => { e.preventDefault(); if (input.trim()) sendMessage(input); }} className="flex items-center gap-2 min-w-0">
+                    {isListening ? (
+                      <div className="relative flex-1 min-w-0 flex items-center justify-between bg-slate-950/95 backdrop-blur-xl text-white rounded-2xl px-3 py-1.5 sm:px-3.5 sm:py-2 border border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.15)] overflow-hidden min-h-[38px]">
+                        <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent pointer-events-none" />
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1 z-10 px-1">
+                          <VoiceWaveVisualizer
+                            isActive={true}
+                            type="listening"
+                            bars={14}
+                            className="shrink-0 max-w-[80px] sm:max-w-[100px]"
+                          />
+                          <span className="text-[11px] sm:text-xs text-emerald-300 font-semibold italic animate-pulse truncate flex-1 min-w-0 tracking-wide">
+                            {tempVoiceText || voiceTranscript || input || 'Speak now…'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 z-10 shrink-0 ml-1">
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+
+                              // Snapshot current text BEFORE stopping
+                              const textSnapshot = (tempVoiceText || voiceTranscript || input || '').trim();
+
+                              if (textSnapshot) {
+                                // Text already available — commit immediately
+                                setInput(textSnapshot);
+                                toast.success('Voice dictation inserted into prompt box!', { id: 'voice-success' });
+                                setTempVoiceText('');
+                                stopListening();
+                              } else {
+                                // Text not yet arrived (Google API still processing) — stop mic to flush
+                                stopListening();
+                                // Wait briefly for onSpeechEnd to fire with the buffered result
+                                await new Promise(res => setTimeout(res, 400));
+                                const flushedText = (tempVoiceText || voiceTranscript || input || '').trim();
+                                if (flushedText) {
+                                  setInput(flushedText);
+                                  toast.success('Voice dictation inserted into prompt box!', { id: 'voice-success' });
+                                } else {
+                                  try {
+                                    const isBrave = (navigator as any).brave && typeof (navigator as any).brave.isBrave === 'function'
+                                      ? await (navigator as any).brave.isBrave()
+                                      : false;
+                                    if (isBrave) {
+                                      toast.error('Brave Browser blocks Google Speech API. Enable "Google services for speech recognition" in brave://settings/privacy', { duration: 7000, id: 'brave-err' });
+                                    } else {
+                                      toast.error('No voice speech captured. Please check your microphone and speak clearly.', { id: 'mic-empty' });
+                                    }
+                                  } catch (_) {}
+                                }
+                                setTempVoiceText('');
+                              }
+                            }}
+                            className="flex items-center justify-center w-6 sm:w-6.5 h-6 sm:h-6.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/90 text-emerald-300 hover:text-white border border-emerald-500/40 hover:border-emerald-400 transition-all duration-200 shadow-xs cursor-pointer active:scale-95 group"
+                            title="Confirm Voice Dictation"
+                          >
+                            <Check className="w-3.5 h-3.5 stroke-[3] group-hover:scale-110 transition-transform" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setIsLiveVoiceMode(false);
+                              setTempVoiceText('');
+                              setInput('');
+                              stopListening();
+                              stopSpeaking();
+                            }}
+                            className="flex items-center justify-center w-6 sm:w-6.5 h-6 sm:h-6.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/90 text-rose-300 hover:text-white border border-rose-500/40 hover:border-rose-400 transition-all duration-200 shadow-xs cursor-pointer active:scale-95 group"
+                            title="Cancel Voice Dictation"
+                          >
+                            <X className="w-3.5 h-3.5 stroke-[2.5] group-hover:scale-110 transition-transform" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex-1 relative">
+                        <input
+                          ref={inputRef}
+                          type="text"
+                          value={input}
+                          onChange={e => setInput(e.target.value)}
+                          placeholder="Ask about exams, pricing, features…"
+                          disabled={loading}
+                          className={cn(
+                            "w-full text-xs bg-slate-50/70 border rounded-2xl pl-3.5 pr-8 sm:pl-4 sm:pr-9 py-2 sm:py-2.5 text-slate-800 placeholder:text-slate-450 focus:outline-none focus:bg-white transition-all duration-300 font-medium disabled:opacity-60 disabled:cursor-not-allowed",
+                            "border-slate-200/60 focus:border-brand-400/80"
+                          )}
+                        />
+                        <AnimatePresence>
+                          {!input.trim() && (
+                            <motion.button
+                              type="button"
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.8 }}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                startListening();
+                              }}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-slate-100 transition-colors cursor-pointer z-10"
+                              title="Voice Dictation"
+                            >
+                              <Mic className="w-3.5 h-3.5" />
+                            </motion.button>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )}
+
+                    {/* Dynamic Action Button: Loading | Live Voice Mic | Send */}
+                    <AnimatePresence mode="wait" initial={false}>
+                      {loading ? (
+                        <motion.button
+                          key="loading"
+                          type="button"
+                          disabled
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.8, opacity: 0 }}
+                          className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl flex items-center justify-center shrink-0 bg-slate-100 text-slate-400 cursor-not-allowed"
+                        >
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        </motion.button>
+                      ) : !input.trim() ? (
+                        <div className="flex items-center gap-1">
+                          {/* AI Speech Mute Toggle — only visible in Live Voice mode */}
+                          {(isLiveVoiceMode || isListening) && (
+                            <motion.button
+                              key="voice-mute"
+                              type="button"
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.8 }}
+                              onClick={() => {
+                                const next = !isVoiceMuted;
+                                setIsVoiceMuted(next);
+                                try { localStorage.setItem('oep-companion-voice-muted', String(next)); } catch {}
+                              }}
+                              className={cn(
+                                "w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 cursor-pointer border",
+                                isVoiceMuted
+                                  ? "bg-slate-200 border-slate-300 text-slate-500"
+                                  : "bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100"
+                              )}
+                              title={isVoiceMuted ? "AI Speech Off — click to unmute" : "AI Speech On — click to mute"}
+                            >
+                              {isVoiceMuted
+                                ? <VolumeX className="w-3 h-3" />
+                                : <Volume2 className="w-3 h-3" />}
+                            </motion.button>
+                          )}
+                          <motion.button
+                            key="live-voice"
+                            type="button"
+                            onClick={() => {
+                              if (isLiveVoiceMode || isListening) {
+                                // User clicked active live voice button to STOP/EXIT Live Voice mode
+                                setIsLiveVoiceMode(false);
+                                stopListening();
+                                stopSpeaking();
+                              } else {
+                                // First click: atomically set live mode + open mic
+                                startLiveVoice();
+                              }
+                            }}
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            whileTap={{ scale: 0.92 }}
+                            className={cn(
+                              "w-8 h-8 sm:w-9 sm:h-9 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300 cursor-pointer overflow-hidden border shadow-xs relative group",
+                              isLiveVoiceMode || isListening
+                                ? "bg-gradient-to-br from-emerald-500 to-teal-700 border-emerald-600 text-white shadow-emerald-500/30"
+                                : "bg-white hover:bg-slate-100 text-slate-700 border-slate-200/80 hover:border-emerald-300 hover:text-emerald-600"
+                            )}
+                            title={isLiveVoiceMode ? "AI Live Voice Active" : "Start AI Live Voice"}
+                          >
+                            <Radio className={cn(
+                              "w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-110",
+                              (isLiveVoiceMode || isListening) ? "text-white animate-pulse" : "text-slate-700 group-hover:text-emerald-600"
+                            )} />
+                          </motion.button>
+                        </div>
+                      ) : (
+                        <motion.button
+                          key="send"
+                          type="submit"
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.8, opacity: 0 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300 bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-900/15 hover:shadow-brand-500/25 hover:scale-105 active:scale-95 cursor-pointer"
+                          title="Send"
+                        >
+                          <Send className="w-3.5 h-3.5" strokeWidth={2.5} />
+                        </motion.button>
                       )}
-                      title="Send"
-                    >
-                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-3 h-3 sm:w-3.5 sm:h-3.5" strokeWidth={2.5} />}
-                    </button>
+                    </AnimatePresence>
                   </form>
+
                   <p className="text-[9px] text-slate-400 text-center mt-1.5 font-semibold">
-                    OEP Buddy · Real-time data from OdishaExamPrep
+                    OEP Buddy · Real-time data
                   </p>
                 </div>
               </>

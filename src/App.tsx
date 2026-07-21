@@ -49,7 +49,8 @@ import {
   RotateCw,
   Timer,
   Clock3,
-  MessageSquare
+  MessageSquare,
+  Video
 } from 'lucide-react';
 import { Toaster, toast, useToasterStore } from 'react-hot-toast';
 import { useAuth } from './lib/AuthContext';
@@ -86,6 +87,8 @@ import StickyAICompanion from './components/StickyAICompanion';
 import LoadingPortal from './components/LoadingPortal';
 import PushPermissionPrompt from './components/PushPermissionPrompt';
 import { registerServiceWorker } from './lib/pushNotifications';
+import { WelcomeVideoModal } from './components/WelcomeVideoModal';
+import { OnboardingTour } from './components/OnboardingTour';
 
 const HistoryView = ({ 
   user, 
@@ -1751,11 +1754,21 @@ export const Navbar = ({
              </Link>
             {user && (
               <>
-                 <div className="w-0.5 h-4 bg-slate-200 mx-0.5 shrink-0"></div>
-                 <a href={supportUrl} target="_blank" rel="noopener noreferrer" className="relative flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-600 hover:text-[#2563EB] px-4 py-2 rounded-lg hover:bg-slate-50 transition-all duration-200 group">
-                   <HelpCircle className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#2563EB] transition-colors" />
-                   <span>Support</span>
-                 </a>
+              <div className="w-0.5 h-4 bg-slate-200 mx-0.5 shrink-0"></div>
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('oep-open-tutorial-video'))}
+                className="relative flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-700 hover:text-brand-600 px-3 py-2 rounded-lg hover:bg-brand-50 transition-all duration-200 group cursor-pointer"
+                title="Watch Website Tutorial Video"
+              >
+                <Video className="w-3.5 h-3.5 text-rose-500 group-hover:text-brand-600 transition-colors" />
+                <span>Watch Guide</span>
+              </button>
+              <div className="w-0.5 h-4 bg-slate-200 mx-0.5 shrink-0"></div>
+              <a href={supportUrl} target="_blank" rel="noopener noreferrer" className="relative flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-600 hover:text-[#2563EB] px-4 py-2 rounded-lg hover:bg-slate-50 transition-all duration-200 group">
+                <HelpCircle className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#2563EB] transition-colors" />
+                <span>Support</span>
+              </a>
               </>
             )}
           </div>
@@ -1976,6 +1989,23 @@ export const Navbar = ({
                       <span className="tracking-wide">Latest Updates &amp; Blog</span>
                       <ChevronRight className={cn("w-4 h-4 ml-auto transition-transform duration-250", isBlogActive ? "text-[#2563EB] translate-x-0.5" : "text-slate-400 group-hover:translate-x-0.5")} />
                     </Link>
+                  </motion.div>
+
+                  <motion.div variants={drawerItemVariants}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        window.dispatchEvent(new CustomEvent('oep-open-tutorial-video'));
+                      }}
+                      className="w-full flex items-center gap-3 text-sm font-extrabold p-2.5 rounded-xl transition-all border border-transparent group relative hover:bg-rose-50 text-slate-800 active:bg-rose-100 active:scale-[0.98] select-none cursor-pointer"
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shrink-0 shadow-xs">
+                         <Video className="w-4 h-4" />
+                      </div>
+                      <span className="tracking-wide text-left flex-1 font-bold">Watch Video Guide</span>
+                      <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                    </button>
                   </motion.div>
 
                   {user && (
@@ -2855,8 +2885,8 @@ const LandingPage = () => {
 
         {/* 1. Practice Core (Explore Exams) */}
         <section id="exams" className="py-12 md:py-16 scroll-mt-24 border-b border-slate-200/50">
-          <div className="max-w-6xl mx-auto px-6 space-y-12 sm:space-y-10">
-            <div className="flex flex-col items-center space-y-4 text-center">
+          <div id="exam-gateway-wrapper" data-tour="exam-search" className="max-w-6xl mx-auto px-6 space-y-12 sm:space-y-10">
+            <div id="exam-gateway-header" className="flex flex-col items-center space-y-4 text-center">
               <span className="section-chip">
                 <Zap className="w-3.5 h-3.5" />
                 Your Exam Gateway
@@ -9355,6 +9385,23 @@ function AppContent() {
   }
 
   const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
+  const [showWelcomeVideoModal, setShowWelcomeVideoModal] = useState(false);
+  const [showOnboardingTourModal, setShowOnboardingTourModal] = useState(false);
+
+  // Auto show tutorial video for new users / first-time visit
+  useEffect(() => {
+    const hasSeenVideo = localStorage.getItem('oep_welcome_video_seen');
+    if (!hasSeenVideo) {
+      setShowWelcomeVideoModal(true);
+    }
+  }, []);
+
+  // Listen for custom event to open video tutorial anytime on demand
+  useEffect(() => {
+    const handleOpenVideo = () => setShowWelcomeVideoModal(true);
+    window.addEventListener('oep-open-tutorial-video', handleOpenVideo);
+    return () => window.removeEventListener('oep-open-tutorial-video', handleOpenVideo);
+  }, []);
 
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('oep-bottom-nav-visible', { detail: isBottomNavVisible }));
@@ -9687,7 +9734,7 @@ function AppContent() {
               <ChevronDown className="w-4 h-4 transition-transform group-hover:translate-y-0.5 duration-200" />
             </button>
 
-            <button onClick={handleHomeClick} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'home' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+            <button data-tour="bottom-nav-home" onClick={handleHomeClick} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'home' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
               <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
                 {mainTab === 'home' && (
                   <motion.div
@@ -9700,7 +9747,7 @@ function AppContent() {
               </div>
               <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'home' ? 'font-black' : 'font-extrabold'}`}>Home</span>
             </button>
-            <button onClick={() => handleTabClick('courses')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'courses' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+            <button data-tour="bottom-nav-courses" onClick={() => handleTabClick('courses')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'courses' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
               <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
                 {mainTab === 'courses' && (
                   <motion.div
@@ -9713,7 +9760,7 @@ function AppContent() {
               </div>
               <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'courses' ? 'font-black' : 'font-extrabold'}`}>Courses</span>
             </button>
-            <button onClick={() => handleTabClick('analytics')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'analytics' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+            <button data-tour="bottom-nav-analytics" onClick={() => handleTabClick('analytics')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'analytics' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
               <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
                 {mainTab === 'analytics' && (
                   <motion.div
@@ -9726,7 +9773,7 @@ function AppContent() {
               </div>
               <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'analytics' ? 'font-black' : 'font-extrabold'}`}>Analytics</span>
             </button>
-            <button onClick={() => handleTabClick('history')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'history' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+            <button data-tour="bottom-nav-history" onClick={() => handleTabClick('history')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'history' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
               <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
                 {mainTab === 'history' && (
                   <motion.div
@@ -9739,7 +9786,7 @@ function AppContent() {
               </div>
               <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'history' ? 'font-black' : 'font-extrabold'}`}>History</span>
             </button>
-            <button onClick={() => handleTabClick('library')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'library' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+            <button data-tour="bottom-nav-library" onClick={() => handleTabClick('library')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'library' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
               <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
                 {mainTab === 'library' && (
                   <motion.div
@@ -9752,7 +9799,7 @@ function AppContent() {
               </div>
               <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide sm:tracking-widest ${mainTab === 'library' ? 'font-black' : 'font-extrabold'}`}>Library</span>
             </button>
-            <button onClick={() => handleTabClick('ai_mentor')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'ai_mentor' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
+            <button data-tour="bottom-nav-ai_mentor" onClick={() => handleTabClick('ai_mentor')} className={`flex flex-col items-center gap-1 sm:gap-1.5 group ${mainTab === 'ai_mentor' ? 'text-brand-650' : 'text-slate-500 hover:text-slate-800'}`}>
               <div className="relative p-1.5 sm:p-2 rounded-xl group-hover:scale-115 transition-all duration-300 border border-transparent flex items-center justify-center">
                 {mainTab === 'ai_mentor' && (
                   <motion.div
@@ -10106,6 +10153,18 @@ function AppContent() {
           </>
         )}
       </AnimatePresence>
+
+      <WelcomeVideoModal 
+        isOpen={showWelcomeVideoModal} 
+        onClose={() => setShowWelcomeVideoModal(false)} 
+        onStartTour={() => setShowOnboardingTourModal(true)} 
+      />
+      <OnboardingTour 
+        mainTab={mainTab}
+        onNavigate={(tab) => handleTabClick(tab)}
+        isOpenManual={showOnboardingTourModal} 
+        onCloseManual={() => setShowOnboardingTourModal(false)} 
+      />
     </div>
   );
-}
+}
